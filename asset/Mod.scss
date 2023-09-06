@@ -1,0 +1,146 @@
+.icon {
+	width:18px;
+	height:18px;
+}
+.line1 {
+	text-overflow:ellipsis;
+	white-space:nowrap;
+	overflow:hidden;
+}
+.instruction {
+	color:rgb(255,255,255);
+	font-size:12px;
+	line-height:1;
+	flex-shrink:0px;
+	display:inline-flex;
+}
+.cnt_row {
+	border-radius:100px;
+	background-color:rgba(0,0,0,0.7);
+	display:flex;
+	align-items:center;
+	justify-content:center;
+	flex-shrink:0px;
+	gap:4px;
+	width:176px;
+	height:24px;
+	padding-left:4px;
+	padding-right:8px;
+	padding-top:8px;
+	padding-bottom:8px;
+}
+.img {
+	width:50px;
+	height:50px;
+}
+.instruction1 {
+	color:rgb(0,0,0);
+	font-size:16px;
+	line-height:1;
+	flex-shrink:0px;
+	width:116px;
+	display:inline-flex;
+}
+.txt {
+	color:rgb(153,153,153);
+	font-size:12px;
+	line-height:1;
+	flex-shrink:0px;
+	display:inline-flex;
+}
+.cnt_col {
+	display:flex;
+	flex-direction:column;
+	align-items:flex-start;
+	justify-content:center;
+	gap:8px;
+	width:145px;
+	height:50px;
+}
+.icon1 {
+	width:15px;
+	height:15px;
+}
+.instruction2 {
+	color:rgb(153,153,153);
+	font-size:11px;
+	line-height:1.36;
+	text-align:center;
+	flex-shrink:0px;
+	overflow:hidden;
+}
+.txt1 {
+	color:rgb(34,34,34);
+	font-size:11px;
+	line-height:1.36;
+	text-align:center;
+	flex-shrink:0px;
+}
+.cnt_row2 {
+	border-width:1px;
+	border-style:solid;
+	border-color:rgb(153,153,153);
+	border-radius:12px;
+	display:flex;
+	align-items:flex-start;
+	justify-content:space-between;
+	flex-shrink:0px;
+	gap:-94px;
+	position:absolute;
+	top:3px;
+	left:201px;
+	width:110px;
+	height:23px;
+	padding-left:8px;
+	padding-right:8px;
+	padding-top:4px;
+	padding-bottom:4px;
+	z-index:12;
+}
+.cnt_row1 {
+	display:flex;
+	align-items:center;
+	justify-content:flex-start;
+	gap:10px;
+	position:relative;
+	width:311px;
+	height:50px;
+}
+.txt2 {
+	color:rgb(153,153,153);
+	font-size:12px;
+	line-height:1.83;
+	flex-shrink:0px;
+	width:290px;
+	display:inline-flex;
+}
+.img1 {
+	width:6px;
+	height:10px;
+}
+.cnt_row3 {
+	display:flex;
+	align-items:center;
+	justify-content:space-between;
+	gap:-311px;
+	width:311px;
+	height:44px;
+}
+.mod {
+	background-color:rgb(255,246,240);
+	border-radius:8px;
+	width:343px;
+	height:166px;
+	font-family:Source Han Sans CN;
+	font-weight:500;
+	display:flex;
+	flex-direction:column;
+	align-items:flex-start;
+	justify-content:center;
+	flex-shrink:0px;
+	gap:8px;
+	padding-left:16px;
+	padding-right:16px;
+	padding-top:16px;
+	padding-bottom:16px;
+}

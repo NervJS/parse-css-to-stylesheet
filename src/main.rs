@@ -88,6 +88,8 @@ impl<'i> Visitor<'i> for StyleVisitor {
   }
 }
 
+struct NodeRef {}
+
 fn main() {
   // 使用 swc 解析 JSX
   let jsx = fs::read_to_string("asset/mod.jsx").unwrap();

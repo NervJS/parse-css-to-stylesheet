@@ -1,49 +1,14 @@
 use core::fmt;
 use std::{cell::OnceCell, collections::HashMap, ops::Deref, slice::Iter as SliceIter, collections::hash_map::Iter as HashMapIter};
 
+use cssparser::{serialize_string, ToCss};
 use ego_tree::NodeRef;
-use html5ever::{QualName, tendril::StrTendril, LocalName, ns};
+use html5ever::{QualName, tendril::StrTendril, LocalName, Namespace, ns, namespace_url, Attribute};
+use selectors::{SelectorImpl, parser::{self}, Element as SelectorElement, OpaqueElement, attr::{NamespaceConstraint, AttrSelectorOperation, CaseSensitivity}, matching};
 
 
-fn create_qualame(str: &str) -> QualName {
+pub fn create_qualame(str: &str) -> QualName {
   QualName::new(None, ns!(), LocalName::from(str))
-}
-
-#[derive(Debug, Clone, Copy)]
-pub enum CaseSensitivity {
-  CaseSensitive,
-  AsciiCaseInsensitive
-}
-
-impl CaseSensitivity {
-  pub fn eq(self, a: &[u8], b: &[u8]) -> bool {
-    match self {
-      CaseSensitivity::CaseSensitive => a == b,
-      CaseSensitivity::AsciiCaseInsensitive => a.eq_ignore_ascii_case(b)
-    }
-  }
-
-  pub fn contains(self, haystack: &str, needle: &str) -> bool {
-    match self {
-      CaseSensitivity::CaseSensitive => haystack.contains(needle),
-      CaseSensitivity::AsciiCaseInsensitive => {
-        if let Some((&n_first_byte, n_rest)) = needle.as_bytes().split_first() {
-          haystack.bytes().enumerate().any(|(i, b)| {
-            if !b.eq_ignore_ascii_case(&n_first_byte) {
-              return false;
-            }
-            let after_this_byte = &haystack.as_bytes()[i + i..];
-            match after_this_byte.get(..n_rest.len()) {
-              Some(haystack_slice) => haystack_slice.eq_ignore_ascii_case(n_rest),
-              None => false
-            }
-          })
-        } else {
-          true
-        }
-      }
-    }
-  }
 }
 
 pub struct Classes<'a> {
@@ -69,11 +34,6 @@ impl<'a> Iterator for Attrs<'a> {
   fn next(&mut self) -> Option<Self::Item> {
     self.inner.next().map(|(k, v)| (k.local.deref(), k.local.deref()))
   }
-}
-
-pub struct Attribute {
-  pub name: QualName,
-  pub value: StrTendril
 }
 
 pub type Attributes = HashMap<QualName, StrTendril>;
@@ -191,6 +151,7 @@ impl fmt::Debug for Text {
 
 #[derive(Clone, PartialEq, Eq)]
 pub enum Node {
+  Document,
   Element(Element),
   Comment(Comment),
   Text(Text)
@@ -207,6 +168,10 @@ impl Node {
 
   pub fn is_comment(&self) -> bool {
     matches!(*self, Node::Comment(_))
+  }
+
+  pub fn is_document(&self) -> bool {
+    matches!(*self, Node::Document)
   }
 
   pub fn as_text(&self) -> Option<&Text> {
@@ -234,6 +199,7 @@ impl Node {
 impl fmt::Debug for Node {
   fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
     match *self {
+      Node::Document => write!(f, "Document"),
       Node::Comment(ref c) => write!(f, "Comment({:?})", c),
       Node::Element(ref e) => write!(f, "Element({:?})", e),
       Node::Text(ref t) => write!(f, "Text({:?})", t)
@@ -241,6 +207,101 @@ impl fmt::Debug for Node {
   }
 }
 
+#[derive(Debug, Clone, PartialEq, Eq)]
+pub struct CSSString(pub String);
+
+impl<'a> From<&'a str> for CSSString {
+  fn from(value: &'a str) -> Self {
+    Self(value.to_owned())
+  }
+}
+
+impl AsRef<str> for CSSString {
+  fn as_ref(&self) -> &str {
+    &self.0
+  }
+}
+
+impl ToCss for CSSString {
+  fn to_css<W>(&self, dest: &mut W) -> std::fmt::Result
+    where
+      W: std::fmt::Write {
+    serialize_string(&self.0, dest)
+  }
+}
+
+#[derive(Debug, Default, Clone, PartialEq, Eq)]
+pub struct CSSLocalName(pub LocalName);
+
+impl<'a> From<&'a str> for CSSLocalName {
+  fn from(value: &'a str) -> Self {
+    Self(value.into())
+  }
+}
+
+impl ToCss for CSSLocalName {
+  fn to_css<W>(&self, dest: &mut W) -> std::fmt::Result
+    where
+      W: std::fmt::Write {
+    dest.write_str(&self.0)
+  }
+}
+
+#[derive(Debug, Clone, PartialEq, Eq)]
+pub enum NonTSPseudoClass {}
+
+impl parser::NonTSPseudoClass for NonTSPseudoClass {
+  type Impl = SimpleImpl;
+  fn is_active_or_hover(&self) -> bool {
+    false
+  }
+
+  fn is_user_action_state(&self) -> bool {
+    false
+  }
+}
+
+impl ToCss for NonTSPseudoClass {
+  fn to_css<W>(&self, dest: &mut W) -> std::fmt::Result
+    where
+      W: std::fmt::Write {
+    dest.write_str("")
+  }
+}
+
+#[derive(Debug, Clone, PartialEq, Eq)]
+pub enum PseudoElement {}
+
+impl parser::PseudoElement for PseudoElement {
+  type Impl = SimpleImpl;
+}
+
+impl ToCss for PseudoElement {
+  fn to_css<W>(&self, dest: &mut W) -> std::fmt::Result
+    where
+      W: std::fmt::Write {
+    dest.write_str("")
+  }    
+}
+
+#[derive(Debug, Clone, Copy)]
+pub struct SimpleImpl;
+
+impl SelectorImpl for SimpleImpl {
+  type AttrValue = CSSString;
+  type Identifier = CSSLocalName;
+  type LocalName = CSSLocalName;
+  type NamespacePrefix = CSSLocalName;
+  type NamespaceUrl = Namespace;
+  type BorrowedNamespaceUrl = Namespace;
+  type BorrowedLocalName = CSSLocalName;
+  type NonTSPseudoClass = NonTSPseudoClass;
+  type PseudoElement = PseudoElement;
+
+  type ExtraMatchingData<'a> = ();
+}
+
+#[derive(Debug, Clone, Copy, PartialEq, Eq)]
 pub struct ElementRef<'a> {
   node: NodeRef<'a, Node>
 }
@@ -262,4 +323,140 @@ impl<'a> ElementRef<'a> {
     self.node.value().as_element().unwrap()
   }
 
+}
+
+impl<'a> Deref for ElementRef<'a> {
+  type Target = NodeRef<'a, Node>;
+  fn deref(&self) -> &Self::Target {
+    &self.node
+  }
+}
+
+impl<'a> SelectorElement for ElementRef<'a> {
+  type Impl = SimpleImpl;
+
+  fn opaque(&self) -> OpaqueElement {
+    OpaqueElement::new(&self.node.value())
+  }
+
+  fn parent_element(&self) -> Option<Self> {
+    self.parent().and_then(ElementRef::wrap)
+  }
+
+  fn parent_node_is_shadow_root(&self) -> bool {
+    false
+  }
+
+  fn containing_shadow_host(&self) -> Option<Self> {
+    None
+  }
+
+  fn is_pseudo_element(&self) -> bool {
+    false
+  }
+
+  fn is_part(&self, _name: &CSSLocalName) -> bool {
+    false
+  }
+
+  fn is_same_type(&self, other: &Self) -> bool {
+    self.value().name == other.value().name
+  }
+
+  fn imported_part(&self, _: &CSSLocalName) -> Option<CSSLocalName> {
+    None
+  }
+
+  fn prev_sibling_element(&self) -> Option<Self> {
+    self.prev_siblings()
+      .find(|sibling| sibling.value().is_element())
+      .map(ElementRef::new)
+  }
+
+  fn next_sibling_element(&self) -> Option<Self> {
+    self.next_siblings()
+      .find(|sibling| sibling.value().is_element())
+      .map(ElementRef::new)
+  }
+
+  fn first_element_child(&self) -> Option<Self> {
+    self.children()
+      .find(|child| child.value().is_element())
+      .map(ElementRef::new)
+  }
+
+  fn is_html_element_in_html_document(&self) -> bool {
+    self.value().name.ns == ns!(html)
+  }
+
+  fn has_local_name(&self, name: &CSSLocalName) -> bool {
+    self.value().name.local == name.0
+  }
+
+  fn has_namespace(&self, ns: &Namespace) -> bool {
+    &self.value().name.ns == ns
+  }
+
+  fn attr_matches(
+      &self,
+      ns: &NamespaceConstraint<&Namespace>,
+      local_name: &CSSLocalName,
+      operation: &AttrSelectorOperation<&CSSString>,
+    ) -> bool {
+    self.value().attrs
+      .iter()
+      .any(|(name, value)| {
+        matches!(*ns, NamespaceConstraint::Specific(url) if *url != name.ns)
+          && local_name.0 == name.local
+          && operation.eval_str(value)
+      })
+  }
+
+  fn match_non_ts_pseudo_class(
+    &self,
+    _pc: &NonTSPseudoClass,
+    _context: &mut matching::MatchingContext<'_, Self::Impl>,
+  ) -> bool {
+    false
+  }
+
+  fn match_pseudo_element(
+    &self,
+    _pe: &PseudoElement,
+    _context: &mut matching::MatchingContext<Self::Impl>,
+  ) -> bool {
+    false
+  }
+
+  fn is_link(&self) -> bool {
+    self.value().name() == "link"
+  }
+
+  fn is_html_slot_element(&self) -> bool {
+    true
+  }
+
+  fn has_id(&self, id: &CSSLocalName, case_sensitivity: CaseSensitivity) -> bool {
+    match self.value().id() {
+      Some(val) => case_sensitivity.eq(id.0.as_bytes(), val.as_bytes()),
+      None => false,
+    }
+  }
+
+  fn has_class(&self, name: &CSSLocalName, case_sensitivity: CaseSensitivity) -> bool {
+    self.value().has_class(&name.0, case_sensitivity)
+  }
+
+  fn is_empty(&self) -> bool {
+    !self
+      .children()
+      .any(|child| child.value().is_element() || child.value().is_text())
+  }
+
+  fn is_root(&self) -> bool {
+    self.parent()
+      .map_or(false, |parent| parent.value().is_document())
+  }
+
+  fn apply_selector_flags(&self, _flags: matching::ElementSelectorFlags) {}
 }

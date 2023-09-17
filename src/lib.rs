@@ -7,7 +7,7 @@ use html5ever::{QualName, tendril::StrTendril, LocalName, Namespace, ns, namespa
 use selectors::{SelectorImpl, parser::{self}, Element as SelectorElement, OpaqueElement, attr::{NamespaceConstraint, AttrSelectorOperation, CaseSensitivity}, matching};
 
 
-pub fn create_qualame(str: &str) -> QualName {
+pub fn create_qualname(str: &str) -> QualName {
   QualName::new(None, ns!(), LocalName::from(str))
 }
 
@@ -32,7 +32,7 @@ pub struct Attrs<'a> {
 impl<'a> Iterator for Attrs<'a> {
   type Item = (&'a str, &'a str);
   fn next(&mut self) -> Option<Self::Item> {
-    self.inner.next().map(|(k, v)| (k.local.deref(), k.local.deref()))
+    self.inner.next().map(|(k, v)| (k.local.deref(), v.deref()))
   }
 }
 
@@ -94,7 +94,7 @@ impl Element {
   }
 
   pub fn attr(&self, attr: &str) -> Option<&str> {
-    self.attrs.get(&create_qualame(attr)).map(Deref::deref)
+    self.attrs.get(&create_qualname(attr)).map(Deref::deref)
   }
 
   pub fn attrs(&self) -> Attrs {
@@ -106,7 +106,7 @@ impl fmt::Debug for Element {
   fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
     write!(f, "<{}", self.name())?;
     for (key, value) in self.attrs() {
-      write!(f, "{}={:?}", key, value)?;
+      write!(f, " {}={:?}", key, value)?;
     }
     write!(f, ">")
   }

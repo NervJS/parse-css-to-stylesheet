@@ -1,23 +1,106 @@
 use std::{fs, convert::Infallible};
 
 use cssparser::{ParserInput, Parser as CSSParser, StyleSheetParser, QualifiedRuleParser, AtRuleParser};
-use ego_tree::{Tree, NodeMut};
+use ego_tree::{Tree, NodeMut, NodeId};
 use html5ever::{Attribute, tendril::StrTendril};
-use swc_common::{sync::Lrc, SourceMap, errors::{Handler, ColorConfig}};
-use swc_ecma_ast::{EsVersion, JSXElement, JSXAttrOrSpread, JSXAttrName, JSXAttrValue, Lit, ModuleItem, Stmt, Expr, JSXElementChild, JSXElementName, JSXMemberExpr, Ident, JSXObject, JSXExpr};
+use swc_common::{sync::Lrc, SourceMap, errors::{Handler, ColorConfig}, EqIgnoreSpan};
+use swc_ecma_ast::{EsVersion, JSXElement, JSXAttrOrSpread, JSXAttrName, JSXAttrValue, Lit, ModuleItem, Stmt, Expr, JSXElementChild, JSXElementName, JSXMemberExpr, Ident, JSXObject, JSXExpr, ModuleDecl, Decl, Function, ExportDefaultExpr, Module};
 use swc_ecma_parser::{lexer::Lexer, Syntax, TsConfig, StringInput, Parser};
 use swc_ecma_visit::{Visit, VisitWith};
 use lightningcss::{stylesheet::{StyleSheet, ParserOptions}, visitor::{Visitor, VisitTypes, Visit as CSSVisit}, rules::{CssRule, style::StyleRule}, visit_types};
-use test_cssparse::{Node, Element, create_qualame};
+use test_cssparse::{Node, Element, create_qualname};
 
-struct JSXVisitor;
+struct JSXVisitor<'a> {
+  tree: &'a mut Tree<Node>,
+  root_node: Option<NodeId>,
+  current_node: Option<NodeId>,
+  current_element: Option<JSXElement>
+}
 
-impl Visit for JSXVisitor {
+impl<'a> JSXVisitor<'a> {
+  fn new(tree: &'a mut Tree<Node>) -> Self {
+    JSXVisitor { tree, root_node: None, current_node: None, current_element: None }
+  }
+  fn create_element(&mut self, jsx_element: &JSXElement) -> Node {
+    let name = match &jsx_element.opening.name {
+      JSXElementName::Ident(ident) => ident.sym.to_string(),
+      JSXElementName::JSXMemberExpr(expr) => {
+        recursion_jsx_menber(expr)
+      },
+      JSXElementName::JSXNamespacedName(namespaced_name) => {
+        format!("{}:{}", namespaced_name.ns.sym.to_string(), namespaced_name.name.sym.to_string())
+      }
+    };
+    let qual_name = create_qualname(name.as_str());
+    let mut attributes = Vec::new();
+    for attr in &jsx_element.opening.attrs {
+      if let JSXAttrOrSpread::JSXAttr(attr) = attr {
+        let name = match &attr.name {
+          JSXAttrName::Ident(ident) => ident.sym.to_string(),
+          JSXAttrName::JSXNamespacedName(namespaced_name) => {
+            format!("{}:{}", namespaced_name.ns.sym.to_string(), namespaced_name.name.sym.to_string())
+          }
+        };
+        let value = match &attr.value {
+          Some(value) => {
+            match value {
+              JSXAttrValue::Lit(lit) => {
+                match lit {
+                  Lit::Str(str) => str.value.to_string(),
+                  Lit::Num(num) => num.value.to_string(),
+                  Lit::Bool(bool) => bool.value.to_string(),
+                  Lit::Null(_) => "null".to_string(),
+                  Lit::BigInt(bigint) => bigint.value.to_string(),
+                  Lit::Regex(regex) => regex.exp.to_string(),
+                  Lit::JSXText(text) => text.value.to_string(),
+                }
+              },
+              JSXAttrValue::JSXExprContainer(expr_container) => {
+                match &expr_container.expr {
+                  JSXExpr::JSXEmptyExpr(_) => "{{}}".to_string(),
+                  JSXExpr::Expr(expr) => {
+                    match &**expr {
+                      Expr::Lit(lit) => {
+                        match lit {
+                          Lit::Str(str) => str.value.to_string(),
+                          Lit::Num(num) => num.value.to_string(),
+                          Lit::Bool(bool) => bool.value.to_string(),
+                          Lit::Null(_) => "null".to_string(),
+                          Lit::BigInt(bigint) => bigint.value.to_string(),
+                          Lit::Regex(regex) => regex.exp.to_string(),
+                          Lit::JSXText(text) => text.value.to_string(),
+                        }
+                      },
+                      _ => "".to_string()
+                    }
+                  },
+                }
+              },
+              JSXAttrValue::JSXElement(_) => {
+                "".to_string()
+              },
+              JSXAttrValue::JSXFragment(_) => {
+                "".to_string()
+              }
+            }
+          },
+          None => "".to_string()
+        };
+        attributes.push(Attribute {
+          name: create_qualname(name.as_str()),
+          value: StrTendril::from(value),
+        });
+      }
+    }
+    Node::Element(Element::new(qual_name, attributes))
+  }
+}
+
+impl<'a> Visit for JSXVisitor<'a> {
   fn visit_jsx_element(
     &mut self,
     jsx: &JSXElement,
   ) {
-    // 打印 JSX 元素的 className 属性
     for attr in &jsx.opening.attrs {
       if let JSXAttrOrSpread::JSXAttr(attr) = attr {
         if let JSXAttrName::Ident(ident) = &attr.name {
@@ -36,7 +119,87 @@ impl Visit for JSXVisitor {
         }
       }
     }
-    jsx.visit_children_with(self);
+    let node = self.create_element(jsx);
+    if self.current_element.is_none() {
+      self.current_element = Some(jsx.clone())
+    }
+
+    // let node = self.create_element(jsx);
+    // if self.root_node.is_none() {
+    //   let mut root = self.tree.root_mut();
+    //   self.root_node = Some(root.id());
+    //   let current = root.append(node);
+    //   self.current_node = Some(current.id());
+    // } else {
+    //   let mut root = self.tree.get_mut(self.root_node.unwrap()).unwrap();
+    //   let current = root.append(node);
+    //   self.current_node = Some(current.id());
+    // }
+    jsx.visit_children_with(self)
+  }
+    
+  fn visit_jsx_element_children(&mut self, n: &[JSXElementChild]) {
+    for child in n.iter() {
+      match child {
+        JSXElementChild::JSXElement(element) => {
+          self.current_element.map(|c| {
+            
+          })
+        },
+        _ => {}
+      }
+      child.visit_children_with(self);
+    }
+  }
+}
+
+struct AstVisitor<'a> {
+  export_default_name: Option<String>,
+  module: &'a Module,
+  tree: &'a mut Tree<Node>
+}
+
+impl<'a> AstVisitor<'a> {
+  fn new(module: &'a Module, tree: &'a mut Tree<Node>) -> Self {
+    AstVisitor { export_default_name: None, module, tree }
+  }
+}
+
+impl<'a> Visit for AstVisitor<'a> {
+  fn visit_fn_decl(&mut self, n: &swc_ecma_ast::FnDecl) {
+    match &self.export_default_name {
+      Some(name) => {
+        if n.ident.sym.to_string() == name.as_str() {
+          match &*n.function {
+            Function { body: Some(body), .. } => {
+              for stmt in &body.stmts {
+                match stmt {
+                  Stmt::Return(return_stmt) => {
+                    let mut jsx_visitor = JSXVisitor::new(self.tree);
+                    return_stmt.visit_with(&mut jsx_visitor)
+                  },
+                  _ => {}
+                }
+              }
+            },
+            _ => {}
+          }
+        }
+      },
+      None => {}
+    }
+  }
+
+  fn visit_export_default_expr(&mut self, n: &ExportDefaultExpr) {
+    match &*n.expr {
+      Expr::Ident(ident) => {
+        if self.export_default_name.is_none() {
+          self.export_default_name = Some(ident.sym.to_string());
+          self.module.visit_with(self)
+        }
+      },
+      _ => {}
+    }
   }
 }
 
@@ -141,127 +304,60 @@ impl JSXDocument {
         e.into_diagnostic(&handler).emit()
       })
       .expect("failed to parser module");
-    // 遍历语法树，查找 JSX 节点
-    // let mut vistor = JSXVisitor;
-    // module.visit_with(&mut vistor);
-    // for module_item in &module.body {
-    //   match &module_item {
-    //     // JSXElement { span, opening, children, closing } => {
-    //     //   for attr in &opening.attrs {
-    //     //     if let JSXAttrOrSpread::JSXAttr(attr) = attr {
-    //     //       if let JSXAttrName::Ident(ident) = &attr.name {
-    //     //         if ident.sym.to_string() == "className" {
-    //     //           if let Some(value) = &attr.value {
-    //     //             match value {
-    //     //               JSXAttrValue::Lit(lit) => {
-    //     //                 if let Lit::Str(str) = lit {
-    //     //                   println!("className: {}", str.value);
-    //     //                 }
-    //     //               },
-    //     //               _ => {}
-    //     //             }
-    //     //           }
-    //     //         }
-    //     //       }
-    //     //     }
-    //     //   }
-    //     // }
 
+    let mut vistor = AstVisitor::new(&module, &mut self.tree);
+    module.visit_with(&mut vistor);
+    // for module_item in &module.body {
+    //   match module_item {
+    //     ModuleItem::ModuleDecl(module_del) => {
+    //       println!("{:?}", module_del);
+    //       match module_del {
+    //         ModuleDecl::ExportDecl(export_decl) => {
+    //           match &export_decl.decl {
+    //             Decl::Fn(fn_decl) => {
+    //               match &*fn_decl.function {
+    //                 Function { body: Some(body), .. } => {
+    //                   for stmt in &body.stmts {
+    //                     match stmt {
+    //                       Stmt::Return(return_stmt) => {
+    //                         return_stmt.arg.as_ref().map(|arg| {
+    //                           match &**arg {
+    //                             Expr::JSXElement(jsx_element) => {
+    //                               println!("JSXElement");
+    //                             },
+    //                             _ => {}
+    //                           }
+    //                         });
+    //                       },
+    //                       _ => {}
+    //                     }
+    //                   }
+    //                 },
+    //                 _ => {}
+    //               }
+    //             },
+    //             _ => {}
+    //           }
+    //         },
+    //         _ => {}
+    //       }
+    //     },
+    //     ModuleItem::Stmt(stmt) => {
+    //       match stmt {
+    //         Stmt::Expr(expr_stmt) => {
+    //           match &*expr_stmt.expr {
+    //             Expr::JSXElement(jsx_element) => {
+    //               let mut node = self.create_element(jsx_element);
+    //               root.append(node);
+    //             },
+    //             _ => {}
+    //           }
+    //         },
+    //         _ => {}
+    //       }
+    //     }
     //   }
     // }
-    let mut root = self.tree.root_mut();
-    for module_item in &module.body {
-      match module_item {
-        ModuleItem::Stmt(stmt) => {
-          match stmt {
-            Stmt::Expr(expr_stmt) => {
-              match &*expr_stmt.expr {
-                Expr::JSXElement(jsx_element) => {
-                  println!("{:?}", jsx_element.opening.name);
-                },
-                _ => ()
-              }
-            },
-            _ => ()
-          }
-        },
-        _ => ()
-      }
-    }
-  }
-
-  fn create_element(&self, jsx_element: &JSXElement) -> NodeMut<Node> {
-    let name = match &jsx_element.opening.name {
-      JSXElementName::Ident(ident) => ident.sym.to_string(),
-      JSXElementName::JSXMemberExpr(expr) => {
-        recursion_jsx_menber(expr)
-      },
-      JSXElementName::JSXNamespacedName(namespaced_name) => {
-        format!("{}:{}", namespaced_name.ns.sym.to_string(), namespaced_name.name.sym.to_string())
-      }
-    };
-    let qual_name = create_qualame(name.as_str());
-    let mut attributes = Vec::new();
-    for attr in &jsx_element.opening.attrs {
-      if let JSXAttrOrSpread::JSXAttr(attr) = attr {
-        let name = match &attr.name {
-          JSXAttrName::Ident(ident) => ident.sym.to_string(),
-          JSXAttrName::JSXNamespacedName(namespaced_name) => {
-            format!("{}:{}", namespaced_name.ns.sym.to_string(), namespaced_name.name.sym.to_string())
-          }
-        };
-        let value = match &attr.value {
-          Some(value) => {
-            match value {
-              JSXAttrValue::Lit(lit) => {
-                match lit {
-                  Lit::Str(str) => str.value.to_string(),
-                  Lit::Num(num) => num.value.to_string(),
-                  Lit::Bool(bool) => bool.value.to_string(),
-                  Lit::Null(_) => "null".to_string(),
-                  Lit::BigInt(bigint) => bigint.value.to_string(),
-                  Lit::Regex(regex) => regex.exp.to_string(),
-                  Lit::JSXText(text) => text.value.to_string(),
-                }
-              },
-              JSXAttrValue::JSXExprContainer(expr_container) => {
-                match &expr_container.expr {
-                  JSXExpr::JSXEmptyExpr(empty_expr) => "{{}}".to_string(),
-                  JSXExpr::Expr(expr) => {
-                    match &**expr {
-                      Expr::Lit(lit) => {
-                        match lit {
-                          Lit::Str(str) => str.value.to_string(),
-                          Lit::Num(num) => num.value.to_string(),
-                          Lit::Bool(bool) => bool.value.to_string(),
-                          Lit::Null(_) => "null".to_string(),
-                          Lit::BigInt(bigint) => bigint.value.to_string(),
-                          Lit::Regex(regex) => regex.exp.to_string(),
-                          Lit::JSXText(text) => text.value.to_string(),
-                        }
-                      },
-                      _ => "".to_string()
-                    }
-                  },
-                }
-              },
-              JSXAttrValue::JSXElement(jsx_element) => {
-                "".to_string()
-              },
-              JSXAttrValue::JSXFragment(jsx_fragment) => {
-                "".to_string()
-              }
-            }
-          },
-          None => "".to_string()
-        };
-        attributes.push(Attribute {
-          name: create_qualame(name.as_str()),
-          value: StrTendril::from(value),
-        });
-      }
-    }
-    self.tree.orphan(Node::Element(Element::new(qual_name, attributes)))
   }
 }
 
@@ -285,60 +381,10 @@ fn main() {
   let jsx = fs::read_to_string("asset/mod.jsx").unwrap();
   let css = fs::read_to_string("asset/Mod.scss").unwrap();
 
-  // 初始化 swc 的 SourceMap
-  let cm: Lrc<SourceMap> = Default::default();
-  // 初始化 swc 的错误处理器
-  let handler = Handler::with_tty_emitter(
-    ColorConfig::Auto,
-    true,
-    false,
-    Some(cm.clone()),
-  );
+  let mut document = JSXDocument::new();
+  document.parse(jsx);
 
-  // 将 JSX 代码转换为 SourceFile
-  let fm = cm.new_source_file(
-    swc_common::FileName::Anon,
-    jsx,
-  );
-
-  // 初始化 swc 的词法分析器
-  let lexer = Lexer::new(
-    Syntax::Typescript(
-      TsConfig {
-        tsx: true,
-        ..Default::default()
-      }
-    ),
-    EsVersion::Es2019,
-    StringInput::from(&*fm),
-    None
-  );
-  // 初始化 swc 的语法分析器
-  let mut parser = Parser::new_from(lexer);
-  for e in parser.take_errors() {
-    e.into_diagnostic(&handler).emit();
-  }
-
-  let module = parser
-    .parse_module()
-    .map_err(|e| {
-      e.into_diagnostic(&handler).emit()
-    })
-    .expect("failed to parser module");
-  // 遍历语法树，查找 JSX 节点
-  let mut vistor = JSXVisitor;
-  module.visit_with(&mut vistor);
-
-  // 解析 CSS 代码，解析出所有规则
-  // let mut input = ParserInput::new(&css);
-  // let mut parser = CSSParser::new(&mut input);
-
-  // let mut custom_parser = CSSRuleParser;
-  // let style_sheet_parser = StyleSheetParser::new(input, &mut custom_parser);
-  // let style_sheet: Vec<_> = style_sheet_parser.collect();
-  // println!("{:?}", style_sheet);
-
-  let mut stylesheet = StyleSheet::parse(&css, ParserOptions::default()).unwrap();
-  stylesheet.visit(&mut StyleVisitor).unwrap();
+  // let mut stylesheet = StyleSheet::parse(&css, ParserOptions::default()).unwrap();
+  // stylesheet.visit(&mut StyleVisitor).unwrap();
   
 }

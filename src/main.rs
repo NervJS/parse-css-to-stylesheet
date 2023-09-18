@@ -1,25 +1,23 @@
 use std::{fs, convert::Infallible};
 
-use cssparser::{ParserInput, Parser as CSSParser, StyleSheetParser, QualifiedRuleParser, AtRuleParser};
 use ego_tree::{Tree, NodeMut, NodeId};
 use html5ever::{Attribute, tendril::StrTendril};
-use swc_common::{sync::Lrc, SourceMap, errors::{Handler, ColorConfig}, EqIgnoreSpan};
-use swc_ecma_ast::{EsVersion, JSXElement, JSXAttrOrSpread, JSXAttrName, JSXAttrValue, Lit, ModuleItem, Stmt, Expr, JSXElementChild, JSXElementName, JSXMemberExpr, Ident, JSXObject, JSXExpr, ModuleDecl, Decl, Function, ExportDefaultExpr, Module};
+use swc_common::{sync::Lrc, SourceMap, errors::{Handler, ColorConfig}};
+use swc_ecma_ast::{EsVersion, JSXElement, JSXAttrOrSpread, JSXAttrName, JSXAttrValue, Lit, Stmt, Expr, JSXElementChild, JSXElementName, JSXMemberExpr, JSXObject, JSXExpr, Function, ExportDefaultExpr, Module};
 use swc_ecma_parser::{lexer::Lexer, Syntax, TsConfig, StringInput, Parser};
 use swc_ecma_visit::{Visit, VisitWith};
-use lightningcss::{stylesheet::{StyleSheet, ParserOptions}, visitor::{Visitor, VisitTypes, Visit as CSSVisit}, rules::{CssRule, style::StyleRule}, visit_types};
+use lightningcss::{visitor::{Visitor, VisitTypes}, rules::{CssRule}, visit_types};
 use test_cssparse::{Node, Element, create_qualname};
 
 struct JSXVisitor<'a> {
   tree: &'a mut Tree<Node>,
   root_node: Option<NodeId>,
-  current_node: Option<NodeId>,
-  current_element: Option<JSXElement>
+  current_node: Option<NodeId>
 }
 
 impl<'a> JSXVisitor<'a> {
   fn new(tree: &'a mut Tree<Node>) -> Self {
-    JSXVisitor { tree, root_node: None, current_node: None, current_element: None }
+    JSXVisitor { tree, root_node: None, current_node: None }
   }
   fn create_element(&mut self, jsx_element: &JSXElement) -> Node {
     let name = match &jsx_element.opening.name {
@@ -101,54 +99,36 @@ impl<'a> Visit for JSXVisitor<'a> {
     &mut self,
     jsx: &JSXElement,
   ) {
-    for attr in &jsx.opening.attrs {
-      if let JSXAttrOrSpread::JSXAttr(attr) = attr {
-        if let JSXAttrName::Ident(ident) = &attr.name {
-          if ident.sym.to_string() == "className" {
-            if let Some(value) = &attr.value {
-              match value {
-                JSXAttrValue::Lit(lit) => {
-                  if let Lit::Str(str) = lit {
-                    println!("className: {}", str.value);
-                  }
-                },
-                _ => {}
-              }
-            }
-          }
-        }
-      }
+    if self.root_node.is_none() {
+      let node = self.create_element(jsx);
+      let mut root = self.tree.root_mut();
+      self.root_node = Some(root.id());
+      let current = root.append(node);
+      self.current_node = Some(current.id());
     }
-    let node = self.create_element(jsx);
-    if self.current_element.is_none() {
-      self.current_element = Some(jsx.clone())
-    }
-
-    // let node = self.create_element(jsx);
-    // if self.root_node.is_none() {
-    //   let mut root = self.tree.root_mut();
-    //   self.root_node = Some(root.id());
-    //   let current = root.append(node);
-    //   self.current_node = Some(current.id());
-    // } else {
-    //   let mut root = self.tree.get_mut(self.root_node.unwrap()).unwrap();
-    //   let current = root.append(node);
-    //   self.current_node = Some(current.id());
-    // }
     jsx.visit_children_with(self)
   }
     
   fn visit_jsx_element_children(&mut self, n: &[JSXElementChild]) {
+    let mut nodes = vec![];
+    let mut elements = vec![];
     for child in n.iter() {
       match child {
         JSXElementChild::JSXElement(element) => {
-          self.current_element.map(|c| {
-            
-          })
+          let node = self.create_element(element);
+          let mut current = self.tree.get_mut(self.current_node.unwrap()).unwrap();
+          let tree_node = current.append(node);
+          nodes.push(tree_node.id());
+          elements.push(element);
         },
         _ => {}
       }
-      child.visit_children_with(self);
+    }
+    for (index, element) in elements.iter().enumerate() {
+      let mut visitor = JSXVisitor::new(self.tree);
+      visitor.current_node = Some(nodes[index]);
+      visitor.root_node = self.root_node;
+      element.visit_with(&mut visitor);
     }
   }
 }
@@ -176,7 +156,8 @@ impl<'a> Visit for AstVisitor<'a> {
                 match stmt {
                   Stmt::Return(return_stmt) => {
                     let mut jsx_visitor = JSXVisitor::new(self.tree);
-                    return_stmt.visit_with(&mut jsx_visitor)
+                    return_stmt.visit_with(&mut jsx_visitor);
+                    println!("{:?}", jsx_visitor.tree)
                   },
                   _ => {}
                 }

@@ -1,15 +1,15 @@
-use core::fmt;
-use std::{cell::OnceCell, collections::HashMap, ops::Deref, slice::Iter as SliceIter, collections::hash_map::Iter as HashMapIter};
+// inpired by https://github.com/causal-agent/scraper
 
-use cssparser::{serialize_string, ToCss};
+use core::fmt;
+use std::{cell::OnceCell, collections::HashMap, ops::Deref, slice::Iter as SliceIter, collections::hash_map::Iter as HashMapIter, fmt::Display, error::Error};
+
+use cssparser::{serialize_string, ToCss, Token, ParseError, ParseErrorKind, BasicParseErrorKind, Parser as CSSParser, ParserInput};
 use ego_tree::NodeRef;
 use html5ever::{QualName, tendril::StrTendril, LocalName, Namespace, ns, namespace_url, Attribute};
-use selectors::{SelectorImpl, parser::{self}, Element as SelectorElement, OpaqueElement, attr::{NamespaceConstraint, AttrSelectorOperation, CaseSensitivity}, matching};
+use selectors::{SelectorImpl, parser::{self, SelectorParseErrorKind}, Element as SelectorElement, OpaqueElement, attr::{NamespaceConstraint, AttrSelectorOperation, CaseSensitivity}, matching::{self}, SelectorList};
+use smallvec::SmallVec;
 
-
-pub fn create_qualname(str: &str) -> QualName {
-  QualName::new(None, ns!(), LocalName::from(str))
-}
+use crate::utils::create_qualname;
 
 pub struct Classes<'a> {
   inner: SliceIter<'a, LocalName>
@@ -94,7 +94,7 @@ impl Element {
   }
 
   pub fn attr(&self, attr: &str) -> Option<&str> {
-    self.attrs.get(&create_qualname(attr)).map(Deref::deref)
+    self.attrs.get(&&create_qualname(attr)).map(Deref::deref)
   }
 
   pub fn attrs(&self) -> Attrs {
@@ -459,4 +459,210 @@ impl<'a> SelectorElement for ElementRef<'a> {
   }
 
   fn apply_selector_flags(&self, _flags: matching::ElementSelectorFlags) {}
+}
+
+#[derive(Debug, Clone)]
+pub enum SelectorErrorKind<'a> {
+  UnexpectedToken(Token<'a>),
+  EndOfLine,
+  InvalidAtRule(String),
+  InvalidAtRuleBody,
+  QualRuleInvalid,
+  ExpectedColonOnPseudoElement(Token<'a>),
+  ExpectedIdentityOnPseudoElement(Token<'a>),
+  UnexpectedSelectorParseError(SelectorParseErrorKind<'a>)
+}
+
+impl<'a> From<ParseError<'a, SelectorParseErrorKind<'a>>> for SelectorErrorKind<'a> {
+  fn from(value: ParseError<'a, SelectorParseErrorKind<'a>>) -> Self {
+    match value.kind {
+      ParseErrorKind::Basic(err) => SelectorErrorKind::from(err),
+      ParseErrorKind::Custom(err) => SelectorErrorKind::from(err)
+    }
+  }
+}
+
+impl<'a> From<BasicParseErrorKind<'a>> for SelectorErrorKind<'a> {
+  fn from(value: BasicParseErrorKind<'a>) -> Self {
+    match value {
+      BasicParseErrorKind::UnexpectedToken(token) => Self::UnexpectedToken(token),
+      BasicParseErrorKind::EndOfInput => Self::EndOfLine,
+      BasicParseErrorKind::AtRuleInvalid(name) => Self::InvalidAtRule(name.to_string()),
+      BasicParseErrorKind::AtRuleBodyInvalid => Self::InvalidAtRuleBody,
+      BasicParseErrorKind::QualifiedRuleInvalid => Self::QualRuleInvalid,
+    }
+  }
+}
+
+impl<'a> From<SelectorParseErrorKind<'a>> for SelectorErrorKind<'a> {
+  fn from(value: SelectorParseErrorKind<'a>) -> Self {
+    match value {
+      SelectorParseErrorKind::PseudoElementExpectedColon(token) => Self::ExpectedColonOnPseudoElement(token),
+      SelectorParseErrorKind::PseudoElementExpectedIdent(token) => Self::ExpectedIdentityOnPseudoElement(token),
+      other => Self::UnexpectedSelectorParseError(other)
+    }
+  }
+}
+
+impl<'a> Display for SelectorErrorKind<'a> {
+  fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
+    write!(
+      f,
+      "{}",
+      match self {
+        Self::UnexpectedToken(token) => format!("Unexpected token {:?}", render_token(token)),
+        Self::EndOfLine => String::from("Unexpected end of line"),
+        Self::InvalidAtRule(name) => format!("Invalid @ rule {}", name),
+        Self::InvalidAtRuleBody => String::from("Invalid @ rule body"),
+        Self::QualRuleInvalid => String::from("Invalid qualified rule"),
+        Self::ExpectedColonOnPseudoElement(token) => format!("Expected colon on pseudo-element, found {:?}", render_token(token)),
+        Self::ExpectedIdentityOnPseudoElement(token) => format!("Expected identity on pseudo-element, found {:?}", render_token(token)),
+        Self::UnexpectedSelectorParseError(err) => format!("Unexpected selector parse error: {:#?}", err)
+      }
+    )
+  }
+}
+
+impl<'a> Error for SelectorErrorKind<'a> {
+  fn description(&self) -> &str {
+    match self {
+      Self::UnexpectedToken(_) => "Unexpected token",
+      Self::EndOfLine => "Unexpected end of line",
+      Self::InvalidAtRule(_) => "Invalid @ rule",
+      Self::InvalidAtRuleBody => "Invalid @ rule body",
+      Self::QualRuleInvalid => "Invalid qualified rule",
+      Self::ExpectedColonOnPseudoElement(_) => "Expected colon on pseudo-element",
+      Self::ExpectedIdentityOnPseudoElement(_) => "Expected identity on pseudo-element",
+      Self::UnexpectedSelectorParseError(_) => "Unexpected selector parse error"
+    }
+  }
+}
+
+fn render_token(token: &Token<'_>) -> String {
+  match token {
+    Token::Ident(ident) => format!("{}", ident.clone()),
+    Token::AtKeyword(value) => format!("@{}", value.clone()),
+    Token::Hash(name) | Token::IDHash(name) => format!("#{}", name.clone()),
+    Token::QuotedString(value) => format!("\"{}\"", value.clone()),
+    Token::Number {
+      has_sign: signed,
+      value: num,
+      int_value: _,
+    }
+    | Token::Percentage {
+      has_sign: signed,
+      unit_value: num,
+      int_value: _,
+    } => render_number(*signed, *num, token),
+    Token::Dimension {
+      has_sign: signed,
+      value: num,
+      int_value: _,
+      unit,
+    } => format!("{}{}", render_int(*signed, *num), unit),
+    Token::WhiteSpace(_) => String::from(" "),
+    Token::Comment(comment) => format!("/* {} */", comment),
+    Token::Function(name) => format!("{}()", name.clone()),
+    Token::BadString(string) => format!("<Bad String {:?}>", string.clone()),
+    Token::BadUrl(url) => format!("<Bad URL {:?}>", url.clone()),
+    // Single-character token
+    sc_token => render_single_char_token(sc_token),
+  }
+}
+
+fn render_single_char_token(token: &Token) -> String {
+  String::from(match token {
+      Token::Colon => ":",
+      Token::Semicolon => ";",
+      Token::Comma => ",",
+      Token::IncludeMatch => "~=",
+      Token::DashMatch => "|=",
+      Token::PrefixMatch => "^=",
+      Token::SuffixMatch => "$=",
+      Token::SubstringMatch => "*=",
+      Token::CDO => "<!--",
+      Token::CDC => "-->",
+      Token::ParenthesisBlock => "<(",
+      Token::SquareBracketBlock => "<[",
+      Token::CurlyBracketBlock => "<{",
+      Token::CloseParenthesis => "<)",
+      Token::CloseSquareBracket => "<]",
+      Token::CloseCurlyBracket => "<}",
+      other => panic!(
+          "Token {:?} is not supposed to match as a single-character token!",
+          other
+      ),
+  })
+}
+
+fn render_number(signed: bool, num: f32, token: &Token) -> String {
+  let num = render_int(signed, num);
+
+  match token {
+    Token::Number { .. } => num,
+    Token::Percentage { .. } => format!("{}%", num),
+    _ => panic!("render_number is not supposed to be called on a non-numerical token"),
+  }
+}
+
+fn render_int(signed: bool, num: f32) -> String {
+  if signed {
+    render_int_signed(num)
+  } else {
+    render_int_unsigned(num)
+  }
+}
+
+fn render_int_signed(num: f32) -> String {
+  if num > 0.0 {
+    format!("+{}", num)
+  } else {
+    format!("-{}", num)
+  }
+}
+
+fn render_int_unsigned(num: f32) -> String {
+  format!("{}", num)
+}
+
+struct SelectorParser;
+
+impl<'i> parser::Parser<'i> for SelectorParser {
+  type Impl = SimpleImpl;
+  type Error = SelectorParseErrorKind<'i>;
+}
+
+pub struct Selector {
+  selectors: SmallVec<[parser::Selector<SimpleImpl>; 1]>
+}
+
+impl Selector {
+  pub fn parse(selectors: &'_ str) -> Result<Self, SelectorErrorKind> {
+    let mut parser_input = ParserInput::new(selectors);
+    let mut parser = CSSParser::new(&mut parser_input);
+    SelectorList::parse(&SelectorParser, &mut parser, parser::ParseRelative::No)
+      .map(|list| Selector { selectors: list.0 })
+      .map_err(SelectorErrorKind::from)
+  }
+
+  pub fn matches(&self, element: &ElementRef) -> bool {
+    self.matches_with_scope(element, None)
+  }
+
+  pub fn matches_with_scope(&self, element: &ElementRef, scope: Option<ElementRef>) -> bool {
+    let mut nth_index_cache = Default::default();
+    let mut context = matching::MatchingContext::new(
+      matching::MatchingMode::Normal,
+      None,
+      &mut nth_index_cache,
+      matching::QuirksMode::Quirks,
+      matching::NeedsSelectorFlags::No,
+      matching::IgnoreNthChildForInvalidation::No
+    );
+
+    context.scope_element = scope.map(|element| selectors::Element::opaque(&element));
+    self.selectors
+      .iter()
+      .any(|s| matching::matches_selector(s, 0, None, element, &mut context))
+  }
 }

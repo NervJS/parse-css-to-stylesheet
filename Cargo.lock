@@ -1451,6 +1451,7 @@ dependencies = [
  "html5ever",
  "lightningcss",
  "selectors",
+ "smallvec",
  "style",
  "swc_common",
  "swc_ecma_ast",

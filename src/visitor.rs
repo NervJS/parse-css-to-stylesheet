@@ -1,8 +1,8 @@
-use std::convert::Infallible;
+use std::{convert::Infallible, collections::HashMap};
 
 use ego_tree::{NodeId, Tree};
 use html5ever::{Attribute, tendril::StrTendril};
-use lightningcss::{visitor::{Visitor, VisitTypes}, visit_types, rules::CssRule};
+use lightningcss::{visitor::{Visitor, VisitTypes}, visit_types, rules::{CssRule, CssRuleList}};
 use swc_ecma_ast::{JSXElement, JSXElementName, JSXAttrOrSpread, JSXAttrName, JSXAttrValue, Lit, JSXExpr, Expr, JSXElementChild, Module, Function, Stmt, ExportDefaultExpr};
 use swc_ecma_visit::{Visit, VisitWith};
 
@@ -182,7 +182,9 @@ impl<'a> Visit for AstVisitor<'a> {
   }
 }
 
-pub struct StyleVisitor;
+pub struct StyleVisitor {
+  pub style_record: HashMap<NodeId, CssRuleList<'static>>
+}
 
 impl<'i> Visitor<'i> for StyleVisitor {
   type Error = Infallible;
@@ -190,8 +192,8 @@ impl<'i> Visitor<'i> for StyleVisitor {
   fn visit_rule(&mut self, rule: &mut CssRule<'i>) -> Result<(), Self::Error> {
     match rule {
       CssRule::Style(style) => {
-        println!("{:?}", style.selectors);
-        println!();
+        // println!("{:?}", style.selectors);
+        // println!();
       },
       _ => {}
     }

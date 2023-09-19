@@ -1,6 +1,8 @@
 use std::fs;
 
-use crate::{document::JSXDocument, scraper::Selector};
+use lightningcss::{stylesheet::{StyleSheet, ParserOptions}, visitor::Visit};
+
+use crate::{document::JSXDocument, visitor::StyleVisitor};
 
 mod document;
 mod scraper;
@@ -18,8 +20,8 @@ fn main() {
 
   println!();
 
-  // let mut stylesheet = StyleSheet::parse(&css, ParserOptions::default()).unwrap();
-  // stylesheet.visit(&mut StyleVisitor).unwrap();
-  let selector = Selector::parse(".txt2").unwrap();
-  println!("{:#?}", document.select(&selector));
+  let mut stylesheet = StyleSheet::parse(&css, ParserOptions::default()).unwrap();
+  let mut style_visitor = StyleVisitor::new(&document);
+  stylesheet.visit(&mut style_visitor).unwrap();
+  println!("{:?}", style_visitor.style_record)
 }

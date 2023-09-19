@@ -633,7 +633,7 @@ impl<'i> parser::Parser<'i> for SelectorParser {
 }
 
 pub struct Selector {
-  selectors: SmallVec<[parser::Selector<SimpleImpl>; 1]>
+  pub selectors: SmallVec<[parser::Selector<SimpleImpl>; 1]>
 }
 
 impl Selector {

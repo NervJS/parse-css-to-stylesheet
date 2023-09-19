@@ -2,11 +2,11 @@ use std::{convert::Infallible, collections::HashMap};
 
 use ego_tree::{NodeId, Tree};
 use html5ever::{Attribute, tendril::StrTendril};
-use lightningcss::{visitor::{Visitor, VisitTypes}, visit_types, rules::{CssRule, CssRuleList}};
+use lightningcss::{visitor::{Visitor, VisitTypes}, visit_types, rules::CssRule, declaration::DeclarationBlock};
 use swc_ecma_ast::{JSXElement, JSXElementName, JSXAttrOrSpread, JSXAttrName, JSXAttrValue, Lit, JSXExpr, Expr, JSXElementChild, Module, Function, Stmt, ExportDefaultExpr};
 use swc_ecma_visit::{Visit, VisitWith};
 
-use crate::{scraper::{Node, Element}, utils::{recursion_jsx_menber, create_qualname}};
+use crate::{scraper::{Node, Element, Selector}, utils::{recursion_jsx_menber, create_qualname}, document::JSXDocument};
 
 pub struct JSXVisitor<'a> {
   pub tree: &'a mut Tree<Node>,
@@ -182,18 +182,31 @@ impl<'a> Visit for AstVisitor<'a> {
   }
 }
 
-pub struct StyleVisitor {
-  pub style_record: HashMap<NodeId, CssRuleList<'static>>
+pub struct StyleVisitor<'i> {
+  pub style_record: HashMap<NodeId, Vec<DeclarationBlock<'i>>>,
+  pub document: &'i JSXDocument
 }
 
-impl<'i> Visitor<'i> for StyleVisitor {
+impl<'i> StyleVisitor<'i> {
+  pub fn new(document: &'i JSXDocument) -> Self {
+    StyleVisitor { style_record: HashMap::new(), document }
+  }
+}
+
+impl<'i> Visitor<'i> for StyleVisitor<'i> {
   type Error = Infallible;
   const TYPES: VisitTypes = visit_types!(RULES);
   fn visit_rule(&mut self, rule: &mut CssRule<'i>) -> Result<(), Self::Error> {
     match rule {
       CssRule::Style(style) => {
-        // println!("{:?}", style.selectors);
-        // println!();
+        println!("{:?} => {:?}", style.selectors.to_string(), style.declarations);
+        let selector = Selector::parse(style.selectors.to_string().as_str()).unwrap();
+        let element_refs = self.document.select(&selector);
+        for element_ref in element_refs {
+          let id = element_ref.id();
+          let declarations = self.style_record.entry(id).or_insert(vec![]);
+          declarations.push(style.declarations.clone());
+        }
       },
       _ => {}
     }

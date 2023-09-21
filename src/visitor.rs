@@ -182,8 +182,14 @@ impl<'a> Visit for AstVisitor<'a> {
   }
 }
 
+#[derive(Debug)]
+pub struct StyleDeclaration<'i> {
+  pub specificity: u32,
+  pub declaration: DeclarationBlock<'i>
+}
+
 pub struct StyleVisitor<'i> {
-  pub style_record: HashMap<NodeId, Vec<DeclarationBlock<'i>>>,
+  pub style_record: HashMap<NodeId, Vec<StyleDeclaration<'i>>>,
   pub document: &'i JSXDocument
 }
 
@@ -200,12 +206,20 @@ impl<'i> Visitor<'i> for StyleVisitor<'i> {
     match rule {
       CssRule::Style(style) => {
         println!("{:?} => {:?}", style.selectors.to_string(), style.declarations);
-        let selector = Selector::parse(style.selectors.to_string().as_str()).unwrap();
-        let element_refs = self.document.select(&selector);
-        for element_ref in element_refs {
-          let id = element_ref.id();
-          let declarations = self.style_record.entry(id).or_insert(vec![]);
-          declarations.push(style.declarations.clone());
+        println!("{:?}", style.selectors.0.len());
+        let selectors_str = style.selectors.to_string();
+        let selectors: Vec<&str> = selectors_str.split(",").collect();
+        for index in 0..selectors.len() {
+          let selector = Selector::parse(selectors[index]).unwrap();
+          let element_refs = self.document.select(&selector);
+          for element_ref in element_refs {
+            let id = element_ref.id();
+            let declarations = self.style_record.entry(id).or_insert(vec![]);
+            declarations.push(StyleDeclaration {
+              specificity: style.selectors.0.get(index).unwrap().specificity(),
+              declaration: style.declarations.clone()
+            });
+          }
         }
       },
       _ => {}

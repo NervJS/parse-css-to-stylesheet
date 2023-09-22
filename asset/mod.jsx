@@ -11,7 +11,7 @@ function Cc() {
 
 function Mod() {
   return (
-    <div className='mod'>
+    <div className='mod' style={{ width: '500px', height: 800 }}>
       <div className='cnt_row'>
         <img
           className='icon'

@@ -5,7 +5,7 @@ use lightningcss::{declaration::DeclarationBlock, visitor::{Visitor, VisitTypes,
 
 use crate::{document::JSXDocument, scraper::Selector};
 
-#[derive(Debug)]
+#[derive(Debug, Clone)]
 pub struct StyleDeclaration<'i> {
   pub specificity: u32,
   pub declaration: DeclarationBlock<'i>
@@ -69,10 +69,10 @@ impl<'i> StyleParser<'i> {
     stylesheet.visit(&mut style_visitor).unwrap();
   }
 
-  pub fn calc(&self) -> HashMap<NodeId, Vec<StyleDeclaration<'i>>> {
+  pub fn calc(&self) -> HashMap<NodeId, StyleDeclaration<'i>> {
     // 遍历 style_record，计算每个节点的最终样式
     let mut style_record = self.style_record.borrow_mut();
-    let mut final_style_record: HashMap<NodeId, Vec<StyleDeclaration<'i>>> = HashMap::new();
+    let mut final_style_record: HashMap<NodeId, StyleDeclaration<'i>> = HashMap::new();
     for (id, declarations) in style_record.iter_mut() {
       declarations.sort_by(|a, b| a.specificity.cmp(&b.specificity));
       let mut final_properties: Vec<Property<'i>> = Vec::new();
@@ -104,13 +104,48 @@ impl<'i> StyleParser<'i> {
           }
         }
       }
-      final_style_record.insert(*id, vec![StyleDeclaration {
+      final_style_record.insert(*id, StyleDeclaration {
         specificity: 0,
         declaration: DeclarationBlock {
           declarations: final_properties,
           important_declarations: vec![]
         }
-      }]);
+      });
+    }
+    let parent_style_declarations: HashMap<_, _> = final_style_record
+      .iter()
+      .map(|(id, _)| {
+        let mut parents = Vec::new();
+        let mut node = self.document.tree.get(*id).unwrap();
+        // 找到所有父节点
+        while let Some(parent) = node.parent() {
+          parents.push(parent);
+          node = parent;
+        }
+        let parent_declarations: Vec<_> = parents.iter()
+          .rev()
+          .filter_map(|parent| final_style_record.get(&parent.id()))
+          .flat_map(|parent_declarations| &parent_declarations.declaration.declarations)
+          .cloned()
+          .collect();
+        (*id, parent_declarations)
+      })
+      .collect();
+
+    for (id, style_declaration) in final_style_record.iter_mut() {
+      let final_properties = &mut style_declaration.declaration.declarations;
+      if let Some(parent_declarations) = parent_style_declarations.get(id) {
+        for parent_declaration in parent_declarations.iter() {
+          let has_property_index = final_properties
+            .iter()
+            .position(|property| property.property_id() == parent_declaration.property_id());
+          if let Some(index) = has_property_index {
+            final_properties[index] = parent_declaration.clone();
+          } else {
+            final_properties.push(parent_declaration.clone());
+          }
+        }
+      }
     }
     final_style_record
   }

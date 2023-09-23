@@ -1,9 +1,9 @@
 use std::{collections::HashMap, convert::Infallible, rc::Rc, cell::RefCell};
 
 use ego_tree::NodeId;
-use lightningcss::{declaration::DeclarationBlock, visitor::{Visitor, VisitTypes, Visit}, rules::CssRule, visit_types, stylesheet::{StyleSheet, ParserOptions}, properties::Property};
+use lightningcss::{declaration::DeclarationBlock, visitor::{Visitor, VisitTypes, Visit}, rules::CssRule, visit_types, stylesheet::{StyleSheet, ParserOptions, PrinterOptions}, properties::Property};
 
-use crate::{document::JSXDocument, scraper::Selector};
+use crate::{document::JSXDocument, scraper::Selector, utils::is_style_inheritable};
 
 #[derive(Debug, Clone)]
 pub struct StyleDeclaration<'i> {
@@ -72,7 +72,7 @@ impl<'i> StyleParser<'i> {
   pub fn calc(&self) -> HashMap<NodeId, StyleDeclaration<'i>> {
     // 遍历 style_record，计算每个节点的最终样式
     let mut style_record = self.style_record.borrow_mut();
-    let mut final_style_record: HashMap<NodeId, StyleDeclaration<'i>> = HashMap::new();
+    let mut final_style_record = HashMap::new();
     for (id, declarations) in style_record.iter_mut() {
       declarations.sort_by(|a, b| a.specificity.cmp(&b.specificity));
       let mut final_properties: Vec<Property<'i>> = Vec::new();
@@ -140,7 +140,17 @@ impl<'i> StyleParser<'i> {
             .iter()
             .position(|property| property.property_id() == parent_declaration.property_id());
           if let Some(index) = has_property_index {
-            final_properties[index] = parent_declaration.clone();
+            let is_style_inheritable = is_style_inheritable(final_properties[index].property_id());
+            if is_style_inheritable {
+              final_properties[index] = parent_declaration.clone();
+            } else {
+              let value = final_properties[index].value_to_css_string(PrinterOptions::default());
+              if let Ok(value) = value {
+                if value.as_str() == "inherit" {
+                  final_properties[index] = parent_declaration.clone();
+                }
+              }
+            }
           } else {
             final_properties.push(parent_declaration.clone());
           }

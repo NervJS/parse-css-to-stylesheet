@@ -695,6 +695,7 @@ dependencies = [
  "ego-tree",
  "html5ever",
  "lightningcss",
+ "once_cell",
  "selectors",
  "smallvec",
  "style",

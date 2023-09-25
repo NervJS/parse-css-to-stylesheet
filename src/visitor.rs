@@ -15,7 +15,7 @@ impl<'a> JSXVisitor<'a> {
   pub fn new(tree: &'a mut Tree<Node>) -> Self {
     JSXVisitor { tree, root_node: None, current_node: None }
   }
-  pub fn create_element(&mut self, jsx_element: &JSXElement) -> Node {
+  fn create_element(&mut self, jsx_element: &JSXElement) -> Node {
     let name = match &jsx_element.opening.name {
       JSXElementName::Ident(ident) => ident.sym.to_string(),
       JSXElementName::JSXMemberExpr(expr) => {

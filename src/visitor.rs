@@ -1,6 +1,6 @@
 use ego_tree::{NodeId, Tree};
 use html5ever::{Attribute, tendril::StrTendril};
-use swc_ecma_ast::{JSXElement, JSXElementName, JSXAttrOrSpread, JSXAttrName, JSXAttrValue, Lit, JSXExpr, Expr, JSXElementChild, Module, Function, Stmt, ExportDefaultExpr};
+use swc_ecma_ast::{JSXElement, JSXElementName, JSXAttrOrSpread, JSXAttrName, JSXAttrValue, Lit, JSXExpr, Expr, JSXElementChild, Module, Function, Stmt, ExportDefaultExpr, ExportDefaultDecl, DefaultDecl, ClassDecl, ClassMember, PropName};
 use swc_ecma_visit::{Visit, VisitWith};
 
 use crate::{scraper::{Node, Element}, utils::{recursion_jsx_menber, create_qualname}};
@@ -166,12 +166,102 @@ impl<'a> Visit for AstVisitor<'a> {
     }
   }
 
+  fn visit_class_decl(&mut self, n: &ClassDecl) {
+    match &self.export_default_name {
+      Some(name) => {
+        if n.ident.sym.to_string() == name.as_str() {
+          for member in &n.class.body {
+            match member {
+              ClassMember::Method(method) => {
+                match &method.key {
+                  PropName::Ident(ident) => {
+                    if ident.sym.to_string() == "render" {
+                      match &*method.function {
+                        Function { body: Some(body), .. } => {
+                          for stmt in &body.stmts {
+                            match stmt {
+                              Stmt::Return(return_stmt) => {
+                                let mut jsx_visitor = JSXVisitor::new(self.tree);
+                                return_stmt.visit_with(&mut jsx_visitor);
+                              },
+                              _ => {}
+                            }
+                          }
+                        },
+                        _ => {}
+                      }
+                    }
+                  },
+                  _ => {}
+                }
+              },
+              _ => {}
+            }
+          }
+        }
+      },
+      None => {}
+    }
+  }
+
   fn visit_export_default_expr(&mut self, n: &ExportDefaultExpr) {
     match &*n.expr {
       Expr::Ident(ident) => {
         if self.export_default_name.is_none() {
           self.export_default_name = Some(ident.sym.to_string());
           self.module.visit_with(self)
+        }
+      },
+      _ => {}
+    }
+  }
+
+  fn visit_export_default_decl(&mut self, n: &ExportDefaultDecl) {
+    match &n.decl {
+      DefaultDecl::Fn(n) => {
+        match &*n.function {
+          Function { body: Some(body), .. } => {
+            for stmt in &body.stmts {
+              match stmt {
+                Stmt::Return(return_stmt) => {
+                  let mut jsx_visitor = JSXVisitor::new(self.tree);
+                  return_stmt.visit_with(&mut jsx_visitor);
+                },
+                _ => {}
+              }
+            }
+          },
+          _ => {}
+        }
+      },
+      DefaultDecl::Class(n) => {
+        for member in &n.class.body {
+          match member {
+            ClassMember::Method(method) => {
+              match &method.key {
+                PropName::Ident(ident) => {
+                  if ident.sym.to_string() == "render" {
+                    match &*method.function {
+                      Function { body: Some(body), .. } => {
+                        for stmt in &body.stmts {
+                          match stmt {
+                            Stmt::Return(return_stmt) => {
+                              let mut jsx_visitor = JSXVisitor::new(self.tree);
+                              return_stmt.visit_with(&mut jsx_visitor);
+                            },
+                            _ => {}
+                          }
+                        }
+                      },
+                      _ => {}
+                    }
+                  }
+                },
+                _ => {}
+              }
+            },
+            _ => {}
+          }
         }
       },
       _ => {}

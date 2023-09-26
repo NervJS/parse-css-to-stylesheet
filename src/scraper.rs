@@ -5,7 +5,7 @@ use std::{cell::OnceCell, collections::HashMap, ops::Deref, slice::Iter as Slice
 
 use cssparser::{serialize_string, ToCss, Token, ParseError, ParseErrorKind, BasicParseErrorKind, Parser as CSSParser, ParserInput};
 use ego_tree::NodeRef;
-use html5ever::{QualName, tendril::StrTendril, LocalName, Namespace, ns, namespace_url, Attribute};
+use html5ever::{QualName, tendril::{StrTendril, fmt::imp}, LocalName, Namespace, ns, namespace_url, Attribute};
 use selectors::{SelectorImpl, parser::{self, SelectorParseErrorKind}, Element as SelectorElement, OpaqueElement, attr::{NamespaceConstraint, AttrSelectorOperation, CaseSensitivity}, matching::{self}, SelectorList};
 use smallvec::SmallVec;
 
@@ -113,6 +113,27 @@ impl fmt::Debug for Element {
 }
 
 #[derive(Clone, PartialEq, Eq)]
+pub struct Fragment {
+  pub name: Option<QualName>
+}
+
+impl Fragment {
+  pub fn new(name: Option<QualName>) -> Self {
+    Fragment { name }
+  }
+}
+
+impl fmt::Debug for Fragment {
+  fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
+    if let Some(name) = &self.name {
+      write!(f, "<Fragment name={:?}>", name)
+    } else {
+      write!(f, "<Fragment>")
+    }
+  }
+}
+
+#[derive(Clone, PartialEq, Eq)]
 pub struct Comment {
   pub comment: StrTendril
 }
@@ -152,6 +173,7 @@ impl fmt::Debug for Text {
 #[derive(Clone, PartialEq, Eq)]
 pub enum Node {
   Document,
+  Fragment(Fragment),
   Element(Element),
   Comment(Comment),
   Text(Text)
@@ -172,6 +194,10 @@ impl Node {
 
   pub fn is_document(&self) -> bool {
     matches!(*self, Node::Document)
+  }
+
+  pub fn is_fragment(&self) -> bool {
+    matches!(*self, Node::Fragment(_))
   }
 
   pub fn as_text(&self) -> Option<&Text> {
@@ -200,6 +226,7 @@ impl fmt::Debug for Node {
   fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
     match *self {
       Node::Document => write!(f, "Document"),
+      Node::Fragment(ref F) => write!(f, "Fragment({:?})", F),
       Node::Comment(ref c) => write!(f, "Comment({:?})", c),
       Node::Element(ref e) => write!(f, "Element({:?})", e),
       Node::Text(ref t) => write!(f, "Text({:?})", t)

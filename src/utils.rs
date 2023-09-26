@@ -72,10 +72,10 @@ static INHERITABLE_STYLES: Lazy<HashSet<PropertyId<'static>>> = Lazy::new(|| {
   styles
 });
 
-pub fn recursion_jsx_menber(expr: &JSXMemberExpr) -> String {
+pub fn recursion_jsx_member(expr: &JSXMemberExpr) -> String {
   match &expr.obj {
     JSXObject::JSXMemberExpr(expr) => {
-      format!("{}.{}", recursion_jsx_menber(expr), expr.prop.sym.to_string())
+      format!("{}.{}", recursion_jsx_member(expr), expr.prop.sym.to_string())
     },
     JSXObject::Ident(ident) => {
       format!("{}.{}", ident.sym.to_string(), expr.prop.sym.to_string())
@@ -90,4 +90,8 @@ pub fn create_qualname(str: &str) -> QualName {
 
 pub fn is_style_inheritable(style: PropertyId<'_>) -> bool {
   INHERITABLE_STYLES.contains(&style)
+}
+
+pub fn is_starts_with_uppercase(str: &str) -> bool {
+  str.chars().next().unwrap().is_uppercase()
 }

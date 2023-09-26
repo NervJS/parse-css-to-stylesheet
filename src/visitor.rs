@@ -1,25 +1,34 @@
-use ego_tree::{NodeId, Tree};
+use ego_tree::{NodeId, Tree, NodeMut, NodeRef};
 use html5ever::{Attribute, tendril::StrTendril};
-use swc_ecma_ast::{JSXElement, JSXElementName, JSXAttrOrSpread, JSXAttrName, JSXAttrValue, Lit, JSXExpr, Expr, JSXElementChild, Module, Function, Stmt, ExportDefaultExpr, ExportDefaultDecl, DefaultDecl, ClassDecl, ClassMember, PropName};
+use swc_ecma_ast::{JSXElement, JSXElementName, JSXAttrOrSpread, JSXAttrName, JSXAttrValue, Lit, JSXExpr, Expr, JSXElementChild, Module, Function, Stmt, ExportDefaultExpr, ExportDefaultDecl, DefaultDecl, ClassDecl, ClassMember, PropName, FnDecl};
 use swc_ecma_visit::{Visit, VisitWith};
 
-use crate::{scraper::{Node, Element}, utils::{recursion_jsx_menber, create_qualname}};
+use crate::{scraper::{Node, Element, Fragment}, utils::{recursion_jsx_member, create_qualname, is_starts_with_uppercase}};
+
+fn recursion_sub_tree<'a>(node: &NodeRef<Node>, current: &mut NodeMut<'a, Node>, nodes: &mut Vec<NodeId>) {
+  for child in node.children() {
+    let mut tree_node = current.append(child.value().clone());
+    nodes.push(tree_node.id());
+    recursion_sub_tree(&child, &mut tree_node, nodes);
+  }
+}
 
 pub struct JSXVisitor<'a> {
   pub tree: &'a mut Tree<Node>,
+  pub module: &'a Module,
   pub root_node: Option<NodeId>,
   pub current_node: Option<NodeId>
 }
 
 impl<'a> JSXVisitor<'a> {
-  pub fn new(tree: &'a mut Tree<Node>) -> Self {
-    JSXVisitor { tree, root_node: None, current_node: None }
+  pub fn new(tree: &'a mut Tree<Node>, module: &'a Module) -> Self {
+    JSXVisitor { tree, module, root_node: None, current_node: None }
   }
   fn create_element(&mut self, jsx_element: &JSXElement) -> Node {
     let name = match &jsx_element.opening.name {
       JSXElementName::Ident(ident) => ident.sym.to_string(),
       JSXElementName::JSXMemberExpr(expr) => {
-        recursion_jsx_menber(expr)
+        recursion_jsx_member(expr)
       },
       JSXElementName::JSXNamespacedName(namespaced_name) => {
         format!("{}:{}", namespaced_name.ns.sym.to_string(), namespaced_name.name.sym.to_string())
@@ -111,20 +120,77 @@ impl<'a> Visit for JSXVisitor<'a> {
     for child in n.iter() {
       match child {
         JSXElementChild::JSXElement(element) => {
-          let node = self.create_element(element);
-          let mut current = self.tree.get_mut(self.current_node.unwrap()).unwrap();
-          let tree_node = current.append(node);
-          nodes.push(tree_node.id());
-          elements.push(element);
+          if let JSXElementName::Ident(ident) = &element.opening.name {
+            let name = ident.sym.to_string();
+            if is_starts_with_uppercase(name.as_str()) {
+              let mut visitor = JSXFragmentVisitor::new(self.module, name.as_str());
+              self.module.visit_with(&mut visitor);
+              let mut current = self.tree.get_mut(self.current_node.unwrap()).unwrap();
+              // 将 Fragment 的子节点添加到当前节点
+              recursion_sub_tree(&visitor.tree.root(), &mut current, &mut nodes);
+              elements.push(element);
+            } else {
+              let node = self.create_element(element);
+              let mut current = self.tree.get_mut(self.current_node.unwrap()).unwrap();
+              let tree_node = current.append(node);
+              nodes.push(tree_node.id());
+              elements.push(element);
+            }
+          } else {
+            let node = self.create_element(element);
+            let mut current = self.tree.get_mut(self.current_node.unwrap()).unwrap();
+            let tree_node = current.append(node);
+            nodes.push(tree_node.id());
+            elements.push(element);
+          }
         },
         _ => {}
       }
     }
     for (index, element) in elements.iter().enumerate() {
-      let mut visitor = JSXVisitor::new(self.tree);
+      let mut visitor = JSXVisitor::new(self.tree, self.module);
       visitor.current_node = Some(nodes[index]);
       visitor.root_node = self.root_node;
       element.visit_with(&mut visitor);
+    }
+  }
+}
+
+pub struct JSXFragmentVisitor<'a> {
+  pub module: &'a Module,
+  pub tree: Tree<Node>,
+  pub search_fn: &'a str
+}
+
+impl<'a> JSXFragmentVisitor<'a> {
+  pub fn new(module: &'a Module, search_fn: &'a str) -> Self {
+    JSXFragmentVisitor {
+      module,
+      tree: Tree::new(Node::Fragment(
+        Fragment::new(Some(create_qualname(search_fn)))
+      )),
+      search_fn
+    }
+  }
+}
+
+impl<'a> Visit for JSXFragmentVisitor<'a> {
+  fn visit_fn_decl(&mut self, n: &FnDecl) {
+    if n.ident.sym.to_string() == self.search_fn {
+      match &*n.function {
+        Function { body: Some(body), .. } => {
+          for stmt in &body.stmts {
+            match stmt {
+              Stmt::Return(return_stmt) => {
+                let mut jsx_visitor = JSXVisitor::new(&mut self.tree, self.module);
+                return_stmt.visit_with(&mut jsx_visitor);
+              },
+              _ => {}
+            }
+          }
+        },
+        _ => {}
+      }
     }
   }
 }
@@ -151,7 +217,7 @@ impl<'a> Visit for AstVisitor<'a> {
               for stmt in &body.stmts {
                 match stmt {
                   Stmt::Return(return_stmt) => {
-                    let mut jsx_visitor = JSXVisitor::new(self.tree);
+                    let mut jsx_visitor = JSXVisitor::new(self.tree, self.module);
                     return_stmt.visit_with(&mut jsx_visitor);
                   },
                   _ => {}
@@ -181,7 +247,7 @@ impl<'a> Visit for AstVisitor<'a> {
                           for stmt in &body.stmts {
                             match stmt {
                               Stmt::Return(return_stmt) => {
-                                let mut jsx_visitor = JSXVisitor::new(self.tree);
+                                let mut jsx_visitor = JSXVisitor::new(self.tree, self.module);
                                 return_stmt.visit_with(&mut jsx_visitor);
                               },
                               _ => {}
@@ -224,7 +290,7 @@ impl<'a> Visit for AstVisitor<'a> {
             for stmt in &body.stmts {
               match stmt {
                 Stmt::Return(return_stmt) => {
-                  let mut jsx_visitor = JSXVisitor::new(self.tree);
+                  let mut jsx_visitor = JSXVisitor::new(self.tree, self.module);
                   return_stmt.visit_with(&mut jsx_visitor);
                 },
                 _ => {}
@@ -246,7 +312,7 @@ impl<'a> Visit for AstVisitor<'a> {
                         for stmt in &body.stmts {
                           match stmt {
                             Stmt::Return(return_stmt) => {
-                              let mut jsx_visitor = JSXVisitor::new(self.tree);
+                              let mut jsx_visitor = JSXVisitor::new(self.tree, self.module);
                               return_stmt.visit_with(&mut jsx_visitor);
                             },
                             _ => {}

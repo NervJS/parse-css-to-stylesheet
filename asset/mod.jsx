@@ -4,7 +4,12 @@ import './Mod.scss'
 function Cc() {
   return (
     <div className='cc'>
-      <span className='line1 txt'>成员: 4000+</span>
+      <span className='line1 txt'>成员123: 4000+</span>
+      <div className='cnt_row4'>
+        <img className='icon2' src='//img11.360buyimg.com/img/jfs/t1/175578/35/40256/1981/64f58062Fddaf1a21/f1111d9988a65ccc.png'></img>
+        <span className='instruction3'>slslsl-jsj</span>
+        <span className='txt3'>复制</span>
+      </div>
     </div>
   )
 }
@@ -30,6 +35,7 @@ export default class Mod extends React.Component {
             <span className='line1 txt'>成员: 4000+</span>
           </div>
           <div className='cnt_row2'>
+            <Cc />
             <img
               className='icon1'
               src='//img11.360buyimg.com/img/jfs/t1/175578/35/40256/1981/64f58062Fddaf1a21/f1111d9988a65ccc.png'

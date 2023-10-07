@@ -15,15 +15,31 @@ function Cc() {
 }
 
 export default class Mod extends React.Component {
+  getDom () {
+    return (
+      <div className='cc'>
+        <span className='line1 txt'>成员123: 4000+</span>
+        <div className='cnt_row4'>
+          <img className='icon2' src='//img11.360buyimg.com/img/jfs/t1/175578/35/40256/1981/64f58062Fddaf1a21/f1111d9988a65ccc.png'></img>
+          <span className='instruction3'>slslsl-jsj</span>
+          <span className='txt3'>复制</span>
+        </div>
+      </div>
+    )
+  }
   render () {
     return (
       <div className='mod' style={{ width: '500px', height: 800 }}>
         <div className='cnt_row'>
-          <img
-            className='icon'
-            src='//img20.360buyimg.com/img/jfs/t1/166410/12/38783/3147/64f58062Fd7737e2b/5aaf0205cd1ce175.png'
-          ></img>
-          <span className='line1 instruction'>超能芭比 5分钟前查看团购</span>
+          <>
+            <img
+              className='icon'
+              src='//img20.360buyimg.com/img/jfs/t1/166410/12/38783/3147/64f58062Fd7737e2b/5aaf0205cd1ce175.png'
+            ></img>
+            <>
+              <span className='line1 instruction'>超能芭比 5分钟前查看团购</span>
+            </>
+          </>
         </div>
         <div className='cnt_row1'>
           <img
@@ -35,7 +51,7 @@ export default class Mod extends React.Component {
             <span className='line1 txt'>成员: 4000+</span>
           </div>
           <div className='cnt_row2'>
-            <Cc />
+            { this.getDom() }
             <img
               className='icon1'
               src='//img11.360buyimg.com/img/jfs/t1/175578/35/40256/1981/64f58062Fddaf1a21/f1111d9988a65ccc.png'

@@ -1,6 +1,6 @@
 use ego_tree::{NodeId, Tree, NodeMut, NodeRef};
 use html5ever::{Attribute, tendril::StrTendril};
-use swc_ecma_ast::{JSXElement, JSXElementName, JSXAttrOrSpread, JSXAttrName, JSXAttrValue, Lit, JSXExpr, Expr, JSXElementChild, Module, Function, Stmt, ExportDefaultExpr, ExportDefaultDecl, DefaultDecl, ClassDecl, ClassMember, PropName, FnDecl, JSXFragment};
+use swc_ecma_ast::{JSXElement, JSXElementName, JSXAttrOrSpread, JSXAttrName, JSXAttrValue, Lit, JSXExpr, Expr, JSXElementChild, Module, Function, Stmt, ExportDefaultExpr, ExportDefaultDecl, DefaultDecl, ClassDecl, ClassMember, PropName, FnDecl, Callee, MemberProp};
 use swc_ecma_visit::{Visit, VisitWith};
 
 use crate::{scraper::{Node, Element, Fragment}, utils::{recursion_jsx_member, create_qualname, is_starts_with_uppercase}};
@@ -119,14 +119,14 @@ impl<'a> Visit for JSXVisitor<'a> {
     
   fn visit_jsx_element_children(&mut self, n: &[JSXElementChild]) {
     let mut nodes = vec![];
-    let mut elements: Vec<JSXElementChild> = vec![];
+    let mut elements: Vec<&JSXElementChild> = vec![];
     for child in n.iter() {
       match child {
         JSXElementChild::JSXElement(element) => {
           if let JSXElementName::Ident(ident) = &element.opening.name {
             let name = ident.sym.to_string();
             if is_starts_with_uppercase(name.as_str()) {
-              let mut visitor = JSXFragmentVisitor::new(self.module, name.as_str());
+              let mut visitor = JSXFragmentVisitor::new(self.module, name.as_str(), SearchType::Normal);
               self.module.visit_with(&mut visitor);
               let mut current = self.tree.get_mut(self.current_node.unwrap()).unwrap();
               // 将 Fragment 的子节点添加到当前节点
@@ -136,22 +136,66 @@ impl<'a> Visit for JSXVisitor<'a> {
               let mut current = self.tree.get_mut(self.current_node.unwrap()).unwrap();
               let tree_node = current.append(node);
               nodes.push(tree_node.id());
-              elements.push(JSXElementChild::JSXElement(element.clone()));
+              elements.push(child);
             }
           } else {
             let node = self.create_element(element);
             let mut current = self.tree.get_mut(self.current_node.unwrap()).unwrap();
             let tree_node = current.append(node);
             nodes.push(tree_node.id());
-            elements.push(JSXElementChild::JSXElement(element.clone()));
+            elements.push(child);
           }
         },
-        JSXElementChild::JSXFragment(fragment) => {
+        JSXElementChild::JSXFragment(_) => {
           let node = self.create_fragment();
           let mut current = self.tree.get_mut(self.current_node.unwrap()).unwrap();
           let tree_node = current.append(node);
           nodes.push(tree_node.id());
-          elements.push(JSXElementChild::JSXFragment(fragment.clone()));
+          elements.push(child);
+        },
+        // 找到函数调用中的 JSX
+        JSXElementChild::JSXExprContainer(expr) => {
+          match &expr.expr {
+            JSXExpr::JSXEmptyExpr(_) => {},
+            JSXExpr::Expr(expr) => {
+              match &**expr {
+                Expr::Call(call_expr) => {
+                  match &call_expr.callee {
+                    Callee::Expr(expr) => {
+                      match &**expr {
+                        Expr::Ident(ident) => {
+                          let name = ident.sym.to_string();
+                          let mut visitor = JSXFragmentVisitor::new(self.module, name.as_str(), SearchType::Normal);
+                          self.module.visit_with(&mut visitor);
+                          let mut current = self.tree.get_mut(self.current_node.unwrap()).unwrap();
+                          // 将 Fragment 的子节点添加到当前节点
+                          recursion_sub_tree(&visitor.tree.root(), &mut current);
+                        },
+                        Expr::Member(member_expr) => {
+                          if let Expr::This(_) = &*member_expr.obj {
+                            match &member_expr.prop {
+                              MemberProp::Ident(ident) => {
+                                let name = ident.sym.to_string();
+                                let mut visitor = JSXFragmentVisitor::new(self.module, name.as_str(), SearchType::Class);
+                                self.module.visit_with(&mut visitor);
+                                let mut current = self.tree.get_mut(self.current_node.unwrap()).unwrap();
+                                // 将 Fragment 的子节点添加到当前节点
+                                recursion_sub_tree(&visitor.tree.root(), &mut current);
+                              },
+                              _ => {}
+                            }
+                          }
+                        },
+                        _ => {}
+                      }
+                    },
+                    _ => {}
+                  }
+                },
+                _ => {}
+              }
+            },
+          }
         },
         _ => {}
       }
@@ -165,27 +209,35 @@ impl<'a> Visit for JSXVisitor<'a> {
   }
 }
 
+#[derive(PartialEq)]
+pub enum SearchType {
+  Normal,
+  Class
+}
+
 pub struct JSXFragmentVisitor<'a> {
   pub module: &'a Module,
   pub tree: Tree<Node>,
-  pub search_fn: &'a str
+  pub search_fn: &'a str,
+  pub search_type: SearchType
 }
 
 impl<'a> JSXFragmentVisitor<'a> {
-  pub fn new(module: &'a Module, search_fn: &'a str) -> Self {
+  pub fn new(module: &'a Module, search_fn: &'a str, search_type: SearchType) -> Self {
     JSXFragmentVisitor {
       module,
       tree: Tree::new(Node::Fragment(
         Fragment::new(Some(create_qualname(search_fn)))
       )),
-      search_fn
+      search_fn,
+      search_type
     }
   }
 }
 
 impl<'a> Visit for JSXFragmentVisitor<'a> {
   fn visit_fn_decl(&mut self, n: &FnDecl) {
-    if n.ident.sym.to_string() == self.search_fn {
+    if n.ident.sym.to_string() == self.search_fn && self.search_type == SearchType::Normal {
       match &*n.function {
         Function { body: Some(body), .. } => {
           for stmt in &body.stmts {
@@ -193,6 +245,32 @@ impl<'a> Visit for JSXFragmentVisitor<'a> {
               Stmt::Return(return_stmt) => {
                 let mut jsx_visitor = JSXVisitor::new(&mut self.tree, self.module);
                 return_stmt.visit_with(&mut jsx_visitor);
+              },
+              _ => {}
+            }
+          }
+        },
+        _ => {}
+      }
+    }
+  }
+
+  fn visit_class_method(&mut self,n: &swc_ecma_ast::ClassMethod) {
+    if self.search_type == SearchType::Class {
+      match &n.key {
+        PropName::Ident(ident) => {
+          if ident.sym.to_string() == self.search_fn {
+            match &*n.function {
+              Function { body: Some(body), .. } => {
+                for stmt in &body.stmts {
+                  match stmt {
+                    Stmt::Return(return_stmt) => {
+                      let mut jsx_visitor = JSXVisitor::new(&mut self.tree, self.module);
+                      return_stmt.visit_with(&mut jsx_visitor);
+                    },
+                    _ => {}
+                  }
+                }
               },
               _ => {}
             }

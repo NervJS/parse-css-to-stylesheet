@@ -1,15 +1,14 @@
 use ego_tree::{NodeId, Tree, NodeMut, NodeRef};
 use html5ever::{Attribute, tendril::StrTendril};
-use swc_ecma_ast::{JSXElement, JSXElementName, JSXAttrOrSpread, JSXAttrName, JSXAttrValue, Lit, JSXExpr, Expr, JSXElementChild, Module, Function, Stmt, ExportDefaultExpr, ExportDefaultDecl, DefaultDecl, ClassDecl, ClassMember, PropName, FnDecl};
+use swc_ecma_ast::{JSXElement, JSXElementName, JSXAttrOrSpread, JSXAttrName, JSXAttrValue, Lit, JSXExpr, Expr, JSXElementChild, Module, Function, Stmt, ExportDefaultExpr, ExportDefaultDecl, DefaultDecl, ClassDecl, ClassMember, PropName, FnDecl, JSXFragment};
 use swc_ecma_visit::{Visit, VisitWith};
 
 use crate::{scraper::{Node, Element, Fragment}, utils::{recursion_jsx_member, create_qualname, is_starts_with_uppercase}};
 
-fn recursion_sub_tree<'a>(node: &NodeRef<Node>, current: &mut NodeMut<'a, Node>, nodes: &mut Vec<NodeId>) {
+fn recursion_sub_tree<'a>(node: &NodeRef<Node>, current: &mut NodeMut<'a, Node>) {
   for child in node.children() {
     let mut tree_node = current.append(child.value().clone());
-    nodes.push(tree_node.id());
-    recursion_sub_tree(&child, &mut tree_node, nodes);
+    recursion_sub_tree(&child, &mut tree_node);
   }
 }
 
@@ -97,6 +96,10 @@ impl<'a> JSXVisitor<'a> {
     }
     Node::Element(Element::new(qual_name, attributes))
   }
+
+  fn create_fragment(&mut self) -> Node {
+    Node::Fragment(Fragment::new(Some(create_qualname("__Fragment__"))))
+  }
 }
 
 impl<'a> Visit for JSXVisitor<'a> {
@@ -116,7 +119,7 @@ impl<'a> Visit for JSXVisitor<'a> {
     
   fn visit_jsx_element_children(&mut self, n: &[JSXElementChild]) {
     let mut nodes = vec![];
-    let mut elements = vec![];
+    let mut elements: Vec<JSXElementChild> = vec![];
     for child in n.iter() {
       match child {
         JSXElementChild::JSXElement(element) => {
@@ -127,22 +130,28 @@ impl<'a> Visit for JSXVisitor<'a> {
               self.module.visit_with(&mut visitor);
               let mut current = self.tree.get_mut(self.current_node.unwrap()).unwrap();
               // 将 Fragment 的子节点添加到当前节点
-              recursion_sub_tree(&visitor.tree.root(), &mut current, &mut nodes);
-              elements.push(element);
+              recursion_sub_tree(&visitor.tree.root(), &mut current);
             } else {
               let node = self.create_element(element);
               let mut current = self.tree.get_mut(self.current_node.unwrap()).unwrap();
               let tree_node = current.append(node);
               nodes.push(tree_node.id());
-              elements.push(element);
+              elements.push(JSXElementChild::JSXElement(element.clone()));
             }
           } else {
             let node = self.create_element(element);
             let mut current = self.tree.get_mut(self.current_node.unwrap()).unwrap();
             let tree_node = current.append(node);
             nodes.push(tree_node.id());
-            elements.push(element);
+            elements.push(JSXElementChild::JSXElement(element.clone()));
           }
+        },
+        JSXElementChild::JSXFragment(fragment) => {
+          let node = self.create_fragment();
+          let mut current = self.tree.get_mut(self.current_node.unwrap()).unwrap();
+          let tree_node = current.append(node);
+          nodes.push(tree_node.id());
+          elements.push(JSXElementChild::JSXFragment(fragment.clone()));
         },
         _ => {}
       }

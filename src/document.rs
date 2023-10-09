@@ -1,18 +1,25 @@
-use ego_tree::Tree;
-use swc_common::{sync::Lrc, SourceMap, errors::{Handler, ColorConfig}};
-use swc_ecma_ast::EsVersion;
-use swc_ecma_parser::{lexer::Lexer, Syntax, TsConfig, StringInput, Parser};
-use swc_ecma_visit::VisitWith;
+use std::{collections::HashMap, rc};
 
-use crate::{scraper::{Node, Selector, ElementRef}, visitor::AstVisitor};
+use ego_tree::Tree;
+use swc_common::{sync::Lrc, SourceMap, errors::{Handler, ColorConfig}, comments::SingleThreadedComments};
+use swc_ecma_ast::{EsVersion, Module};
+use swc_ecma_codegen::{text_writer::JsWriter, Emitter};
+use swc_ecma_parser::{lexer::Lexer, Syntax, TsConfig, StringInput, Parser};
+use swc_ecma_visit::{VisitWith, VisitMutWith};
+
+use crate::{scraper::{Node, Selector, ElementRef}, visitor::{AstVisitor, JSXRecord, AstMutVisitor}};
 
 pub struct JSXDocument {
-  pub tree: Tree<Node>
+  pub tree: Tree<Node>,
+  pub module: Option<Module>,
 }
 
 impl JSXDocument {
   pub fn new() -> Self {
-    JSXDocument { tree: Tree::new(Node::Document) }
+    JSXDocument {
+      tree: Tree::new(Node::Document),
+      module: None,
+    }
   }
 
   pub fn parse(&mut self, jsx: String) {
@@ -50,15 +57,36 @@ impl JSXDocument {
       e.into_diagnostic(&handler).emit();
     }
 
-    let module = parser
+    let mut module = parser
       .parse_module()
       .map_err(|e| {
         e.into_diagnostic(&handler).emit()
       })
       .expect("failed to parser module");
-
-    let mut vistor = AstVisitor::new(&module, &mut self.tree);
+    let mut jsx_record: JSXRecord = HashMap::new();
+    let mut vistor = AstVisitor::new(&module, &mut self.tree, &mut jsx_record);
     module.visit_with(&mut vistor);
+    let mut mut_visitor = AstMutVisitor::new( &mut jsx_record);
+    module.visit_mut_with(&mut mut_visitor);
+    // // ast 转代码
+    // let cm = rc::Rc::new(SourceMap::default());
+    // let handler = Handler::with_tty_emitter(ColorConfig::Auto, true, false, Some(cm.clone()));
+    // let comments = SingleThreadedComments::default();
+
+    // let mut buf = Vec::new();
+    // {
+    //   let writer = Box::new(JsWriter::new(cm.clone(), "\n", &mut buf, None));
+    //   let mut emitter = Emitter {
+    //     cfg: Default::default(),
+    //     cm: cm.clone(),
+    //     wr: writer,
+    //     comments: Some(&comments),
+    //   };
+    //   emitter.emit_module(&module).unwrap();
+    // }
+    // let code = String::from_utf8(buf).unwrap();
+    // println!("{}", code);
+    self.module = Some(module);
   }
 
   pub fn select<'a>(&self, selector: &'a Selector) -> Vec<ElementRef> {

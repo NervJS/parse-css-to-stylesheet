@@ -1,12 +1,13 @@
-use std::{hash::{Hash, Hasher}, collections::HashMap};
+use std::{hash::{Hash, Hasher}, collections::HashMap, rc::Rc, cell::RefCell};
 
 use ego_tree::{NodeId, Tree, NodeMut, NodeRef};
 use html5ever::{Attribute, tendril::StrTendril};
+use lightningcss::{traits::ToCss, stylesheet::PrinterOptions};
 use swc_common::{Span, DUMMY_SP};
 use swc_ecma_ast::{JSXElement, JSXElementName, JSXAttrOrSpread, JSXAttrName, JSXAttrValue, Lit, JSXExpr, Expr, JSXElementChild, Module, Function, Stmt, ExportDefaultExpr, ExportDefaultDecl, DefaultDecl, ClassDecl, ClassMember, PropName, FnDecl, Callee, MemberProp, Str, JSXAttr, Ident};
 use swc_ecma_visit::{Visit, VisitWith, VisitMut, noop_visit_type, noop_visit_mut_type, VisitMutWith};
 
-use crate::{scraper::{Node, Element, Fragment}, utils::{recursion_jsx_member, create_qualname, is_starts_with_uppercase, calculate_hash}};
+use crate::{scraper::{Node, Element, Fragment}, utils::{recursion_jsx_member, create_qualname, is_starts_with_uppercase}, style_parser::StyleDeclaration};
 
 #[derive(Eq, Clone, Debug)]
 pub struct SpanKey(Span);
@@ -458,12 +459,13 @@ impl<'a> Visit for AstVisitor<'a> {
 }
 
 pub struct AstMutVisitor<'a> {
-  pub jsx_record: &'a JSXRecord
+  pub jsx_record: Rc<RefCell<JSXRecord>>,
+	pub style_record: Rc<RefCell<HashMap<NodeId, StyleDeclaration<'a>>>>
 }
 
 impl<'a> AstMutVisitor<'a> {
-  pub fn new(jsx_record: &'a JSXRecord) -> Self {
-    AstMutVisitor { jsx_record }
+  pub fn new(jsx_record: Rc<RefCell<JSXRecord>>, style_record: Rc<RefCell<HashMap<NodeId, StyleDeclaration<'a>>>>) -> Self {
+    AstMutVisitor { jsx_record, style_record }
   }
 }
 
@@ -472,19 +474,52 @@ impl<'a> VisitMut for AstMutVisitor<'a> {
 
   fn visit_mut_jsx_element(&mut self, n: &mut JSXElement) {
     let span_key = SpanKey(n.span);
-    if let Some(node_id) = self.jsx_record.get(&span_key) {
-      // 在节点上增加 data-styleid 属性，值为 node_id hash 后的值
-      let attr_value = JSXAttrValue::Lit(Lit::Str(Str {
-        span: DUMMY_SP,
-        value: calculate_hash(node_id).to_string().into(),
-        raw: None
-      }));
-      let attr = JSXAttrOrSpread::JSXAttr(JSXAttr {
-        span: DUMMY_SP,
-        name: JSXAttrName::Ident(Ident::new("data-styleid".into(), DUMMY_SP)),
-        value: Some(attr_value)
-      });
-      n.opening.attrs.push(attr);
+    if let Some(node_id) = self.jsx_record.borrow().get(&span_key) {
+      // 将 style_record 中的样式添加到 JSXElement 的 style 属性中
+      let style_record = self.style_record.borrow();
+      let attrs = &mut n.opening.attrs;
+      let mut has_style = false;
+      for attr in attrs {
+        if let JSXAttrOrSpread::JSXAttr(attr) = attr {
+          if let JSXAttrName::Ident(ident) = &attr.name {
+            if ident.sym.to_string() == "style" {
+              has_style = true;
+              break;
+            }
+          }
+        }
+      }
+
+      if !has_style {
+        if let Some(style_declaration) = style_record.get(node_id) {
+          let mut properties = Vec::new();
+          for declaration in style_declaration.declaration.declarations.iter() {
+            properties.push(declaration.clone());
+          }
+          
+          let mut style = String::new();
+          for property in properties.iter() {
+            let property_id = property.property_id().to_css_string(PrinterOptions::default()).unwrap();
+            let property_value = property.value_to_css_string(PrinterOptions::default()).unwrap();
+            style.push_str(property_id.as_str());
+            style.push_str(":");
+            style.push_str(property_value.as_str());
+            style.push_str(";");
+          }
+          n.opening.attrs.push(JSXAttrOrSpread::JSXAttr(JSXAttr {
+            span: DUMMY_SP,
+            name: JSXAttrName::Ident(Ident::new("style".into(), DUMMY_SP)),
+            value: Some(JSXAttrValue::Lit(Lit::Str(Str {
+              span: DUMMY_SP,
+              value: style.into(),
+              raw: None,
+            })))
+          }));
+        }
+      } else {
+        // 处理 style 属性为对象的情况
+        
+      }
     }
     n.visit_mut_children_with(self);
   }

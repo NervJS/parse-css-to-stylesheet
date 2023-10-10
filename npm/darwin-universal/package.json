@@ -1,0 +1,15 @@
+{
+  "name": "@tarojs/parse-css-to-stylesheet-darwin-universal",
+  "version": "0.0.1",
+  "os": [
+    "darwin"
+  ],
+  "main": "parse-css-to-stylesheet.darwin-universal.node",
+  "files": [
+    "parse-css-to-stylesheet.darwin-universal.node"
+  ],
+  "license": "MIT",
+  "engines": {
+    "node": ">= 10"
+  }
+}

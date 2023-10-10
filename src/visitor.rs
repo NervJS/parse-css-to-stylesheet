@@ -612,7 +612,6 @@ impl<'a> VisitMut for AstMutVisitor<'a> {
             style.push_str(property_value.as_str());
             style.push_str(";");
           }
-          println!("has_empty_style{}", has_empty_style);
           if has_empty_style {
             for attr in &mut n.opening.attrs {
               if let JSXAttrOrSpread::JSXAttr(attr) = attr {

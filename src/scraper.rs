@@ -226,7 +226,7 @@ impl fmt::Debug for Node {
   fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
     match *self {
       Node::Document => write!(f, "Document"),
-      Node::Fragment(ref F) => write!(f, "Fragment({:?})", F),
+      Node::Fragment(ref fa) => write!(f, "Fragment({:?})", fa),
       Node::Comment(ref c) => write!(f, "Comment({:?})", c),
       Node::Element(ref e) => write!(f, "Element({:?})", e),
       Node::Text(ref t) => write!(f, "Text({:?})", t)

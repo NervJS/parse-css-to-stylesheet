@@ -1,0 +1,18 @@
+{
+  "name": "@tarojs/parse-css-to-stylesheet-linux-arm-gnueabihf",
+  "version": "0.0.1",
+  "os": [
+    "linux"
+  ],
+  "cpu": [
+    "arm"
+  ],
+  "main": "parse-css-to-stylesheet.linux-arm-gnueabihf.node",
+  "files": [
+    "parse-css-to-stylesheet.linux-arm-gnueabihf.node"
+  ],
+  "license": "MIT",
+  "engines": {
+    "node": ">= 10"
+  }
+}

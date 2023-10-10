@@ -17,5 +17,6 @@
   },
   "libc": [
     "glibc"
-  ]
+  ],
+  "repository": "https://github.com/NervJS/parse-css-to-stylesheet"
 }

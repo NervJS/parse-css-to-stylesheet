@@ -5,11 +5,9 @@ use std::{cell::OnceCell, collections::HashMap, ops::Deref, slice::Iter as Slice
 
 use cssparser::{serialize_string, ToCss, Token, ParseError, ParseErrorKind, BasicParseErrorKind, Parser as CSSParser, ParserInput};
 use ego_tree::NodeRef;
-use html5ever::{QualName, tendril::{StrTendril, fmt::imp}, LocalName, Namespace, ns, namespace_url, Attribute};
+use html5ever::{QualName, tendril::StrTendril, LocalName, Namespace, ns, namespace_url, Attribute};
 use selectors::{SelectorImpl, parser::{self, SelectorParseErrorKind}, Element as SelectorElement, OpaqueElement, attr::{NamespaceConstraint, AttrSelectorOperation, CaseSensitivity}, matching::{self}, SelectorList};
 use smallvec::SmallVec;
-
-use crate::utils::create_qualname;
 
 pub struct Classes<'a> {
   inner: SliceIter<'a, LocalName>
@@ -91,10 +89,6 @@ impl Element {
     });
 
     Classes { inner: classes.iter() }
-  }
-
-  pub fn attr(&self, attr: &str) -> Option<&str> {
-    self.attrs.get(&&create_qualname(attr)).map(Deref::deref)
   }
 
   pub fn attrs(&self) -> Attrs {

@@ -1,7 +1,7 @@
 name: CI
 env:
   DEBUG: napi:*
-  APP_NAME: napi-project
+  APP_NAME: parse-css-to-stylesheet
   MACOSX_DEPLOYMENT_TARGET: '10.13'
 permissions:
   contents: write
@@ -10,6 +10,7 @@ permissions:
   push:
     branches:
       - main
+      - master
     tags-ignore:
       - '**'
     paths-ignore:

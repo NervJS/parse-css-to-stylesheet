@@ -50,6 +50,6 @@ pub fn parse(component: String, styles: Vec<String>) -> String {
     };
     emitter.emit_module(&module.borrow()).unwrap();
   }
-  let code = String::from_utf8(buf).unwrap();
+  let code = String::from_utf8(buf).unwrap().replace("\r\n", "\n");
   code
 }

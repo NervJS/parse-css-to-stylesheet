@@ -2,6 +2,7 @@
 name = "parse-css-to-stylesheet"
 version = "0.1.0"
 edition = "2021"
+include = ["asset/**"]
 
 [lib]
 crate-type = ["cdylib"]

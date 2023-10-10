@@ -1,4 +1,4 @@
-use std::{collections::{HashSet, hash_map::DefaultHasher}, hash::{Hash, Hasher}};
+use std::collections::HashSet;
 
 use html5ever::{QualName, ns, LocalName, namespace_url};
 use lightningcss::properties::PropertyId;
@@ -94,10 +94,4 @@ pub fn is_style_inheritable(style: PropertyId<'_>) -> bool {
 
 pub fn is_starts_with_uppercase(str: &str) -> bool {
   str.chars().next().unwrap().is_uppercase()
-}
-
-pub fn calculate_hash<T: Hash>(t: &T) -> u64 {
-  let mut hasher = DefaultHasher::new();
-  t.hash(&mut hasher);
-  hasher.finish()
 }

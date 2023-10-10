@@ -4,7 +4,7 @@ use ego_tree::{NodeId, Tree, NodeMut, NodeRef};
 use html5ever::{Attribute, tendril::StrTendril};
 use lightningcss::{traits::ToCss, stylesheet::PrinterOptions};
 use swc_common::{Span, DUMMY_SP};
-use swc_ecma_ast::{JSXElement, JSXElementName, JSXAttrOrSpread, JSXAttrName, JSXAttrValue, Lit, JSXExpr, Expr, JSXElementChild, Module, Function, Stmt, ExportDefaultExpr, ExportDefaultDecl, DefaultDecl, ClassDecl, ClassMember, PropName, FnDecl, Callee, MemberProp, Str, JSXAttr, Ident};
+use swc_ecma_ast::{JSXElement, JSXElementName, JSXAttrOrSpread, JSXAttrName, JSXAttrValue, Lit, JSXExpr, Expr, JSXElementChild, Module, Function, Stmt, ExportDefaultExpr, ExportDefaultDecl, DefaultDecl, ClassDecl, ClassMember, PropName, FnDecl, Callee, MemberProp, Str, JSXAttr, Ident, PropOrSpread, Prop, KeyValueProp};
 use swc_ecma_visit::{Visit, VisitWith, VisitMut, noop_visit_type, noop_visit_mut_type, VisitMutWith};
 
 use crate::{scraper::{Node, Element, Fragment}, utils::{recursion_jsx_member, create_qualname, is_starts_with_uppercase}, style_parser::StyleDeclaration};
@@ -479,12 +479,118 @@ impl<'a> VisitMut for AstMutVisitor<'a> {
       let style_record = self.style_record.borrow();
       let attrs = &mut n.opening.attrs;
       let mut has_style = false;
+      let mut has_empty_style = false;
       for attr in attrs {
         if let JSXAttrOrSpread::JSXAttr(attr) = attr {
           if let JSXAttrName::Ident(ident) = &attr.name {
             if ident.sym.to_string() == "style" {
               has_style = true;
-              break;
+              // 只支持值为字符串、对象形式的 style
+              match &mut attr.value {
+                Some(value) => {
+                  match value {
+                    JSXAttrValue::Lit(lit) => {
+                      match lit {
+                        Lit::Str(str) => {
+                          // 将 style 属性的值转换为对象形式
+                          let mut properties = HashMap::new();
+                          let style = str.value.to_string();
+                          let style = style.split(";").map(|s| s.to_owned()).collect::<Vec<String>>();
+                          if let Some(style_declaration) = style_record.get(node_id) {
+                            for declaration in style_declaration.declaration.declarations.iter() {
+                              let property_id = declaration.property_id().to_css_string(PrinterOptions::default()).unwrap();
+                              let property_value = declaration.value_to_css_string(PrinterOptions::default()).unwrap();
+                              properties.insert(property_id, property_value);
+                            }
+                          }
+                          for property in style.iter() {
+                            let property = property.split(":").map(|s| s.to_owned()).collect::<Vec<String>>();
+                            if property.len() == 2 {
+                              properties.insert(property[0].clone(), property[1].clone());
+                            }
+                          }
+                          let mut style = String::new();
+                          for (property_id, property_value) in properties.iter() {
+                            style.push_str(property_id.as_str());
+                            style.push_str(":");
+                            style.push_str(property_value.as_str());
+                            style.push_str(";");
+                          }
+                          attr.value = Some(JSXAttrValue::Lit(Lit::Str(Str {
+                            span: DUMMY_SP,
+                            value: style.into(),
+                            raw: None,
+                          })));
+                        },
+                        _ => {}
+                      }
+                    },
+                    JSXAttrValue::JSXExprContainer(expr_container) => {
+                      match &mut expr_container.expr {
+                        JSXExpr::JSXEmptyExpr(_) => {
+                          has_empty_style = true;
+                          has_style = false;
+                        },
+                        JSXExpr::Expr(expr) => {
+                          match &mut **expr {
+                            Expr::Object(lit) => {
+                              let mut properties = Vec::new();
+                              if let Some(style_declaration) = style_record.get(node_id) {
+                                for declaration in style_declaration.declaration.declarations.iter() {
+                                  let mut has_property = false;
+                                  for prop in lit.props.iter_mut() {
+                                    match prop {
+                                      PropOrSpread::Prop(prop) => {
+                                        match &**prop {
+                                          Prop::KeyValue(key_value_prop) => {
+                                            match &key_value_prop.key {
+                                              PropName::Ident(ident) => {
+                                                let property_id = ident.sym.to_string();
+                                                if property_id == declaration.property_id().to_css_string(PrinterOptions::default()).unwrap() {
+                                                  has_property = true;
+                                                  break;
+                                                }
+                                              },
+                                              _ => {}
+                                            }
+                                          },
+                                          _ => {}
+                                        }
+                                      },
+                                      PropOrSpread::Spread(_) => {
+                                      }
+                                    }
+                                  }
+                                  if !has_property {
+                                    properties.push(declaration.clone());
+                                  }
+                                }
+                              }
+                              for property in properties.iter() {
+                                lit.props.push(PropOrSpread::Prop(Box::new(Prop::KeyValue(KeyValueProp {
+                                  key: PropName::Ident(Ident::new(property.property_id().to_css_string(PrinterOptions::default()).unwrap().into(), DUMMY_SP)),
+                                  value: property.value_to_css_string(PrinterOptions::default()).unwrap().into()
+                                }))));
+                              }
+                            },
+                            _ => {}
+                          }
+                        },
+                      }
+                    },
+                    JSXAttrValue::JSXElement(_) => {
+                      
+                    },
+                    JSXAttrValue::JSXFragment(_) => {
+                      
+                    }
+                  }
+                },
+                None => {
+                  has_empty_style = true;
+                  has_style = false;
+                }
+              };
             }
           }
         }
@@ -506,19 +612,33 @@ impl<'a> VisitMut for AstMutVisitor<'a> {
             style.push_str(property_value.as_str());
             style.push_str(";");
           }
-          n.opening.attrs.push(JSXAttrOrSpread::JSXAttr(JSXAttr {
-            span: DUMMY_SP,
-            name: JSXAttrName::Ident(Ident::new("style".into(), DUMMY_SP)),
-            value: Some(JSXAttrValue::Lit(Lit::Str(Str {
+          println!("has_empty_style{}", has_empty_style);
+          if has_empty_style {
+            for attr in &mut n.opening.attrs {
+              if let JSXAttrOrSpread::JSXAttr(attr) = attr {
+                if let JSXAttrName::Ident(ident) = &attr.name {
+                  if ident.sym.to_string() == "style" {
+                    attr.value = Some(JSXAttrValue::Lit(Lit::Str(Str {
+                      span: DUMMY_SP,
+                      value: style.clone().into(),
+                      raw: None,
+                    })));
+                  }
+                }
+              }
+            }
+          } else {
+            n.opening.attrs.push(JSXAttrOrSpread::JSXAttr(JSXAttr {
               span: DUMMY_SP,
-              value: style.into(),
-              raw: None,
-            })))
-          }));
+              name: JSXAttrName::Ident(Ident::new("style".into(), DUMMY_SP)),
+              value: Some(JSXAttrValue::Lit(Lit::Str(Str {
+                span: DUMMY_SP,
+                value: style.into(),
+                raw: None,
+              })))
+            }));
+          }
         }
-      } else {
-        // 处理 style 属性为对象的情况
-        
       }
     }
     n.visit_mut_children_with(self);

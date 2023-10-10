@@ -43,6 +43,7 @@ impl JSXDocument {
     let lexer = Lexer::new(
       Syntax::Typescript(TsConfig {
         tsx: true,
+        decorators: true,
         ..Default::default()
       }),
       EsVersion::Es2019,

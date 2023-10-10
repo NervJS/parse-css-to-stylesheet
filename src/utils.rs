@@ -1,9 +1,9 @@
 use std::collections::HashSet;
 
-use html5ever::{QualName, ns, LocalName, namespace_url};
+use html5ever::{namespace_url, ns, LocalName, QualName};
 use lightningcss::properties::PropertyId;
 use once_cell::sync::Lazy;
-use swc_ecma_ast::{JSXObject, JSXMemberExpr};
+use swc_ecma_ast::{JSXMemberExpr, JSXObject};
 
 static INHERITABLE_STYLES: Lazy<HashSet<PropertyId<'static>>> = Lazy::new(|| {
   let mut styles = HashSet::new();
@@ -11,7 +11,6 @@ static INHERITABLE_STYLES: Lazy<HashSet<PropertyId<'static>>> = Lazy::new(|| {
   styles.insert(PropertyId::from("font-size"));
   styles.insert(PropertyId::from("font-family"));
   styles.insert(PropertyId::from("font-weight"));
-
 
   styles.insert(PropertyId::from("font-style"));
   styles.insert(PropertyId::from("font-variant"));
@@ -75,8 +74,12 @@ static INHERITABLE_STYLES: Lazy<HashSet<PropertyId<'static>>> = Lazy::new(|| {
 pub fn recursion_jsx_member(expr: &JSXMemberExpr) -> String {
   match &expr.obj {
     JSXObject::JSXMemberExpr(expr) => {
-      format!("{}.{}", recursion_jsx_member(expr), expr.prop.sym.to_string())
-    },
+      format!(
+        "{}.{}",
+        recursion_jsx_member(expr),
+        expr.prop.sym.to_string()
+      )
+    }
     JSXObject::Ident(ident) => {
       format!("{}.{}", ident.sym.to_string(), expr.prop.sym.to_string())
     }
@@ -86,7 +89,6 @@ pub fn recursion_jsx_member(expr: &JSXMemberExpr) -> String {
 pub fn create_qualname(str: &str) -> QualName {
   QualName::new(None, ns!(), LocalName::from(str))
 }
-
 
 pub fn is_style_inheritable(style: PropertyId<'_>) -> bool {
   INHERITABLE_STYLES.contains(&style)

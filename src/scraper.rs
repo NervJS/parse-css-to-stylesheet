@@ -1,16 +1,29 @@
 // inpired by https://github.com/causal-agent/scraper
 
 use core::fmt;
-use std::{cell::OnceCell, collections::HashMap, ops::Deref, slice::Iter as SliceIter, collections::hash_map::Iter as HashMapIter, fmt::Display, error::Error};
+use std::{
+  cell::OnceCell, collections::hash_map::Iter as HashMapIter, collections::HashMap, error::Error,
+  fmt::Display, ops::Deref, slice::Iter as SliceIter,
+};
 
-use cssparser::{serialize_string, ToCss, Token, ParseError, ParseErrorKind, BasicParseErrorKind, Parser as CSSParser, ParserInput};
+use cssparser::{
+  serialize_string, BasicParseErrorKind, ParseError, ParseErrorKind, Parser as CSSParser,
+  ParserInput, ToCss, Token,
+};
 use ego_tree::NodeRef;
-use html5ever::{QualName, tendril::StrTendril, LocalName, Namespace, ns, namespace_url, Attribute};
-use selectors::{SelectorImpl, parser::{self, SelectorParseErrorKind}, Element as SelectorElement, OpaqueElement, attr::{NamespaceConstraint, AttrSelectorOperation, CaseSensitivity}, matching::{self}, SelectorList};
+use html5ever::{
+  namespace_url, ns, tendril::StrTendril, Attribute, LocalName, Namespace, QualName,
+};
+use selectors::{
+  attr::{AttrSelectorOperation, CaseSensitivity, NamespaceConstraint},
+  matching::{self},
+  parser::{self, SelectorParseErrorKind},
+  Element as SelectorElement, OpaqueElement, SelectorImpl, SelectorList,
+};
 use smallvec::SmallVec;
 
 pub struct Classes<'a> {
-  inner: SliceIter<'a, LocalName>
+  inner: SliceIter<'a, LocalName>,
 }
 
 impl<'a> Iterator for Classes<'a> {
@@ -24,7 +37,7 @@ pub type AttributesIter<'a> = HashMapIter<'a, QualName, StrTendril>;
 
 #[derive(Debug, Clone)]
 pub struct Attrs<'a> {
-  inner: AttributesIter<'a>
+  inner: AttributesIter<'a>,
 }
 
 impl<'a> Iterator for Attrs<'a> {
@@ -41,7 +54,7 @@ pub struct Element {
   pub name: QualName,
   pub attrs: Attributes,
   id: OnceCell<Option<StrTendril>>,
-  classes: OnceCell<Vec<LocalName>>
+  classes: OnceCell<Vec<LocalName>>,
 }
 
 impl Element {
@@ -54,7 +67,7 @@ impl Element {
       name,
       attrs,
       id: OnceCell::new(),
-      classes: OnceCell::new()
+      classes: OnceCell::new(),
     }
   }
 
@@ -63,22 +76,28 @@ impl Element {
   }
 
   pub fn id(&self) -> Option<&str> {
-    self.id.get_or_init(|| {
-      self.attrs
-        .iter()
-        .find(|(name,_ )| name.local.as_ref() == "id")
-        .map(|(_, value)| value.clone())
-    }).as_deref()
+    self
+      .id
+      .get_or_init(|| {
+        self
+          .attrs
+          .iter()
+          .find(|(name, _)| name.local.as_ref() == "id")
+          .map(|(_, value)| value.clone())
+      })
+      .as_deref()
   }
 
   pub fn has_class(&self, class: &str, case_sensitive: CaseSensitivity) -> bool {
-    self.classes()
+    self
+      .classes()
       .any(|class_name| case_sensitive.eq(class.as_bytes(), class_name.as_bytes()))
   }
 
   pub fn classes(&self) -> Classes {
     let classes = self.classes.get_or_init(|| {
-      let mut classes: Vec<LocalName> = self.attrs
+      let mut classes: Vec<LocalName> = self
+        .attrs
         .iter()
         .filter(|(name, _)| name.local.as_ref() == "className")
         .flat_map(|(_, value)| value.split_whitespace().map(LocalName::from))
@@ -88,11 +107,15 @@ impl Element {
       classes
     });
 
-    Classes { inner: classes.iter() }
+    Classes {
+      inner: classes.iter(),
+    }
   }
 
   pub fn attrs(&self) -> Attrs {
-    Attrs { inner: self.attrs.iter() }
+    Attrs {
+      inner: self.attrs.iter(),
+    }
   }
 }
 
@@ -108,7 +131,7 @@ impl fmt::Debug for Element {
 
 #[derive(Clone, PartialEq, Eq)]
 pub struct Fragment {
-  pub name: Option<QualName>
+  pub name: Option<QualName>,
 }
 
 impl Fragment {
@@ -129,7 +152,7 @@ impl fmt::Debug for Fragment {
 
 #[derive(Clone, PartialEq, Eq)]
 pub struct Comment {
-  pub comment: StrTendril
+  pub comment: StrTendril,
 }
 
 impl Deref for Comment {
@@ -147,7 +170,7 @@ impl fmt::Debug for Comment {
 
 #[derive(Clone, PartialEq, Eq)]
 pub struct Text {
-  pub text: StrTendril
+  pub text: StrTendril,
 }
 
 impl Deref for Text {
@@ -170,7 +193,7 @@ pub enum Node {
   Fragment(Fragment),
   Element(Element),
   Comment(Comment),
-  Text(Text)
+  Text(Text),
 }
 
 impl Node {
@@ -197,21 +220,21 @@ impl Node {
   pub fn as_text(&self) -> Option<&Text> {
     match *self {
       Node::Text(ref t) => Some(t),
-      _ => None
+      _ => None,
     }
   }
 
   pub fn as_element(&self) -> Option<&Element> {
     match *self {
       Node::Element(ref e) => Some(e),
-      _ => None
+      _ => None,
     }
   }
 
   pub fn as_comment(&self) -> Option<&Comment> {
     match *self {
       Node::Comment(ref c) => Some(c),
-      _ => None
+      _ => None,
     }
   }
 }
@@ -223,7 +246,7 @@ impl fmt::Debug for Node {
       Node::Fragment(ref fa) => write!(f, "Fragment({:?})", fa),
       Node::Comment(ref c) => write!(f, "Comment({:?})", c),
       Node::Element(ref e) => write!(f, "Element({:?})", e),
-      Node::Text(ref t) => write!(f, "Text({:?})", t)
+      Node::Text(ref t) => write!(f, "Text({:?})", t),
     }
   }
 }
@@ -245,8 +268,9 @@ impl AsRef<str> for CSSString {
 
 impl ToCss for CSSString {
   fn to_css<W>(&self, dest: &mut W) -> std::fmt::Result
-    where
-      W: std::fmt::Write {
+  where
+    W: std::fmt::Write,
+  {
     serialize_string(&self.0, dest)
   }
 }
@@ -262,8 +286,9 @@ impl<'a> From<&'a str> for CSSLocalName {
 
 impl ToCss for CSSLocalName {
   fn to_css<W>(&self, dest: &mut W) -> std::fmt::Result
-    where
-      W: std::fmt::Write {
+  where
+    W: std::fmt::Write,
+  {
     dest.write_str(&self.0)
   }
 }
@@ -284,8 +309,9 @@ impl parser::NonTSPseudoClass for NonTSPseudoClass {
 
 impl ToCss for NonTSPseudoClass {
   fn to_css<W>(&self, dest: &mut W) -> std::fmt::Result
-    where
-      W: std::fmt::Write {
+  where
+    W: std::fmt::Write,
+  {
     dest.write_str("")
   }
 }
@@ -299,10 +325,11 @@ impl parser::PseudoElement for PseudoElement {
 
 impl ToCss for PseudoElement {
   fn to_css<W>(&self, dest: &mut W) -> std::fmt::Result
-    where
-      W: std::fmt::Write {
+  where
+    W: std::fmt::Write,
+  {
     dest.write_str("")
-  }    
+  }
 }
 
 #[derive(Debug, Clone, Copy)]
@@ -324,7 +351,7 @@ impl SelectorImpl for SimpleImpl {
 
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
 pub struct ElementRef<'a> {
-  node: NodeRef<'a, Node>
+  node: NodeRef<'a, Node>,
 }
 
 impl<'a> ElementRef<'a> {
@@ -343,7 +370,6 @@ impl<'a> ElementRef<'a> {
   pub fn value(&self) -> &'a Element {
     self.node.value().as_element().unwrap()
   }
-
 }
 
 impl<'a> Deref for ElementRef<'a> {
@@ -389,19 +415,22 @@ impl<'a> SelectorElement for ElementRef<'a> {
   }
 
   fn prev_sibling_element(&self) -> Option<Self> {
-    self.prev_siblings()
+    self
+      .prev_siblings()
       .find(|sibling| sibling.value().is_element())
       .map(ElementRef::new)
   }
 
   fn next_sibling_element(&self) -> Option<Self> {
-    self.next_siblings()
+    self
+      .next_siblings()
       .find(|sibling| sibling.value().is_element())
       .map(ElementRef::new)
   }
 
   fn first_element_child(&self) -> Option<Self> {
-    self.children()
+    self
+      .children()
       .find(|child| child.value().is_element())
       .map(ElementRef::new)
   }
@@ -419,18 +448,16 @@ impl<'a> SelectorElement for ElementRef<'a> {
   }
 
   fn attr_matches(
-      &self,
-      ns: &NamespaceConstraint<&Namespace>,
-      local_name: &CSSLocalName,
-      operation: &AttrSelectorOperation<&CSSString>,
-    ) -> bool {
-    self.value().attrs
-      .iter()
-      .any(|(name, value)| {
-        matches!(*ns, NamespaceConstraint::Specific(url) if *url != name.ns)
-          && local_name.0 == name.local
-          && operation.eval_str(value)
-      })
+    &self,
+    ns: &NamespaceConstraint<&Namespace>,
+    local_name: &CSSLocalName,
+    operation: &AttrSelectorOperation<&CSSString>,
+  ) -> bool {
+    self.value().attrs.iter().any(|(name, value)| {
+      matches!(*ns, NamespaceConstraint::Specific(url) if *url != name.ns)
+        && local_name.0 == name.local
+        && operation.eval_str(value)
+    })
   }
 
   fn match_non_ts_pseudo_class(
@@ -475,7 +502,8 @@ impl<'a> SelectorElement for ElementRef<'a> {
   }
 
   fn is_root(&self) -> bool {
-    self.parent()
+    self
+      .parent()
       .map_or(false, |parent| parent.value().is_document())
   }
 
@@ -491,14 +519,14 @@ pub enum SelectorErrorKind<'a> {
   QualRuleInvalid,
   ExpectedColonOnPseudoElement(Token<'a>),
   ExpectedIdentityOnPseudoElement(Token<'a>),
-  UnexpectedSelectorParseError(SelectorParseErrorKind<'a>)
+  UnexpectedSelectorParseError(SelectorParseErrorKind<'a>),
 }
 
 impl<'a> From<ParseError<'a, SelectorParseErrorKind<'a>>> for SelectorErrorKind<'a> {
   fn from(value: ParseError<'a, SelectorParseErrorKind<'a>>) -> Self {
     match value.kind {
       ParseErrorKind::Basic(err) => SelectorErrorKind::from(err),
-      ParseErrorKind::Custom(err) => SelectorErrorKind::from(err)
+      ParseErrorKind::Custom(err) => SelectorErrorKind::from(err),
     }
   }
 }
@@ -518,9 +546,13 @@ impl<'a> From<BasicParseErrorKind<'a>> for SelectorErrorKind<'a> {
 impl<'a> From<SelectorParseErrorKind<'a>> for SelectorErrorKind<'a> {
   fn from(value: SelectorParseErrorKind<'a>) -> Self {
     match value {
-      SelectorParseErrorKind::PseudoElementExpectedColon(token) => Self::ExpectedColonOnPseudoElement(token),
-      SelectorParseErrorKind::PseudoElementExpectedIdent(token) => Self::ExpectedIdentityOnPseudoElement(token),
-      other => Self::UnexpectedSelectorParseError(other)
+      SelectorParseErrorKind::PseudoElementExpectedColon(token) => {
+        Self::ExpectedColonOnPseudoElement(token)
+      }
+      SelectorParseErrorKind::PseudoElementExpectedIdent(token) => {
+        Self::ExpectedIdentityOnPseudoElement(token)
+      }
+      other => Self::UnexpectedSelectorParseError(other),
     }
   }
 }
@@ -536,9 +568,16 @@ impl<'a> Display for SelectorErrorKind<'a> {
         Self::InvalidAtRule(name) => format!("Invalid @ rule {}", name),
         Self::InvalidAtRuleBody => String::from("Invalid @ rule body"),
         Self::QualRuleInvalid => String::from("Invalid qualified rule"),
-        Self::ExpectedColonOnPseudoElement(token) => format!("Expected colon on pseudo-element, found {:?}", render_token(token)),
-        Self::ExpectedIdentityOnPseudoElement(token) => format!("Expected identity on pseudo-element, found {:?}", render_token(token)),
-        Self::UnexpectedSelectorParseError(err) => format!("Unexpected selector parse error: {:#?}", err)
+        Self::ExpectedColonOnPseudoElement(token) => format!(
+          "Expected colon on pseudo-element, found {:?}",
+          render_token(token)
+        ),
+        Self::ExpectedIdentityOnPseudoElement(token) => format!(
+          "Expected identity on pseudo-element, found {:?}",
+          render_token(token)
+        ),
+        Self::UnexpectedSelectorParseError(err) =>
+          format!("Unexpected selector parse error: {:#?}", err),
       }
     )
   }
@@ -554,7 +593,7 @@ impl<'a> Error for SelectorErrorKind<'a> {
       Self::QualRuleInvalid => "Invalid qualified rule",
       Self::ExpectedColonOnPseudoElement(_) => "Expected colon on pseudo-element",
       Self::ExpectedIdentityOnPseudoElement(_) => "Expected identity on pseudo-element",
-      Self::UnexpectedSelectorParseError(_) => "Unexpected selector parse error"
+      Self::UnexpectedSelectorParseError(_) => "Unexpected selector parse error",
     }
   }
 }
@@ -593,26 +632,26 @@ fn render_token(token: &Token<'_>) -> String {
 
 fn render_single_char_token(token: &Token) -> String {
   String::from(match token {
-      Token::Colon => ":",
-      Token::Semicolon => ";",
-      Token::Comma => ",",
-      Token::IncludeMatch => "~=",
-      Token::DashMatch => "|=",
-      Token::PrefixMatch => "^=",
-      Token::SuffixMatch => "$=",
-      Token::SubstringMatch => "*=",
-      Token::CDO => "<!--",
-      Token::CDC => "-->",
-      Token::ParenthesisBlock => "<(",
-      Token::SquareBracketBlock => "<[",
-      Token::CurlyBracketBlock => "<{",
-      Token::CloseParenthesis => "<)",
-      Token::CloseSquareBracket => "<]",
-      Token::CloseCurlyBracket => "<}",
-      other => panic!(
-          "Token {:?} is not supposed to match as a single-character token!",
-          other
-      ),
+    Token::Colon => ":",
+    Token::Semicolon => ";",
+    Token::Comma => ",",
+    Token::IncludeMatch => "~=",
+    Token::DashMatch => "|=",
+    Token::PrefixMatch => "^=",
+    Token::SuffixMatch => "$=",
+    Token::SubstringMatch => "*=",
+    Token::CDO => "<!--",
+    Token::CDC => "-->",
+    Token::ParenthesisBlock => "<(",
+    Token::SquareBracketBlock => "<[",
+    Token::CurlyBracketBlock => "<{",
+    Token::CloseParenthesis => "<)",
+    Token::CloseSquareBracket => "<]",
+    Token::CloseCurlyBracket => "<}",
+    other => panic!(
+      "Token {:?} is not supposed to match as a single-character token!",
+      other
+    ),
   })
 }
 
@@ -654,7 +693,7 @@ impl<'i> parser::Parser<'i> for SelectorParser {
 }
 
 pub struct Selector {
-  pub selectors: SmallVec<[parser::Selector<SimpleImpl>; 1]>
+  pub selectors: SmallVec<[parser::Selector<SimpleImpl>; 1]>,
 }
 
 impl Selector {
@@ -678,11 +717,12 @@ impl Selector {
       &mut nth_index_cache,
       matching::QuirksMode::Quirks,
       matching::NeedsSelectorFlags::No,
-      matching::IgnoreNthChildForInvalidation::No
+      matching::IgnoreNthChildForInvalidation::No,
     );
 
     context.scope_element = scope.map(|element| selectors::Element::opaque(&element));
-    self.selectors
+    self
+      .selectors
       .iter()
       .any(|s| matching::matches_selector(s, 0, None, element, &mut context))
   }

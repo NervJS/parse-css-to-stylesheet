@@ -1,13 +1,29 @@
-use std::{hash::{Hash, Hasher}, collections::HashMap, rc::Rc, cell::RefCell};
+use std::{
+  cell::RefCell,
+  collections::HashMap,
+  hash::{Hash, Hasher},
+  rc::Rc,
+};
 
-use ego_tree::{NodeId, Tree, NodeMut, NodeRef};
-use html5ever::{Attribute, tendril::StrTendril};
-use lightningcss::{traits::ToCss, stylesheet::PrinterOptions};
+use ego_tree::{NodeId, NodeMut, NodeRef, Tree};
+use html5ever::{tendril::StrTendril, Attribute};
+use lightningcss::{stylesheet::PrinterOptions, traits::ToCss};
 use swc_common::{Span, DUMMY_SP};
-use swc_ecma_ast::{JSXElement, JSXElementName, JSXAttrOrSpread, JSXAttrName, JSXAttrValue, Lit, JSXExpr, Expr, JSXElementChild, Module, Function, Stmt, ExportDefaultExpr, ExportDefaultDecl, DefaultDecl, ClassDecl, ClassMember, PropName, FnDecl, Callee, MemberProp, Str, JSXAttr, Ident, PropOrSpread, Prop, KeyValueProp};
-use swc_ecma_visit::{Visit, VisitWith, VisitMut, noop_visit_type, noop_visit_mut_type, VisitMutWith};
+use swc_ecma_ast::{
+  Callee, ClassDecl, ClassMember, DefaultDecl, ExportDefaultDecl, ExportDefaultExpr, Expr, FnDecl,
+  Function, Ident, JSXAttr, JSXAttrName, JSXAttrOrSpread, JSXAttrValue, JSXElement,
+  JSXElementChild, JSXElementName, JSXExpr, KeyValueProp, Lit, MemberProp, Module, Prop, PropName,
+  PropOrSpread, Stmt, Str,
+};
+use swc_ecma_visit::{
+  noop_visit_mut_type, noop_visit_type, Visit, VisitMut, VisitMutWith, VisitWith,
+};
 
-use crate::{scraper::{Node, Element, Fragment}, utils::{recursion_jsx_member, create_qualname, is_starts_with_uppercase}, style_parser::StyleDeclaration};
+use crate::{
+  scraper::{Element, Fragment, Node},
+  style_parser::StyleDeclaration,
+  utils::{create_qualname, is_starts_with_uppercase, recursion_jsx_member},
+};
 
 #[derive(Eq, Clone, Debug)]
 pub struct SpanKey(Span);
@@ -44,16 +60,24 @@ pub struct JSXVisitor<'a> {
 
 impl<'a> JSXVisitor<'a> {
   pub fn new(tree: &'a mut Tree<Node>, module: &'a Module, jsx_record: &'a mut JSXRecord) -> Self {
-    JSXVisitor { tree, module, jsx_record, root_node: None, current_node: None }
+    JSXVisitor {
+      tree,
+      module,
+      jsx_record,
+      root_node: None,
+      current_node: None,
+    }
   }
   fn create_element(&mut self, jsx_element: &JSXElement) -> Node {
     let name = match &jsx_element.opening.name {
       JSXElementName::Ident(ident) => ident.sym.to_string(),
-      JSXElementName::JSXMemberExpr(expr) => {
-        recursion_jsx_member(expr)
-      },
+      JSXElementName::JSXMemberExpr(expr) => recursion_jsx_member(expr),
       JSXElementName::JSXNamespacedName(namespaced_name) => {
-        format!("{}:{}", namespaced_name.ns.sym.to_string(), namespaced_name.name.sym.to_string())
+        format!(
+          "{}:{}",
+          namespaced_name.ns.sym.to_string(),
+          namespaced_name.name.sym.to_string()
+        )
       }
     };
     let qual_name = create_qualname(name.as_str());
@@ -63,14 +87,28 @@ impl<'a> JSXVisitor<'a> {
         let name = match &attr.name {
           JSXAttrName::Ident(ident) => ident.sym.to_string(),
           JSXAttrName::JSXNamespacedName(namespaced_name) => {
-            format!("{}:{}", namespaced_name.ns.sym.to_string(), namespaced_name.name.sym.to_string())
+            format!(
+              "{}:{}",
+              namespaced_name.ns.sym.to_string(),
+              namespaced_name.name.sym.to_string()
+            )
           }
         };
         let value = match &attr.value {
-          Some(value) => {
-            match value {
-              JSXAttrValue::Lit(lit) => {
-                match lit {
+          Some(value) => match value {
+            JSXAttrValue::Lit(lit) => match lit {
+              Lit::Str(str) => str.value.to_string(),
+              Lit::Num(num) => num.value.to_string(),
+              Lit::Bool(bool) => bool.value.to_string(),
+              Lit::Null(_) => "null".to_string(),
+              Lit::BigInt(bigint) => bigint.value.to_string(),
+              Lit::Regex(regex) => regex.exp.to_string(),
+              Lit::JSXText(text) => text.value.to_string(),
+            },
+            JSXAttrValue::JSXExprContainer(expr_container) => match &expr_container.expr {
+              JSXExpr::JSXEmptyExpr(_) => "{{}}".to_string(),
+              JSXExpr::Expr(expr) => match &**expr {
+                Expr::Lit(lit) => match lit {
                   Lit::Str(str) => str.value.to_string(),
                   Lit::Num(num) => num.value.to_string(),
                   Lit::Bool(bool) => bool.value.to_string(),
@@ -78,38 +116,14 @@ impl<'a> JSXVisitor<'a> {
                   Lit::BigInt(bigint) => bigint.value.to_string(),
                   Lit::Regex(regex) => regex.exp.to_string(),
                   Lit::JSXText(text) => text.value.to_string(),
-                }
+                },
+                _ => "".to_string(),
               },
-              JSXAttrValue::JSXExprContainer(expr_container) => {
-                match &expr_container.expr {
-                  JSXExpr::JSXEmptyExpr(_) => "{{}}".to_string(),
-                  JSXExpr::Expr(expr) => {
-                    match &**expr {
-                      Expr::Lit(lit) => {
-                        match lit {
-                          Lit::Str(str) => str.value.to_string(),
-                          Lit::Num(num) => num.value.to_string(),
-                          Lit::Bool(bool) => bool.value.to_string(),
-                          Lit::Null(_) => "null".to_string(),
-                          Lit::BigInt(bigint) => bigint.value.to_string(),
-                          Lit::Regex(regex) => regex.exp.to_string(),
-                          Lit::JSXText(text) => text.value.to_string(),
-                        }
-                      },
-                      _ => "".to_string()
-                    }
-                  },
-                }
-              },
-              JSXAttrValue::JSXElement(_) => {
-                "".to_string()
-              },
-              JSXAttrValue::JSXFragment(_) => {
-                "".to_string()
-              }
-            }
+            },
+            JSXAttrValue::JSXElement(_) => "".to_string(),
+            JSXAttrValue::JSXFragment(_) => "".to_string(),
           },
-          None => "".to_string()
+          None => "".to_string(),
         };
         attributes.push(Attribute {
           name: create_qualname(name.as_str()),
@@ -128,10 +142,7 @@ impl<'a> JSXVisitor<'a> {
 impl<'a> Visit for JSXVisitor<'a> {
   noop_visit_type!();
 
-  fn visit_jsx_element(
-    &mut self,
-    jsx: &JSXElement,
-  ) {
+  fn visit_jsx_element(&mut self, jsx: &JSXElement) {
     if self.root_node.is_none() {
       let node = self.create_element(jsx);
       let mut root = self.tree.root_mut();
@@ -142,7 +153,7 @@ impl<'a> Visit for JSXVisitor<'a> {
     }
     jsx.visit_children_with(self)
   }
-    
+
   fn visit_jsx_element_children(&mut self, n: &[JSXElementChild]) {
     let mut nodes = vec![];
     let mut elements: Vec<&JSXElementChild> = vec![];
@@ -152,40 +163,63 @@ impl<'a> Visit for JSXVisitor<'a> {
           if let JSXElementName::Ident(ident) = &element.opening.name {
             let name = ident.sym.to_string();
             if is_starts_with_uppercase(name.as_str()) {
-              let mut visitor = JSXFragmentVisitor::new(self.module, self.jsx_record, name.as_str(), SearchType::Normal);
+              let mut visitor = JSXFragmentVisitor::new(
+                self.module,
+                self.jsx_record,
+                name.as_str(),
+                SearchType::Normal,
+              );
               self.module.visit_with(&mut visitor);
-              let mut current = self.tree.get_mut(self.current_node.unwrap()).unwrap();
-              // 将 Fragment 的子节点添加到当前节点
-              recursion_sub_tree(&visitor.tree.root(), &mut current);
+              if let Some(current_node) = self.current_node {
+                if let Some(mut current) = self.tree.get_mut(current_node) {
+                  // 将 Fragment 的子节点添加到当前节点
+                  recursion_sub_tree(&visitor.tree.root(), &mut current);
+                }
+              }
             } else {
               let node = self.create_element(element);
-              let mut current = self.tree.get_mut(self.current_node.unwrap()).unwrap();
-              let tree_node = current.append(node);
-              nodes.push(tree_node.id());
-              elements.push(child);
-              self.jsx_record.insert(SpanKey(element.span), tree_node.id());
+              if let Some(current_node) = self.current_node {
+                if let Some(mut current) = self.tree.get_mut(current_node) {
+                  let tree_node = current.append(node);
+                  nodes.push(tree_node.id());
+                  elements.push(child);
+                  self
+                    .jsx_record
+                    .insert(SpanKey(element.span), tree_node.id());
+                }
+              }
             }
           } else {
             let node = self.create_element(element);
-            let mut current = self.tree.get_mut(self.current_node.unwrap()).unwrap();
-            let tree_node = current.append(node);
-            nodes.push(tree_node.id());
-            elements.push(child);
-            self.jsx_record.insert(SpanKey(element.span), tree_node.id());
+            if let Some(current_node) = self.current_node {
+              if let Some(mut current) = self.tree.get_mut(current_node) {
+                let tree_node = current.append(node);
+                nodes.push(tree_node.id());
+                elements.push(child);
+                self
+                  .jsx_record
+                  .insert(SpanKey(element.span), tree_node.id());
+              }
+            }
           }
-        },
+        }
         JSXElementChild::JSXFragment(fragment) => {
           let node = self.create_fragment();
-          let mut current = self.tree.get_mut(self.current_node.unwrap()).unwrap();
-          let tree_node = current.append(node);
-          nodes.push(tree_node.id());
-          elements.push(child);
-          self.jsx_record.insert(SpanKey(fragment.span), tree_node.id());
-        },
+          if let Some(current_node) = self.current_node {
+            if let Some(mut current) = self.tree.get_mut(current_node) {
+              let tree_node = current.append(node);
+              nodes.push(tree_node.id());
+              elements.push(child);
+              self
+                .jsx_record
+                .insert(SpanKey(fragment.span), tree_node.id());
+            }
+          }
+        }
         // 找到函数调用中的 JSX
         JSXElementChild::JSXExprContainer(expr) => {
           match &expr.expr {
-            JSXExpr::JSXEmptyExpr(_) => {},
+            JSXExpr::JSXEmptyExpr(_) => {}
             JSXExpr::Expr(expr) => {
               match &**expr {
                 Expr::Call(call_expr) => {
@@ -194,38 +228,54 @@ impl<'a> Visit for JSXVisitor<'a> {
                       match &**expr {
                         Expr::Ident(ident) => {
                           let name = ident.sym.to_string();
-                          let mut visitor = JSXFragmentVisitor::new(self.module, self.jsx_record, name.as_str(), SearchType::Normal);
+                          let mut visitor = JSXFragmentVisitor::new(
+                            self.module,
+                            self.jsx_record,
+                            name.as_str(),
+                            SearchType::Normal,
+                          );
                           self.module.visit_with(&mut visitor);
-                          let mut current = self.tree.get_mut(self.current_node.unwrap()).unwrap();
-                          // 将 Fragment 的子节点添加到当前节点
-                          recursion_sub_tree(&visitor.tree.root(), &mut current);
-                        },
+                          if let Some(current_node) = self.current_node {
+                            if let Some(mut current) = self.tree.get_mut(current_node) {
+                              // 将 Fragment 的子节点添加到当前节点
+                              recursion_sub_tree(&visitor.tree.root(), &mut current);
+                            }
+                          }
+                        }
                         Expr::Member(member_expr) => {
                           if let Expr::This(_) = &*member_expr.obj {
                             match &member_expr.prop {
                               MemberProp::Ident(ident) => {
                                 let name = ident.sym.to_string();
-                                let mut visitor = JSXFragmentVisitor::new(self.module, self.jsx_record, name.as_str(), SearchType::Class);
+                                let mut visitor = JSXFragmentVisitor::new(
+                                  self.module,
+                                  self.jsx_record,
+                                  name.as_str(),
+                                  SearchType::Class,
+                                );
                                 self.module.visit_with(&mut visitor);
-                                let mut current = self.tree.get_mut(self.current_node.unwrap()).unwrap();
-                                // 将 Fragment 的子节点添加到当前节点
-                                recursion_sub_tree(&visitor.tree.root(), &mut current);
-                              },
+                                if let Some(current_node) = self.current_node {
+                                  if let Some(mut current) = self.tree.get_mut(current_node) {
+                                    // 将 Fragment 的子节点添加到当前节点
+                                    recursion_sub_tree(&visitor.tree.root(), &mut current);
+                                  }
+                                }
+                              }
                               _ => {}
                             }
                           }
-                        },
+                        }
                         _ => {}
                       }
-                    },
+                    }
                     _ => {}
                   }
-                },
+                }
                 _ => {}
               }
-            },
+            }
           }
-        },
+        }
         _ => {}
       }
     }
@@ -241,7 +291,7 @@ impl<'a> Visit for JSXVisitor<'a> {
 #[derive(PartialEq)]
 pub enum SearchType {
   Normal,
-  Class
+  Class,
 }
 
 pub struct JSXFragmentVisitor<'a> {
@@ -249,19 +299,24 @@ pub struct JSXFragmentVisitor<'a> {
   pub tree: Tree<Node>,
   pub jsx_record: &'a mut JSXRecord,
   pub search_fn: &'a str,
-  pub search_type: SearchType
+  pub search_type: SearchType,
 }
 
 impl<'a> JSXFragmentVisitor<'a> {
-  pub fn new(module: &'a Module, jsx_record: &'a mut JSXRecord, search_fn: &'a str, search_type: SearchType) -> Self {
+  pub fn new(
+    module: &'a Module,
+    jsx_record: &'a mut JSXRecord,
+    search_fn: &'a str,
+    search_type: SearchType,
+  ) -> Self {
     JSXFragmentVisitor {
       module,
       jsx_record,
-      tree: Tree::new(Node::Fragment(
-        Fragment::new(Some(create_qualname(search_fn)))
-      )),
+      tree: Tree::new(Node::Fragment(Fragment::new(Some(create_qualname(
+        search_fn,
+      ))))),
       search_fn,
-      search_type
+      search_type,
     }
   }
 }
@@ -272,43 +327,48 @@ impl<'a> Visit for JSXFragmentVisitor<'a> {
   fn visit_fn_decl(&mut self, n: &FnDecl) {
     if n.ident.sym.to_string() == self.search_fn && self.search_type == SearchType::Normal {
       match &*n.function {
-        Function { body: Some(body), .. } => {
+        Function {
+          body: Some(body), ..
+        } => {
           for stmt in &body.stmts {
             match stmt {
               Stmt::Return(return_stmt) => {
                 let mut jsx_visitor = JSXVisitor::new(&mut self.tree, self.module, self.jsx_record);
                 return_stmt.visit_with(&mut jsx_visitor);
-              },
+              }
               _ => {}
             }
           }
-        },
+        }
         _ => {}
       }
     }
   }
 
-  fn visit_class_method(&mut self,n: &swc_ecma_ast::ClassMethod) {
+  fn visit_class_method(&mut self, n: &swc_ecma_ast::ClassMethod) {
     if self.search_type == SearchType::Class {
       match &n.key {
         PropName::Ident(ident) => {
           if ident.sym.to_string() == self.search_fn {
             match &*n.function {
-              Function { body: Some(body), .. } => {
+              Function {
+                body: Some(body), ..
+              } => {
                 for stmt in &body.stmts {
                   match stmt {
                     Stmt::Return(return_stmt) => {
-                      let mut jsx_visitor = JSXVisitor::new(&mut self.tree, self.module, self.jsx_record);
+                      let mut jsx_visitor =
+                        JSXVisitor::new(&mut self.tree, self.module, self.jsx_record);
                       return_stmt.visit_with(&mut jsx_visitor);
-                    },
+                    }
                     _ => {}
                   }
                 }
-              },
+              }
               _ => {}
             }
           }
-        },
+        }
         _ => {}
       }
     }
@@ -319,12 +379,17 @@ pub struct AstVisitor<'a> {
   pub export_default_name: Option<String>,
   pub module: &'a Module,
   pub tree: &'a mut Tree<Node>,
-  pub jsx_record: &'a mut JSXRecord
+  pub jsx_record: &'a mut JSXRecord,
 }
 
 impl<'a> AstVisitor<'a> {
   pub fn new(module: &'a Module, tree: &'a mut Tree<Node>, jsx_record: &'a mut JSXRecord) -> Self {
-    AstVisitor { export_default_name: None, module, tree, jsx_record }
+    AstVisitor {
+      export_default_name: None,
+      module,
+      tree,
+      jsx_record,
+    }
   }
 }
 
@@ -336,21 +401,23 @@ impl<'a> Visit for AstVisitor<'a> {
       Some(name) => {
         if n.ident.sym.to_string() == name.as_str() {
           match &*n.function {
-            Function { body: Some(body), .. } => {
+            Function {
+              body: Some(body), ..
+            } => {
               for stmt in &body.stmts {
                 match stmt {
                   Stmt::Return(return_stmt) => {
                     let mut jsx_visitor = JSXVisitor::new(self.tree, self.module, self.jsx_record);
                     return_stmt.visit_with(&mut jsx_visitor);
-                  },
+                  }
                   _ => {}
                 }
               }
-            },
+            }
             _ => {}
           }
         }
-      },
+      }
       None => {}
     }
   }
@@ -361,34 +428,35 @@ impl<'a> Visit for AstVisitor<'a> {
         if n.ident.sym.to_string() == name.as_str() {
           for member in &n.class.body {
             match member {
-              ClassMember::Method(method) => {
-                match &method.key {
-                  PropName::Ident(ident) => {
-                    if ident.sym.to_string() == "render" {
-                      match &*method.function {
-                        Function { body: Some(body), .. } => {
-                          for stmt in &body.stmts {
-                            match stmt {
-                              Stmt::Return(return_stmt) => {
-                                let mut jsx_visitor = JSXVisitor::new(self.tree, self.module, self.jsx_record);
-                                return_stmt.visit_with(&mut jsx_visitor);
-                              },
-                              _ => {}
+              ClassMember::Method(method) => match &method.key {
+                PropName::Ident(ident) => {
+                  if ident.sym.to_string() == "render" {
+                    match &*method.function {
+                      Function {
+                        body: Some(body), ..
+                      } => {
+                        for stmt in &body.stmts {
+                          match stmt {
+                            Stmt::Return(return_stmt) => {
+                              let mut jsx_visitor =
+                                JSXVisitor::new(self.tree, self.module, self.jsx_record);
+                              return_stmt.visit_with(&mut jsx_visitor);
                             }
+                            _ => {}
                           }
-                        },
-                        _ => {}
+                        }
                       }
+                      _ => {}
                     }
-                  },
-                  _ => {}
+                  }
                 }
+                _ => {}
               },
               _ => {}
             }
           }
         }
-      },
+      }
       None => {}
     }
   }
@@ -400,59 +468,60 @@ impl<'a> Visit for AstVisitor<'a> {
           self.export_default_name = Some(ident.sym.to_string());
           self.module.visit_with(self)
         }
-      },
+      }
       _ => {}
     }
   }
 
   fn visit_export_default_decl(&mut self, n: &ExportDefaultDecl) {
     match &n.decl {
-      DefaultDecl::Fn(n) => {
-        match &*n.function {
-          Function { body: Some(body), .. } => {
-            for stmt in &body.stmts {
-              match stmt {
-                Stmt::Return(return_stmt) => {
-                  let mut jsx_visitor = JSXVisitor::new(self.tree, self.module, self.jsx_record);
-                  return_stmt.visit_with(&mut jsx_visitor);
-                },
-                _ => {}
+      DefaultDecl::Fn(n) => match &*n.function {
+        Function {
+          body: Some(body), ..
+        } => {
+          for stmt in &body.stmts {
+            match stmt {
+              Stmt::Return(return_stmt) => {
+                let mut jsx_visitor = JSXVisitor::new(self.tree, self.module, self.jsx_record);
+                return_stmt.visit_with(&mut jsx_visitor);
               }
+              _ => {}
             }
-          },
-          _ => {}
+          }
         }
+        _ => {}
       },
       DefaultDecl::Class(n) => {
         for member in &n.class.body {
           match member {
-            ClassMember::Method(method) => {
-              match &method.key {
-                PropName::Ident(ident) => {
-                  if ident.sym.to_string() == "render" {
-                    match &*method.function {
-                      Function { body: Some(body), .. } => {
-                        for stmt in &body.stmts {
-                          match stmt {
-                            Stmt::Return(return_stmt) => {
-                              let mut jsx_visitor = JSXVisitor::new(self.tree, self.module, self.jsx_record);
-                              return_stmt.visit_with(&mut jsx_visitor);
-                            },
-                            _ => {}
+            ClassMember::Method(method) => match &method.key {
+              PropName::Ident(ident) => {
+                if ident.sym.to_string() == "render" {
+                  match &*method.function {
+                    Function {
+                      body: Some(body), ..
+                    } => {
+                      for stmt in &body.stmts {
+                        match stmt {
+                          Stmt::Return(return_stmt) => {
+                            let mut jsx_visitor =
+                              JSXVisitor::new(self.tree, self.module, self.jsx_record);
+                            return_stmt.visit_with(&mut jsx_visitor);
                           }
+                          _ => {}
                         }
-                      },
-                      _ => {}
+                      }
                     }
+                    _ => {}
                   }
-                },
-                _ => {}
+                }
               }
+              _ => {}
             },
             _ => {}
           }
         }
-      },
+      }
       _ => {}
     }
   }
@@ -460,12 +529,18 @@ impl<'a> Visit for AstVisitor<'a> {
 
 pub struct AstMutVisitor<'a> {
   pub jsx_record: Rc<RefCell<JSXRecord>>,
-	pub style_record: Rc<RefCell<HashMap<NodeId, StyleDeclaration<'a>>>>
+  pub style_record: Rc<RefCell<HashMap<NodeId, StyleDeclaration<'a>>>>,
 }
 
 impl<'a> AstMutVisitor<'a> {
-  pub fn new(jsx_record: Rc<RefCell<JSXRecord>>, style_record: Rc<RefCell<HashMap<NodeId, StyleDeclaration<'a>>>>) -> Self {
-    AstMutVisitor { jsx_record, style_record }
+  pub fn new(
+    jsx_record: Rc<RefCell<JSXRecord>>,
+    style_record: Rc<RefCell<HashMap<NodeId, StyleDeclaration<'a>>>>,
+  ) -> Self {
+    AstMutVisitor {
+      jsx_record,
+      style_record,
+    }
   }
 }
 
@@ -495,16 +570,27 @@ impl<'a> VisitMut for AstMutVisitor<'a> {
                           // 将 style 属性的值转换为对象形式
                           let mut properties = HashMap::new();
                           let style = str.value.to_string();
-                          let style = style.split(";").map(|s| s.to_owned()).collect::<Vec<String>>();
+                          let style = style
+                            .split(";")
+                            .map(|s| s.to_owned())
+                            .collect::<Vec<String>>();
                           if let Some(style_declaration) = style_record.get(node_id) {
                             for declaration in style_declaration.declaration.declarations.iter() {
-                              let property_id = declaration.property_id().to_css_string(PrinterOptions::default()).unwrap();
-                              let property_value = declaration.value_to_css_string(PrinterOptions::default()).unwrap();
+                              let property_id = declaration
+                                .property_id()
+                                .to_css_string(PrinterOptions::default())
+                                .unwrap();
+                              let property_value = declaration
+                                .value_to_css_string(PrinterOptions::default())
+                                .unwrap();
                               properties.insert(property_id, property_value);
                             }
                           }
                           for property in style.iter() {
-                            let property = property.split(":").map(|s| s.to_owned()).collect::<Vec<String>>();
+                            let property = property
+                              .split(":")
+                              .map(|s| s.to_owned())
+                              .collect::<Vec<String>>();
                             if property.len() == 2 {
                               properties.insert(property[0].clone(), property[1].clone());
                             }
@@ -521,71 +607,77 @@ impl<'a> VisitMut for AstMutVisitor<'a> {
                             value: style.into(),
                             raw: None,
                           })));
-                        },
+                        }
                         _ => {}
                       }
-                    },
+                    }
                     JSXAttrValue::JSXExprContainer(expr_container) => {
                       match &mut expr_container.expr {
                         JSXExpr::JSXEmptyExpr(_) => {
                           has_empty_style = true;
                           has_style = false;
-                        },
-                        JSXExpr::Expr(expr) => {
-                          match &mut **expr {
-                            Expr::Object(lit) => {
-                              let mut properties = Vec::new();
-                              if let Some(style_declaration) = style_record.get(node_id) {
-                                for declaration in style_declaration.declaration.declarations.iter() {
-                                  let mut has_property = false;
-                                  for prop in lit.props.iter_mut() {
-                                    match prop {
-                                      PropOrSpread::Prop(prop) => {
-                                        match &**prop {
-                                          Prop::KeyValue(key_value_prop) => {
-                                            match &key_value_prop.key {
-                                              PropName::Ident(ident) => {
-                                                let property_id = ident.sym.to_string();
-                                                if property_id == declaration.property_id().to_css_string(PrinterOptions::default()).unwrap() {
-                                                  has_property = true;
-                                                  break;
-                                                }
-                                              },
-                                              _ => {}
-                                            }
-                                          },
-                                          _ => {}
+                        }
+                        JSXExpr::Expr(expr) => match &mut **expr {
+                          Expr::Object(lit) => {
+                            let mut properties = Vec::new();
+                            if let Some(style_declaration) = style_record.get(node_id) {
+                              for declaration in style_declaration.declaration.declarations.iter() {
+                                let mut has_property = false;
+                                for prop in lit.props.iter_mut() {
+                                  match prop {
+                                    PropOrSpread::Prop(prop) => match &**prop {
+                                      Prop::KeyValue(key_value_prop) => match &key_value_prop.key {
+                                        PropName::Ident(ident) => {
+                                          let property_id = ident.sym.to_string();
+                                          if property_id
+                                            == declaration
+                                              .property_id()
+                                              .to_css_string(PrinterOptions::default())
+                                              .unwrap()
+                                          {
+                                            has_property = true;
+                                            break;
+                                          }
                                         }
+                                        _ => {}
                                       },
-                                      PropOrSpread::Spread(_) => {
-                                      }
-                                    }
-                                  }
-                                  if !has_property {
-                                    properties.push(declaration.clone());
+                                      _ => {}
+                                    },
+                                    PropOrSpread::Spread(_) => {}
                                   }
                                 }
+                                if !has_property {
+                                  properties.push(declaration.clone());
+                                }
                               }
-                              for property in properties.iter() {
-                                lit.props.push(PropOrSpread::Prop(Box::new(Prop::KeyValue(KeyValueProp {
-                                  key: PropName::Ident(Ident::new(property.property_id().to_css_string(PrinterOptions::default()).unwrap().into(), DUMMY_SP)),
-                                  value: property.value_to_css_string(PrinterOptions::default()).unwrap().into()
-                                }))));
-                              }
-                            },
-                            _ => {}
+                            }
+                            for property in properties.iter() {
+                              lit.props.push(PropOrSpread::Prop(Box::new(Prop::KeyValue(
+                                KeyValueProp {
+                                  key: PropName::Ident(Ident::new(
+                                    property
+                                      .property_id()
+                                      .to_css_string(PrinterOptions::default())
+                                      .unwrap()
+                                      .into(),
+                                    DUMMY_SP,
+                                  )),
+                                  value: property
+                                    .value_to_css_string(PrinterOptions::default())
+                                    .unwrap()
+                                    .into(),
+                                },
+                              ))));
+                            }
                           }
+                          _ => {}
                         },
                       }
-                    },
-                    JSXAttrValue::JSXElement(_) => {
-                      
-                    },
-                    JSXAttrValue::JSXFragment(_) => {
-                      
                     }
+                    JSXAttrValue::JSXElement(_) => {}
+                    JSXAttrValue::JSXFragment(_) => {}
                   }
-                },
+                }
                 None => {
                   has_empty_style = true;
                   has_style = false;
@@ -602,11 +694,16 @@ impl<'a> VisitMut for AstMutVisitor<'a> {
           for declaration in style_declaration.declaration.declarations.iter() {
             properties.push(declaration.clone());
           }
-          
+
           let mut style = String::new();
           for property in properties.iter() {
-            let property_id = property.property_id().to_css_string(PrinterOptions::default()).unwrap();
-            let property_value = property.value_to_css_string(PrinterOptions::default()).unwrap();
+            let property_id = property
+              .property_id()
+              .to_css_string(PrinterOptions::default())
+              .unwrap();
+            let property_value = property
+              .value_to_css_string(PrinterOptions::default())
+              .unwrap();
             style.push_str(property_id.as_str());
             style.push_str(":");
             style.push_str(property_value.as_str());
@@ -634,7 +731,7 @@ impl<'a> VisitMut for AstMutVisitor<'a> {
                 span: DUMMY_SP,
                 value: style.into(),
                 raw: None,
-              })))
+              }))),
             }));
           }
         }

@@ -1,12 +1,19 @@
 use std::collections::HashMap;
 
 use ego_tree::Tree;
-use swc_common::{sync::Lrc, SourceMap, errors::{Handler, ColorConfig}};
+use swc_common::{
+  errors::{ColorConfig, Handler},
+  sync::Lrc,
+  SourceMap,
+};
 use swc_ecma_ast::{EsVersion, Module};
-use swc_ecma_parser::{lexer::Lexer, Syntax, TsConfig, StringInput, Parser};
+use swc_ecma_parser::{lexer::Lexer, Parser, StringInput, Syntax, TsConfig};
 use swc_ecma_visit::VisitWith;
 
-use crate::{scraper::{Node, Selector, ElementRef}, visitor::{AstVisitor, JSXRecord}};
+use crate::{
+  scraper::{ElementRef, Node, Selector},
+  visitor::{AstVisitor, JSXRecord},
+};
 
 pub struct JSXDocument {
   pub tree: Tree<Node>,
@@ -27,30 +34,20 @@ impl JSXDocument {
     // 初始化 swc 的 SourceMap
     let cm: Lrc<SourceMap> = Default::default();
     // 初始化 swc 的错误处理器
-    let handler = Handler::with_tty_emitter(
-      ColorConfig::Auto,
-      true,
-      false,
-      Some(cm.clone()),
-    );
+    let handler = Handler::with_tty_emitter(ColorConfig::Auto, true, false, Some(cm.clone()));
 
     // 将 JSX 代码转换为 SourceFile
-    let fm = cm.new_source_file(
-      swc_common::FileName::Anon,
-      jsx,
-    );
+    let fm = cm.new_source_file(swc_common::FileName::Anon, jsx);
 
     // 初始化 swc 的词法分析器
     let lexer = Lexer::new(
-      Syntax::Typescript(
-        TsConfig {
-          tsx: true,
-          ..Default::default()
-        }
-      ),
+      Syntax::Typescript(TsConfig {
+        tsx: true,
+        ..Default::default()
+      }),
       EsVersion::Es2019,
       StringInput::from(&*fm),
-      None
+      None,
     );
     // 初始化 swc 的语法分析器
     let mut parser = Parser::new_from(lexer);
@@ -60,10 +57,8 @@ impl JSXDocument {
 
     let module = parser
       .parse_module()
-      .map_err(|e| {
-        e.into_diagnostic(&handler).emit()
-      })
-      .expect("failed to parser module");
+      .map_err(|e| e.into_diagnostic(&handler).emit())
+      .expect("解析 JSX 失败");
     let mut jsx_record: JSXRecord = HashMap::new();
     let mut vistor = AstVisitor::new(&module, &mut self.tree, &mut jsx_record);
     module.visit_with(&mut vistor);

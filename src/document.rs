@@ -4,11 +4,12 @@ use ego_tree::Tree;
 use swc_common::{
   errors::{ColorConfig, Handler},
   sync::Lrc,
-  SourceMap,
+  SourceMap, Mark, comments::SingleThreadedComments, Globals, GLOBALS,
 };
-use swc_ecma_ast::{EsVersion, Module};
+use swc_ecma_ast::{EsVersion, Program};
 use swc_ecma_parser::{lexer::Lexer, Parser, StringInput, Syntax, TsConfig};
-use swc_ecma_visit::VisitWith;
+use swc_ecma_visit::{VisitWith, FoldWith};
+use swc_ecma_transforms_base::{fixer::fixer, hygiene::hygiene, resolver};
 
 use crate::{
   scraper::{ElementRef, Node, Selector},
@@ -17,7 +18,7 @@ use crate::{
 
 pub struct JSXDocument {
   pub tree: Tree<Node>,
-  pub module: Option<Module>,
+  pub program: Option<Program>,
   pub jsx_record: Option<JSXRecord>,
 }
 
@@ -25,20 +26,17 @@ impl JSXDocument {
   pub fn new() -> Self {
     JSXDocument {
       tree: Tree::new(Node::Document),
-      module: None,
+      program: None,
       jsx_record: None,
     }
   }
 
-  pub fn parse(&mut self, jsx: String) {
-    // 初始化 swc 的 SourceMap
-    let cm: Lrc<SourceMap> = Default::default();
+  pub fn parse(&mut self, jsx: String, cm: Lrc<SourceMap>, comments: &SingleThreadedComments) {
     // 初始化 swc 的错误处理器
     let handler = Handler::with_tty_emitter(ColorConfig::Auto, true, false, Some(cm.clone()));
 
     // 将 JSX 代码转换为 SourceFile
     let fm = cm.new_source_file(swc_common::FileName::Anon, jsx);
-
     // 初始化 swc 的词法分析器
     let lexer = Lexer::new(
       Syntax::Typescript(TsConfig {
@@ -48,23 +46,31 @@ impl JSXDocument {
       }),
       EsVersion::Es2019,
       StringInput::from(&*fm),
-      None,
+      Some(comments),
     );
     // 初始化 swc 的语法分析器
     let mut parser = Parser::new_from(lexer);
     for e in parser.take_errors() {
       e.into_diagnostic(&handler).emit();
     }
-
-    let module = parser
-      .parse_module()
-      .map_err(|e| e.into_diagnostic(&handler).emit())
-      .expect("解析 JSX 失败");
-    let mut jsx_record: JSXRecord = HashMap::new();
-    let mut vistor = AstVisitor::new(&module, &mut self.tree, &mut jsx_record);
-    module.visit_with(&mut vistor);
-    self.module = Some(module);
-    self.jsx_record = Some(jsx_record);
+    let program = parser
+        .parse_program()
+        .map_err(|e| e.into_diagnostic(&handler).emit())
+        .expect("解析 JSX 失败");
+    
+    let globals = Globals::default();
+    GLOBALS.set(&globals, || {
+      let unresolved_mark = Mark::new();
+      let top_level_mark = Mark::new();
+      let program = program.fold_with(&mut resolver(unresolved_mark, top_level_mark, true));
+      let program = program.fold_with(&mut hygiene());
+      let program = program.fold_with(&mut fixer(Some(comments)));
+      let mut jsx_record: JSXRecord = HashMap::new();
+      let mut vistor = AstVisitor::new(&program, &mut self.tree, &mut jsx_record);
+      program.visit_with(&mut vistor);
+      self.program = Some(program);
+      self.jsx_record = Some(jsx_record);
+    });
   }
 
   pub fn select<'a>(&self, selector: &'a Selector) -> Vec<ElementRef> {

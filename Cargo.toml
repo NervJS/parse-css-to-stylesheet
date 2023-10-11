@@ -24,6 +24,8 @@ swc_ecma_ast = {version = "0.110.0"}
 swc_ecma_codegen = "0.146.0"
 swc_ecma_parser = "0.141.0"
 swc_ecma_visit = "0.96.0"
+swc_ecmascript = {version = "0.235.1", features = ["transforms", "typescript"]}
+swc_ecma_transforms_base = "0.134.0"
 
 [build-dependencies]
 napi-build = "2.0.1"

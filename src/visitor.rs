@@ -12,7 +12,7 @@ use swc_common::{Span, DUMMY_SP};
 use swc_ecma_ast::{
   Callee, ClassDecl, ClassMember, DefaultDecl, ExportDefaultDecl, ExportDefaultExpr, Expr, FnDecl,
   Function, Ident, JSXAttr, JSXAttrName, JSXAttrOrSpread, JSXAttrValue, JSXElement,
-  JSXElementChild, JSXElementName, JSXExpr, KeyValueProp, Lit, MemberProp, Module, Prop, PropName,
+  JSXElementChild, JSXElementName, JSXExpr, KeyValueProp, Lit, MemberProp, Program, Prop, PropName,
   PropOrSpread, Stmt, Str,
 };
 use swc_ecma_visit::{
@@ -52,14 +52,14 @@ fn recursion_sub_tree<'a>(node: &NodeRef<Node>, current: &mut NodeMut<'a, Node>)
 
 pub struct JSXVisitor<'a> {
   pub tree: &'a mut Tree<Node>,
-  pub module: &'a Module,
+  pub module: &'a Program,
   pub jsx_record: &'a mut JSXRecord,
   pub root_node: Option<NodeId>,
   pub current_node: Option<NodeId>,
 }
 
 impl<'a> JSXVisitor<'a> {
-  pub fn new(tree: &'a mut Tree<Node>, module: &'a Module, jsx_record: &'a mut JSXRecord) -> Self {
+  pub fn new(tree: &'a mut Tree<Node>, module: &'a Program, jsx_record: &'a mut JSXRecord) -> Self {
     JSXVisitor {
       tree,
       module,
@@ -295,7 +295,7 @@ pub enum SearchType {
 }
 
 pub struct JSXFragmentVisitor<'a> {
-  pub module: &'a Module,
+  pub module: &'a Program,
   pub tree: Tree<Node>,
   pub jsx_record: &'a mut JSXRecord,
   pub search_fn: &'a str,
@@ -304,7 +304,7 @@ pub struct JSXFragmentVisitor<'a> {
 
 impl<'a> JSXFragmentVisitor<'a> {
   pub fn new(
-    module: &'a Module,
+    module: &'a Program,
     jsx_record: &'a mut JSXRecord,
     search_fn: &'a str,
     search_type: SearchType,
@@ -377,13 +377,13 @@ impl<'a> Visit for JSXFragmentVisitor<'a> {
 
 pub struct AstVisitor<'a> {
   pub export_default_name: Option<String>,
-  pub module: &'a Module,
+  pub module: &'a Program,
   pub tree: &'a mut Tree<Node>,
   pub jsx_record: &'a mut JSXRecord,
 }
 
 impl<'a> AstVisitor<'a> {
-  pub fn new(module: &'a Module, tree: &'a mut Tree<Node>, jsx_record: &'a mut JSXRecord) -> Self {
+  pub fn new(module: &'a Program, tree: &'a mut Tree<Node>, jsx_record: &'a mut JSXRecord) -> Self {
     AstVisitor {
       export_default_name: None,
       module,

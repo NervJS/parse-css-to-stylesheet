@@ -1,7 +1,7 @@
 use std::{cell::RefCell, collections::HashMap, rc::Rc};
 
 use ego_tree::NodeId;
-use swc_ecma_ast::Module;
+use swc_ecma_ast::Program;
 use swc_ecma_visit::VisitMutWith;
 
 use crate::{
@@ -10,14 +10,14 @@ use crate::{
 };
 
 pub struct StyleWrite<'i> {
-  pub module: Rc<RefCell<Module>>,
+  pub module: Rc<RefCell<Program>>,
   pub jsx_record: Rc<RefCell<JSXRecord>>,
   pub style_record: Rc<RefCell<HashMap<NodeId, StyleDeclaration<'i>>>>,
 }
 
 impl<'i> StyleWrite<'i> {
   pub fn new(
-    module: Rc<RefCell<Module>>,
+    module: Rc<RefCell<Program>>,
     jsx_record: Rc<RefCell<JSXRecord>>,
     style_record: Rc<RefCell<HashMap<NodeId, StyleDeclaration<'i>>>>,
   ) -> Self {

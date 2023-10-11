@@ -10,6 +10,7 @@ use swc_ecma_ast::{EsVersion, Program};
 use swc_ecma_parser::{lexer::Lexer, Parser, StringInput, Syntax, TsConfig};
 use swc_ecma_visit::{VisitWith, FoldWith};
 use swc_ecma_transforms_base::{fixer::fixer, hygiene::hygiene, resolver};
+use swc_ecmascript::transforms::typescript::strip;
 
 use crate::{
   scraper::{ElementRef, Node, Selector},
@@ -63,6 +64,7 @@ impl JSXDocument {
       let unresolved_mark = Mark::new();
       let top_level_mark = Mark::new();
       let program = program.fold_with(&mut resolver(unresolved_mark, top_level_mark, true));
+      let program = program.fold_with(&mut strip(top_level_mark));
       let program = program.fold_with(&mut hygiene());
       let program = program.fold_with(&mut fixer(Some(comments)));
       let mut jsx_record: JSXRecord = HashMap::new();

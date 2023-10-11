@@ -43,10 +43,20 @@ impl Hash for SpanKey {
 
 pub type JSXRecord = HashMap<SpanKey, NodeId>;
 
-fn recursion_sub_tree<'a>(node: &NodeRef<Node>, current: &mut NodeMut<'a, Node>) {
+fn recursion_sub_tree_with_jsx_record<'a>(
+  node: &NodeRef<Node>,
+  current: &mut NodeMut<'a, Node>,
+  sub_jsx_record: &JSXRecord,
+  jsx_record: &mut JSXRecord
+) {
   for child in node.children() {
     let mut tree_node = current.append(child.value().clone());
-    recursion_sub_tree(&child, &mut tree_node);
+    for (k, v) in sub_jsx_record {
+      if *v == child.id() {
+        jsx_record.insert(k.clone(), tree_node.id());
+      }
+    }
+    recursion_sub_tree_with_jsx_record(&child, &mut tree_node, sub_jsx_record, jsx_record);
   }
 }
 
@@ -145,41 +155,60 @@ impl<'a> Visit for JSXVisitor<'a> {
   noop_visit_type!();
 
   fn visit_jsx_element(&mut self, jsx: &JSXElement) {
+    let node = self.create_element(jsx);
     if self.root_node.is_none() {
-      let node = self.create_element(jsx);
       let mut root = self.tree.root_mut();
       self.root_node = Some(root.id());
       let current = root.append(node);
       self.current_node = Some(current.id());
       self.jsx_record.insert(SpanKey(jsx.span), current.id());
+    } else {
+      if let Some(current_node) = self.current_node {
+        if let Some(mut current) = self.tree.get_mut(current_node) {
+          let tree_node = current.append(node);
+          self
+            .jsx_record
+            .insert(SpanKey(jsx.span), tree_node.id());
+          self.current_node = Some(tree_node.id());
+        }
+      }
     }
     jsx.visit_children_with(self)
   }
 
   fn visit_jsx_fragment(&mut self, n: &JSXFragment) {
+    let node = self.create_fragment();
     if self.root_node.is_none() {
-      let node = self.create_fragment();
       let mut root = self.tree.root_mut();
       self.root_node = Some(root.id());
       let current = root.append(node);
       self.current_node = Some(current.id());
       self.jsx_record.insert(SpanKey(n.span), current.id());
+    } else {
+      if let Some(current_node) = self.current_node {
+        if let Some(mut current) = self.tree.get_mut(current_node) {
+          let tree_node = current.append(node);
+          self
+            .jsx_record
+            .insert(SpanKey(n.span), tree_node.id());
+          self.current_node = Some(tree_node.id());
+        }
+      }
     }
     n.visit_children_with(self)
   }
 
   fn visit_jsx_element_children(&mut self, n: &[JSXElementChild]) {
-    let mut nodes = vec![];
-    let mut elements: Vec<&JSXElementChild> = vec![];
     for child in n.iter() {
       match child {
         JSXElementChild::JSXElement(element) => {
           if let JSXElementName::Ident(ident) = &element.opening.name {
             let name = ident.sym.to_string();
             if is_starts_with_uppercase(name.as_str()) && !self.taro_components.contains(&name) {
+              let mut jsx_record = HashMap::new();
               let mut visitor = JSXFragmentVisitor::new(
                 self.module,
-                self.jsx_record,
+                &mut jsx_record,
                 self.taro_components,
                 name.as_str(),
                 SearchType::Normal,
@@ -188,48 +217,12 @@ impl<'a> Visit for JSXVisitor<'a> {
               if let Some(current_node) = self.current_node {
                 if let Some(mut current) = self.tree.get_mut(current_node) {
                   // 将 Fragment 的子节点添加到当前节点
-                  recursion_sub_tree(&visitor.tree.root(), &mut current);
-                }
-              }
-            } else {
-              let node = self.create_element(element);
-              if let Some(current_node) = self.current_node {
-                if let Some(mut current) = self.tree.get_mut(current_node) {
-                  let tree_node = current.append(node);
-                  nodes.push(tree_node.id());
-                  elements.push(child);
-                  self
-                    .jsx_record
-                    .insert(SpanKey(element.span), tree_node.id());
+                  recursion_sub_tree_with_jsx_record(&visitor.tree.root(), &mut current, &jsx_record, &mut self.jsx_record);
                 }
               }
             }
-          } else {
-            let node = self.create_element(element);
-            if let Some(current_node) = self.current_node {
-              if let Some(mut current) = self.tree.get_mut(current_node) {
-                let tree_node = current.append(node);
-                nodes.push(tree_node.id());
-                elements.push(child);
-                self
-                  .jsx_record
-                  .insert(SpanKey(element.span), tree_node.id());
-              }
-            }
           }
-        }
-        JSXElementChild::JSXFragment(fragment) => {
-          let node = self.create_fragment();
-          if let Some(current_node) = self.current_node {
-            if let Some(mut current) = self.tree.get_mut(current_node) {
-              let tree_node = current.append(node);
-              nodes.push(tree_node.id());
-              elements.push(child);
-              self
-                .jsx_record
-                .insert(SpanKey(fragment.span), tree_node.id());
-            }
-          }
+          child.visit_with(self);
         }
         // 找到函数调用中的 JSX
         JSXElementChild::JSXExprContainer(expr) => {
@@ -243,9 +236,10 @@ impl<'a> Visit for JSXVisitor<'a> {
                       match &**expr {
                         Expr::Ident(ident) => {
                           let name = ident.sym.to_string();
+                          let mut jsx_record = HashMap::new();
                           let mut visitor = JSXFragmentVisitor::new(
                             self.module,
-                            self.jsx_record,
+                            &mut jsx_record,
                             self.taro_components,
                             name.as_str(),
                             SearchType::Normal,
@@ -254,7 +248,7 @@ impl<'a> Visit for JSXVisitor<'a> {
                           if let Some(current_node) = self.current_node {
                             if let Some(mut current) = self.tree.get_mut(current_node) {
                               // 将 Fragment 的子节点添加到当前节点
-                              recursion_sub_tree(&visitor.tree.root(), &mut current);
+                              recursion_sub_tree_with_jsx_record(&visitor.tree.root(), &mut current, &jsx_record, &mut self.jsx_record);
                             }
                           }
                         }
@@ -263,9 +257,10 @@ impl<'a> Visit for JSXVisitor<'a> {
                             match &member_expr.prop {
                               MemberProp::Ident(ident) => {
                                 let name = ident.sym.to_string();
+                                let mut jsx_record = HashMap::new();
                                 let mut visitor = JSXFragmentVisitor::new(
                                   self.module,
-                                  self.jsx_record,
+                                  &mut jsx_record,
                                   self.taro_components,
                                   name.as_str(),
                                   SearchType::Class,
@@ -274,7 +269,7 @@ impl<'a> Visit for JSXVisitor<'a> {
                                 if let Some(current_node) = self.current_node {
                                   if let Some(mut current) = self.tree.get_mut(current_node) {
                                     // 将 Fragment 的子节点添加到当前节点
-                                    recursion_sub_tree(&visitor.tree.root(), &mut current);
+                                    recursion_sub_tree_with_jsx_record(&visitor.tree.root(), &mut current, &jsx_record, &mut self.jsx_record);
                                   }
                                 }
                               }
@@ -288,19 +283,25 @@ impl<'a> Visit for JSXVisitor<'a> {
                     _ => {}
                   }
                 }
-                _ => {}
+                _ => {
+                  let node = self.create_fragment();
+                  if let Some(current_node) = self.current_node {
+                    if let Some(mut current) = self.tree.get_mut(current_node) {
+                      let tree_node = current.append(node);
+                      self.current_node = Some(tree_node.id());
+                      child.visit_with(self);
+                    }
+                  }
+                }
               }
             }
           }
+          child.visit_with(self);
         }
-        _ => {}
+        _ => {
+          child.visit_with(self);
+        }
       }
-    }
-    for (index, element) in elements.iter().enumerate() {
-      let mut visitor = JSXVisitor::new(self.tree, self.module, self.jsx_record, self.taro_components);
-      visitor.current_node = Some(nodes[index]);
-      visitor.root_node = self.root_node;
-      element.visit_with(&mut visitor);
     }
   }
 }

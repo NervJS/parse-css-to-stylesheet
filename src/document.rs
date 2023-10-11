@@ -13,7 +13,7 @@ use swc_ecma_transforms_base::{fixer::fixer, hygiene::hygiene, resolver};
 
 use crate::{
   scraper::{ElementRef, Node, Selector},
-  visitor::{AstVisitor, JSXRecord},
+  visitor::{AstVisitor, JSXRecord, CollectVisitor},
 };
 
 pub struct JSXDocument {
@@ -66,7 +66,9 @@ impl JSXDocument {
       let program = program.fold_with(&mut hygiene());
       let program = program.fold_with(&mut fixer(Some(comments)));
       let mut jsx_record: JSXRecord = HashMap::new();
-      let mut vistor = AstVisitor::new(&program, &mut self.tree, &mut jsx_record);
+      let mut visitor = CollectVisitor::new();
+      program.visit_with(&mut visitor);
+      let mut vistor = AstVisitor::new(&program, &mut self.tree, &mut jsx_record, &visitor.export_default_name, &visitor.taro_components);
       program.visit_with(&mut vistor);
       self.program = Some(program);
       self.jsx_record = Some(jsx_record);

@@ -13,7 +13,7 @@ use swc_ecma_ast::{
   Callee, ClassDecl, ClassMember, DefaultDecl, ExportDefaultDecl, ExportDefaultExpr, Expr, FnDecl,
   Function, Ident, JSXAttr, JSXAttrName, JSXAttrOrSpread, JSXAttrValue, JSXElement,
   JSXElementChild, JSXElementName, JSXExpr, KeyValueProp, Lit, MemberProp, Program, Prop, PropName,
-  PropOrSpread, Stmt, Str,
+  PropOrSpread, Stmt, Str, JSXFragment, ImportDecl, ImportSpecifier,
 };
 use swc_ecma_visit::{
   noop_visit_mut_type, noop_visit_type, Visit, VisitMut, VisitMutWith, VisitWith,
@@ -54,16 +54,18 @@ pub struct JSXVisitor<'a> {
   pub tree: &'a mut Tree<Node>,
   pub module: &'a Program,
   pub jsx_record: &'a mut JSXRecord,
+  pub taro_components: &'a [String],
   pub root_node: Option<NodeId>,
   pub current_node: Option<NodeId>,
 }
 
 impl<'a> JSXVisitor<'a> {
-  pub fn new(tree: &'a mut Tree<Node>, module: &'a Program, jsx_record: &'a mut JSXRecord) -> Self {
+  pub fn new(tree: &'a mut Tree<Node>, module: &'a Program, jsx_record: &'a mut JSXRecord, taro_components: &'a [String]) -> Self {
     JSXVisitor {
       tree,
       module,
       jsx_record,
+      taro_components,
       root_node: None,
       current_node: None,
     }
@@ -154,6 +156,18 @@ impl<'a> Visit for JSXVisitor<'a> {
     jsx.visit_children_with(self)
   }
 
+  fn visit_jsx_fragment(&mut self, n: &JSXFragment) {
+    if self.root_node.is_none() {
+      let node = self.create_fragment();
+      let mut root = self.tree.root_mut();
+      self.root_node = Some(root.id());
+      let current = root.append(node);
+      self.current_node = Some(current.id());
+      self.jsx_record.insert(SpanKey(n.span), current.id());
+    }
+    n.visit_children_with(self)
+  }
+
   fn visit_jsx_element_children(&mut self, n: &[JSXElementChild]) {
     let mut nodes = vec![];
     let mut elements: Vec<&JSXElementChild> = vec![];
@@ -162,10 +176,11 @@ impl<'a> Visit for JSXVisitor<'a> {
         JSXElementChild::JSXElement(element) => {
           if let JSXElementName::Ident(ident) = &element.opening.name {
             let name = ident.sym.to_string();
-            if is_starts_with_uppercase(name.as_str()) {
+            if is_starts_with_uppercase(name.as_str()) && !self.taro_components.contains(&name) {
               let mut visitor = JSXFragmentVisitor::new(
                 self.module,
                 self.jsx_record,
+                self.taro_components,
                 name.as_str(),
                 SearchType::Normal,
               );
@@ -231,6 +246,7 @@ impl<'a> Visit for JSXVisitor<'a> {
                           let mut visitor = JSXFragmentVisitor::new(
                             self.module,
                             self.jsx_record,
+                            self.taro_components,
                             name.as_str(),
                             SearchType::Normal,
                           );
@@ -250,6 +266,7 @@ impl<'a> Visit for JSXVisitor<'a> {
                                 let mut visitor = JSXFragmentVisitor::new(
                                   self.module,
                                   self.jsx_record,
+                                  self.taro_components,
                                   name.as_str(),
                                   SearchType::Class,
                                 );
@@ -280,7 +297,7 @@ impl<'a> Visit for JSXVisitor<'a> {
       }
     }
     for (index, element) in elements.iter().enumerate() {
-      let mut visitor = JSXVisitor::new(self.tree, self.module, self.jsx_record);
+      let mut visitor = JSXVisitor::new(self.tree, self.module, self.jsx_record, self.taro_components);
       visitor.current_node = Some(nodes[index]);
       visitor.root_node = self.root_node;
       element.visit_with(&mut visitor);
@@ -298,6 +315,7 @@ pub struct JSXFragmentVisitor<'a> {
   pub module: &'a Program,
   pub tree: Tree<Node>,
   pub jsx_record: &'a mut JSXRecord,
+  pub taro_components: &'a [String],
   pub search_fn: &'a str,
   pub search_type: SearchType,
 }
@@ -306,12 +324,14 @@ impl<'a> JSXFragmentVisitor<'a> {
   pub fn new(
     module: &'a Program,
     jsx_record: &'a mut JSXRecord,
+    taro_components: &'a [String],
     search_fn: &'a str,
     search_type: SearchType,
   ) -> Self {
     JSXFragmentVisitor {
       module,
       jsx_record,
+      taro_components,
       tree: Tree::new(Node::Fragment(Fragment::new(Some(create_qualname(
         search_fn,
       ))))),
@@ -333,7 +353,7 @@ impl<'a> Visit for JSXFragmentVisitor<'a> {
           for stmt in &body.stmts {
             match stmt {
               Stmt::Return(return_stmt) => {
-                let mut jsx_visitor = JSXVisitor::new(&mut self.tree, self.module, self.jsx_record);
+                let mut jsx_visitor = JSXVisitor::new(&mut self.tree, self.module, self.jsx_record, self.taro_components);
                 return_stmt.visit_with(&mut jsx_visitor);
               }
               _ => {}
@@ -358,7 +378,7 @@ impl<'a> Visit for JSXFragmentVisitor<'a> {
                   match stmt {
                     Stmt::Return(return_stmt) => {
                       let mut jsx_visitor =
-                        JSXVisitor::new(&mut self.tree, self.module, self.jsx_record);
+                        JSXVisitor::new(&mut self.tree, self.module, self.jsx_record, self.taro_components);
                       return_stmt.visit_with(&mut jsx_visitor);
                     }
                     _ => {}
@@ -375,17 +395,59 @@ impl<'a> Visit for JSXFragmentVisitor<'a> {
   }
 }
 
-pub struct AstVisitor<'a> {
+pub struct CollectVisitor {
   pub export_default_name: Option<String>,
+  pub taro_components: Vec<String>,
+}
+
+impl CollectVisitor {
+  pub fn new() -> Self {
+    CollectVisitor {
+      export_default_name: None,
+      taro_components: vec![],
+    }
+  }
+}
+
+impl Visit for CollectVisitor {
+  fn visit_export_default_expr(&mut self, n: &ExportDefaultExpr) {
+    match &*n.expr {
+      Expr::Ident(ident) => {
+        if self.export_default_name.is_none() {
+          self.export_default_name = Some(ident.sym.to_string());
+        }
+      }
+      _ => {}
+    }
+  }
+
+  fn visit_import_decl(&mut self, n: &ImportDecl) {
+    if n.src.value.to_string().starts_with("@tarojs/components") {
+      for specifier in &n.specifiers {
+        match specifier {
+          ImportSpecifier::Named(named_specifier) => {
+            self.taro_components.push(named_specifier.local.sym.to_string())
+          }
+          _ => {}
+        }
+      }
+    }
+  }
+}
+
+pub struct AstVisitor<'a> {
+  pub export_default_name: &'a Option<String>,
+  pub taro_components: &'a [String],
   pub module: &'a Program,
   pub tree: &'a mut Tree<Node>,
   pub jsx_record: &'a mut JSXRecord,
 }
 
 impl<'a> AstVisitor<'a> {
-  pub fn new(module: &'a Program, tree: &'a mut Tree<Node>, jsx_record: &'a mut JSXRecord) -> Self {
+  pub fn new(module: &'a Program, tree: &'a mut Tree<Node>, jsx_record: &'a mut JSXRecord, export_default_name: &'a Option<String>, taro_components: &'a [String]) -> Self {
     AstVisitor {
-      export_default_name: None,
+      export_default_name,
+      taro_components,
       module,
       tree,
       jsx_record,
@@ -396,7 +458,7 @@ impl<'a> AstVisitor<'a> {
 impl<'a> Visit for AstVisitor<'a> {
   noop_visit_type!();
 
-  fn visit_fn_decl(&mut self, n: &swc_ecma_ast::FnDecl) {
+  fn visit_fn_decl(&mut self, n: &FnDecl) {
     match &self.export_default_name {
       Some(name) => {
         if n.ident.sym.to_string() == name.as_str() {
@@ -407,7 +469,7 @@ impl<'a> Visit for AstVisitor<'a> {
               for stmt in &body.stmts {
                 match stmt {
                   Stmt::Return(return_stmt) => {
-                    let mut jsx_visitor = JSXVisitor::new(self.tree, self.module, self.jsx_record);
+                    let mut jsx_visitor = JSXVisitor::new(self.tree, self.module, self.jsx_record, self.taro_components);
                     return_stmt.visit_with(&mut jsx_visitor);
                   }
                   _ => {}
@@ -439,7 +501,7 @@ impl<'a> Visit for AstVisitor<'a> {
                           match stmt {
                             Stmt::Return(return_stmt) => {
                               let mut jsx_visitor =
-                                JSXVisitor::new(self.tree, self.module, self.jsx_record);
+                                JSXVisitor::new(self.tree, self.module, self.jsx_record, self.taro_components);
                               return_stmt.visit_with(&mut jsx_visitor);
                             }
                             _ => {}
@@ -461,18 +523,6 @@ impl<'a> Visit for AstVisitor<'a> {
     }
   }
 
-  fn visit_export_default_expr(&mut self, n: &ExportDefaultExpr) {
-    match &*n.expr {
-      Expr::Ident(ident) => {
-        if self.export_default_name.is_none() {
-          self.export_default_name = Some(ident.sym.to_string());
-          self.module.visit_with(self)
-        }
-      }
-      _ => {}
-    }
-  }
-
   fn visit_export_default_decl(&mut self, n: &ExportDefaultDecl) {
     match &n.decl {
       DefaultDecl::Fn(n) => match &*n.function {
@@ -482,7 +532,7 @@ impl<'a> Visit for AstVisitor<'a> {
           for stmt in &body.stmts {
             match stmt {
               Stmt::Return(return_stmt) => {
-                let mut jsx_visitor = JSXVisitor::new(self.tree, self.module, self.jsx_record);
+                let mut jsx_visitor = JSXVisitor::new(self.tree, self.module, self.jsx_record, self.taro_components);
                 return_stmt.visit_with(&mut jsx_visitor);
               }
               _ => {}
@@ -505,7 +555,7 @@ impl<'a> Visit for AstVisitor<'a> {
                         match stmt {
                           Stmt::Return(return_stmt) => {
                             let mut jsx_visitor =
-                              JSXVisitor::new(self.tree, self.module, self.jsx_record);
+                              JSXVisitor::new(self.tree, self.module, self.jsx_record, self.taro_components);
                             return_stmt.visit_with(&mut jsx_visitor);
                           }
                           _ => {}

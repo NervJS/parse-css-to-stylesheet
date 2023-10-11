@@ -1,3 +1,17 @@
+## [0.0.5](https://github.com/NervJS/parse-css-to-stylesheet/compare/0.0.4...0.0.5) (2023-10-11)
+
+
+### Bug Fixes
+
+* 修复 jsx 遍历不完整问题 ([cec4e20](https://github.com/NervJS/parse-css-to-stylesheet/commit/cec4e20710ec6f621cdff93961e5df3897999dd1))
+
+
+### Features
+
+* 去掉 typescript 声明 ([3c68159](https://github.com/NervJS/parse-css-to-stylesheet/commit/3c68159872f082f55081a978d4da5bc8805abf69))
+
+
+
 ## 0.0.4 (2023-10-11)
 
 

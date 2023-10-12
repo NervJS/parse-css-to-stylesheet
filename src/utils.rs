@@ -5,7 +5,7 @@ use lightningcss::properties::PropertyId;
 use once_cell::sync::Lazy;
 use swc_ecma_ast::{JSXMemberExpr, JSXObject};
 
-static INHERITABLE_STYLES: Lazy<HashSet<PropertyId<'static>>> = Lazy::new(|| {
+static _INHERITABLE_STYLES: Lazy<HashSet<PropertyId<'static>>> = Lazy::new(|| {
   let mut styles = HashSet::new();
   styles.insert(PropertyId::from("color"));
   styles.insert(PropertyId::from("font-size"));
@@ -90,8 +90,9 @@ pub fn create_qualname(str: &str) -> QualName {
   QualName::new(None, ns!(), LocalName::from(str))
 }
 
-pub fn is_style_inheritable(style: PropertyId<'_>) -> bool {
-  INHERITABLE_STYLES.contains(&style)
+pub fn is_style_inheritable(_style: PropertyId<'_>) -> bool {
+  // INHERITABLE_STYLES.contains(&style)
+  false
 }
 
 pub fn is_starts_with_uppercase(str: &str) -> bool {

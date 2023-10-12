@@ -163,19 +163,16 @@ impl<'i> StyleParser<'i> {
           let has_property_index = final_properties
             .iter()
             .position(|property| property.property_id() == parent_declaration.property_id());
+          let is_style_inheritable = is_style_inheritable(parent_declaration.property_id());
           if let Some(index) = has_property_index {
-            let is_style_inheritable = is_style_inheritable(final_properties[index].property_id());
-            if is_style_inheritable {
-              final_properties[index] = parent_declaration.clone();
-            } else {
-              let value = final_properties[index].value_to_css_string(PrinterOptions::default());
+            let value = final_properties[index].value_to_css_string(PrinterOptions::default());
               if let Ok(value) = value {
+                // Todo "initial" "unset"
                 if value.as_str() == "inherit" {
                   final_properties[index] = parent_declaration.clone();
                 }
               }
-            }
-          } else {
+          } else if is_style_inheritable {
             final_properties.push(parent_declaration.clone());
           }
         }

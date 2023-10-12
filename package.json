@@ -1,6 +1,6 @@
 {
   "name": "@tarojs/parse-css-to-stylesheet",
-  "version": "0.0.5",
+  "version": "0.0.6",
   "main": "index.js",
   "types": "index.d.ts",
   "napi": {
@@ -46,6 +46,7 @@
     "build:debug": "napi build --platform",
     "prepublishOnly": "napi prepublish -t npm",
     "test": "ava",
+    "update": "ava --update-snapshots",
     "universal": "napi universal",
     "format": "run-p format:source format:rs",
     "format:rs": "cargo fmt",

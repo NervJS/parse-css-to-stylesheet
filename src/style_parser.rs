@@ -5,12 +5,12 @@ use lightningcss::{
   declaration::DeclarationBlock,
   properties::Property,
   rules::CssRule,
-  stylesheet::{ParserOptions, PrinterOptions, StyleSheet},
+  stylesheet::{ParserOptions, StyleSheet},
   visit_types,
   visitor::{Visit, VisitTypes, Visitor},
 };
 
-use crate::{document::JSXDocument, scraper::Selector, utils::is_style_inheritable};
+use crate::{document::JSXDocument, scraper::Selector};
 
 #[derive(Debug, Clone)]
 pub struct StyleDeclaration<'i> {
@@ -134,49 +134,6 @@ impl<'i> StyleParser<'i> {
           },
         },
       );
-    }
-    let parent_style_declarations: HashMap<_, _> = final_style_record
-      .iter()
-      .map(|(id, _)| {
-        let mut parents = Vec::new();
-        let mut node = self.document.tree.get(*id).unwrap();
-        // 找到所有父节点
-        while let Some(parent) = node.parent() {
-          parents.push(parent);
-          node = parent;
-        }
-        let parent_declarations: Vec<_> = parents
-          .iter()
-          .rev()
-          .filter_map(|parent| final_style_record.get(&parent.id()))
-          .flat_map(|parent_declarations| &parent_declarations.declaration.declarations)
-          .cloned()
-          .collect();
-        (*id, parent_declarations)
-      })
-      .collect();
-
-    for (id, style_declaration) in final_style_record.iter_mut() {
-      let final_properties = &mut style_declaration.declaration.declarations;
-      if let Some(parent_declarations) = parent_style_declarations.get(id) {
-        for parent_declaration in parent_declarations.iter() {
-          let has_property_index = final_properties
-            .iter()
-            .position(|property| property.property_id() == parent_declaration.property_id());
-          let is_style_inheritable = is_style_inheritable(parent_declaration.property_id());
-          if let Some(index) = has_property_index {
-            let value = final_properties[index].value_to_css_string(PrinterOptions::default());
-              if let Ok(value) = value {
-                // Todo "initial" "unset"
-                if value.as_str() == "inherit" {
-                  final_properties[index] = parent_declaration.clone();
-                }
-              }
-          } else if is_style_inheritable {
-            final_properties.push(parent_declaration.clone());
-          }
-        }
-      }
     }
     final_style_record
   }

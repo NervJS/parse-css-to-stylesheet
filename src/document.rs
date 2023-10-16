@@ -1,6 +1,6 @@
 use std::collections::HashMap;
 
-use ego_tree::Tree;
+use selectors::attr::CaseSensitivity;
 use swc_common::{
   errors::{ColorConfig, Handler},
   sync::Lrc,
@@ -8,17 +8,16 @@ use swc_common::{
 };
 use swc_ecma_ast::{EsVersion, Program};
 use swc_ecma_parser::{lexer::Lexer, Parser, StringInput, Syntax, TsConfig};
-use swc_ecma_visit::{VisitWith, FoldWith};
+use swc_ecma_visit::{VisitWith, FoldWith, VisitAllWith};
 use swc_ecma_transforms_base::{fixer::fixer, hygiene::hygiene, resolver};
 use swc_ecmascript::transforms::typescript::strip;
 
 use crate::{
-  scraper::{ElementRef, Node, Selector},
+  scraper::Element,
   visitor::{AstVisitor, JSXRecord, CollectVisitor},
 };
 
 pub struct JSXDocument {
-  pub tree: Tree<Node>,
   pub program: Option<Program>,
   pub jsx_record: Option<JSXRecord>,
 }
@@ -26,7 +25,6 @@ pub struct JSXDocument {
 impl JSXDocument {
   pub fn new() -> Self {
     JSXDocument {
-      tree: Tree::new(Node::Document),
       program: None,
       jsx_record: None,
     }
@@ -70,19 +68,25 @@ impl JSXDocument {
       let mut jsx_record: JSXRecord = HashMap::new();
       let mut visitor = CollectVisitor::new();
       program.visit_with(&mut visitor);
-      let mut vistor = AstVisitor::new(&program, &mut self.tree, &mut jsx_record, &visitor.export_default_name, &visitor.taro_components);
-      program.visit_with(&mut vistor);
+      let mut vistor = AstVisitor::new(&mut jsx_record, &visitor.taro_components);
+      program.visit_all_with(&mut vistor);
       self.program = Some(program);
       self.jsx_record = Some(jsx_record);
     });
   }
 
-  pub fn select<'a>(&self, selector: &'a Selector) -> Vec<ElementRef> {
-    let nodes = self.tree.nodes();
-    let elements = nodes
-      .filter_map(|node| ElementRef::wrap(node))
-      .filter(|element| element.parent().is_some() && selector.matches(&element))
-      .collect::<Vec<_>>();
-    elements
+  pub fn select<'a>(&self, selector: &'a str) -> Vec<Element> {
+    match self.jsx_record {
+      Some(ref jsx_record) => {
+        let mut elements = Vec::new();
+        for (_, element) in jsx_record.iter() {
+          if element.has_class(selector, CaseSensitivity::CaseSensitive) {
+            elements.push(element.clone());
+          }
+        }
+        elements
+      }
+      None => Vec::new(),
+    }
   }
 }

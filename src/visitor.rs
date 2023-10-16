@@ -5,27 +5,26 @@ use std::{
   rc::Rc,
 };
 
-use ego_tree::{NodeId, NodeMut, NodeRef, Tree};
 use html5ever::{tendril::StrTendril, Attribute};
 use lightningcss::{stylesheet::PrinterOptions, traits::ToCss};
 use swc_common::{Span, DUMMY_SP};
 use swc_ecma_ast::{
-  Callee, ClassDecl, ClassMember, DefaultDecl, ExportDefaultDecl, ExportDefaultExpr, Expr, FnDecl,
-  Function, Ident, JSXAttr, JSXAttrName, JSXAttrOrSpread, JSXAttrValue, JSXElement,
-  JSXElementChild, JSXElementName, JSXExpr, KeyValueProp, Lit, MemberProp, Program, Prop, PropName,
-  PropOrSpread, Stmt, Str, JSXFragment, ImportDecl, ImportSpecifier,
+  Expr,
+   Ident, JSXAttr, JSXAttrName, JSXAttrOrSpread, JSXAttrValue, JSXElement,
+   JSXElementName, JSXExpr, KeyValueProp, Lit, Prop, PropName,
+  PropOrSpread, Str, JSXFragment, ImportDecl, ImportSpecifier,
 };
 use swc_ecma_visit::{
-  noop_visit_mut_type, noop_visit_type, Visit, VisitMut, VisitMutWith, VisitWith,
+  noop_visit_mut_type, noop_visit_type, VisitMut, VisitMutWith, VisitAll, Visit, VisitAllWith,
 };
 
 use crate::{
-  scraper::{Element, Fragment, Node},
+  scraper::Element,
   style_parser::StyleDeclaration,
   utils::{create_qualname, is_starts_with_uppercase, recursion_jsx_member},
 };
 
-#[derive(Eq, Clone, Debug)]
+#[derive(Eq, Clone, Copy, Debug)]
 pub struct SpanKey(Span);
 
 impl PartialEq for SpanKey {
@@ -41,46 +40,49 @@ impl Hash for SpanKey {
   }
 }
 
-pub type JSXRecord = HashMap<SpanKey, NodeId>;
+pub type JSXRecord = HashMap<SpanKey, Element>;
 
-fn recursion_sub_tree_with_jsx_record<'a>(
-  node: &NodeRef<Node>,
-  current: &mut NodeMut<'a, Node>,
-  sub_jsx_record: &JSXRecord,
-  jsx_record: &mut JSXRecord
-) {
-  for child in node.children() {
-    let mut tree_node = current.append(child.value().clone());
-    for (k, v) in sub_jsx_record {
-      if *v == child.id() {
-        jsx_record.insert(k.clone(), tree_node.id());
+pub struct CollectVisitor {
+  pub taro_components: Vec<String>,
+}
+
+impl CollectVisitor {
+  pub fn new() -> Self {
+    CollectVisitor {
+      taro_components: vec![],
+    }
+  }
+}
+
+impl Visit for CollectVisitor {
+  fn visit_import_decl(&mut self, n: &ImportDecl) {
+    if n.src.value.to_string().starts_with("@tarojs/components") {
+      for specifier in &n.specifiers {
+        match specifier {
+          ImportSpecifier::Named(named_specifier) => {
+            self.taro_components.push(named_specifier.local.sym.to_string())
+          }
+          _ => {}
+        }
       }
     }
-    recursion_sub_tree_with_jsx_record(&child, &mut tree_node, sub_jsx_record, jsx_record);
   }
 }
 
-pub struct JSXVisitor<'a> {
-  pub tree: &'a mut Tree<Node>,
-  pub module: &'a Program,
-  pub jsx_record: &'a mut JSXRecord,
+pub struct AstVisitor<'a> {
   pub taro_components: &'a [String],
-  pub root_node: Option<NodeId>,
-  pub current_node: Option<NodeId>,
+  pub jsx_record: &'a mut JSXRecord,
 }
 
-impl<'a> JSXVisitor<'a> {
-  pub fn new(tree: &'a mut Tree<Node>, module: &'a Program, jsx_record: &'a mut JSXRecord, taro_components: &'a [String]) -> Self {
-    JSXVisitor {
-      tree,
-      module,
-      jsx_record,
+impl<'a> AstVisitor<'a> {
+  pub fn new(jsx_record: &'a mut JSXRecord, taro_components: &'a [String]) -> Self {
+    AstVisitor {
       taro_components,
-      root_node: None,
-      current_node: None,
+      jsx_record,
     }
   }
-  fn create_element(&mut self, jsx_element: &JSXElement) -> Node {
+
+  fn create_element(&mut self, jsx_element: &JSXElement) -> Element {
     let name = match &jsx_element.opening.name {
       JSXElementName::Ident(ident) => ident.sym.to_string(),
       JSXElementName::JSXMemberExpr(expr) => recursion_jsx_member(expr),
@@ -143,450 +145,42 @@ impl<'a> JSXVisitor<'a> {
         });
       }
     }
-    Node::Element(Element::new(qual_name, attributes))
-  }
-
-  fn create_fragment(&mut self) -> Node {
-    Node::Fragment(Fragment::new(Some(create_qualname("__Fragment__"))))
+    Element::new(qual_name, SpanKey(jsx_element.span), attributes)
   }
 }
 
-impl<'a> Visit for JSXVisitor<'a> {
+impl<'a> VisitAll for AstVisitor<'a> {
   noop_visit_type!();
 
   fn visit_jsx_element(&mut self, jsx: &JSXElement) {
-    let node = self.create_element(jsx);
-    if self.root_node.is_none() {
-      let mut root = self.tree.root_mut();
-      self.root_node = Some(root.id());
-      let current = root.append(node);
-      self.current_node = Some(current.id());
-      self.jsx_record.insert(SpanKey(jsx.span), current.id());
-    } else {
-      if let Some(current_node) = self.current_node {
-        if let Some(mut current) = self.tree.get_mut(current_node) {
-          let tree_node = current.append(node);
-          self
-            .jsx_record
-            .insert(SpanKey(jsx.span), tree_node.id());
-          self.current_node = Some(tree_node.id());
+    let element = self.create_element(jsx);
+    if let JSXElementName::Ident(ident) = &jsx.opening.name {
+      let name = ident.sym.to_string();
+      if is_starts_with_uppercase(name.as_str()) {
+        if self.taro_components.contains(&name) {
+          self.jsx_record.insert(SpanKey(jsx.span), element);
         }
+      } else {
+        self.jsx_record.insert(SpanKey(jsx.span), element);
       }
     }
-    jsx.visit_children_with(self)
+    jsx.visit_all_children_with(self);
   }
 
-  fn visit_jsx_fragment(&mut self, n: &JSXFragment) {
-    let node = self.create_fragment();
-    if self.root_node.is_none() {
-      let mut root = self.tree.root_mut();
-      self.root_node = Some(root.id());
-      let current = root.append(node);
-      self.current_node = Some(current.id());
-      self.jsx_record.insert(SpanKey(n.span), current.id());
-    } else {
-      if let Some(current_node) = self.current_node {
-        if let Some(mut current) = self.tree.get_mut(current_node) {
-          let tree_node = current.append(node);
-          self
-            .jsx_record
-            .insert(SpanKey(n.span), tree_node.id());
-          self.current_node = Some(tree_node.id());
-        }
-      }
-    }
-    n.visit_children_with(self)
-  }
-
-  fn visit_jsx_element_children(&mut self, n: &[JSXElementChild]) {
-    for child in n.iter() {
-      match child {
-        JSXElementChild::JSXElement(element) => {
-          if let JSXElementName::Ident(ident) = &element.opening.name {
-            let name = ident.sym.to_string();
-            if is_starts_with_uppercase(name.as_str()) && !self.taro_components.contains(&name) {
-              let mut jsx_record = HashMap::new();
-              let mut visitor = JSXFragmentVisitor::new(
-                self.module,
-                &mut jsx_record,
-                self.taro_components,
-                name.as_str(),
-                SearchType::Normal,
-              );
-              self.module.visit_with(&mut visitor);
-              if let Some(current_node) = self.current_node {
-                if let Some(mut current) = self.tree.get_mut(current_node) {
-                  // 将 Fragment 的子节点添加到当前节点
-                  recursion_sub_tree_with_jsx_record(&visitor.tree.root(), &mut current, &jsx_record, &mut self.jsx_record);
-                }
-              }
-            }
-          }
-          child.visit_with(self);
-        }
-        // 找到函数调用中的 JSX
-        JSXElementChild::JSXExprContainer(expr) => {
-          match &expr.expr {
-            JSXExpr::JSXEmptyExpr(_) => {}
-            JSXExpr::Expr(expr) => {
-              match &**expr {
-                Expr::Call(call_expr) => {
-                  match &call_expr.callee {
-                    Callee::Expr(expr) => {
-                      match &**expr {
-                        Expr::Ident(ident) => {
-                          let name = ident.sym.to_string();
-                          let mut jsx_record = HashMap::new();
-                          let mut visitor = JSXFragmentVisitor::new(
-                            self.module,
-                            &mut jsx_record,
-                            self.taro_components,
-                            name.as_str(),
-                            SearchType::Normal,
-                          );
-                          self.module.visit_with(&mut visitor);
-                          if let Some(current_node) = self.current_node {
-                            if let Some(mut current) = self.tree.get_mut(current_node) {
-                              // 将 Fragment 的子节点添加到当前节点
-                              recursion_sub_tree_with_jsx_record(&visitor.tree.root(), &mut current, &jsx_record, &mut self.jsx_record);
-                            }
-                          }
-                        }
-                        Expr::Member(member_expr) => {
-                          if let Expr::This(_) = &*member_expr.obj {
-                            match &member_expr.prop {
-                              MemberProp::Ident(ident) => {
-                                let name = ident.sym.to_string();
-                                let mut jsx_record = HashMap::new();
-                                let mut visitor = JSXFragmentVisitor::new(
-                                  self.module,
-                                  &mut jsx_record,
-                                  self.taro_components,
-                                  name.as_str(),
-                                  SearchType::Class,
-                                );
-                                self.module.visit_with(&mut visitor);
-                                if let Some(current_node) = self.current_node {
-                                  if let Some(mut current) = self.tree.get_mut(current_node) {
-                                    // 将 Fragment 的子节点添加到当前节点
-                                    recursion_sub_tree_with_jsx_record(&visitor.tree.root(), &mut current, &jsx_record, &mut self.jsx_record);
-                                  }
-                                }
-                              }
-                              _ => {}
-                            }
-                          }
-                        }
-                        _ => {}
-                      }
-                    }
-                    _ => {}
-                  }
-                }
-                _ => {
-                  let node = self.create_fragment();
-                  if let Some(current_node) = self.current_node {
-                    if let Some(mut current) = self.tree.get_mut(current_node) {
-                      let tree_node = current.append(node);
-                      self.current_node = Some(tree_node.id());
-                      child.visit_with(self);
-                    }
-                  }
-                }
-              }
-            }
-          }
-          child.visit_with(self);
-        }
-        _ => {
-          child.visit_with(self);
-        }
-      }
-    }
-  }
-}
-
-#[derive(PartialEq)]
-pub enum SearchType {
-  Normal,
-  Class,
-}
-
-pub struct JSXFragmentVisitor<'a> {
-  pub module: &'a Program,
-  pub tree: Tree<Node>,
-  pub jsx_record: &'a mut JSXRecord,
-  pub taro_components: &'a [String],
-  pub search_fn: &'a str,
-  pub search_type: SearchType,
-}
-
-impl<'a> JSXFragmentVisitor<'a> {
-  pub fn new(
-    module: &'a Program,
-    jsx_record: &'a mut JSXRecord,
-    taro_components: &'a [String],
-    search_fn: &'a str,
-    search_type: SearchType,
-  ) -> Self {
-    JSXFragmentVisitor {
-      module,
-      jsx_record,
-      taro_components,
-      tree: Tree::new(Node::Fragment(Fragment::new(Some(create_qualname(
-        search_fn,
-      ))))),
-      search_fn,
-      search_type,
-    }
-  }
-}
-
-impl<'a> Visit for JSXFragmentVisitor<'a> {
-  noop_visit_type!();
-
-  fn visit_fn_decl(&mut self, n: &FnDecl) {
-    if n.ident.sym.to_string() == self.search_fn && self.search_type == SearchType::Normal {
-      match &*n.function {
-        Function {
-          body: Some(body), ..
-        } => {
-          for stmt in &body.stmts {
-            match stmt {
-              Stmt::Return(return_stmt) => {
-                let mut jsx_visitor = JSXVisitor::new(&mut self.tree, self.module, self.jsx_record, self.taro_components);
-                return_stmt.visit_with(&mut jsx_visitor);
-              }
-              _ => {}
-            }
-          }
-        }
-        _ => {}
-      }
-    }
-  }
-
-  fn visit_class_method(&mut self, n: &swc_ecma_ast::ClassMethod) {
-    if self.search_type == SearchType::Class {
-      match &n.key {
-        PropName::Ident(ident) => {
-          if ident.sym.to_string() == self.search_fn {
-            match &*n.function {
-              Function {
-                body: Some(body), ..
-              } => {
-                for stmt in &body.stmts {
-                  match stmt {
-                    Stmt::Return(return_stmt) => {
-                      let mut jsx_visitor =
-                        JSXVisitor::new(&mut self.tree, self.module, self.jsx_record, self.taro_components);
-                      return_stmt.visit_with(&mut jsx_visitor);
-                    }
-                    _ => {}
-                  }
-                }
-              }
-              _ => {}
-            }
-          }
-        }
-        _ => {}
-      }
-    }
-  }
-}
-
-pub struct CollectVisitor {
-  pub export_default_name: Option<String>,
-  pub taro_components: Vec<String>,
-}
-
-impl CollectVisitor {
-  pub fn new() -> Self {
-    CollectVisitor {
-      export_default_name: None,
-      taro_components: vec![],
-    }
-  }
-}
-
-impl Visit for CollectVisitor {
-  fn visit_export_default_expr(&mut self, n: &ExportDefaultExpr) {
-    match &*n.expr {
-      Expr::Ident(ident) => {
-        if self.export_default_name.is_none() {
-          self.export_default_name = Some(ident.sym.to_string());
-        }
-      }
-      _ => {}
-    }
-  }
-
-  fn visit_import_decl(&mut self, n: &ImportDecl) {
-    if n.src.value.to_string().starts_with("@tarojs/components") {
-      for specifier in &n.specifiers {
-        match specifier {
-          ImportSpecifier::Named(named_specifier) => {
-            self.taro_components.push(named_specifier.local.sym.to_string())
-          }
-          _ => {}
-        }
-      }
-    }
-  }
-}
-
-pub struct AstVisitor<'a> {
-  pub export_default_name: &'a Option<String>,
-  pub taro_components: &'a [String],
-  pub module: &'a Program,
-  pub tree: &'a mut Tree<Node>,
-  pub jsx_record: &'a mut JSXRecord,
-}
-
-impl<'a> AstVisitor<'a> {
-  pub fn new(module: &'a Program, tree: &'a mut Tree<Node>, jsx_record: &'a mut JSXRecord, export_default_name: &'a Option<String>, taro_components: &'a [String]) -> Self {
-    AstVisitor {
-      export_default_name,
-      taro_components,
-      module,
-      tree,
-      jsx_record,
-    }
-  }
-}
-
-impl<'a> Visit for AstVisitor<'a> {
-  noop_visit_type!();
-
-  fn visit_fn_decl(&mut self, n: &FnDecl) {
-    match &self.export_default_name {
-      Some(name) => {
-        if n.ident.sym.to_string() == name.as_str() {
-          match &*n.function {
-            Function {
-              body: Some(body), ..
-            } => {
-              for stmt in &body.stmts {
-                match stmt {
-                  Stmt::Return(return_stmt) => {
-                    let mut jsx_visitor = JSXVisitor::new(self.tree, self.module, self.jsx_record, self.taro_components);
-                    return_stmt.visit_with(&mut jsx_visitor);
-                  }
-                  _ => {}
-                }
-              }
-            }
-            _ => {}
-          }
-        }
-      }
-      None => {}
-    }
-  }
-
-  fn visit_class_decl(&mut self, n: &ClassDecl) {
-    match &self.export_default_name {
-      Some(name) => {
-        if n.ident.sym.to_string() == name.as_str() {
-          for member in &n.class.body {
-            match member {
-              ClassMember::Method(method) => match &method.key {
-                PropName::Ident(ident) => {
-                  if ident.sym.to_string() == "render" {
-                    match &*method.function {
-                      Function {
-                        body: Some(body), ..
-                      } => {
-                        for stmt in &body.stmts {
-                          match stmt {
-                            Stmt::Return(return_stmt) => {
-                              let mut jsx_visitor =
-                                JSXVisitor::new(self.tree, self.module, self.jsx_record, self.taro_components);
-                              return_stmt.visit_with(&mut jsx_visitor);
-                            }
-                            _ => {}
-                          }
-                        }
-                      }
-                      _ => {}
-                    }
-                  }
-                }
-                _ => {}
-              },
-              _ => {}
-            }
-          }
-        }
-      }
-      None => {}
-    }
-  }
-
-  fn visit_export_default_decl(&mut self, n: &ExportDefaultDecl) {
-    match &n.decl {
-      DefaultDecl::Fn(n) => match &*n.function {
-        Function {
-          body: Some(body), ..
-        } => {
-          for stmt in &body.stmts {
-            match stmt {
-              Stmt::Return(return_stmt) => {
-                let mut jsx_visitor = JSXVisitor::new(self.tree, self.module, self.jsx_record, self.taro_components);
-                return_stmt.visit_with(&mut jsx_visitor);
-              }
-              _ => {}
-            }
-          }
-        }
-        _ => {}
-      },
-      DefaultDecl::Class(n) => {
-        for member in &n.class.body {
-          match member {
-            ClassMember::Method(method) => match &method.key {
-              PropName::Ident(ident) => {
-                if ident.sym.to_string() == "render" {
-                  match &*method.function {
-                    Function {
-                      body: Some(body), ..
-                    } => {
-                      for stmt in &body.stmts {
-                        match stmt {
-                          Stmt::Return(return_stmt) => {
-                            let mut jsx_visitor =
-                              JSXVisitor::new(self.tree, self.module, self.jsx_record, self.taro_components);
-                            return_stmt.visit_with(&mut jsx_visitor);
-                          }
-                          _ => {}
-                        }
-                      }
-                    }
-                    _ => {}
-                  }
-                }
-              }
-              _ => {}
-            },
-            _ => {}
-          }
-        }
-      }
-      _ => {}
-    }
+  fn visit_jsx_fragment(&mut self, jsx: &JSXFragment) {
+    jsx.visit_all_children_with(self);
   }
 }
 
 pub struct AstMutVisitor<'a> {
   pub jsx_record: Rc<RefCell<JSXRecord>>,
-  pub style_record: Rc<RefCell<HashMap<NodeId, StyleDeclaration<'a>>>>,
+  pub style_record: Rc<RefCell<HashMap<SpanKey, StyleDeclaration<'a>>>>,
 }
 
 impl<'a> AstMutVisitor<'a> {
   pub fn new(
     jsx_record: Rc<RefCell<JSXRecord>>,
-    style_record: Rc<RefCell<HashMap<NodeId, StyleDeclaration<'a>>>>,
+    style_record: Rc<RefCell<HashMap<SpanKey, StyleDeclaration<'a>>>>,
   ) -> Self {
     AstMutVisitor {
       jsx_record,
@@ -600,7 +194,7 @@ impl<'a> VisitMut for AstMutVisitor<'a> {
 
   fn visit_mut_jsx_element(&mut self, n: &mut JSXElement) {
     let span_key = SpanKey(n.span);
-    if let Some(node_id) = self.jsx_record.borrow().get(&span_key) {
+    if let Some(element) = self.jsx_record.borrow().get(&span_key) {
       // 将 style_record 中的样式添加到 JSXElement 的 style 属性中
       let style_record = self.style_record.borrow();
       let attrs = &mut n.opening.attrs;
@@ -625,7 +219,7 @@ impl<'a> VisitMut for AstMutVisitor<'a> {
                             .split(";")
                             .map(|s| s.to_owned())
                             .collect::<Vec<String>>();
-                          if let Some(style_declaration) = style_record.get(node_id) {
+                          if let Some(style_declaration) = style_record.get(&element.span) {
                             for declaration in style_declaration.declaration.declarations.iter() {
                               let property_id = declaration
                                 .property_id()
@@ -671,7 +265,7 @@ impl<'a> VisitMut for AstMutVisitor<'a> {
                         JSXExpr::Expr(expr) => match &mut **expr {
                           Expr::Object(lit) => {
                             let mut properties = Vec::new();
-                            if let Some(style_declaration) = style_record.get(node_id) {
+                            if let Some(style_declaration) = style_record.get(&element.span) {
                               for declaration in style_declaration.declaration.declarations.iter() {
                                 let mut has_property = false;
                                 for prop in lit.props.iter_mut() {
@@ -740,7 +334,7 @@ impl<'a> VisitMut for AstMutVisitor<'a> {
       }
 
       if !has_style {
-        if let Some(style_declaration) = style_record.get(node_id) {
+        if let Some(style_declaration) = style_record.get(&element.span) {
           let mut properties = Vec::new();
           for declaration in style_declaration.declaration.declarations.iter() {
             properties.push(declaration.clone());

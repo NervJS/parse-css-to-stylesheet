@@ -1,25 +1,24 @@
 use std::{cell::RefCell, collections::HashMap, rc::Rc};
 
-use ego_tree::NodeId;
 use swc_ecma_ast::Program;
 use swc_ecma_visit::VisitMutWith;
 
 use crate::{
   style_parser::StyleDeclaration,
-  visitor::{AstMutVisitor, JSXRecord},
+  visitor::{AstMutVisitor, JSXRecord, SpanKey},
 };
 
 pub struct StyleWrite<'i> {
   pub module: Rc<RefCell<Program>>,
   pub jsx_record: Rc<RefCell<JSXRecord>>,
-  pub style_record: Rc<RefCell<HashMap<NodeId, StyleDeclaration<'i>>>>,
+  pub style_record: Rc<RefCell<HashMap<SpanKey, StyleDeclaration<'i>>>>,
 }
 
 impl<'i> StyleWrite<'i> {
   pub fn new(
     module: Rc<RefCell<Program>>,
     jsx_record: Rc<RefCell<JSXRecord>>,
-    style_record: Rc<RefCell<HashMap<NodeId, StyleDeclaration<'i>>>>,
+    style_record: Rc<RefCell<HashMap<SpanKey, StyleDeclaration<'i>>>>,
   ) -> Self {
     StyleWrite {
       module,

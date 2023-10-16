@@ -1,6 +1,5 @@
 use std::{cell::RefCell, collections::HashMap, convert::Infallible, rc::Rc};
 
-use ego_tree::NodeId;
 use lightningcss::{
   declaration::DeclarationBlock,
   properties::Property,
@@ -10,7 +9,7 @@ use lightningcss::{
   visitor::{Visit, VisitTypes, Visitor},
 };
 
-use crate::{document::JSXDocument, scraper::Selector};
+use crate::{document::JSXDocument, visitor::SpanKey};
 
 #[derive(Debug, Clone)]
 pub struct StyleDeclaration<'i> {
@@ -19,14 +18,14 @@ pub struct StyleDeclaration<'i> {
 }
 
 pub struct StyleVisitor<'i> {
-  pub style_record: Rc<RefCell<HashMap<NodeId, Vec<StyleDeclaration<'i>>>>>,
+  pub style_record: Rc<RefCell<HashMap<SpanKey, Vec<StyleDeclaration<'i>>>>>,
   pub document: &'i JSXDocument,
 }
 
 impl<'i> StyleVisitor<'i> {
   pub fn new(
     document: &'i JSXDocument,
-    style_record: Rc<RefCell<HashMap<NodeId, Vec<StyleDeclaration<'i>>>>>,
+    style_record: Rc<RefCell<HashMap<SpanKey, Vec<StyleDeclaration<'i>>>>>,
   ) -> Self {
     StyleVisitor {
       style_record,
@@ -42,25 +41,18 @@ impl<'i> Visitor<'i> for StyleVisitor<'i> {
     match rule {
       CssRule::Style(style) => {
         let selectors_str = style.selectors.to_string();
-        let selectors: Vec<&str> = selectors_str.split(",").collect();
+        let selectors = selectors_str.split(",").collect::<Vec<&str>>();
         for index in 0..selectors.len() {
-          match Selector::parse(selectors[index]) {
-            Ok(selector) => {
-              let element_refs = self.document.select(&selector);
-              for element_ref in element_refs {
-                let id = element_ref.id();
-                let mut style_record = self.style_record.borrow_mut();
-                let declarations: &mut Vec<StyleDeclaration<'_>> =
-                  style_record.entry(id).or_insert(vec![]);
-                declarations.push(StyleDeclaration {
-                  specificity: style.selectors.0.get(index).unwrap().specificity(),
-                  declaration: style.declarations.clone(),
-                });
-              }
-            }
-            Err(_) => {
-              continue;
-            }
+          let selector = selectors[index].trim().replace(".", "");
+          let elements = self.document.select(selector.as_str());
+          for element in elements {
+            let mut style_record = self.style_record.borrow_mut();
+            let declarations: &mut Vec<StyleDeclaration<'_>> =
+              style_record.entry(element.span).or_insert(vec![]);
+            declarations.push(StyleDeclaration {
+              specificity: style.selectors.0.get(index).unwrap().specificity(),
+              declaration: style.declarations.clone(),
+            });
           }
         }
       }
@@ -71,7 +63,7 @@ impl<'i> Visitor<'i> for StyleVisitor<'i> {
 }
 
 pub struct StyleParser<'i> {
-  pub style_record: Rc<RefCell<HashMap<NodeId, Vec<StyleDeclaration<'i>>>>>,
+  pub style_record: Rc<RefCell<HashMap<SpanKey, Vec<StyleDeclaration<'i>>>>>,
   pub document: &'i JSXDocument,
 }
 
@@ -89,7 +81,7 @@ impl<'i> StyleParser<'i> {
     stylesheet.visit(&mut style_visitor).unwrap();
   }
 
-  pub fn calc(&self) -> HashMap<NodeId, StyleDeclaration<'i>> {
+  pub fn calc(&self) -> HashMap<SpanKey, StyleDeclaration<'i>> {
     // 遍历 style_record，计算每个节点的最终样式
     let mut style_record = self.style_record.borrow_mut();
     let mut final_style_record = HashMap::new();

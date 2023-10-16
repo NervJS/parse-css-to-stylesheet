@@ -12,7 +12,7 @@ use swc_ecma_ast::{
   Expr,
    Ident, JSXAttr, JSXAttrName, JSXAttrOrSpread, JSXAttrValue, JSXElement,
    JSXElementName, JSXExpr, KeyValueProp, Lit, Prop, PropName,
-  PropOrSpread, Str, JSXFragment, ImportDecl, ImportSpecifier, CallExpr, Callee, Null, ExprOrSpread, JSXExprContainer,
+  PropOrSpread, Str, JSXFragment, ImportDecl, ImportSpecifier, CallExpr, Callee, Null, ExprOrSpread, JSXExprContainer, Module, Stmt, ObjectLit, ExprStmt, AssignExpr, PatOrExpr,Pat, BindingIdent, ModuleItem, ModuleDecl, Decl, VarDecl, VarDeclKind, VarDeclarator
 };
 use swc_ecma_visit::{
   noop_visit_mut_type, noop_visit_type, VisitMut, VisitMutWith, VisitAll, Visit, VisitAllWith,
@@ -175,22 +175,89 @@ impl<'a> VisitAll for AstVisitor<'a> {
 pub struct AstMutVisitor<'a> {
   pub jsx_record: Rc<RefCell<JSXRecord>>,
   pub style_record: Rc<RefCell<HashMap<SpanKey, StyleDeclaration<'a>>>>,
+  pub all_style: Rc<RefCell<HashMap<String, StyleDeclaration<'a>>>>,
 }
 
 impl<'a> AstMutVisitor<'a> {
   pub fn new(
     jsx_record: Rc<RefCell<JSXRecord>>,
     style_record: Rc<RefCell<HashMap<SpanKey, StyleDeclaration<'a>>>>,
+    all_style: Rc<RefCell<HashMap<String, StyleDeclaration<'a>>>>,
   ) -> Self {
     AstMutVisitor {
       jsx_record,
       style_record,
+      all_style,
     }
   }
 }
 
 impl<'a> VisitMut for AstMutVisitor<'a> {
   noop_visit_mut_type!();
+
+  fn visit_mut_module(&mut self, module: &mut Module) {
+    let inner_style_stmt = Stmt::Decl(Decl::Var(Box::new(VarDecl {
+      span: DUMMY_SP,
+      kind: VarDeclKind::Var,
+      declare: false,
+      decls: vec![VarDeclarator {
+        span: DUMMY_SP,
+        name: Pat::Ident(BindingIdent {
+          id: Ident::new("__inner_style__".into(), DUMMY_SP),
+          type_ann: None,
+        }),
+        definite: false,
+        init: Some(Box::new(Expr::Object(ObjectLit {
+          span: DUMMY_SP,
+          props: self
+            .all_style
+            .borrow()
+            .iter()
+            .map(|(key, value)| {
+              PropOrSpread::Prop(Box::new(Prop::KeyValue(KeyValueProp {
+                key: PropName::Ident(Ident::new(key.clone().into(), DUMMY_SP)),
+                value: Box::new(Expr::Object(ObjectLit {
+                  span: DUMMY_SP,
+                  props: value
+                    .declaration
+                    .declarations
+                    .iter()
+                    .map(|declaration| {
+                      PropOrSpread::Prop(Box::new(Prop::KeyValue(KeyValueProp {
+                        key: PropName::Ident(Ident::new(
+                          declaration
+                            .property_id()
+                            .to_css_string(PrinterOptions::default())
+                            .unwrap()
+                            .into(),
+                          DUMMY_SP,
+                        )),
+                        value: declaration
+                          .value_to_css_string(PrinterOptions::default())
+                          .unwrap()
+                          .into(),
+                      })))
+                    })
+                    .collect::<Vec<PropOrSpread>>()
+                    .into(),
+                })),
+              })))
+            })
+            .collect::<Vec<PropOrSpread>>()
+            .into(),
+        })))
+      }]
+    })));
+
+    // 将 inner_style_stmt 插入到 module 的最后一条 import 语句之后
+    let mut last_import_index: i32 = -1;
+    for (index, stmt) in module.body.iter().enumerate() {
+      if let ModuleItem::ModuleDecl(ModuleDecl::Import(_)) = stmt {
+        last_import_index = index as i32;
+      }
+    }
+    module.body.insert((last_import_index + 1) as usize, ModuleItem::Stmt(inner_style_stmt));
+  }
 
   fn visit_mut_jsx_element(&mut self, n: &mut JSXElement) {
     let span_key = SpanKey(n.span);

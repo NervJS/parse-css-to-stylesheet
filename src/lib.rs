@@ -29,12 +29,11 @@ pub fn parse(component: String, styles: Vec<String>) -> String {
   let css = styles.join("\n");
   let mut style_parser = StyleParser::new(&document);
   style_parser.parse(&css);
-  let style_record = style_parser.calc();
+  let style_data = style_parser.calc();
 
   let program = Rc::new(RefCell::new(document.program.as_ref().unwrap().clone()));
   let jsx_record = Rc::new(RefCell::new(document.jsx_record.as_ref().unwrap().clone()));
-  let style_record = Rc::new(RefCell::new(style_record));
-  let mut style_write = StyleWrite::new(program.clone(), jsx_record.clone(), style_record.clone());
+  let mut style_write = StyleWrite::new(program.clone(), jsx_record.clone(), style_data.style_record.clone(), style_data.all_style.clone());
   style_write.write();
 
   // ast 转代码

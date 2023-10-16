@@ -1,4 +1,4 @@
-use std::{cell::RefCell, collections::HashMap, convert::Infallible, rc::Rc, hash::Hash};
+use std::{cell::RefCell, collections::HashMap, convert::Infallible, hash::Hash, rc::Rc};
 
 use lightningcss::{
   declaration::DeclarationBlock,
@@ -96,11 +96,18 @@ impl<'i> StyleParser<'i> {
 
   pub fn parse(&mut self, css: &'i str) {
     let mut stylesheet = StyleSheet::parse(css, ParserOptions::default()).expect("解析样式失败");
-    let mut style_visitor = StyleVisitor::new(self.document, Rc::clone(&self.style_record), Rc::clone(&self.all_style));
+    let mut style_visitor = StyleVisitor::new(
+      self.document,
+      Rc::clone(&self.style_record),
+      Rc::clone(&self.all_style),
+    );
     stylesheet.visit(&mut style_visitor).unwrap();
   }
 
-  fn calc_style_record<T: Hash + Eq + Clone>(&self, style_record: &mut HashMap<T, Vec<StyleDeclaration<'i>>>) -> HashMap<T, StyleDeclaration<'i>> {
+  fn calc_style_record<T: Hash + Eq + Clone>(
+    &self,
+    style_record: &mut HashMap<T, Vec<StyleDeclaration<'i>>>,
+  ) -> HashMap<T, StyleDeclaration<'i>> {
     let mut final_style_record = HashMap::new();
     for (id, declarations) in style_record.iter_mut() {
       declarations.sort_by(|a, b| a.specificity.cmp(&b.specificity));

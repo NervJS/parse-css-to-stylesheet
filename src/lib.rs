@@ -2,7 +2,7 @@
 
 use std::{cell::RefCell, rc::Rc};
 
-use swc_common::{comments::SingleThreadedComments, SourceMap, sync::Lrc};
+use swc_common::{comments::SingleThreadedComments, sync::Lrc, SourceMap};
 use swc_ecma_codegen::{text_writer::JsWriter, Emitter};
 
 use crate::{document::JSXDocument, style_parser::StyleParser, style_write::StyleWrite};
@@ -33,7 +33,12 @@ pub fn parse(component: String, styles: Vec<String>) -> String {
 
   let program = Rc::new(RefCell::new(document.program.as_ref().unwrap().clone()));
   let jsx_record = Rc::new(RefCell::new(document.jsx_record.as_ref().unwrap().clone()));
-  let mut style_write = StyleWrite::new(program.clone(), jsx_record.clone(), style_data.style_record.clone(), style_data.all_style.clone());
+  let mut style_write = StyleWrite::new(
+    program.clone(),
+    jsx_record.clone(),
+    style_data.style_record.clone(),
+    style_data.all_style.clone(),
+  );
   style_write.write();
 
   // ast 转代码

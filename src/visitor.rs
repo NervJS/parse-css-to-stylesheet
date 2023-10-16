@@ -9,13 +9,14 @@ use html5ever::{tendril::StrTendril, Attribute};
 use lightningcss::{stylesheet::PrinterOptions, traits::ToCss};
 use swc_common::{Span, DUMMY_SP};
 use swc_ecma_ast::{
-  Expr,
-   Ident, JSXAttr, JSXAttrName, JSXAttrOrSpread, JSXAttrValue, JSXElement,
-   JSXElementName, JSXExpr, KeyValueProp, Lit, Prop, PropName,
-  PropOrSpread, Str, JSXFragment, ImportDecl, ImportSpecifier, CallExpr, Callee, Null, ExprOrSpread, JSXExprContainer, Module, Stmt, ObjectLit, ExprStmt, AssignExpr, PatOrExpr,Pat, BindingIdent, ModuleItem, ModuleDecl, Decl, VarDecl, VarDeclKind, VarDeclarator
+  AssignExpr, BindingIdent, CallExpr, Callee, Decl, Expr, ExprOrSpread, ExprStmt, Ident,
+  ImportDecl, ImportSpecifier, JSXAttr, JSXAttrName, JSXAttrOrSpread, JSXAttrValue, JSXElement,
+  JSXElementName, JSXExpr, JSXExprContainer, JSXFragment, KeyValueProp, Lit, Module, ModuleDecl,
+  ModuleItem, Null, ObjectLit, Pat, PatOrExpr, Prop, PropName, PropOrSpread, Stmt, Str, VarDecl,
+  VarDeclKind, VarDeclarator,
 };
 use swc_ecma_visit::{
-  noop_visit_mut_type, noop_visit_type, VisitMut, VisitMutWith, VisitAll, Visit, VisitAllWith,
+  noop_visit_mut_type, noop_visit_type, Visit, VisitAll, VisitAllWith, VisitMut, VisitMutWith,
 };
 
 use crate::{
@@ -59,9 +60,9 @@ impl Visit for CollectVisitor {
     if n.src.value.to_string().starts_with("@tarojs/components") {
       for specifier in &n.specifiers {
         match specifier {
-          ImportSpecifier::Named(named_specifier) => {
-            self.taro_components.push(named_specifier.local.sym.to_string())
-          }
+          ImportSpecifier::Named(named_specifier) => self
+            .taro_components
+            .push(named_specifier.local.sym.to_string()),
           _ => {}
         }
       }
@@ -245,8 +246,8 @@ impl<'a> VisitMut for AstMutVisitor<'a> {
             })
             .collect::<Vec<PropOrSpread>>()
             .into(),
-        })))
-      }]
+        }))),
+      }],
     })));
 
     // 将 inner_style_stmt 插入到 module 的最后一条 import 语句之后
@@ -256,7 +257,10 @@ impl<'a> VisitMut for AstMutVisitor<'a> {
         last_import_index = index as i32;
       }
     }
-    module.body.insert((last_import_index + 1) as usize, ModuleItem::Stmt(inner_style_stmt));
+    module.body.insert(
+      (last_import_index + 1) as usize,
+      ModuleItem::Stmt(inner_style_stmt),
+    );
   }
 
   fn visit_mut_jsx_element(&mut self, n: &mut JSXElement) {
@@ -270,27 +274,26 @@ impl<'a> VisitMut for AstMutVisitor<'a> {
       let mut has_dynamic_style = false;
       let mut class_attr_value = None;
       let mut style_attr_value = None;
-      let has_dynamic_class = attrs.iter()
-        .any(|attr| {
-          if let JSXAttrOrSpread::JSXAttr(attr) = attr {
-            if let JSXAttrName::Ident(ident) = &attr.name {
-              if ident.sym.to_string() == "className" {
-                if let Some(value) = &attr.value {
-                  if let JSXAttrValue::JSXExprContainer(expr_container) = value {
-                    match &expr_container.expr {
-                      JSXExpr::JSXEmptyExpr(_) => {},
-                      JSXExpr::Expr(expr) => {
-                        class_attr_value = Some((**expr).clone());
-                      },
-                    };
-                    return true;
-                  }
+      let has_dynamic_class = attrs.iter().any(|attr| {
+        if let JSXAttrOrSpread::JSXAttr(attr) = attr {
+          if let JSXAttrName::Ident(ident) = &attr.name {
+            if ident.sym.to_string() == "className" {
+              if let Some(value) = &attr.value {
+                if let JSXAttrValue::JSXExprContainer(expr_container) = value {
+                  match &expr_container.expr {
+                    JSXExpr::JSXEmptyExpr(_) => {}
+                    JSXExpr::Expr(expr) => {
+                      class_attr_value = Some((**expr).clone());
+                    }
+                  };
+                  return true;
                 }
               }
             }
           }
-          false
-        });
+        }
+        false
+      });
       for attr in attrs {
         if let JSXAttrOrSpread::JSXAttr(attr) = attr {
           if let JSXAttrName::Ident(ident) = &attr.name {
@@ -362,26 +365,30 @@ impl<'a> VisitMut for AstMutVisitor<'a> {
                               if !has_dynamic_class {
                                 let mut properties = Vec::new();
                                 if let Some(style_declaration) = style_record.get(&element.span) {
-                                  for declaration in style_declaration.declaration.declarations.iter() {
+                                  for declaration in
+                                    style_declaration.declaration.declarations.iter()
+                                  {
                                     let mut has_property = false;
                                     for prop in lit.props.iter_mut() {
                                       match prop {
                                         PropOrSpread::Prop(prop) => match &**prop {
-                                          Prop::KeyValue(key_value_prop) => match &key_value_prop.key {
-                                            PropName::Ident(ident) => {
-                                              let property_id = ident.sym.to_string();
-                                              if property_id
-                                                == declaration
-                                                  .property_id()
-                                                  .to_css_string(PrinterOptions::default())
-                                                  .unwrap()
-                                              {
-                                                has_property = true;
-                                                break;
+                                          Prop::KeyValue(key_value_prop) => {
+                                            match &key_value_prop.key {
+                                              PropName::Ident(ident) => {
+                                                let property_id = ident.sym.to_string();
+                                                if property_id
+                                                  == declaration
+                                                    .property_id()
+                                                    .to_css_string(PrinterOptions::default())
+                                                    .unwrap()
+                                                {
+                                                  has_property = true;
+                                                  break;
+                                                }
                                               }
+                                              _ => {}
                                             }
-                                            _ => {}
-                                          },
+                                          }
                                           _ => {}
                                         },
                                         PropOrSpread::Spread(_) => {}
@@ -418,7 +425,7 @@ impl<'a> VisitMut for AstMutVisitor<'a> {
                               has_dynamic_style = true;
                             }
                           }
-                        },
+                        }
                       }
                     }
                     JSXAttrValue::JSXElement(_) => {
@@ -489,35 +496,32 @@ impl<'a> VisitMut for AstMutVisitor<'a> {
           }
         }
       } else {
-        let fun_call_expr = Expr::Call(
-          CallExpr {
-            span: DUMMY_SP,
-            callee: Callee::Expr(Box::new(Expr::Ident(Ident::new("__calc_style__".into(), DUMMY_SP)))),
-            args: vec![
-              match class_attr_value {
-                Some(value) => ExprOrSpread::from(Box::new(value)),
-                None => ExprOrSpread::from(Box::new(Expr::Lit(Lit::Null(Null { span: DUMMY_SP })))),
-              },
-              match style_attr_value {
-                Some(value) => ExprOrSpread::from(Box::new(value)),
-                None => ExprOrSpread::from(Box::new(Expr::Lit(Lit::Null(Null { span: DUMMY_SP })))),
-              },
-            ],
-            type_args: None,
-          }
-        );
+        let fun_call_expr = Expr::Call(CallExpr {
+          span: DUMMY_SP,
+          callee: Callee::Expr(Box::new(Expr::Ident(Ident::new(
+            "__calc_style__".into(),
+            DUMMY_SP,
+          )))),
+          args: vec![
+            match class_attr_value {
+              Some(value) => ExprOrSpread::from(Box::new(value)),
+              None => ExprOrSpread::from(Box::new(Expr::Lit(Lit::Null(Null { span: DUMMY_SP })))),
+            },
+            match style_attr_value {
+              Some(value) => ExprOrSpread::from(Box::new(value)),
+              None => ExprOrSpread::from(Box::new(Expr::Lit(Lit::Null(Null { span: DUMMY_SP })))),
+            },
+          ],
+          type_args: None,
+        });
         for attr in &mut n.opening.attrs {
           if let JSXAttrOrSpread::JSXAttr(attr) = attr {
             if let JSXAttrName::Ident(ident) = &attr.name {
               if ident.sym.to_string() == "style" {
-                attr.value = Some(
-                  JSXAttrValue::JSXExprContainer(
-                    JSXExprContainer {
-                      span: DUMMY_SP,
-                      expr: JSXExpr::Expr(Box::new(fun_call_expr.clone())),
-                    }
-                  )
-                );
+                attr.value = Some(JSXAttrValue::JSXExprContainer(JSXExprContainer {
+                  span: DUMMY_SP,
+                  expr: JSXExpr::Expr(Box::new(fun_call_expr.clone())),
+                }));
               }
             }
           }

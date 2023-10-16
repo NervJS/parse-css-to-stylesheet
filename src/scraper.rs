@@ -1,15 +1,18 @@
 // inpired by https://github.com/causal-agent/scraper
 
 use core::fmt;
-use std::{cell::OnceCell, collections::HashMap, ops::Deref, slice::Iter as SliceIter, collections::hash_map::Iter as HashMapIter};
+use std::{
+  cell::OnceCell, collections::hash_map::Iter as HashMapIter, collections::HashMap, ops::Deref,
+  slice::Iter as SliceIter,
+};
 
-use html5ever::{QualName, tendril::StrTendril, LocalName, Attribute};
+use html5ever::{tendril::StrTendril, Attribute, LocalName, QualName};
 use selectors::attr::CaseSensitivity;
 
 use crate::visitor::SpanKey;
 
 pub struct Classes<'a> {
-  inner: SliceIter<'a, LocalName>
+  inner: SliceIter<'a, LocalName>,
 }
 
 impl<'a> Iterator for Classes<'a> {
@@ -23,7 +26,7 @@ pub type AttributesIter<'a> = HashMapIter<'a, QualName, StrTendril>;
 
 #[derive(Debug, Clone)]
 pub struct Attrs<'a> {
-  inner: AttributesIter<'a>
+  inner: AttributesIter<'a>,
 }
 
 impl<'a> Iterator for Attrs<'a> {
@@ -41,7 +44,7 @@ pub struct Element {
   pub attrs: Attributes,
   pub span: SpanKey,
   id: OnceCell<Option<StrTendril>>,
-  classes: OnceCell<Vec<LocalName>>
+  classes: OnceCell<Vec<LocalName>>,
 }
 
 impl Element {
@@ -55,7 +58,7 @@ impl Element {
       span,
       attrs,
       id: OnceCell::new(),
-      classes: OnceCell::new()
+      classes: OnceCell::new(),
     }
   }
 
@@ -64,22 +67,28 @@ impl Element {
   }
 
   pub fn id(&self) -> Option<&str> {
-    self.id.get_or_init(|| {
-      self.attrs
-        .iter()
-        .find(|(name,_ )| name.local.as_ref() == "id")
-        .map(|(_, value)| value.clone())
-    }).as_deref()
+    self
+      .id
+      .get_or_init(|| {
+        self
+          .attrs
+          .iter()
+          .find(|(name, _)| name.local.as_ref() == "id")
+          .map(|(_, value)| value.clone())
+      })
+      .as_deref()
   }
 
   pub fn has_class(&self, class: &str, case_sensitive: CaseSensitivity) -> bool {
-    self.classes()
+    self
+      .classes()
       .any(|class_name| case_sensitive.eq(class.as_bytes(), class_name.as_bytes()))
   }
 
   pub fn classes(&self) -> Classes {
     let classes = self.classes.get_or_init(|| {
-      let mut classes: Vec<LocalName> = self.attrs
+      let mut classes: Vec<LocalName> = self
+        .attrs
         .iter()
         .filter(|(name, _)| name.local.as_ref() == "className")
         .flat_map(|(_, value)| value.split_whitespace().map(LocalName::from))
@@ -89,11 +98,15 @@ impl Element {
       classes
     });
 
-    Classes { inner: classes.iter() }
+    Classes {
+      inner: classes.iter(),
+    }
   }
 
   pub fn attrs(&self) -> Attrs {
-    Attrs { inner: self.attrs.iter() }
+    Attrs {
+      inner: self.attrs.iter(),
+    }
   }
 }
 

@@ -2,19 +2,20 @@ use std::collections::HashMap;
 
 use selectors::attr::CaseSensitivity;
 use swc_common::{
+  comments::SingleThreadedComments,
   errors::{ColorConfig, Handler},
   sync::Lrc,
-  SourceMap, Mark, comments::SingleThreadedComments, Globals, GLOBALS,
+  Globals, Mark, SourceMap, GLOBALS,
 };
 use swc_ecma_ast::{EsVersion, Program};
 use swc_ecma_parser::{lexer::Lexer, Parser, StringInput, Syntax, TsConfig};
-use swc_ecma_visit::{VisitWith, FoldWith, VisitAllWith};
 use swc_ecma_transforms_base::{fixer::fixer, hygiene::hygiene, resolver};
+use swc_ecma_visit::{FoldWith, VisitAllWith, VisitWith};
 use swc_ecmascript::transforms::typescript::strip;
 
 use crate::{
   scraper::Element,
-  visitor::{AstVisitor, JSXRecord, CollectVisitor},
+  visitor::{AstVisitor, CollectVisitor, JSXRecord},
 };
 
 pub struct JSXDocument {
@@ -53,10 +54,10 @@ impl JSXDocument {
       e.into_diagnostic(&handler).emit();
     }
     let program = parser
-        .parse_program()
-        .map_err(|e| e.into_diagnostic(&handler).emit())
-        .expect("解析 JSX 失败");
-    
+      .parse_program()
+      .map_err(|e| e.into_diagnostic(&handler).emit())
+      .expect("解析 JSX 失败");
+
     let globals = Globals::default();
     GLOBALS.set(&globals, || {
       let unresolved_mark = Mark::new();

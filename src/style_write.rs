@@ -31,7 +31,11 @@ impl<'i> StyleWrite<'i> {
   }
 
   pub fn write(&mut self) {
-    let mut style_visitor = AstMutVisitor::new(self.jsx_record.clone(), self.style_record.clone(), self.all_style.clone());
+    let mut style_visitor = AstMutVisitor::new(
+      self.jsx_record.clone(),
+      self.style_record.clone(),
+      self.all_style.clone(),
+    );
     self.module.borrow_mut().visit_mut_with(&mut style_visitor);
   }
 }

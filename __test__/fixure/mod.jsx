@@ -30,7 +30,7 @@ export default class Mod extends React.Component {
   render () {
     return (
       <div className='mod' style={{ width: '500px', height: 800 }}>
-        <div className='cnt_row' style>
+        <div className={classnames('cnt_row')} style>
           <>
             <img
               className='icon'

@@ -1,6 +1,6 @@
 use std::{
   cell::RefCell,
-  collections::HashMap,
+  collections::{HashMap, VecDeque},
   hash::{Hash, Hasher},
   rc::Rc,
 };
@@ -12,7 +12,7 @@ use swc_ecma_ast::{
   Expr,
    Ident, JSXAttr, JSXAttrName, JSXAttrOrSpread, JSXAttrValue, JSXElement,
    JSXElementName, JSXExpr, KeyValueProp, Lit, Prop, PropName,
-  PropOrSpread, Str, JSXFragment, ImportDecl, ImportSpecifier,
+  PropOrSpread, Str, JSXFragment, ImportDecl, ImportSpecifier, CallExpr, Callee, Null, ExprOrSpread, JSXExprContainer,
 };
 use swc_ecma_visit::{
   noop_visit_mut_type, noop_visit_type, VisitMut, VisitMutWith, VisitAll, Visit, VisitAllWith,
@@ -200,6 +200,30 @@ impl<'a> VisitMut for AstMutVisitor<'a> {
       let attrs = &mut n.opening.attrs;
       let mut has_style = false;
       let mut has_empty_style = false;
+      let mut has_dynamic_style = false;
+      let mut class_attr_value = None;
+      let mut style_attr_value = None;
+      let has_dynamic_class = attrs.iter()
+        .any(|attr| {
+          if let JSXAttrOrSpread::JSXAttr(attr) = attr {
+            if let JSXAttrName::Ident(ident) = &attr.name {
+              if ident.sym.to_string() == "className" {
+                if let Some(value) = &attr.value {
+                  if let JSXAttrValue::JSXExprContainer(expr_container) = value {
+                    match &expr_container.expr {
+                      JSXExpr::JSXEmptyExpr(_) => {},
+                      JSXExpr::Expr(expr) => {
+                        class_attr_value = Some((**expr).clone());
+                      },
+                    };
+                    return true;
+                  }
+                }
+              }
+            }
+          }
+          false
+        });
       for attr in attrs {
         if let JSXAttrOrSpread::JSXAttr(attr) = attr {
           if let JSXAttrName::Ident(ident) = &attr.name {
@@ -212,46 +236,48 @@ impl<'a> VisitMut for AstMutVisitor<'a> {
                     JSXAttrValue::Lit(lit) => {
                       match lit {
                         Lit::Str(str) => {
-                          // 将 style 属性的值转换为对象形式
-                          let mut properties = HashMap::new();
-                          let style = str.value.to_string();
-                          let style = style
-                            .split(";")
-                            .map(|s| s.to_owned())
-                            .collect::<Vec<String>>();
-                          if let Some(style_declaration) = style_record.get(&element.span) {
-                            for declaration in style_declaration.declaration.declarations.iter() {
-                              let property_id = declaration
-                                .property_id()
-                                .to_css_string(PrinterOptions::default())
-                                .unwrap();
-                              let property_value = declaration
-                                .value_to_css_string(PrinterOptions::default())
-                                .unwrap();
-                              properties.insert(property_id, property_value);
-                            }
-                          }
-                          for property in style.iter() {
-                            let property = property
-                              .split(":")
+                          if !has_dynamic_class {
+                            // 将 style 属性的值转换为对象形式
+                            let mut properties = HashMap::new();
+                            let style = str.value.to_string();
+                            let style = style
+                              .split(";")
                               .map(|s| s.to_owned())
                               .collect::<Vec<String>>();
-                            if property.len() == 2 {
-                              properties.insert(property[0].clone(), property[1].clone());
+                            if let Some(style_declaration) = style_record.get(&element.span) {
+                              for declaration in style_declaration.declaration.declarations.iter() {
+                                let property_id = declaration
+                                  .property_id()
+                                  .to_css_string(PrinterOptions::default())
+                                  .unwrap();
+                                let property_value = declaration
+                                  .value_to_css_string(PrinterOptions::default())
+                                  .unwrap();
+                                properties.insert(property_id, property_value);
+                              }
                             }
+                            for property in style.iter() {
+                              let property = property
+                                .split(":")
+                                .map(|s| s.to_owned())
+                                .collect::<Vec<String>>();
+                              if property.len() == 2 {
+                                properties.insert(property[0].clone(), property[1].clone());
+                              }
+                            }
+                            let mut style = String::new();
+                            for (property_id, property_value) in properties.iter() {
+                              style.push_str(property_id.as_str());
+                              style.push_str(":");
+                              style.push_str(property_value.as_str());
+                              style.push_str(";");
+                            }
+                            attr.value = Some(JSXAttrValue::Lit(Lit::Str(Str {
+                              span: DUMMY_SP,
+                              value: style.into(),
+                              raw: None,
+                            })));
                           }
-                          let mut style = String::new();
-                          for (property_id, property_value) in properties.iter() {
-                            style.push_str(property_id.as_str());
-                            style.push_str(":");
-                            style.push_str(property_value.as_str());
-                            style.push_str(";");
-                          }
-                          attr.value = Some(JSXAttrValue::Lit(Lit::Str(Str {
-                            span: DUMMY_SP,
-                            value: style.into(),
-                            raw: None,
-                          })));
                         }
                         _ => {}
                       }
@@ -262,65 +288,78 @@ impl<'a> VisitMut for AstMutVisitor<'a> {
                           has_empty_style = true;
                           has_style = false;
                         }
-                        JSXExpr::Expr(expr) => match &mut **expr {
-                          Expr::Object(lit) => {
-                            let mut properties = Vec::new();
-                            if let Some(style_declaration) = style_record.get(&element.span) {
-                              for declaration in style_declaration.declaration.declarations.iter() {
-                                let mut has_property = false;
-                                for prop in lit.props.iter_mut() {
-                                  match prop {
-                                    PropOrSpread::Prop(prop) => match &**prop {
-                                      Prop::KeyValue(key_value_prop) => match &key_value_prop.key {
-                                        PropName::Ident(ident) => {
-                                          let property_id = ident.sym.to_string();
-                                          if property_id
-                                            == declaration
-                                              .property_id()
-                                              .to_css_string(PrinterOptions::default())
-                                              .unwrap()
-                                          {
-                                            has_property = true;
-                                            break;
-                                          }
-                                        }
-                                        _ => {}
-                                      },
-                                      _ => {}
-                                    },
-                                    PropOrSpread::Spread(_) => {}
+                        JSXExpr::Expr(expr) => {
+                          style_attr_value = Some((**expr).clone());
+                          match &mut **expr {
+                            Expr::Object(lit) => {
+                              if !has_dynamic_class {
+                                let mut properties = Vec::new();
+                                if let Some(style_declaration) = style_record.get(&element.span) {
+                                  for declaration in style_declaration.declaration.declarations.iter() {
+                                    let mut has_property = false;
+                                    for prop in lit.props.iter_mut() {
+                                      match prop {
+                                        PropOrSpread::Prop(prop) => match &**prop {
+                                          Prop::KeyValue(key_value_prop) => match &key_value_prop.key {
+                                            PropName::Ident(ident) => {
+                                              let property_id = ident.sym.to_string();
+                                              if property_id
+                                                == declaration
+                                                  .property_id()
+                                                  .to_css_string(PrinterOptions::default())
+                                                  .unwrap()
+                                              {
+                                                has_property = true;
+                                                break;
+                                              }
+                                            }
+                                            _ => {}
+                                          },
+                                          _ => {}
+                                        },
+                                        PropOrSpread::Spread(_) => {}
+                                      }
+                                    }
+                                    if !has_property {
+                                      properties.push(declaration.clone());
+                                    }
                                   }
                                 }
-                                if !has_property {
-                                  properties.push(declaration.clone());
+                                let mut deque = VecDeque::from(lit.props.clone());
+                                for property in properties.iter() {
+                                  deque.push_front(PropOrSpread::Prop(Box::new(Prop::KeyValue(
+                                    KeyValueProp {
+                                      key: PropName::Ident(Ident::new(
+                                        property
+                                          .property_id()
+                                          .to_css_string(PrinterOptions::default())
+                                          .unwrap()
+                                          .into(),
+                                        DUMMY_SP,
+                                      )),
+                                      value: property
+                                        .value_to_css_string(PrinterOptions::default())
+                                        .unwrap()
+                                        .into(),
+                                    },
+                                  ))));
                                 }
+                                lit.props = deque.into();
                               }
                             }
-                            for property in properties.iter() {
-                              lit.props.push(PropOrSpread::Prop(Box::new(Prop::KeyValue(
-                                KeyValueProp {
-                                  key: PropName::Ident(Ident::new(
-                                    property
-                                      .property_id()
-                                      .to_css_string(PrinterOptions::default())
-                                      .unwrap()
-                                      .into(),
-                                    DUMMY_SP,
-                                  )),
-                                  value: property
-                                    .value_to_css_string(PrinterOptions::default())
-                                    .unwrap()
-                                    .into(),
-                                },
-                              ))));
+                            _ => {
+                              has_dynamic_style = true;
                             }
                           }
-                          _ => {}
                         },
                       }
                     }
-                    JSXAttrValue::JSXElement(_) => {}
-                    JSXAttrValue::JSXFragment(_) => {}
+                    JSXAttrValue::JSXElement(_) => {
+                      has_dynamic_style = true;
+                    }
+                    JSXAttrValue::JSXFragment(_) => {
+                      has_dynamic_style = true;
+                    }
                   }
                 }
                 None => {
@@ -333,51 +372,87 @@ impl<'a> VisitMut for AstMutVisitor<'a> {
         }
       }
 
-      if !has_style {
-        if let Some(style_declaration) = style_record.get(&element.span) {
-          let mut properties = Vec::new();
-          for declaration in style_declaration.declaration.declarations.iter() {
-            properties.push(declaration.clone());
-          }
+      if !has_dynamic_class && !has_dynamic_style {
+        if !has_style {
+          if let Some(style_declaration) = style_record.get(&element.span) {
+            let mut properties = Vec::new();
+            for declaration in style_declaration.declaration.declarations.iter() {
+              properties.push(declaration.clone());
+            }
 
-          let mut style = String::new();
-          for property in properties.iter() {
-            let property_id = property
-              .property_id()
-              .to_css_string(PrinterOptions::default())
-              .unwrap();
-            let property_value = property
-              .value_to_css_string(PrinterOptions::default())
-              .unwrap();
-            style.push_str(property_id.as_str());
-            style.push_str(":");
-            style.push_str(property_value.as_str());
-            style.push_str(";");
-          }
-          if has_empty_style {
-            for attr in &mut n.opening.attrs {
-              if let JSXAttrOrSpread::JSXAttr(attr) = attr {
-                if let JSXAttrName::Ident(ident) = &attr.name {
-                  if ident.sym.to_string() == "style" {
-                    attr.value = Some(JSXAttrValue::Lit(Lit::Str(Str {
-                      span: DUMMY_SP,
-                      value: style.clone().into(),
-                      raw: None,
-                    })));
+            let mut style = String::new();
+            for property in properties.iter() {
+              let property_id = property
+                .property_id()
+                .to_css_string(PrinterOptions::default())
+                .unwrap();
+              let property_value = property
+                .value_to_css_string(PrinterOptions::default())
+                .unwrap();
+              style.push_str(property_id.as_str());
+              style.push_str(":");
+              style.push_str(property_value.as_str());
+              style.push_str(";");
+            }
+            if has_empty_style {
+              for attr in &mut n.opening.attrs {
+                if let JSXAttrOrSpread::JSXAttr(attr) = attr {
+                  if let JSXAttrName::Ident(ident) = &attr.name {
+                    if ident.sym.to_string() == "style" {
+                      attr.value = Some(JSXAttrValue::Lit(Lit::Str(Str {
+                        span: DUMMY_SP,
+                        value: style.clone().into(),
+                        raw: None,
+                      })));
+                    }
                   }
                 }
               }
-            }
-          } else {
-            n.opening.attrs.push(JSXAttrOrSpread::JSXAttr(JSXAttr {
-              span: DUMMY_SP,
-              name: JSXAttrName::Ident(Ident::new("style".into(), DUMMY_SP)),
-              value: Some(JSXAttrValue::Lit(Lit::Str(Str {
+            } else {
+              n.opening.attrs.push(JSXAttrOrSpread::JSXAttr(JSXAttr {
                 span: DUMMY_SP,
-                value: style.into(),
-                raw: None,
-              }))),
-            }));
+                name: JSXAttrName::Ident(Ident::new("style".into(), DUMMY_SP)),
+                value: Some(JSXAttrValue::Lit(Lit::Str(Str {
+                  span: DUMMY_SP,
+                  value: style.into(),
+                  raw: None,
+                }))),
+              }));
+            }
+          }
+        }
+      } else {
+        let fun_call_expr = Expr::Call(
+          CallExpr {
+            span: DUMMY_SP,
+            callee: Callee::Expr(Box::new(Expr::Ident(Ident::new("__calc_style__".into(), DUMMY_SP)))),
+            args: vec![
+              match class_attr_value {
+                Some(value) => ExprOrSpread::from(Box::new(value)),
+                None => ExprOrSpread::from(Box::new(Expr::Lit(Lit::Null(Null { span: DUMMY_SP })))),
+              },
+              match style_attr_value {
+                Some(value) => ExprOrSpread::from(Box::new(value)),
+                None => ExprOrSpread::from(Box::new(Expr::Lit(Lit::Null(Null { span: DUMMY_SP })))),
+              },
+            ],
+            type_args: None,
+          }
+        );
+        for attr in &mut n.opening.attrs {
+          if let JSXAttrOrSpread::JSXAttr(attr) = attr {
+            if let JSXAttrName::Ident(ident) = &attr.name {
+              if ident.sym.to_string() == "style" {
+                attr.value = Some(
+                  JSXAttrValue::JSXExprContainer(
+                    JSXExprContainer {
+                      span: DUMMY_SP,
+                      expr: JSXExpr::Expr(Box::new(fun_call_expr.clone())),
+                    }
+                  )
+                );
+              }
+            }
           }
         }
       }

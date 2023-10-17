@@ -2,14 +2,36 @@ use std::{cell::RefCell, collections::HashMap, convert::Infallible, hash::Hash, 
 
 use lightningcss::{
   declaration::DeclarationBlock,
-  properties::Property,
+  properties::{Property, PropertyId},
   rules::CssRule,
-  stylesheet::{ParserOptions, StyleSheet},
+  stylesheet::{ParserOptions, StyleSheet, PrinterOptions},
   visit_types,
-  visitor::{Visit, VisitTypes, Visitor},
+  visitor::{Visit, VisitTypes, Visitor}, targets::{Targets, Features}, traits::Op,
 };
 
 use crate::{document::JSXDocument, visitor::SpanKey};
+
+struct TextDecoration {
+  pub index: Option<usize>,
+  pub value: Option<String>,
+}
+
+impl TextDecoration {
+  pub fn new() -> Self {
+    TextDecoration {
+      index: None,
+      value: None,
+    }
+  }
+
+  pub fn set_index(&mut self, index: usize) {
+    self.index = Some(index);
+  }
+
+  pub fn set_value(&mut self, value: String) {
+    self.value = Some(value);
+  } 
+}
 
 pub struct StyleData<'i> {
   pub style_record: Rc<RefCell<HashMap<SpanKey, StyleDeclaration<'i>>>>,
@@ -23,7 +45,6 @@ pub struct StyleDeclaration<'i> {
 }
 
 pub struct StyleVisitor<'i> {
-  pub style_record: Rc<RefCell<HashMap<SpanKey, Vec<StyleDeclaration<'i>>>>>,
   pub all_style: Rc<RefCell<HashMap<String, Vec<StyleDeclaration<'i>>>>>,
   pub document: &'i JSXDocument,
 }
@@ -31,11 +52,9 @@ pub struct StyleVisitor<'i> {
 impl<'i> StyleVisitor<'i> {
   pub fn new(
     document: &'i JSXDocument,
-    style_record: Rc<RefCell<HashMap<SpanKey, Vec<StyleDeclaration<'i>>>>>,
     all_style: Rc<RefCell<HashMap<String, Vec<StyleDeclaration<'i>>>>>,
   ) -> Self {
     StyleVisitor {
-      style_record,
       all_style,
       document,
     }
@@ -52,25 +71,13 @@ impl<'i> Visitor<'i> for StyleVisitor<'i> {
         let selectors = selectors_str.split(",").collect::<Vec<&str>>();
         for index in 0..selectors.len() {
           let selector = selectors[index].trim().replace(".", "");
-          {
-            let mut all_style = self.all_style.borrow_mut();
-            let declarations: &mut Vec<StyleDeclaration<'_>> =
-              all_style.entry(selector.clone()).or_insert(vec![]);
-            declarations.push(StyleDeclaration {
-              specificity: style.selectors.0.get(index).unwrap().specificity(),
-              declaration: style.declarations.clone(),
-            });
-          }
-          let elements = self.document.select(selector.as_str());
-          for element in elements {
-            let mut style_record = self.style_record.borrow_mut();
-            let declarations: &mut Vec<StyleDeclaration<'_>> =
-              style_record.entry(element.span).or_insert(vec![]);
-            declarations.push(StyleDeclaration {
-              specificity: style.selectors.0.get(index).unwrap().specificity(),
-              declaration: style.declarations.clone(),
-            });
-          }
+          let mut all_style = self.all_style.borrow_mut();
+          let declarations: &mut Vec<StyleDeclaration<'_>> =
+            all_style.entry(selector.clone()).or_insert(vec![]);
+          declarations.push(StyleDeclaration {
+            specificity: style.selectors.0.get(index).unwrap().specificity(),
+            declaration: style.declarations.clone(),
+          });
         }
       }
       _ => {}
@@ -80,7 +87,6 @@ impl<'i> Visitor<'i> for StyleVisitor<'i> {
 }
 
 pub struct StyleParser<'i> {
-  pub style_record: Rc<RefCell<HashMap<SpanKey, Vec<StyleDeclaration<'i>>>>>,
   pub all_style: Rc<RefCell<HashMap<String, Vec<StyleDeclaration<'i>>>>>,
   pub document: &'i JSXDocument,
 }
@@ -88,7 +94,6 @@ pub struct StyleParser<'i> {
 impl<'i> StyleParser<'i> {
   pub fn new(document: &'i JSXDocument) -> Self {
     StyleParser {
-      style_record: Rc::new(RefCell::new(HashMap::new())),
       all_style: Rc::new(RefCell::new(HashMap::new())),
       document,
     }
@@ -98,7 +103,6 @@ impl<'i> StyleParser<'i> {
     let mut stylesheet = StyleSheet::parse(css, ParserOptions::default()).expect("解析样式失败");
     let mut style_visitor = StyleVisitor::new(
       self.document,
-      Rc::clone(&self.style_record),
       Rc::clone(&self.all_style),
     );
     stylesheet.visit(&mut style_visitor).unwrap();
@@ -154,12 +158,55 @@ impl<'i> StyleParser<'i> {
     final_style_record
   }
 
+  fn parse_style_value(&self, style_value: &mut StyleDeclaration<'i>) {
+    let properties = &mut style_value.declaration.declarations;
+    let mut text_decoration = TextDecoration::new();
+    let mut color = None;
+    for (index, property) in properties.iter_mut().enumerate() {
+      if property.property_id() == PropertyId::from("text-decoration") {
+        text_decoration.set_index(index);
+        text_decoration.set_value(property.value_to_css_string(PrinterOptions {
+          minify: false,
+          targets: Targets {
+            include: Features::HexAlphaColors,
+            ..Targets::default()
+          },
+          ..PrinterOptions::default()
+        }).unwrap());
+      } else if property.property_id() == PropertyId::from("color") {
+        color = Some(property.value_to_css_string(PrinterOptions {
+          minify: false,
+          targets: Targets {
+            include: Features::HexAlphaColors,
+            ..Targets::default()
+          },
+          ..PrinterOptions::default()
+        })
+        .unwrap());
+      }
+    }
+
+    if text_decoration.index.is_some() {
+      
+    }
+  }
+
   pub fn calc(&self) -> StyleData<'i> {
     // 遍历 style_record，计算每个节点的最终样式
-    let mut style_record = self.style_record.borrow_mut();
     let mut all_style = self.all_style.borrow_mut();
+    let mut style_record = HashMap::new();
+    let mut final_all_style = self.calc_style_record(&mut all_style);
+
+    for (selector, style_value) in final_all_style.iter_mut() {
+      self.parse_style_value(style_value);
+      let elements = self.document.select(selector.as_str());
+      for element in elements {
+        let declarations: &mut Vec<StyleDeclaration<'_>> =
+          style_record.entry(element.span).or_insert(vec![]);
+        declarations.push(style_value.clone());
+      }
+    }
     let final_style_record = self.calc_style_record(&mut style_record);
-    let final_all_style = self.calc_style_record(&mut all_style);
     StyleData {
       style_record: Rc::new(RefCell::new(final_style_record)),
       all_style: Rc::new(RefCell::new(final_all_style)),

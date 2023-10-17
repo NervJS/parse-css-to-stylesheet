@@ -9,10 +9,10 @@ use html5ever::{tendril::StrTendril, Attribute};
 use lightningcss::{stylesheet::PrinterOptions, traits::ToCss};
 use swc_common::{Span, DUMMY_SP};
 use swc_ecma_ast::{
-  AssignExpr, BindingIdent, CallExpr, Callee, Decl, Expr, ExprOrSpread, ExprStmt, Ident,
+  BindingIdent, CallExpr, Callee, Decl, Expr, ExprOrSpread, Ident,
   ImportDecl, ImportSpecifier, JSXAttr, JSXAttrName, JSXAttrOrSpread, JSXAttrValue, JSXElement,
   JSXElementName, JSXExpr, JSXExprContainer, JSXFragment, KeyValueProp, Lit, Module, ModuleDecl,
-  ModuleItem, Null, ObjectLit, Pat, PatOrExpr, Prop, PropName, PropOrSpread, Stmt, Str, VarDecl,
+  ModuleItem, Null, ObjectLit, Pat, Prop, PropName, PropOrSpread, Stmt, Str, VarDecl,
   VarDeclKind, VarDeclarator,
 };
 use swc_ecma_visit::{
@@ -173,27 +173,21 @@ impl<'a> VisitAll for AstVisitor<'a> {
   }
 }
 
-pub struct AstMutVisitor<'a> {
-  pub jsx_record: Rc<RefCell<JSXRecord>>,
-  pub style_record: Rc<RefCell<HashMap<SpanKey, StyleDeclaration<'a>>>>,
+pub struct ModuleMutVisitor<'a> {
+  pub insert_module: Rc<RefCell<Module>>,
   pub all_style: Rc<RefCell<HashMap<String, StyleDeclaration<'a>>>>,
 }
 
-impl<'a> AstMutVisitor<'a> {
+impl<'a> ModuleMutVisitor<'a> {
   pub fn new(
-    jsx_record: Rc<RefCell<JSXRecord>>,
-    style_record: Rc<RefCell<HashMap<SpanKey, StyleDeclaration<'a>>>>,
     all_style: Rc<RefCell<HashMap<String, StyleDeclaration<'a>>>>,
+    insert_module: Rc<RefCell<Module>>,
   ) -> Self {
-    AstMutVisitor {
-      jsx_record,
-      style_record,
-      all_style,
-    }
+    ModuleMutVisitor { all_style, insert_module }
   }
 }
 
-impl<'a> VisitMut for AstMutVisitor<'a> {
+impl<'a> VisitMut for ModuleMutVisitor<'a> {
   noop_visit_mut_type!();
 
   fn visit_mut_module(&mut self, module: &mut Module) {
@@ -251,18 +245,48 @@ impl<'a> VisitMut for AstMutVisitor<'a> {
     })));
 
     // 将 inner_style_stmt 插入到 module 的最后一条 import 语句之后
-    let mut last_import_index: i32 = -1;
+    let mut last_import_index = 0;
     for (index, stmt) in module.body.iter().enumerate() {
       if let ModuleItem::ModuleDecl(ModuleDecl::Import(_)) = stmt {
-        last_import_index = index as i32;
+        last_import_index = index;
       }
     }
+    if last_import_index != 0 {
+      last_import_index += 1;
+    }
     module.body.insert(
-      (last_import_index + 1) as usize,
+      last_import_index,
       ModuleItem::Stmt(inner_style_stmt),
     );
+    for item in self.insert_module.borrow().body.iter() {
+      if last_import_index != 0 {
+        last_import_index += 1;
+      }
+      module.body.insert(last_import_index, item.clone());
+    }
   }
+}
 
+pub struct JSXMutVisitor<'a> {
+  pub jsx_record: Rc<RefCell<JSXRecord>>,
+  pub style_record: Rc<RefCell<HashMap<SpanKey, StyleDeclaration<'a>>>>,
+}
+
+impl<'a> JSXMutVisitor<'a> {
+  pub fn new(
+    jsx_record: Rc<RefCell<JSXRecord>>,
+    style_record: Rc<RefCell<HashMap<SpanKey, StyleDeclaration<'a>>>>,
+  ) -> Self {
+    JSXMutVisitor {
+      jsx_record,
+      style_record,
+    }
+  }
+}
+
+impl<'a> VisitMut for JSXMutVisitor<'a> {
+  noop_visit_mut_type!();
+  
   fn visit_mut_jsx_element(&mut self, n: &mut JSXElement) {
     let span_key = SpanKey(n.span);
     if let Some(element) = self.jsx_record.borrow().get(&span_key) {

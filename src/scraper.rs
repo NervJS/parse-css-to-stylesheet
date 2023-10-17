@@ -66,19 +66,6 @@ impl Element {
     self.name.local.deref()
   }
 
-  pub fn id(&self) -> Option<&str> {
-    self
-      .id
-      .get_or_init(|| {
-        self
-          .attrs
-          .iter()
-          .find(|(name, _)| name.local.as_ref() == "id")
-          .map(|(_, value)| value.clone())
-      })
-      .as_deref()
-  }
-
   pub fn has_class(&self, class: &str, case_sensitive: CaseSensitivity) -> bool {
     self
       .classes()

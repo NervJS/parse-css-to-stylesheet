@@ -297,7 +297,7 @@ impl<'a> JSXMutVisitor<'a> {
 
   fn properties_to_object_lit_props(
     &self,
-    properties: &HashMap<String, String>,
+    properties: &Vec<(&String, &String)>
   ) -> Vec<PropOrSpread> {
     properties
       .iter()
@@ -393,11 +393,13 @@ impl<'a> VisitMut for JSXMutVisitor<'a> {
                                 properties.insert(property[0].clone(), property[1].clone());
                               }
                             }
+                            let mut properties_entries: Vec<_> = properties.iter().collect();
+                            properties_entries.sort_by(|a, b| a.0.cmp(&b.0));
                             attr.value = Some(JSXAttrValue::JSXExprContainer(JSXExprContainer {
                               span: DUMMY_SP,
                               expr: JSXExpr::Expr(Box::new(Expr::Object(ObjectLit {
                                 span: DUMMY_SP,
-                                props: self.properties_to_object_lit_props(&properties).into(),
+                                props: self.properties_to_object_lit_props(&properties_entries).into(),
                               }))),
                             }));
                           }
@@ -537,6 +539,8 @@ impl<'a> VisitMut for JSXMutVisitor<'a> {
                 )
               })
               .collect::<HashMap<_, _>>();
+            let mut properties_entries: Vec<_> = properties.iter().collect();
+            properties_entries.sort_by(|a, b| a.0.cmp(&b.0));
             if has_empty_style {
               for attr in &mut n.opening.attrs {
                 if let JSXAttrOrSpread::JSXAttr(attr) = attr {
@@ -546,7 +550,7 @@ impl<'a> VisitMut for JSXMutVisitor<'a> {
                         span: DUMMY_SP,
                         expr: JSXExpr::Expr(Box::new(Expr::Object(ObjectLit {
                           span: DUMMY_SP,
-                          props: self.properties_to_object_lit_props(&properties).into(),
+                          props: self.properties_to_object_lit_props(&properties_entries).into(),
                         }))),
                       }));
                     }
@@ -561,7 +565,7 @@ impl<'a> VisitMut for JSXMutVisitor<'a> {
                   span: DUMMY_SP,
                   expr: JSXExpr::Expr(Box::new(Expr::Object(ObjectLit {
                     span: DUMMY_SP,
-                    props: self.properties_to_object_lit_props(&properties).into(),
+                    props: self.properties_to_object_lit_props(&properties_entries).into(),
                   }))),
                 })),
               }));

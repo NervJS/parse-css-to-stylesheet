@@ -1,3 +1,13 @@
+## [0.0.9](https://github.com/NervJS/parse-css-to-stylesheet/compare/v0.0.8...v0.0.9) (2023-10-17)
+
+
+### Bug Fixes
+
+* 避免将 rgab 色值转为 hexalpha ([ccbe771](https://github.com/NervJS/parse-css-to-stylesheet/commit/ccbe771da730911712df300cddf4479437e5eb80))
+* 将样式名转为 camelCase ([cc39775](https://github.com/NervJS/parse-css-to-stylesheet/commit/cc3977548b3a0fb898cc499b6a2d493d19d1a491))
+
+
+
 ## [0.0.8](https://github.com/NervJS/parse-css-to-stylesheet/compare/v0.0.7...v0.0.8) (2023-10-17)
 
 

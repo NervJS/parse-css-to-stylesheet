@@ -6,13 +6,17 @@ use std::{
 };
 
 use html5ever::{tendril::StrTendril, Attribute};
-use lightningcss::{stylesheet::PrinterOptions, traits::ToCss, targets::{Targets, Features}};
+use lightningcss::{
+  stylesheet::PrinterOptions,
+  targets::{Features, Targets},
+  traits::ToCss,
+};
 use swc_common::{Span, DUMMY_SP};
 use swc_ecma_ast::{
   BindingIdent, CallExpr, Callee, Decl, Expr, ExprOrSpread, Ident, ImportDecl, ImportSpecifier,
   JSXAttr, JSXAttrName, JSXAttrOrSpread, JSXAttrValue, JSXElement, JSXElementName, JSXExpr,
   JSXExprContainer, JSXFragment, KeyValueProp, Lit, Module, ModuleDecl, ModuleItem, Null,
-  ObjectLit, Pat, Prop, PropName, PropOrSpread, Stmt, VarDecl, VarDeclKind, VarDeclarator,
+  ObjectLit, Pat, Prop, PropName, PropOrSpread, Stmt, Str, VarDecl, VarDeclKind, VarDeclarator,
 };
 use swc_ecma_visit::{
   noop_visit_mut_type, noop_visit_type, Visit, VisitAll, VisitAllWith, VisitMut, VisitMutWith,
@@ -213,7 +217,7 @@ impl<'a> VisitMut for ModuleMutVisitor<'a> {
             .iter()
             .map(|(key, value)| {
               PropOrSpread::Prop(Box::new(Prop::KeyValue(KeyValueProp {
-                key: PropName::Ident(Ident::new(key.to_string().into(), DUMMY_SP)),
+                key: PropName::Str(Str::from(key.as_str())),
                 value: Box::new(Expr::Object(ObjectLit {
                   span: DUMMY_SP,
                   props: value
@@ -297,7 +301,7 @@ impl<'a> JSXMutVisitor<'a> {
 
   fn properties_to_object_lit_props(
     &self,
-    properties: &Vec<(&String, &String)>
+    properties: &Vec<(&String, &String)>,
   ) -> Vec<PropOrSpread> {
     properties
       .iter()
@@ -399,7 +403,9 @@ impl<'a> VisitMut for JSXMutVisitor<'a> {
                               span: DUMMY_SP,
                               expr: JSXExpr::Expr(Box::new(Expr::Object(ObjectLit {
                                 span: DUMMY_SP,
-                                props: self.properties_to_object_lit_props(&properties_entries).into(),
+                                props: self
+                                  .properties_to_object_lit_props(&properties_entries)
+                                  .into(),
                               }))),
                             }));
                           }
@@ -550,7 +556,9 @@ impl<'a> VisitMut for JSXMutVisitor<'a> {
                         span: DUMMY_SP,
                         expr: JSXExpr::Expr(Box::new(Expr::Object(ObjectLit {
                           span: DUMMY_SP,
-                          props: self.properties_to_object_lit_props(&properties_entries).into(),
+                          props: self
+                            .properties_to_object_lit_props(&properties_entries)
+                            .into(),
                         }))),
                       }));
                     }
@@ -565,7 +573,9 @@ impl<'a> VisitMut for JSXMutVisitor<'a> {
                   span: DUMMY_SP,
                   expr: JSXExpr::Expr(Box::new(Expr::Object(ObjectLit {
                     span: DUMMY_SP,
-                    props: self.properties_to_object_lit_props(&properties_entries).into(),
+                    props: self
+                      .properties_to_object_lit_props(&properties_entries)
+                      .into(),
                   }))),
                 })),
               }));

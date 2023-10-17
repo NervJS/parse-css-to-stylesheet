@@ -13,10 +13,11 @@ use lightningcss::{
 };
 use swc_common::{Span, DUMMY_SP};
 use swc_ecma_ast::{
-  BindingIdent, CallExpr, Callee, Decl, Expr, ExprOrSpread, Ident, ImportDecl, ImportSpecifier,
-  JSXAttr, JSXAttrName, JSXAttrOrSpread, JSXAttrValue, JSXElement, JSXElementName, JSXExpr,
-  JSXExprContainer, JSXFragment, KeyValueProp, Lit, Module, ModuleDecl, ModuleItem, Null,
-  ObjectLit, Pat, Prop, PropName, PropOrSpread, Stmt, Str, VarDecl, VarDeclKind, VarDeclarator,
+  BindingIdent, CallExpr, Callee, Decl, Expr, ExprOrSpread, Ident, ImportDecl,
+  ImportNamedSpecifier, ImportSpecifier, JSXAttr, JSXAttrName, JSXAttrOrSpread, JSXAttrValue,
+  JSXElement, JSXElementName, JSXExpr, JSXExprContainer, JSXFragment, KeyValueProp, Lit, Module,
+  ModuleDecl, ModuleExportName, ModuleItem, Null, ObjectLit, Pat, Prop, PropName, PropOrSpread,
+  Stmt, Str, VarDecl, VarDeclKind, VarDeclarator,
 };
 use swc_ecma_visit::{
   noop_visit_mut_type, noop_visit_type, Visit, VisitAll, VisitAllWith, VisitMut, VisitMutWith,
@@ -177,19 +178,12 @@ impl<'a> VisitAll for AstVisitor<'a> {
 }
 
 pub struct ModuleMutVisitor<'a> {
-  pub insert_module: Rc<RefCell<Module>>,
   pub all_style: Rc<RefCell<HashMap<String, StyleDeclaration<'a>>>>,
 }
 
 impl<'a> ModuleMutVisitor<'a> {
-  pub fn new(
-    all_style: Rc<RefCell<HashMap<String, StyleDeclaration<'a>>>>,
-    insert_module: Rc<RefCell<Module>>,
-  ) -> Self {
-    ModuleMutVisitor {
-      all_style,
-      insert_module,
-    }
+  pub fn new(all_style: Rc<RefCell<HashMap<String, StyleDeclaration<'a>>>>) -> Self {
+    ModuleMutVisitor { all_style }
   }
 }
 
@@ -271,15 +265,29 @@ impl<'a> VisitMut for ModuleMutVisitor<'a> {
     if last_import_index != 0 {
       last_import_index += 1;
     }
+    // 插入代码 import { calcDynamicStyle } from '@tarojs/runtime'
+    module.body.insert(
+      last_import_index,
+      ModuleItem::ModuleDecl(ModuleDecl::Import(ImportDecl {
+        span: DUMMY_SP,
+        specifiers: vec![ImportSpecifier::Named(ImportNamedSpecifier {
+          span: DUMMY_SP,
+          local: Ident::new("calcDynamicStyle".into(), DUMMY_SP),
+          imported: Some(ModuleExportName::Ident(Ident::new(
+            "calcDynamicStyle".into(),
+            DUMMY_SP,
+          ))),
+          is_type_only: false,
+        })],
+        src: Box::new(Str::from("@tarojs/runtime")),
+        type_only: false,
+        with: None,
+      })),
+    );
+    last_import_index += 1;
     module
       .body
       .insert(last_import_index, ModuleItem::Stmt(inner_style_stmt));
-    for item in self.insert_module.borrow().body.iter() {
-      if last_import_index != 0 {
-        last_import_index += 1;
-      }
-      module.body.insert(last_import_index, item.clone());
-    }
   }
 }
 
@@ -586,10 +594,15 @@ impl<'a> VisitMut for JSXMutVisitor<'a> {
         let fun_call_expr = Expr::Call(CallExpr {
           span: DUMMY_SP,
           callee: Callee::Expr(Box::new(Expr::Ident(Ident::new(
-            "__calc_style__".into(),
+            "calcDynamicStyle".into(),
             DUMMY_SP,
           )))),
           args: vec![
+            ExprOrSpread::from(Box::new(Expr::Ident(Ident {
+              span: DUMMY_SP,
+              sym: "__inner_style__".into(),
+              optional: false,
+            }))),
             match class_attr_value {
               Some(value) => ExprOrSpread::from(Box::new(value)),
               None => ExprOrSpread::from(Box::new(Expr::Lit(Lit::Null(Null { span: DUMMY_SP })))),

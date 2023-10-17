@@ -12,7 +12,7 @@ use swc_ecma_ast::{
   BindingIdent, CallExpr, Callee, Decl, Expr, ExprOrSpread, Ident,
   ImportDecl, ImportSpecifier, JSXAttr, JSXAttrName, JSXAttrOrSpread, JSXAttrValue, JSXElement,
   JSXElementName, JSXExpr, JSXExprContainer, JSXFragment, KeyValueProp, Lit, Module, ModuleDecl,
-  ModuleItem, Null, ObjectLit, Pat, Prop, PropName, PropOrSpread, Stmt, Str, VarDecl,
+  ModuleItem, Null, ObjectLit, Pat, Prop, PropName, PropOrSpread, Stmt, VarDecl,
   VarDeclKind, VarDeclarator,
 };
 use swc_ecma_visit::{
@@ -22,7 +22,7 @@ use swc_ecma_visit::{
 use crate::{
   scraper::Element,
   style_parser::StyleDeclaration,
-  utils::{create_qualname, is_starts_with_uppercase, recursion_jsx_member},
+  utils::{create_qualname, is_starts_with_uppercase, recursion_jsx_member, to_camel_case},
 };
 
 #[derive(Eq, Clone, Copy, Debug)]
@@ -221,11 +221,13 @@ impl<'a> VisitMut for ModuleMutVisitor<'a> {
                     .map(|declaration| {
                       PropOrSpread::Prop(Box::new(Prop::KeyValue(KeyValueProp {
                         key: PropName::Ident(Ident::new(
-                          declaration
-                            .property_id()
-                            .to_css_string(PrinterOptions::default())
-                            .unwrap()
-                            .into(),
+                          to_camel_case(
+                            declaration
+                              .property_id()
+                              .to_css_string(PrinterOptions::default())
+                              .unwrap()
+                              .as_str(),
+                          ).into(),
                           DUMMY_SP,
                         )),
                         value: declaration
@@ -282,6 +284,24 @@ impl<'a> JSXMutVisitor<'a> {
       jsx_record,
       style_record,
     }
+  }
+
+  fn properties_to_object_lit_props(
+    &self,
+    properties: &HashMap<String, String>,
+  ) -> Vec<PropOrSpread> {
+    properties
+      .iter()
+      .map(|(key, value)| {
+        PropOrSpread::Prop(Box::new(Prop::KeyValue(KeyValueProp {
+          key: PropName::Ident(Ident::new(
+            to_camel_case(key.as_str()).into(),
+            DUMMY_SP,
+          )),
+          value: value.to_string().into(),
+        })))
+      })
+      .collect::<Vec<PropOrSpread>>()
   }
 }
 
@@ -360,18 +380,13 @@ impl<'a> VisitMut for JSXMutVisitor<'a> {
                                 properties.insert(property[0].clone(), property[1].clone());
                               }
                             }
-                            let mut style = String::new();
-                            for (property_id, property_value) in properties.iter() {
-                              style.push_str(property_id.as_str());
-                              style.push_str(":");
-                              style.push_str(property_value.as_str());
-                              style.push_str(";");
-                            }
-                            attr.value = Some(JSXAttrValue::Lit(Lit::Str(Str {
+                            attr.value = Some(JSXAttrValue::JSXExprContainer(JSXExprContainer {
                               span: DUMMY_SP,
-                              value: style.into(),
-                              raw: None,
-                            })));
+                              expr: JSXExpr::Expr(Box::new(Expr::Object(ObjectLit {
+                                span: DUMMY_SP,
+                                props: self.properties_to_object_lit_props(&properties).into(),
+                              }))),
+                            }));
                           }
                         }
                         _ => {}
@@ -429,11 +444,13 @@ impl<'a> VisitMut for JSXMutVisitor<'a> {
                                   deque.push_front(PropOrSpread::Prop(Box::new(Prop::KeyValue(
                                     KeyValueProp {
                                       key: PropName::Ident(Ident::new(
-                                        property
-                                          .property_id()
-                                          .to_css_string(PrinterOptions::default())
-                                          .unwrap()
-                                          .into(),
+                                        to_camel_case(
+                                          property
+                                            .property_id()
+                                            .to_css_string(PrinterOptions::default())
+                                            .unwrap()
+                                            .as_str(),
+                                        ).into(),
                                         DUMMY_SP,
                                       )),
                                       value: property
@@ -478,31 +495,30 @@ impl<'a> VisitMut for JSXMutVisitor<'a> {
             for declaration in style_declaration.declaration.declarations.iter() {
               properties.push(declaration.clone());
             }
-
-            let mut style = String::new();
-            for property in properties.iter() {
-              let property_id = property
-                .property_id()
-                .to_css_string(PrinterOptions::default())
-                .unwrap();
-              let property_value = property
-                .value_to_css_string(PrinterOptions::default())
-                .unwrap();
-              style.push_str(property_id.as_str());
-              style.push_str(":");
-              style.push_str(property_value.as_str());
-              style.push_str(";");
-            }
+            let properties = properties.iter()
+              .map(|property| {
+                (
+                  property
+                  .property_id()
+                  .to_css_string(PrinterOptions::default())
+                  .unwrap(),
+                  property
+                  .value_to_css_string(PrinterOptions::default())
+                  .unwrap()
+                )
+              }).collect::<HashMap<_, _>>();
             if has_empty_style {
               for attr in &mut n.opening.attrs {
                 if let JSXAttrOrSpread::JSXAttr(attr) = attr {
                   if let JSXAttrName::Ident(ident) = &attr.name {
                     if ident.sym.to_string() == "style" {
-                      attr.value = Some(JSXAttrValue::Lit(Lit::Str(Str {
+                      attr.value = Some(JSXAttrValue::JSXExprContainer(JSXExprContainer {
                         span: DUMMY_SP,
-                        value: style.clone().into(),
-                        raw: None,
-                      })));
+                        expr: JSXExpr::Expr(Box::new(Expr::Object(ObjectLit {
+                          span: DUMMY_SP,
+                          props: self.properties_to_object_lit_props(&properties).into(),
+                        }))),
+                      }));
                     }
                   }
                 }
@@ -511,11 +527,13 @@ impl<'a> VisitMut for JSXMutVisitor<'a> {
               n.opening.attrs.push(JSXAttrOrSpread::JSXAttr(JSXAttr {
                 span: DUMMY_SP,
                 name: JSXAttrName::Ident(Ident::new("style".into(), DUMMY_SP)),
-                value: Some(JSXAttrValue::Lit(Lit::Str(Str {
+                value: Some(JSXAttrValue::JSXExprContainer(JSXExprContainer {
                   span: DUMMY_SP,
-                  value: style.into(),
-                  raw: None,
-                }))),
+                  expr: JSXExpr::Expr(Box::new(Expr::Object(ObjectLit {
+                    span: DUMMY_SP,
+                    props: self.properties_to_object_lit_props(&properties).into(),
+                  }))),
+                })),
               }));
             }
           }

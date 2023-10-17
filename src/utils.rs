@@ -23,3 +23,19 @@ pub fn create_qualname(str: &str) -> QualName {
 pub fn is_starts_with_uppercase(str: &str) -> bool {
   str.chars().next().unwrap().is_uppercase()
 }
+
+pub fn to_camel_case(s: &str) -> String {
+  let mut result = String::new();
+  let mut next_cap = false;
+  for c in s.chars() {
+    if c == '-' || c == '_' {
+      next_cap = true;
+    } else if next_cap {
+      result.extend(c.to_uppercase());
+      next_cap = false;
+    } else {
+      result.push(c);
+    }
+  }
+  result
+}

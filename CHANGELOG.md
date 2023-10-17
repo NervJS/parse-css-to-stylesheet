@@ -1,3 +1,14 @@
+## [0.0.10](https://github.com/NervJS/parse-css-to-stylesheet/compare/v0.0.8...v0.0.10) (2023-10-17)
+
+
+### Bug Fixes
+
+* __inner_style__ 要符合 JSON 定义 ([94a533e](https://github.com/NervJS/parse-css-to-stylesheet/commit/94a533eff0531453f8932a74e3672a3d16fe934c))
+* 避免将 rgab 色值转为 hexalpha ([ccbe771](https://github.com/NervJS/parse-css-to-stylesheet/commit/ccbe771da730911712df300cddf4479437e5eb80))
+* 将样式名转为 camelCase ([cc39775](https://github.com/NervJS/parse-css-to-stylesheet/commit/cc3977548b3a0fb898cc499b6a2d493d19d1a491))
+
+
+
 ## [0.0.9](https://github.com/NervJS/parse-css-to-stylesheet/compare/v0.0.8...v0.0.9) (2023-10-17)
 
 

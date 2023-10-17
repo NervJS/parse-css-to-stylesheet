@@ -1,3 +1,20 @@
+## [0.0.8](https://github.com/NervJS/parse-css-to-stylesheet/compare/v0.0.7...v0.0.8) (2023-10-17)
+
+
+### Bug Fixes
+
+* 去掉样式继承逻辑 ([eec198f](https://github.com/NervJS/parse-css-to-stylesheet/commit/eec198f20bd0a93e163c5990424a19322ca9a94a))
+* 去掉样式继承逻辑，仅支持类选择器 ([0752a13](https://github.com/NervJS/parse-css-to-stylesheet/commit/0752a13770e2387b3b6479cca7472783fe12f3bb))
+
+
+### Features
+
+* 将 __calc_style__ 函数插入到代码中 ([65ec163](https://github.com/NervJS/parse-css-to-stylesheet/commit/65ec1632f9031eb346fb90993031b1f977237170))
+* 将样式转为对象插入到代码中 ([644a0d3](https://github.com/NervJS/parse-css-to-stylesheet/commit/644a0d3018efb34c0a9c1afda918034a6f13eb05))
+* 支持处理动态类名情况 ([ae91b2c](https://github.com/NervJS/parse-css-to-stylesheet/commit/ae91b2c31362ff1d073e3bc268d3aa43fac7cb51))
+
+
+
 ## [0.0.7](https://github.com/NervJS/parse-css-to-stylesheet/compare/v0.0.6...v0.0.7) (2023-10-12)
 
 

@@ -191,6 +191,9 @@ impl<'a> VisitMut for ModuleMutVisitor<'a> {
   noop_visit_mut_type!();
 
   fn visit_mut_module(&mut self, module: &mut Module) {
+    let binding = self.all_style.borrow();
+    let mut style_entries: Vec<_> = binding.iter().collect();
+    style_entries.sort_by(|a, b| a.0.cmp(&b.0));
     let inner_style_stmt = Stmt::Decl(Decl::Var(Box::new(VarDecl {
       span: DUMMY_SP,
       kind: VarDeclKind::Var,
@@ -204,13 +207,11 @@ impl<'a> VisitMut for ModuleMutVisitor<'a> {
         definite: false,
         init: Some(Box::new(Expr::Object(ObjectLit {
           span: DUMMY_SP,
-          props: self
-            .all_style
-            .borrow()
+          props: style_entries
             .iter()
             .map(|(key, value)| {
               PropOrSpread::Prop(Box::new(Prop::KeyValue(KeyValueProp {
-                key: PropName::Ident(Ident::new(key.clone().into(), DUMMY_SP)),
+                key: PropName::Ident(Ident::new(key.to_string().into(), DUMMY_SP)),
                 value: Box::new(Expr::Object(ObjectLit {
                   span: DUMMY_SP,
                   props: value

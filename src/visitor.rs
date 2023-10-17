@@ -6,14 +6,13 @@ use std::{
 };
 
 use html5ever::{tendril::StrTendril, Attribute};
-use lightningcss::{stylesheet::PrinterOptions, traits::ToCss};
+use lightningcss::{stylesheet::PrinterOptions, traits::ToCss, targets::{Targets, Features}};
 use swc_common::{Span, DUMMY_SP};
 use swc_ecma_ast::{
-  BindingIdent, CallExpr, Callee, Decl, Expr, ExprOrSpread, Ident,
-  ImportDecl, ImportSpecifier, JSXAttr, JSXAttrName, JSXAttrOrSpread, JSXAttrValue, JSXElement,
-  JSXElementName, JSXExpr, JSXExprContainer, JSXFragment, KeyValueProp, Lit, Module, ModuleDecl,
-  ModuleItem, Null, ObjectLit, Pat, Prop, PropName, PropOrSpread, Stmt, VarDecl,
-  VarDeclKind, VarDeclarator,
+  BindingIdent, CallExpr, Callee, Decl, Expr, ExprOrSpread, Ident, ImportDecl, ImportSpecifier,
+  JSXAttr, JSXAttrName, JSXAttrOrSpread, JSXAttrValue, JSXElement, JSXElementName, JSXExpr,
+  JSXExprContainer, JSXFragment, KeyValueProp, Lit, Module, ModuleDecl, ModuleItem, Null,
+  ObjectLit, Pat, Prop, PropName, PropOrSpread, Stmt, VarDecl, VarDeclKind, VarDeclarator,
 };
 use swc_ecma_visit::{
   noop_visit_mut_type, noop_visit_type, Visit, VisitAll, VisitAllWith, VisitMut, VisitMutWith,
@@ -183,7 +182,10 @@ impl<'a> ModuleMutVisitor<'a> {
     all_style: Rc<RefCell<HashMap<String, StyleDeclaration<'a>>>>,
     insert_module: Rc<RefCell<Module>>,
   ) -> Self {
-    ModuleMutVisitor { all_style, insert_module }
+    ModuleMutVisitor {
+      all_style,
+      insert_module,
+    }
   }
 }
 
@@ -227,11 +229,19 @@ impl<'a> VisitMut for ModuleMutVisitor<'a> {
                               .to_css_string(PrinterOptions::default())
                               .unwrap()
                               .as_str(),
-                          ).into(),
+                          )
+                          .into(),
                           DUMMY_SP,
                         )),
                         value: declaration
-                          .value_to_css_string(PrinterOptions::default())
+                          .value_to_css_string(PrinterOptions {
+                            minify: false,
+                            targets: Targets {
+                              include: Features::HexAlphaColors,
+                              ..Targets::default()
+                            },
+                            ..PrinterOptions::default()
+                          })
                           .unwrap()
                           .into(),
                       })))
@@ -257,10 +267,9 @@ impl<'a> VisitMut for ModuleMutVisitor<'a> {
     if last_import_index != 0 {
       last_import_index += 1;
     }
-    module.body.insert(
-      last_import_index,
-      ModuleItem::Stmt(inner_style_stmt),
-    );
+    module
+      .body
+      .insert(last_import_index, ModuleItem::Stmt(inner_style_stmt));
     for item in self.insert_module.borrow().body.iter() {
       if last_import_index != 0 {
         last_import_index += 1;
@@ -294,10 +303,7 @@ impl<'a> JSXMutVisitor<'a> {
       .iter()
       .map(|(key, value)| {
         PropOrSpread::Prop(Box::new(Prop::KeyValue(KeyValueProp {
-          key: PropName::Ident(Ident::new(
-            to_camel_case(key.as_str()).into(),
-            DUMMY_SP,
-          )),
+          key: PropName::Ident(Ident::new(to_camel_case(key.as_str()).into(), DUMMY_SP)),
           value: value.to_string().into(),
         })))
       })
@@ -307,7 +313,7 @@ impl<'a> JSXMutVisitor<'a> {
 
 impl<'a> VisitMut for JSXMutVisitor<'a> {
   noop_visit_mut_type!();
-  
+
   fn visit_mut_jsx_element(&mut self, n: &mut JSXElement) {
     let span_key = SpanKey(n.span);
     if let Some(element) = self.jsx_record.borrow().get(&span_key) {
@@ -366,7 +372,14 @@ impl<'a> VisitMut for JSXMutVisitor<'a> {
                                   .to_css_string(PrinterOptions::default())
                                   .unwrap();
                                 let property_value = declaration
-                                  .value_to_css_string(PrinterOptions::default())
+                                  .value_to_css_string(PrinterOptions {
+                                    minify: false,
+                                    targets: Targets {
+                                      include: Features::HexAlphaColors,
+                                      ..Targets::default()
+                                    },
+                                    ..PrinterOptions::default()
+                                  })
                                   .unwrap();
                                 properties.insert(property_id, property_value);
                               }
@@ -450,11 +463,19 @@ impl<'a> VisitMut for JSXMutVisitor<'a> {
                                             .to_css_string(PrinterOptions::default())
                                             .unwrap()
                                             .as_str(),
-                                        ).into(),
+                                        )
+                                        .into(),
                                         DUMMY_SP,
                                       )),
                                       value: property
-                                        .value_to_css_string(PrinterOptions::default())
+                                        .value_to_css_string(PrinterOptions {
+                                          minify: false,
+                                          targets: Targets {
+                                            include: Features::HexAlphaColors,
+                                            ..Targets::default()
+                                          },
+                                          ..PrinterOptions::default()
+                                        })
                                         .unwrap()
                                         .into(),
                                     },
@@ -495,18 +516,27 @@ impl<'a> VisitMut for JSXMutVisitor<'a> {
             for declaration in style_declaration.declaration.declarations.iter() {
               properties.push(declaration.clone());
             }
-            let properties = properties.iter()
+            let properties = properties
+              .iter()
               .map(|property| {
                 (
                   property
-                  .property_id()
-                  .to_css_string(PrinterOptions::default())
-                  .unwrap(),
+                    .property_id()
+                    .to_css_string(PrinterOptions::default())
+                    .unwrap(),
                   property
-                  .value_to_css_string(PrinterOptions::default())
-                  .unwrap()
+                    .value_to_css_string(PrinterOptions {
+                      minify: false,
+                      targets: Targets {
+                        include: Features::HexAlphaColors,
+                        ..Targets::default()
+                      },
+                      ..PrinterOptions::default()
+                    })
+                    .unwrap(),
                 )
-              }).collect::<HashMap<_, _>>();
+              })
+              .collect::<HashMap<_, _>>();
             if has_empty_style {
               for attr in &mut n.opening.attrs {
                 if let JSXAttrOrSpread::JSXAttr(attr) = attr {

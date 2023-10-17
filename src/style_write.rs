@@ -1,13 +1,17 @@
 use std::{cell::RefCell, collections::HashMap, rc::Rc};
 
-use swc_common::{sync::Lrc, SourceMap, errors::{Handler, ColorConfig}};
+use swc_common::{
+  errors::{ColorConfig, Handler},
+  sync::Lrc,
+  SourceMap,
+};
 use swc_ecma_ast::Program;
-use swc_ecma_parser::{StringInput, Syntax, lexer::Lexer, Parser};
+use swc_ecma_parser::{lexer::Lexer, Parser, StringInput, Syntax};
 use swc_ecma_visit::VisitMutWith;
 
 use crate::{
   style_parser::StyleDeclaration,
-  visitor::{JSXRecord, SpanKey, ModuleMutVisitor, JSXMutVisitor},
+  visitor::{JSXMutVisitor, JSXRecord, ModuleMutVisitor, SpanKey},
 };
 
 pub struct StyleWrite<'i> {
@@ -58,22 +62,23 @@ function __calc_style__(classnames, styleObj) {
       parser
         .parse_module()
         .map_err(|e| e.into_diagnostic(&handler).emit())
-        .expect("解析插入代码失败")
+        .expect("解析插入代码失败"),
     ));
     {
-      let mut jsx_mut_visitor = JSXMutVisitor::new(
-        self.jsx_record.clone(),
-        self.style_record.clone(),
-        
-      );
-      self.module.borrow_mut().visit_mut_with(&mut jsx_mut_visitor);
+      let mut jsx_mut_visitor =
+        JSXMutVisitor::new(self.jsx_record.clone(), self.style_record.clone());
+      self
+        .module
+        .borrow_mut()
+        .visit_mut_with(&mut jsx_mut_visitor);
     }
     {
-      let mut insert_mut_visitor = ModuleMutVisitor::new(
-        self.all_style.clone(),
-        insert_module.clone(),
-      );
-      self.module.borrow_mut().visit_mut_with(&mut insert_mut_visitor);
+      let mut insert_mut_visitor =
+        ModuleMutVisitor::new(self.all_style.clone(), insert_module.clone());
+      self
+        .module
+        .borrow_mut()
+        .visit_mut_with(&mut insert_mut_visitor);
     }
   }
 }

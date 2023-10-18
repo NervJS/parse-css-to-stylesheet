@@ -4,12 +4,14 @@ use lightningcss::{
   declaration::DeclarationBlock,
   properties::{Property, PropertyId},
   rules::CssRule,
-  stylesheet::{ParserOptions, StyleSheet, PrinterOptions},
+  stylesheet::{ParserOptions, PrinterOptions, StyleSheet},
+  targets::{Features, Targets},
+  traits::ToCss,
   visit_types,
-  visitor::{Visit, VisitTypes, Visitor}, targets::{Targets, Features}, traits::Op,
+  visitor::{Visit, VisitTypes, Visitor},
 };
 
-use crate::{document::JSXDocument, visitor::SpanKey};
+use crate::{document::JSXDocument, utils::to_camel_case, visitor::SpanKey};
 
 struct TextDecoration {
   pub index: Option<usize>,
@@ -30,12 +32,14 @@ impl TextDecoration {
 
   pub fn set_value(&mut self, value: String) {
     self.value = Some(value);
-  } 
+  }
 }
 
-pub struct StyleData<'i> {
-  pub style_record: Rc<RefCell<HashMap<SpanKey, StyleDeclaration<'i>>>>,
-  pub all_style: Rc<RefCell<HashMap<String, StyleDeclaration<'i>>>>,
+pub type StyleValue = HashMap<String, String>;
+
+pub struct StyleData {
+  pub style_record: Rc<RefCell<HashMap<SpanKey, StyleValue>>>,
+  pub all_style: Rc<RefCell<HashMap<String, StyleValue>>>,
 }
 
 #[derive(Debug, Clone)]
@@ -101,10 +105,7 @@ impl<'i> StyleParser<'i> {
 
   pub fn parse(&mut self, css: &'i str) {
     let mut stylesheet = StyleSheet::parse(css, ParserOptions::default()).expect("解析样式失败");
-    let mut style_visitor = StyleVisitor::new(
-      self.document,
-      Rc::clone(&self.all_style),
-    );
+    let mut style_visitor = StyleVisitor::new(self.document, Rc::clone(&self.all_style));
     stylesheet.visit(&mut style_visitor).unwrap();
   }
 
@@ -165,48 +166,102 @@ impl<'i> StyleParser<'i> {
     for (index, property) in properties.iter_mut().enumerate() {
       if property.property_id() == PropertyId::from("text-decoration") {
         text_decoration.set_index(index);
-        text_decoration.set_value(property.value_to_css_string(PrinterOptions {
-          minify: false,
-          targets: Targets {
-            include: Features::HexAlphaColors,
-            ..Targets::default()
-          },
-          ..PrinterOptions::default()
-        }).unwrap());
+        text_decoration.set_value(
+          property
+            .value_to_css_string(PrinterOptions {
+              minify: false,
+              targets: Targets {
+                include: Features::HexAlphaColors,
+                ..Targets::default()
+              },
+              ..PrinterOptions::default()
+            })
+            .unwrap(),
+        );
       } else if property.property_id() == PropertyId::from("color") {
-        color = Some(property.value_to_css_string(PrinterOptions {
-          minify: false,
-          targets: Targets {
-            include: Features::HexAlphaColors,
-            ..Targets::default()
-          },
-          ..PrinterOptions::default()
-        })
-        .unwrap());
+        color = Some(
+          property
+            .value_to_css_string(PrinterOptions {
+              minify: false,
+              targets: Targets {
+                include: Features::HexAlphaColors,
+                ..Targets::default()
+              },
+              ..PrinterOptions::default()
+            })
+            .unwrap(),
+        );
       }
     }
 
-    if text_decoration.index.is_some() {
-      
-    }
+    if text_decoration.index.is_some() {}
   }
 
-  pub fn calc(&self) -> StyleData<'i> {
+  pub fn calc(&self) -> StyleData {
     // 遍历 style_record，计算每个节点的最终样式
     let mut all_style = self.all_style.borrow_mut();
     let mut style_record = HashMap::new();
     let mut final_all_style = self.calc_style_record(&mut all_style);
 
+    let mut final_all_style = final_all_style
+      .iter()
+      .map(|(selector, style_value)| {
+        (
+          selector.to_owned(),
+          style_value
+            .declaration
+            .declarations
+            .iter()
+            .map(|property| {
+              (
+                to_camel_case(
+                  property
+                    .property_id()
+                    .to_css_string(PrinterOptions::default())
+                    .unwrap()
+                    .as_str(),
+                ),
+                property
+                  .value_to_css_string(PrinterOptions {
+                    minify: false,
+                    targets: Targets {
+                      include: Features::HexAlphaColors,
+                      ..Targets::default()
+                    },
+                    ..PrinterOptions::default()
+                  })
+                  .unwrap(),
+              )
+            })
+            .collect::<HashMap<_, _>>(),
+        )
+      })
+      .collect::<HashMap<_, _>>();
+
     for (selector, style_value) in final_all_style.iter_mut() {
-      self.parse_style_value(style_value);
-      let elements = self.document.select(selector.as_str());
+      // self.parse_style_value(style_value);
+      let elements = self.document.select(selector);
       for element in elements {
-        let declarations: &mut Vec<StyleDeclaration<'_>> =
-          style_record.entry(element.span).or_insert(vec![]);
+        let declarations = style_record.entry(element.span).or_insert(vec![]);
         declarations.push(style_value.clone());
       }
     }
-    let final_style_record = self.calc_style_record(&mut style_record);
+    let final_style_record = style_record
+      .iter_mut()
+      .map(|(selector, style_value)| {
+        (
+          *selector,
+          style_value
+            .iter_mut()
+            .reduce(|a, b| {
+              a.extend(b.drain());
+              a
+            })
+            .unwrap()
+            .to_owned(),
+        )
+      })
+      .collect::<HashMap<_, _>>();
     StyleData {
       style_record: Rc::new(RefCell::new(final_style_record)),
       all_style: Rc::new(RefCell::new(final_all_style)),

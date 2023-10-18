@@ -6,11 +6,6 @@ use std::{
 };
 
 use html5ever::{tendril::StrTendril, Attribute};
-use lightningcss::{
-  stylesheet::PrinterOptions,
-  targets::{Features, Targets},
-  traits::ToCss,
-};
 use swc_common::{Span, DUMMY_SP};
 use swc_ecma_ast::{
   BindingIdent, CallExpr, Callee, Decl, Expr, ExprOrSpread, Ident, ImportDecl,
@@ -25,7 +20,7 @@ use swc_ecma_visit::{
 
 use crate::{
   scraper::Element,
-  style_parser::StyleDeclaration,
+  style_parser::StyleValue,
   utils::{create_qualname, is_starts_with_uppercase, recursion_jsx_member, to_camel_case},
 };
 
@@ -177,17 +172,17 @@ impl<'a> VisitAll for AstVisitor<'a> {
   }
 }
 
-pub struct ModuleMutVisitor<'a> {
-  pub all_style: Rc<RefCell<HashMap<String, StyleDeclaration<'a>>>>,
+pub struct ModuleMutVisitor {
+  pub all_style: Rc<RefCell<HashMap<String, StyleValue>>>,
 }
 
-impl<'a> ModuleMutVisitor<'a> {
-  pub fn new(all_style: Rc<RefCell<HashMap<String, StyleDeclaration<'a>>>>) -> Self {
+impl ModuleMutVisitor {
+  pub fn new(all_style: Rc<RefCell<HashMap<String, StyleValue>>>) -> Self {
     ModuleMutVisitor { all_style }
   }
 }
 
-impl<'a> VisitMut for ModuleMutVisitor<'a> {
+impl VisitMut for ModuleMutVisitor {
   noop_visit_mut_type!();
 
   fn visit_mut_module(&mut self, module: &mut Module) {
@@ -215,33 +210,11 @@ impl<'a> VisitMut for ModuleMutVisitor<'a> {
                 value: Box::new(Expr::Object(ObjectLit {
                   span: DUMMY_SP,
                   props: value
-                    .declaration
-                    .declarations
                     .iter()
-                    .map(|declaration| {
+                    .map(|(key, value)| {
                       PropOrSpread::Prop(Box::new(Prop::KeyValue(KeyValueProp {
-                        key: PropName::Ident(Ident::new(
-                          to_camel_case(
-                            declaration
-                              .property_id()
-                              .to_css_string(PrinterOptions::default())
-                              .unwrap()
-                              .as_str(),
-                          )
-                          .into(),
-                          DUMMY_SP,
-                        )),
-                        value: declaration
-                          .value_to_css_string(PrinterOptions {
-                            minify: false,
-                            targets: Targets {
-                              include: Features::HexAlphaColors,
-                              ..Targets::default()
-                            },
-                            ..PrinterOptions::default()
-                          })
-                          .unwrap()
-                          .into(),
+                        key: PropName::Ident(Ident::new(key.to_string().into(), DUMMY_SP)),
+                        value: value.to_string().into(),
                       })))
                     })
                     .collect::<Vec<PropOrSpread>>()
@@ -291,15 +264,15 @@ impl<'a> VisitMut for ModuleMutVisitor<'a> {
   }
 }
 
-pub struct JSXMutVisitor<'a> {
+pub struct JSXMutVisitor {
   pub jsx_record: Rc<RefCell<JSXRecord>>,
-  pub style_record: Rc<RefCell<HashMap<SpanKey, StyleDeclaration<'a>>>>,
+  pub style_record: Rc<RefCell<HashMap<SpanKey, StyleValue>>>,
 }
 
-impl<'a> JSXMutVisitor<'a> {
+impl JSXMutVisitor {
   pub fn new(
     jsx_record: Rc<RefCell<JSXRecord>>,
-    style_record: Rc<RefCell<HashMap<SpanKey, StyleDeclaration<'a>>>>,
+    style_record: Rc<RefCell<HashMap<SpanKey, StyleValue>>>,
   ) -> Self {
     JSXMutVisitor {
       jsx_record,
@@ -323,7 +296,7 @@ impl<'a> JSXMutVisitor<'a> {
   }
 }
 
-impl<'a> VisitMut for JSXMutVisitor<'a> {
+impl VisitMut for JSXMutVisitor {
   noop_visit_mut_type!();
 
   fn visit_mut_jsx_element(&mut self, n: &mut JSXElement) {
@@ -378,22 +351,8 @@ impl<'a> VisitMut for JSXMutVisitor<'a> {
                               .map(|s| s.to_owned())
                               .collect::<Vec<String>>();
                             if let Some(style_declaration) = style_record.get(&element.span) {
-                              for declaration in style_declaration.declaration.declarations.iter() {
-                                let property_id = declaration
-                                  .property_id()
-                                  .to_css_string(PrinterOptions::default())
-                                  .unwrap();
-                                let property_value = declaration
-                                  .value_to_css_string(PrinterOptions {
-                                    minify: false,
-                                    targets: Targets {
-                                      include: Features::HexAlphaColors,
-                                      ..Targets::default()
-                                    },
-                                    ..PrinterOptions::default()
-                                  })
-                                  .unwrap();
-                                properties.insert(property_id, property_value);
+                              for (key, value) in style_declaration.iter() {
+                                properties.insert(key.to_string(), value.to_string());
                               }
                             }
                             for property in style.iter() {
@@ -434,9 +393,7 @@ impl<'a> VisitMut for JSXMutVisitor<'a> {
                               if !has_dynamic_class {
                                 let mut properties = Vec::new();
                                 if let Some(style_declaration) = style_record.get(&element.span) {
-                                  for declaration in
-                                    style_declaration.declaration.declarations.iter()
-                                  {
+                                  for declaration in style_declaration.iter() {
                                     let mut has_property = false;
                                     for prop in lit.props.iter_mut() {
                                       match prop {
@@ -445,12 +402,7 @@ impl<'a> VisitMut for JSXMutVisitor<'a> {
                                             match &key_value_prop.key {
                                               PropName::Ident(ident) => {
                                                 let property_id = ident.sym.to_string();
-                                                if property_id
-                                                  == declaration
-                                                    .property_id()
-                                                    .to_css_string(PrinterOptions::default())
-                                                    .unwrap()
-                                                {
+                                                if property_id == declaration.0.to_string() {
                                                   has_property = true;
                                                   break;
                                                 }
@@ -473,27 +425,10 @@ impl<'a> VisitMut for JSXMutVisitor<'a> {
                                   deque.push_front(PropOrSpread::Prop(Box::new(Prop::KeyValue(
                                     KeyValueProp {
                                       key: PropName::Ident(Ident::new(
-                                        to_camel_case(
-                                          property
-                                            .property_id()
-                                            .to_css_string(PrinterOptions::default())
-                                            .unwrap()
-                                            .as_str(),
-                                        )
-                                        .into(),
+                                        property.0.to_string().into(),
                                         DUMMY_SP,
                                       )),
-                                      value: property
-                                        .value_to_css_string(PrinterOptions {
-                                          minify: false,
-                                          targets: Targets {
-                                            include: Features::HexAlphaColors,
-                                            ..Targets::default()
-                                          },
-                                          ..PrinterOptions::default()
-                                        })
-                                        .unwrap()
-                                        .into(),
+                                      value: property.1.to_string().into(),
                                     },
                                   ))));
                                 }
@@ -529,29 +464,12 @@ impl<'a> VisitMut for JSXMutVisitor<'a> {
         if !has_style {
           if let Some(style_declaration) = style_record.get(&element.span) {
             let mut properties = Vec::new();
-            for declaration in style_declaration.declaration.declarations.iter() {
+            for declaration in style_declaration.iter() {
               properties.push(declaration.clone());
             }
             let properties = properties
               .iter()
-              .map(|property| {
-                (
-                  property
-                    .property_id()
-                    .to_css_string(PrinterOptions::default())
-                    .unwrap(),
-                  property
-                    .value_to_css_string(PrinterOptions {
-                      minify: false,
-                      targets: Targets {
-                        include: Features::HexAlphaColors,
-                        ..Targets::default()
-                      },
-                      ..PrinterOptions::default()
-                    })
-                    .unwrap(),
-                )
-              })
+              .map(|property| (property.0.to_string(), property.1.to_string()))
               .collect::<HashMap<_, _>>();
             let mut properties_entries: Vec<_> = properties.iter().collect();
             properties_entries.sort_by(|a, b| a.0.cmp(&b.0));

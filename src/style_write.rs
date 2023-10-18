@@ -4,23 +4,23 @@ use swc_ecma_ast::Program;
 use swc_ecma_visit::VisitMutWith;
 
 use crate::{
-  style_parser::StyleDeclaration,
+  style_parser::StyleValue,
   visitor::{JSXMutVisitor, JSXRecord, ModuleMutVisitor, SpanKey},
 };
 
-pub struct StyleWrite<'i> {
+pub struct StyleWrite {
   pub module: Rc<RefCell<Program>>,
   pub jsx_record: Rc<RefCell<JSXRecord>>,
-  pub style_record: Rc<RefCell<HashMap<SpanKey, StyleDeclaration<'i>>>>,
-  pub all_style: Rc<RefCell<HashMap<String, StyleDeclaration<'i>>>>,
+  pub style_record: Rc<RefCell<HashMap<SpanKey, StyleValue>>>,
+  pub all_style: Rc<RefCell<HashMap<String, StyleValue>>>,
 }
 
-impl<'i> StyleWrite<'i> {
+impl StyleWrite {
   pub fn new(
     module: Rc<RefCell<Program>>,
     jsx_record: Rc<RefCell<JSXRecord>>,
-    style_record: Rc<RefCell<HashMap<SpanKey, StyleDeclaration<'i>>>>,
-    all_style: Rc<RefCell<HashMap<String, StyleDeclaration<'i>>>>,
+    style_record: Rc<RefCell<HashMap<SpanKey, StyleValue>>>,
+    all_style: Rc<RefCell<HashMap<String, StyleValue>>>,
   ) -> Self {
     StyleWrite {
       module,

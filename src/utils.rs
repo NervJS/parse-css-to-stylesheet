@@ -24,9 +24,9 @@ pub fn is_starts_with_uppercase(str: &str) -> bool {
   str.chars().next().unwrap().is_uppercase()
 }
 
-pub fn to_camel_case(s: &str) -> String {
+pub fn to_camel_case(s: &str, is_first: bool) -> String {
   let mut result = String::new();
-  let mut next_cap = false;
+  let mut next_cap = if is_first { true } else { false };
   for c in s.chars() {
     if c == '-' || c == '_' {
       next_cap = true;

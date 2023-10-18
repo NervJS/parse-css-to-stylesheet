@@ -8,11 +8,11 @@ use std::{
 use html5ever::{tendril::StrTendril, Attribute};
 use swc_common::{Span, DUMMY_SP};
 use swc_ecma_ast::{
-  BindingIdent, CallExpr, Callee, Decl, Expr, ExprOrSpread, Ident, ImportDecl,
+  BindingIdent, CallExpr, Callee, ComputedPropName, Decl, Expr, ExprOrSpread, Ident, ImportDecl,
   ImportNamedSpecifier, ImportSpecifier, JSXAttr, JSXAttrName, JSXAttrOrSpread, JSXAttrValue,
-  JSXElement, JSXElementName, JSXExpr, JSXExprContainer, JSXFragment, KeyValueProp, Lit, Module,
-  ModuleDecl, ModuleExportName, ModuleItem, Null, ObjectLit, Pat, Prop, PropName, PropOrSpread,
-  Stmt, Str, VarDecl, VarDeclKind, VarDeclarator,
+  JSXElement, JSXElementName, JSXExpr, JSXExprContainer, JSXFragment, KeyValueProp, Lit,
+  MemberExpr, MemberProp, Module, ModuleDecl, ModuleExportName, ModuleItem, Null, ObjectLit, Pat,
+  Prop, PropName, PropOrSpread, Stmt, Str, VarDecl, VarDeclKind, VarDeclarator,
 };
 use swc_ecma_visit::{
   noop_visit_mut_type, noop_visit_type, Visit, VisitAll, VisitAllWith, VisitMut, VisitMutWith,
@@ -20,7 +20,7 @@ use swc_ecma_visit::{
 
 use crate::{
   scraper::Element,
-  style_parser::StyleValue,
+  style_parser::{StyleValue, StyleValueType},
   utils::{create_qualname, is_starts_with_uppercase, recursion_jsx_member, to_camel_case},
 };
 
@@ -172,6 +172,47 @@ impl<'a> VisitAll for AstVisitor<'a> {
   }
 }
 
+fn properties_to_object_lit_props(
+  properties: &Vec<(&String, &mut StyleValueType)>,
+) -> Vec<PropOrSpread> {
+  properties
+    .iter()
+    .map(|(key, value)| PropOrSpread::Prop(Box::new(Prop::KeyValue(parse_style_kv(key, value)))))
+    .collect::<Vec<PropOrSpread>>()
+}
+
+pub fn parse_style_kv(key: &str, value: &StyleValueType) -> KeyValueProp {
+  KeyValueProp {
+    key: PropName::Ident(Ident::new(key.to_string().into(), DUMMY_SP)),
+    value: match value {
+      StyleValueType::Normal(value) => value.to_string().into(),
+      StyleValueType::TextDecoration(text_decoration) => Expr::Object(ObjectLit {
+        span: DUMMY_SP,
+        props: vec![
+          PropOrSpread::Prop(Box::new(Prop::KeyValue(KeyValueProp {
+            key: PropName::Ident(Ident::new("type".into(), DUMMY_SP)),
+            value: Expr::Member(MemberExpr {
+              span: DUMMY_SP,
+              obj: Box::new(Expr::Ident(Ident::new("TextDecoration".into(), DUMMY_SP))),
+              prop: MemberProp::Computed(ComputedPropName {
+                span: DUMMY_SP,
+                expr: Expr::Lit(Lit::Str(Str::from(value.to_string()))).into(),
+              }),
+            })
+            .into(),
+          }))),
+          PropOrSpread::Prop(Box::new(Prop::KeyValue(KeyValueProp {
+            key: PropName::Ident(Ident::new("color".into(), DUMMY_SP)),
+            value: Expr::Lit(Lit::Str(Str::from(text_decoration.color.to_string()))).into(),
+          }))),
+        ]
+        .into(),
+      })
+      .into(),
+    },
+  }
+}
+
 pub struct ModuleMutVisitor {
   pub all_style: Rc<RefCell<HashMap<String, StyleValue>>>,
 }
@@ -212,10 +253,7 @@ impl VisitMut for ModuleMutVisitor {
                   props: value
                     .iter()
                     .map(|(key, value)| {
-                      PropOrSpread::Prop(Box::new(Prop::KeyValue(KeyValueProp {
-                        key: PropName::Ident(Ident::new(key.to_string().into(), DUMMY_SP)),
-                        value: value.to_string().into(),
-                      })))
+                      PropOrSpread::Prop(Box::new(Prop::KeyValue(parse_style_kv(key, value))))
                     })
                     .collect::<Vec<PropOrSpread>>()
                     .into(),
@@ -279,21 +317,6 @@ impl JSXMutVisitor {
       style_record,
     }
   }
-
-  fn properties_to_object_lit_props(
-    &self,
-    properties: &Vec<(&String, &String)>,
-  ) -> Vec<PropOrSpread> {
-    properties
-      .iter()
-      .map(|(key, value)| {
-        PropOrSpread::Prop(Box::new(Prop::KeyValue(KeyValueProp {
-          key: PropName::Ident(Ident::new(to_camel_case(key.as_str()).into(), DUMMY_SP)),
-          value: value.to_string().into(),
-        })))
-      })
-      .collect::<Vec<PropOrSpread>>()
-  }
 }
 
 impl VisitMut for JSXMutVisitor {
@@ -352,7 +375,7 @@ impl VisitMut for JSXMutVisitor {
                               .collect::<Vec<String>>();
                             if let Some(style_declaration) = style_record.get(&element.span) {
                               for (key, value) in style_declaration.iter() {
-                                properties.insert(key.to_string(), value.to_string());
+                                properties.insert(to_camel_case(key, false), value.clone());
                               }
                             }
                             for property in style.iter() {
@@ -361,18 +384,35 @@ impl VisitMut for JSXMutVisitor {
                                 .map(|s| s.to_owned())
                                 .collect::<Vec<String>>();
                               if property.len() == 2 {
-                                properties.insert(property[0].clone(), property[1].clone());
+                                properties.insert(
+                                  property[0].clone(),
+                                  StyleValueType::Normal(property[1].clone()),
+                                );
                               }
                             }
-                            let mut properties_entries: Vec<_> = properties.iter().collect();
+                            let color = properties.get("color").cloned();
+                            let mut properties_entries: Vec<_> = properties
+                              .iter_mut()
+                              .map(|(key, value)| {
+                                if key == "textDecoration" {
+                                  if let Some(color) = &color {
+                                    match value {
+                                      StyleValueType::TextDecoration(text_decoration) => {
+                                        text_decoration.color = color.to_string();
+                                      }
+                                      _ => {}
+                                    }
+                                  }
+                                }
+                                (key, value)
+                              })
+                              .collect();
                             properties_entries.sort_by(|a, b| a.0.cmp(&b.0));
                             attr.value = Some(JSXAttrValue::JSXExprContainer(JSXExprContainer {
                               span: DUMMY_SP,
                               expr: JSXExpr::Expr(Box::new(Expr::Object(ObjectLit {
                                 span: DUMMY_SP,
-                                props: self
-                                  .properties_to_object_lit_props(&properties_entries)
-                                  .into(),
+                                props: properties_to_object_lit_props(&properties_entries).into(),
                               }))),
                             }));
                           }
@@ -397,10 +437,15 @@ impl VisitMut for JSXMutVisitor {
                                     let mut has_property = false;
                                     for prop in lit.props.iter_mut() {
                                       match prop {
-                                        PropOrSpread::Prop(prop) => match &**prop {
+                                        PropOrSpread::Prop(prop) => match &mut **prop {
                                           Prop::KeyValue(key_value_prop) => {
-                                            match &key_value_prop.key {
+                                            match &mut key_value_prop.key {
                                               PropName::Ident(ident) => {
+                                                ident.sym = to_camel_case(
+                                                  ident.sym.to_string().as_str(),
+                                                  false,
+                                                )
+                                                .into();
                                                 let property_id = ident.sym.to_string();
                                                 if property_id == declaration.0.to_string() {
                                                   has_property = true;
@@ -432,7 +477,110 @@ impl VisitMut for JSXMutVisitor {
                                     },
                                   ))));
                                 }
-                                lit.props = deque.into();
+                                let color = deque.iter().fold(None, |c, p| {
+                                  let color = match p {
+                                    PropOrSpread::Prop(prop) => match &**prop {
+                                      Prop::KeyValue(key_value_prop) => match &key_value_prop.key {
+                                        PropName::Ident(ident) => {
+                                          if ident.sym.to_string() == "color" {
+                                            Some(key_value_prop.value.clone())
+                                          } else {
+                                            c
+                                          }
+                                        }
+                                        _ => c,
+                                      },
+                                      _ => c,
+                                    },
+                                    _ => c,
+                                  };
+                                  color
+                                });
+                                lit.props = deque
+                                  .iter_mut()
+                                  .map(|p| {
+                                    match p {
+                                      PropOrSpread::Prop(prop) => match &mut **prop {
+                                        Prop::KeyValue(key_value_prop) => match &mut key_value_prop
+                                          .key
+                                        {
+                                          PropName::Ident(ident) => {
+                                            if ident.sym.to_string() == "textDecoration" {
+                                              key_value_prop.value =
+                                                Box::new(Expr::Object(ObjectLit {
+                                                  span: DUMMY_SP,
+                                                  props: vec![
+                                                    PropOrSpread::Prop(Box::new(Prop::KeyValue(
+                                                      KeyValueProp {
+                                                        key: PropName::Ident(Ident::new(
+                                                          "type".into(),
+                                                          DUMMY_SP,
+                                                        )),
+                                                        value: Expr::Member(MemberExpr {
+                                                          span: DUMMY_SP,
+                                                          obj: Box::new(Expr::Ident(Ident::new(
+                                                            "TextDecoration".into(),
+                                                            DUMMY_SP,
+                                                          ))),
+                                                          prop: MemberProp::Computed(
+                                                            ComputedPropName {
+                                                              span: DUMMY_SP,
+                                                              expr: match &*key_value_prop.value {
+                                                                Expr::Lit(lit) => match lit {
+                                                                  Lit::Str(str) => {
+                                                                    Expr::Lit(Lit::Str(Str::from(
+                                                                      to_camel_case(
+                                                                        str
+                                                                          .value
+                                                                          .to_string()
+                                                                          .as_str(),
+                                                                        false,
+                                                                      ),
+                                                                    )))
+                                                                  }
+                                                                  _ => Expr::Lit(Lit::Str(
+                                                                    Str::from("None".to_string()),
+                                                                  )),
+                                                                },
+                                                                _ => {
+                                                                  (*key_value_prop.value).clone()
+                                                                }
+                                                              }
+                                                              .into(),
+                                                            },
+                                                          ),
+                                                        })
+                                                        .into(),
+                                                      },
+                                                    ))),
+                                                    PropOrSpread::Prop(Box::new(Prop::KeyValue(
+                                                      KeyValueProp {
+                                                        key: PropName::Ident(Ident::new(
+                                                          "color".into(),
+                                                          DUMMY_SP,
+                                                        )),
+                                                        value: match &color {
+                                                          Some(value) => (*value).clone(),
+                                                          None => Box::new(Expr::Lit(Lit::Str(
+                                                            Str::from("black".to_string()),
+                                                          ))),
+                                                        },
+                                                      },
+                                                    ))),
+                                                  ]
+                                                  .into(),
+                                                }));
+                                            }
+                                          }
+                                          _ => {}
+                                        },
+                                        _ => {}
+                                      },
+                                      PropOrSpread::Spread(_) => {}
+                                    }
+                                    (*p).clone()
+                                  })
+                                  .collect();
                               }
                             }
                             _ => {
@@ -459,7 +607,6 @@ impl VisitMut for JSXMutVisitor {
           }
         }
       }
-
       if !has_dynamic_class && !has_dynamic_style {
         if !has_style {
           if let Some(style_declaration) = style_record.get(&element.span) {
@@ -467,11 +614,11 @@ impl VisitMut for JSXMutVisitor {
             for declaration in style_declaration.iter() {
               properties.push(declaration.clone());
             }
-            let properties = properties
+            let mut properties = properties
               .iter()
-              .map(|property| (property.0.to_string(), property.1.to_string()))
+              .map(|property| (property.0.to_string(), property.1.clone()))
               .collect::<HashMap<_, _>>();
-            let mut properties_entries: Vec<_> = properties.iter().collect();
+            let mut properties_entries: Vec<_> = properties.iter_mut().collect();
             properties_entries.sort_by(|a, b| a.0.cmp(&b.0));
             if has_empty_style {
               for attr in &mut n.opening.attrs {
@@ -482,9 +629,7 @@ impl VisitMut for JSXMutVisitor {
                         span: DUMMY_SP,
                         expr: JSXExpr::Expr(Box::new(Expr::Object(ObjectLit {
                           span: DUMMY_SP,
-                          props: self
-                            .properties_to_object_lit_props(&properties_entries)
-                            .into(),
+                          props: properties_to_object_lit_props(&properties_entries).into(),
                         }))),
                       }));
                     }
@@ -499,9 +644,7 @@ impl VisitMut for JSXMutVisitor {
                   span: DUMMY_SP,
                   expr: JSXExpr::Expr(Box::new(Expr::Object(ObjectLit {
                     span: DUMMY_SP,
-                    props: self
-                      .properties_to_object_lit_props(&properties_entries)
-                      .into(),
+                    props: properties_to_object_lit_props(&properties_entries).into(),
                   }))),
                 })),
               }));

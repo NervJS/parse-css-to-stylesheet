@@ -532,17 +532,28 @@ impl VisitMut for JSXMutVisitor {
           ],
           type_args: None,
         });
-        for attr in &mut n.opening.attrs {
-          if let JSXAttrOrSpread::JSXAttr(attr) = attr {
-            if let JSXAttrName::Ident(ident) = &attr.name {
-              if ident.sym.to_string() == "style" {
-                attr.value = Some(JSXAttrValue::JSXExprContainer(JSXExprContainer {
-                  span: DUMMY_SP,
-                  expr: JSXExpr::Expr(Box::new(fun_call_expr.clone())),
-                }));
+        if has_style {
+          for attr in &mut n.opening.attrs {
+            if let JSXAttrOrSpread::JSXAttr(attr) = attr {
+              if let JSXAttrName::Ident(ident) = &attr.name {
+                if ident.sym.to_string() == "style" {
+                  attr.value = Some(JSXAttrValue::JSXExprContainer(JSXExprContainer {
+                    span: DUMMY_SP,
+                    expr: JSXExpr::Expr(Box::new(fun_call_expr.clone())),
+                  }));
+                }
               }
             }
           }
+        } else {
+          n.opening.attrs.push(JSXAttrOrSpread::JSXAttr(JSXAttr {
+            span: DUMMY_SP,
+            name: JSXAttrName::Ident(Ident::new("style".into(), DUMMY_SP)),
+            value: Some(JSXAttrValue::JSXExprContainer(JSXExprContainer {
+              span: DUMMY_SP,
+              expr: JSXExpr::Expr(Box::new(fun_call_expr)),
+            })),
+          }));
         }
       }
     }

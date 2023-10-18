@@ -1,3 +1,19 @@
+## [0.0.12](https://github.com/NervJS/parse-css-to-stylesheet/compare/v0.0.11...v0.0.12) (2023-10-18)
+
+
+### Bug Fixes
+
+* 遗漏样式属性添加情况 ([b698459](https://github.com/NervJS/parse-css-to-stylesheet/commit/b698459608d91030b2c4b8ba28c46e15bbe08189))
+
+
+### Features
+
+* 开始尝试在在编译时按需处理样式 ([82aa6f5](https://github.com/NervJS/parse-css-to-stylesheet/commit/82aa6f5a3a715d7e3ac50ac784b3a19cd4fe06e6))
+* 优化样式处理逻辑 ([d8954ae](https://github.com/NervJS/parse-css-to-stylesheet/commit/d8954aed25438151a7c48e477b462dd0235507d5))
+* 支持优化处理 text-decoration 属性 ([9799f94](https://github.com/NervJS/parse-css-to-stylesheet/commit/9799f94e9136346e52e2029099b991bfb077f643))
+
+
+
 ## [0.0.11](https://github.com/NervJS/parse-css-to-stylesheet/compare/v0.0.10...v0.0.11) (2023-10-17)
 
 

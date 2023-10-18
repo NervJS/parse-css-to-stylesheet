@@ -1,6 +1,6 @@
 use std::{
   cell::RefCell,
-  collections::{HashMap, VecDeque},
+  collections::{HashMap, VecDeque, BTreeMap},
   hash::{Hash, Hasher},
   rc::Rc,
 };
@@ -173,7 +173,7 @@ impl<'a> VisitAll for AstVisitor<'a> {
 }
 
 fn properties_to_object_lit_props(
-  properties: &Vec<(&String, &mut StyleValueType)>,
+  properties: &BTreeMap<&String, &mut StyleValueType>,
 ) -> Vec<PropOrSpread> {
   properties
     .iter()
@@ -228,8 +228,7 @@ impl VisitMut for ModuleMutVisitor {
 
   fn visit_mut_module(&mut self, module: &mut Module) {
     let binding = self.all_style.borrow();
-    let mut style_entries: Vec<_> = binding.iter().collect();
-    style_entries.sort_by(|a, b| a.0.cmp(&b.0));
+    let style_entries: BTreeMap<_, _> = binding.iter().collect();
     let inner_style_stmt = Stmt::Decl(Decl::Var(Box::new(VarDecl {
       span: DUMMY_SP,
       kind: VarDeclKind::Var,
@@ -246,11 +245,12 @@ impl VisitMut for ModuleMutVisitor {
           props: style_entries
             .iter()
             .map(|(key, value)| {
+              let ordered_value: BTreeMap<_, _> = value.iter().collect();
               PropOrSpread::Prop(Box::new(Prop::KeyValue(KeyValueProp {
                 key: PropName::Str(Str::from(key.as_str())),
                 value: Box::new(Expr::Object(ObjectLit {
                   span: DUMMY_SP,
-                  props: value
+                  props: ordered_value
                     .iter()
                     .map(|(key, value)| {
                       PropOrSpread::Prop(Box::new(Prop::KeyValue(parse_style_kv(key, value))))
@@ -391,7 +391,7 @@ impl VisitMut for JSXMutVisitor {
                               }
                             }
                             let color = properties.get("color").cloned();
-                            let mut properties_entries: Vec<_> = properties
+                            let properties_entries: BTreeMap<_, _> = properties
                               .iter_mut()
                               .map(|(key, value)| {
                                 if key == "textDecoration" {
@@ -407,7 +407,6 @@ impl VisitMut for JSXMutVisitor {
                                 (key, value)
                               })
                               .collect();
-                            properties_entries.sort_by(|a, b| a.0.cmp(&b.0));
                             attr.value = Some(JSXAttrValue::JSXExprContainer(JSXExprContainer {
                               span: DUMMY_SP,
                               expr: JSXExpr::Expr(Box::new(Expr::Object(ObjectLit {
@@ -618,8 +617,7 @@ impl VisitMut for JSXMutVisitor {
               .iter()
               .map(|property| (property.0.to_string(), property.1.clone()))
               .collect::<HashMap<_, _>>();
-            let mut properties_entries: Vec<_> = properties.iter_mut().collect();
-            properties_entries.sort_by(|a, b| a.0.cmp(&b.0));
+            let properties_entries: BTreeMap<_, _> = properties.iter_mut().collect();
             if has_empty_style {
               for attr in &mut n.opening.attrs {
                 if let JSXAttrOrSpread::JSXAttr(attr) = attr {

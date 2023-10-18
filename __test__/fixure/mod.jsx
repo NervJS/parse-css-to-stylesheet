@@ -34,9 +34,6 @@ export default class Mod extends React.Component {
           <>
             <img
               className='icon'
-              style={{
-                color: 'red'
-              }}
               src='//img20.360buyimg.com/img/jfs/t1/166410/12/38783/3147/64f58062Fd7737e2b/5aaf0205cd1ce175.png'
             ></img>
             <>

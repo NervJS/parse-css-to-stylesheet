@@ -1,3 +1,12 @@
+## [0.0.14](https://github.com/NervJS/parse-css-to-stylesheet/compare/v0.0.13...v0.0.14) (2023-10-19)
+
+
+### Bug Fixes
+
+* TextDecoration => TextDecorationType ([c9167e4](https://github.com/NervJS/parse-css-to-stylesheet/commit/c9167e431a5ad8abece2319519d4f225a0366035))
+
+
+
 ## [0.0.13](https://github.com/NervJS/parse-css-to-stylesheet/compare/v0.0.11...v0.0.13) (2023-10-19)
 
 

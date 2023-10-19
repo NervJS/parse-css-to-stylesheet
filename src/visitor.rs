@@ -20,8 +20,12 @@ use swc_ecma_visit::{
 
 use crate::{
   scraper::Element,
-  style_parser::{BorderRadius, StyleValue, StyleValueType, TextDecoration, ToObjectExpr, MarginPadding},
-  utils::{create_qualname, is_starts_with_uppercase, recursion_jsx_member, to_camel_case},
+  style_parser::{
+    BorderRadius, MarginPadding, StyleValue, StyleValueType, TextDecoration, ToObjectExpr,
+  },
+  utils::{
+    create_qualname, delete_items, is_starts_with_uppercase, recursion_jsx_member, to_camel_case,
+  },
 };
 
 #[derive(Eq, Clone, Copy, Debug)]
@@ -475,29 +479,210 @@ impl VisitMut for JSXMutVisitor {
                                   };
                                   color
                                 });
+                                let mut margin = None;
+                                let mut margin_index = None;
+                                let mut margin_left = None;
+                                let mut margin_left_index = None;
+                                let mut margin_right = None;
+                                let mut margin_right_index = None;
+                                let mut margin_top = None;
+                                let mut margin_top_index = None;
+                                let mut margin_bottom = None;
+                                let mut margin_bottom_index = None;
+                                let mut padding = None;
+                                let mut padding_index = None;
+                                let mut padding_left = None;
+                                let mut padding_left_index = None;
+                                let mut padding_right = None;
+                                let mut padding_right_index = None;
+                                let mut padding_top = None;
+                                let mut padding_top_index = None;
+                                let mut padding_bottom = None;
+                                let mut padding_bottom_index = None;
+                                let mut border_radius = None;
+                                let mut border_radius_index = None;
+                                let mut border_radius_top_left = None;
+                                let mut border_radius_top_left_index = None;
+                                let mut border_radius_top_right = None;
+                                let mut border_radius_top_right_index = None;
+                                let mut border_radius_bottom_left = None;
+                                let mut border_radius_bottom_left_index = None;
+                                let mut border_radius_bottom_right = None;
+                                let mut border_radius_bottom_right_index = None;
+                                deque.iter_mut().enumerate().for_each(|(index, p)| match p {
+                                  PropOrSpread::Prop(prop) => match &**prop {
+                                    Prop::KeyValue(key_value_prop) => {
+                                      let value = match &*key_value_prop.value {
+                                        Expr::Lit(lit) => match lit {
+                                          Lit::Str(str) => {
+                                            to_camel_case(str.value.to_string().as_str(), true)
+                                          }
+                                          _ => "".to_string(),
+                                        },
+                                        _ => {
+                                          has_dynamic_style = true;
+                                          "".to_string()
+                                        }
+                                      };
+                                      let name = match &key_value_prop.key {
+                                        PropName::Ident(ident) => {
+                                          Some(to_camel_case(ident.sym.to_string().as_str(), false))
+                                        }
+                                        PropName::Str(str) => {
+                                          Some(to_camel_case(str.value.to_string().as_str(), false))
+                                        }
+                                        _ => None,
+                                      };
+                                      if let Some(name) = name {
+                                        if name == "margin" {
+                                          margin = Some(value);
+                                          margin_index = Some(index);
+                                        } else if name == "marginLeft" {
+                                          margin_left = Some(value);
+                                          margin_left_index = Some(index);
+                                        } else if name == "marginRight" {
+                                          margin_right = Some(value);
+                                          margin_right_index = Some(index);
+                                        } else if name == "marginTop" {
+                                          margin_top = Some(value);
+                                          margin_top_index = Some(index);
+                                        } else if name == "marginBottom" {
+                                          margin_bottom = Some(value);
+                                          margin_bottom_index = Some(index);
+                                        } else if name == "padding" {
+                                          padding = Some(value);
+                                          padding_index = Some(index);
+                                        } else if name == "paddingLeft" {
+                                          padding_left = Some(value);
+                                          padding_left_index = Some(index);
+                                        } else if name == "paddingRight" {
+                                          padding_right = Some(value);
+                                          padding_right_index = Some(index);
+                                        } else if name == "paddingTop" {
+                                          padding_top = Some(value);
+                                          padding_top_index = Some(index);
+                                        } else if name == "paddingBottom" {
+                                          padding_bottom = Some(value);
+                                          padding_bottom_index = Some(index);
+                                        } else if name == "borderRadius" {
+                                          border_radius = Some(value);
+                                          border_radius_index = Some(index);
+                                        } else if name == "borderTopLeftRadius" {
+                                          border_radius_top_left = Some(value);
+                                          border_radius_top_left_index = Some(index);
+                                        } else if name == "borderTopRightRadius" {
+                                          border_radius_top_right = Some(value);
+                                          border_radius_top_right_index = Some(index);
+                                        } else if name == "borderBottomLeftRadius" {
+                                          border_radius_bottom_left = Some(value);
+                                          border_radius_bottom_left_index = Some(index);
+                                        } else if name == "borderBottomRightRadius" {
+                                          border_radius_bottom_right = Some(value);
+                                          border_radius_bottom_right_index = Some(index);
+                                        }
+                                      }
+                                    }
+                                    _ => {}
+                                  },
+                                  PropOrSpread::Spread(_) => {}
+                                });
+                                let mut margin = match &margin {
+                                  Some(margin) => MarginPadding::from(margin.to_string().as_str()),
+                                  None => MarginPadding::from("0"),
+                                };
+                                if let Some(margin_left) = &margin_left {
+                                  margin.set_left(margin_left.to_string().as_str());
+                                }
+                                if let Some(margin_right) = &margin_right {
+                                  margin.set_right(margin_right.to_string().as_str());
+                                }
+                                if let Some(margin_top) = &margin_top {
+                                  margin.set_top(margin_top.to_string().as_str());
+                                }
+                                if let Some(margin_bottom) = &margin_bottom {
+                                  margin.set_bottom(margin_bottom.to_string().as_str());
+                                }
+
+                                let mut padding = match &padding {
+                                  Some(padding) => {
+                                    MarginPadding::from(padding.to_string().as_str())
+                                  }
+                                  None => MarginPadding::from("0"),
+                                };
+
+                                if let Some(padding_left) = &padding_left {
+                                  padding.set_left(padding_left.to_string().as_str());
+                                }
+                                if let Some(padding_right) = &padding_right {
+                                  padding.set_right(padding_right.to_string().as_str());
+                                }
+                                if let Some(padding_top) = &padding_top {
+                                  padding.set_top(padding_top.to_string().as_str());
+                                }
+                                if let Some(padding_bottom) = &padding_bottom {
+                                  padding.set_bottom(padding_bottom.to_string().as_str());
+                                }
+
+                                let mut border_radius = match &border_radius {
+                                  Some(border_radius) => {
+                                    BorderRadius::from(border_radius.to_string().as_str())
+                                  }
+                                  None => BorderRadius::from("0"),
+                                };
+
+                                if let Some(border_radius_top_left) = &border_radius_top_left {
+                                  border_radius
+                                    .set_top_left(border_radius_top_left.to_string().as_str());
+                                }
+                                if let Some(border_radius_top_right) = &border_radius_top_right {
+                                  border_radius
+                                    .set_top_right(border_radius_top_right.to_string().as_str());
+                                }
+                                if let Some(border_radius_bottom_left) = &border_radius_bottom_left
+                                {
+                                  border_radius.set_bottom_left(
+                                    border_radius_bottom_left.to_string().as_str(),
+                                  );
+                                }
+                                if let Some(border_radius_bottom_right) =
+                                  &border_radius_bottom_right
+                                {
+                                  border_radius.set_bottom_right(
+                                    border_radius_bottom_right.to_string().as_str(),
+                                  );
+                                }
+
                                 let mut props = deque
                                   .iter_mut()
                                   .map(|p| {
                                     match p {
                                       PropOrSpread::Prop(prop) => match &mut **prop {
-                                        Prop::KeyValue(key_value_prop) => match &mut key_value_prop
-                                          .key
-                                        {
-                                          PropName::Ident(ident) => {
-                                            let value = match &*key_value_prop.value {
-                                              Expr::Lit(lit) => match lit {
-                                                Lit::Str(str) => to_camel_case(
-                                                  str.value.to_string().as_str(),
-                                                  true,
-                                                ),
-                                                _ => "".to_string(),
-                                              },
-                                              _ => {
-                                                has_dynamic_style = true;
-                                                "".to_string()
+                                        Prop::KeyValue(key_value_prop) => {
+                                          let value = match &*key_value_prop.value {
+                                            Expr::Lit(lit) => match lit {
+                                              Lit::Str(str) => {
+                                                to_camel_case(str.value.to_string().as_str(), true)
                                               }
-                                            };
-                                            if ident.sym.to_string() == "textDecoration" {
+                                              _ => "".to_string(),
+                                            },
+                                            _ => {
+                                              has_dynamic_style = true;
+                                              "".to_string()
+                                            }
+                                          };
+                                          let name = match &key_value_prop.key {
+                                            PropName::Ident(ident) => Some(to_camel_case(
+                                              ident.sym.to_string().as_str(),
+                                              false,
+                                            )),
+                                            PropName::Str(str) => Some(to_camel_case(
+                                              str.value.to_string().as_str(),
+                                              false,
+                                            )),
+                                            _ => None,
+                                          };
+                                          if let Some(name) = name {
+                                            if name == "textDecoration" {
                                               if !has_dynamic_style {
                                                 let mut text_decoration =
                                                   TextDecoration::from(value.to_string().as_str());
@@ -517,31 +702,9 @@ impl VisitMut for JSXMutVisitor {
                                                 key_value_prop.value =
                                                   text_decoration.to_object_expr().into();
                                               }
-                                            } else if ident.sym.to_string() == "borderRadius" {
-                                              if !has_dynamic_style {
-                                                let border_radius =
-                                                  BorderRadius::from(value.to_string().as_str());
-                                                key_value_prop.value =
-                                                  border_radius.to_object_expr().into();
-                                              }
-                                            } else if ident.sym.to_string() == "margin" {
-                                              if !has_dynamic_style {
-                                                let margin_padding =
-                                                  MarginPadding::from(value.to_string().as_str());
-                                                key_value_prop.value =
-                                                  margin_padding.to_object_expr().into();
-                                              }
-                                            } else if ident.sym.to_string() == "padding" {
-                                              if !has_dynamic_style {
-                                                let margin_padding =
-                                                MarginPadding::from(value.to_string().as_str());
-                                                key_value_prop.value =
-                                                  margin_padding.to_object_expr().into();
-                                              }
                                             }
                                           }
-                                          _ => {}
-                                        },
+                                        }
                                         _ => {}
                                       },
                                       PropOrSpread::Spread(_) => {}
@@ -549,6 +712,98 @@ impl VisitMut for JSXMutVisitor {
                                     (*p).clone()
                                   })
                                   .collect::<Vec<_>>();
+                                if !has_dynamic_style {
+                                  let mut delete_indexs = vec![];
+
+                                  if let Some(margin_index) = margin_index {
+                                    delete_indexs.push(margin_index);
+                                  }
+                                  if let Some(margin_left_index) = margin_left_index {
+                                    delete_indexs.push(margin_left_index);
+                                  }
+                                  if let Some(margin_right_index) = margin_right_index {
+                                    delete_indexs.push(margin_right_index);
+                                  }
+                                  if let Some(margin_top_index) = margin_top_index {
+                                    delete_indexs.push(margin_top_index);
+                                  }
+                                  if let Some(margin_bottom_index) = margin_bottom_index {
+                                    delete_indexs.push(margin_bottom_index);
+                                  }
+
+                                  if let Some(padding_index) = padding_index {
+                                    delete_indexs.push(padding_index);
+                                  }
+                                  if let Some(padding_left_index) = padding_left_index {
+                                    delete_indexs.push(padding_left_index);
+                                  }
+                                  if let Some(padding_right_index) = padding_right_index {
+                                    delete_indexs.push(padding_right_index);
+                                  }
+                                  if let Some(padding_top_index) = padding_top_index {
+                                    delete_indexs.push(padding_top_index);
+                                  }
+                                  if let Some(padding_bottom_index) = padding_bottom_index {
+                                    delete_indexs.push(padding_bottom_index);
+                                  }
+
+                                  if let Some(border_radius_index) = border_radius_index {
+                                    delete_indexs.push(border_radius_index);
+                                  }
+                                  if let Some(border_radius_top_left_index) =
+                                    border_radius_top_left_index
+                                  {
+                                    delete_indexs.push(border_radius_top_left_index);
+                                  }
+                                  if let Some(border_radius_top_right_index) =
+                                    border_radius_top_right_index
+                                  {
+                                    delete_indexs.push(border_radius_top_right_index);
+                                  }
+                                  if let Some(border_radius_bottom_left_index) =
+                                    border_radius_bottom_left_index
+                                  {
+                                    delete_indexs.push(border_radius_bottom_left_index);
+                                  }
+                                  if let Some(border_radius_bottom_right_index) =
+                                    border_radius_bottom_right_index
+                                  {
+                                    delete_indexs.push(border_radius_bottom_right_index);
+                                  }
+
+                                  delete_items(&mut props, delete_indexs);
+
+                                  if !margin.is_zero() {
+                                    props.push(PropOrSpread::Prop(Box::new(Prop::KeyValue(
+                                      KeyValueProp {
+                                        key: PropName::Ident(Ident::new("margin".into(), DUMMY_SP)),
+                                        value: margin.to_object_expr().into(),
+                                      },
+                                    ))));
+                                  }
+                                  if !padding.is_zero() {
+                                    props.push(PropOrSpread::Prop(Box::new(Prop::KeyValue(
+                                      KeyValueProp {
+                                        key: PropName::Ident(Ident::new(
+                                          "padding".into(),
+                                          DUMMY_SP,
+                                        )),
+                                        value: padding.to_object_expr().into(),
+                                      },
+                                    ))));
+                                  }
+                                  if !border_radius.is_zero() {
+                                    props.push(PropOrSpread::Prop(Box::new(Prop::KeyValue(
+                                      KeyValueProp {
+                                        key: PropName::Ident(Ident::new(
+                                          "borderRadius".into(),
+                                          DUMMY_SP,
+                                        )),
+                                        value: border_radius.to_object_expr().into(),
+                                      },
+                                    ))));
+                                  }
+                                }
                                 props.sort_by(|a, b| {
                                   let a = match a {
                                     PropOrSpread::Prop(prop) => match &**prop {

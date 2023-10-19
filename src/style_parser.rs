@@ -73,7 +73,11 @@ impl ToObjectExpr for TextDecoration {
 impl From<&str> for TextDecoration {
   fn from(value: &str) -> Self {
     TextDecoration {
-      kind: if value == "" { "None".to_string() } else { value.to_string()},
+      kind: if value == "" {
+        "None".to_string()
+      } else {
+        value.to_string()
+      },
       color: "black".to_string(),
     }
   }
@@ -89,7 +93,10 @@ pub struct BorderRadius {
 
 impl BorderRadius {
   pub fn is_zero(&self) -> bool {
-    self.top_left == "0" && self.top_right == "0" && self.bottom_left == "0" && self.bottom_right == "0"
+    self.top_left == "0"
+      && self.top_right == "0"
+      && self.bottom_left == "0"
+      && self.bottom_right == "0"
   }
 
   pub fn set_top_left(&mut self, top_left: &str) {
@@ -272,7 +279,6 @@ impl From<&str> for MarginPadding {
     margin_padding
   }
 }
-    
 
 #[derive(Debug, Clone)]
 pub enum StyleValueType {
@@ -297,7 +303,11 @@ impl Display for StyleValueType {
         )
       }
       StyleValueType::MarginPadding(value) => {
-        write!(f, "{} {} {} {}", value.top, value.right, value.bottom, value.left)
+        write!(
+          f,
+          "{} {} {} {}",
+          value.top, value.right, value.bottom, value.left
+        )
       }
     }
   }
@@ -538,7 +548,10 @@ impl<'i> StyleParser<'i> {
     if padding.is_zero() {
       style_value.remove("padding");
     } else {
-      style_value.insert("padding".to_string(), StyleValueType::MarginPadding(padding));
+      style_value.insert(
+        "padding".to_string(),
+        StyleValueType::MarginPadding(padding),
+      );
     }
 
     let mut border_radius = match border_radius {
@@ -569,7 +582,6 @@ impl<'i> StyleParser<'i> {
         StyleValueType::BorderRadius(border_radius),
       );
     }
-    
   }
 
   pub fn calc(&self) -> StyleData {

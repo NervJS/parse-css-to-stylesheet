@@ -53,7 +53,7 @@ export default class Mod extends React.Component {
             <span className='line1 instruction1'>巴拉巴拉小魔仙</span>
             <span className='line1 txt'>成员: 4000+</span>
           </div>
-          <div className='cnt_row2'>
+          <div className='cnt_row2' style={{"border-top-left-radius": "1000px"}}>
             { this.getDom() }
             <img
               className='icon1'

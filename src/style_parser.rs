@@ -55,7 +55,7 @@ impl ToObjectExpr for TextDecoration {
             obj: Box::new(Expr::Ident(Ident::new("TextDecoration".into(), DUMMY_SP))),
             prop: MemberProp::Computed(ComputedPropName {
               span: DUMMY_SP,
-              expr: Expr::Lit(Lit::Str(Str::from(self.kind.to_string()))).into(),
+              expr: Expr::Lit(Lit::Str(Str::from(to_camel_case(self.kind.as_str(), true)))).into(),
             }),
           })
           .into(),

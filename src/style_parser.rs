@@ -73,7 +73,7 @@ impl ToObjectExpr for TextDecoration {
 impl From<&str> for TextDecoration {
   fn from(value: &str) -> Self {
     TextDecoration {
-      kind: value.to_string(),
+      kind: if value == "" { "None".to_string() } else { value.to_string()},
       color: "black".to_string(),
     }
   }
@@ -85,6 +85,28 @@ pub struct BorderRadius {
   pub top_right: String,
   pub bottom_left: String,
   pub bottom_right: String,
+}
+
+impl BorderRadius {
+  pub fn is_zero(&self) -> bool {
+    self.top_left == "0" && self.top_right == "0" && self.bottom_left == "0" && self.bottom_right == "0"
+  }
+
+  pub fn set_top_left(&mut self, top_left: &str) {
+    self.top_left = top_left.to_string();
+  }
+
+  pub fn set_top_right(&mut self, top_right: &str) {
+    self.top_right = top_right.to_string();
+  }
+
+  pub fn set_bottom_left(&mut self, bottom_left: &str) {
+    self.bottom_left = bottom_left.to_string();
+  }
+
+  pub fn set_bottom_right(&mut self, bottom_right: &str) {
+    self.bottom_right = bottom_right.to_string();
+  }
 }
 
 impl ToObjectExpr for BorderRadius {
@@ -155,10 +177,109 @@ impl From<&str> for BorderRadius {
 }
 
 #[derive(Debug, Clone)]
+pub struct MarginPadding {
+  pub top: String,
+  pub right: String,
+  pub bottom: String,
+  pub left: String,
+}
+
+impl MarginPadding {
+  pub fn is_zero(&self) -> bool {
+    self.top == "0" && self.right == "0" && self.bottom == "0" && self.left == "0"
+  }
+
+  pub fn set_top(&mut self, top: &str) {
+    self.top = top.to_string();
+  }
+
+  pub fn set_right(&mut self, right: &str) {
+    self.right = right.to_string();
+  }
+
+  pub fn set_bottom(&mut self, bottom: &str) {
+    self.bottom = bottom.to_string();
+  }
+
+  pub fn set_left(&mut self, left: &str) {
+    self.left = left.to_string();
+  }
+}
+
+impl ToObjectExpr for MarginPadding {
+  fn to_object_expr(&self) -> Expr {
+    Expr::Object(ObjectLit {
+      span: DUMMY_SP,
+      props: vec![
+        PropOrSpread::Prop(Box::new(Prop::KeyValue(KeyValueProp {
+          key: PropName::Ident(Ident::new("top".into(), DUMMY_SP)),
+          value: Expr::Lit(Lit::Str(Str::from(self.top.to_string()))).into(),
+        }))),
+        PropOrSpread::Prop(Box::new(Prop::KeyValue(KeyValueProp {
+          key: PropName::Ident(Ident::new("right".into(), DUMMY_SP)),
+          value: Expr::Lit(Lit::Str(Str::from(self.right.to_string()))).into(),
+        }))),
+        PropOrSpread::Prop(Box::new(Prop::KeyValue(KeyValueProp {
+          key: PropName::Ident(Ident::new("bottom".into(), DUMMY_SP)),
+          value: Expr::Lit(Lit::Str(Str::from(self.bottom.to_string()))).into(),
+        }))),
+        PropOrSpread::Prop(Box::new(Prop::KeyValue(KeyValueProp {
+          key: PropName::Ident(Ident::new("left".into(), DUMMY_SP)),
+          value: Expr::Lit(Lit::Str(Str::from(self.left.to_string()))).into(),
+        }))),
+      ]
+      .into(),
+    })
+  }
+}
+
+impl From<&str> for MarginPadding {
+  fn from(value: &str) -> Self {
+    let margin_padding = value.to_string();
+    let margin_padding = margin_padding.split(" ").collect::<Vec<&str>>();
+    let margin_padding = match margin_padding.len() {
+      1 => MarginPadding {
+        top: margin_padding[0].to_string(),
+        right: margin_padding[0].to_string(),
+        bottom: margin_padding[0].to_string(),
+        left: margin_padding[0].to_string(),
+      },
+      2 => MarginPadding {
+        top: margin_padding[0].to_string(),
+        right: margin_padding[1].to_string(),
+        bottom: margin_padding[0].to_string(),
+        left: margin_padding[1].to_string(),
+      },
+      3 => MarginPadding {
+        top: margin_padding[0].to_string(),
+        right: margin_padding[1].to_string(),
+        bottom: margin_padding[2].to_string(),
+        left: margin_padding[1].to_string(),
+      },
+      4 => MarginPadding {
+        top: margin_padding[0].to_string(),
+        right: margin_padding[1].to_string(),
+        bottom: margin_padding[2].to_string(),
+        left: margin_padding[3].to_string(),
+      },
+      _ => MarginPadding {
+        top: "0".to_string(),
+        right: "0".to_string(),
+        bottom: "0".to_string(),
+        left: "0".to_string(),
+      },
+    };
+    margin_padding
+  }
+}
+    
+
+#[derive(Debug, Clone)]
 pub enum StyleValueType {
   Normal(String),
   TextDecoration(TextDecoration),
   BorderRadius(BorderRadius),
+  MarginPadding(MarginPadding),
 }
 
 impl Display for StyleValueType {
@@ -174,6 +295,9 @@ impl Display for StyleValueType {
           "{} {} {} {}",
           value.top_left, value.top_right, value.bottom_left, value.bottom_right
         )
+      }
+      StyleValueType::MarginPadding(value) => {
+        write!(f, "{} {} {} {}", value.top, value.right, value.bottom, value.left)
       }
     }
   }
@@ -297,16 +421,58 @@ impl<'i> StyleParser<'i> {
   }
 
   fn parse_style_value(&self, style_value: &mut StyleValue) {
+    let mut margin = None;
+    let mut margin_left = None;
+    let mut margin_right = None;
+    let mut margin_top = None;
+    let mut margin_bottom = None;
+    let mut padding = None;
+    let mut padding_left = None;
+    let mut padding_right = None;
+    let mut padding_top = None;
+    let mut padding_bottom = None;
+    let mut border_radius = None;
+    let mut border_radius_top_left = None;
+    let mut border_radius_top_right = None;
+    let mut border_radius_bottom_left = None;
+    let mut border_radius_bottom_right = None;
     let mut text_decoration = None;
     let mut color = None;
-    let mut border_radius = None;
-    for property in style_value.iter_mut() {
-      if property.0 == "textDecoration" {
-        text_decoration = Some(property.1.clone());
-      } else if property.0 == "color" {
-        color = Some(property.1.clone());
-      } else if property.0 == "borderRadius" {
-        border_radius = Some(property.1.clone());
+    for (id, value) in style_value.iter_mut() {
+      if id == "margin" {
+        margin = Some(value.clone());
+      } else if id == "marginLeft" {
+        margin_left = Some(value.clone());
+      } else if id == "marginRight" {
+        margin_right = Some(value.clone());
+      } else if id == "marginTop" {
+        margin_top = Some(value.clone());
+      } else if id == "marginBottom" {
+        margin_bottom = Some(value.clone());
+      } else if id == "padding" {
+        padding = Some(value.clone());
+      } else if id == "paddingLeft" {
+        padding_left = Some(value.clone());
+      } else if id == "paddingRight" {
+        padding_right = Some(value.clone());
+      } else if id == "paddingTop" {
+        padding_top = Some(value.clone());
+      } else if id == "paddingBottom" {
+        padding_bottom = Some(value.clone());
+      } else if id == "borderRadius" {
+        border_radius = Some(value.clone());
+      } else if id == "borderRadiusTopLeft" {
+        border_radius_top_left = Some(value.clone());
+      } else if id == "borderRadiusTopRight" {
+        border_radius_top_right = Some(value.clone());
+      } else if id == "borderRadiusBottomLeft" {
+        border_radius_bottom_left = Some(value.clone());
+      } else if id == "borderRadiusBottomRight" {
+        border_radius_bottom_right = Some(value.clone());
+      } else if id == "textDecoration" {
+        text_decoration = Some(value.clone());
+      } else if id == "color" {
+        color = Some(value.clone());
       }
     }
 
@@ -323,12 +489,87 @@ impl<'i> StyleParser<'i> {
       );
     }
 
-    if let Some(border_radius) = border_radius {
+    let mut margin = match margin {
+      Some(margin) => MarginPadding::from(margin.to_string().as_str()),
+      None => MarginPadding::from("0"),
+    };
+    if let Some(margin_left) = margin_left {
+      margin.set_left(margin_left.to_string().as_str());
+      style_value.remove("marginLeft");
+    }
+    if let Some(margin_right) = margin_right {
+      margin.set_right(margin_right.to_string().as_str());
+      style_value.remove("marginRight");
+    }
+    if let Some(margin_top) = margin_top {
+      margin.set_top(margin_top.to_string().as_str());
+      style_value.remove("marginTop");
+    }
+    if let Some(margin_bottom) = margin_bottom {
+      margin.set_bottom(margin_bottom.to_string().as_str());
+      style_value.remove("marginBottom");
+    }
+    if margin.is_zero() {
+      style_value.remove("margin");
+    } else {
+      style_value.insert("margin".to_string(), StyleValueType::MarginPadding(margin));
+    }
+
+    let mut padding = match padding {
+      Some(padding) => MarginPadding::from(padding.to_string().as_str()),
+      None => MarginPadding::from("0"),
+    };
+    if let Some(padding_left) = padding_left {
+      padding.set_left(padding_left.to_string().as_str());
+      style_value.remove("paddingLeft");
+    }
+    if let Some(padding_right) = padding_right {
+      padding.set_right(padding_right.to_string().as_str());
+      style_value.remove("paddingRight");
+    }
+    if let Some(padding_top) = padding_top {
+      padding.set_top(padding_top.to_string().as_str());
+      style_value.remove("paddingTop");
+    }
+    if let Some(padding_bottom) = padding_bottom {
+      padding.set_bottom(padding_bottom.to_string().as_str());
+      style_value.remove("paddingBottom");
+    }
+    if padding.is_zero() {
+      style_value.remove("padding");
+    } else {
+      style_value.insert("padding".to_string(), StyleValueType::MarginPadding(padding));
+    }
+
+    let mut border_radius = match border_radius {
+      Some(border_radius) => BorderRadius::from(border_radius.to_string().as_str()),
+      None => BorderRadius::from("0"),
+    };
+    if let Some(border_radius_top_left) = border_radius_top_left {
+      border_radius.set_top_left(border_radius_top_left.to_string().as_str());
+      style_value.remove("borderRadiusTopLeft");
+    }
+    if let Some(border_radius_top_right) = border_radius_top_right {
+      border_radius.set_top_right(border_radius_top_right.to_string().as_str());
+      style_value.remove("borderRadiusTopRight");
+    }
+    if let Some(border_radius_bottom_left) = border_radius_bottom_left {
+      border_radius.set_bottom_left(border_radius_bottom_left.to_string().as_str());
+      style_value.remove("borderRadiusBottomLeft");
+    }
+    if let Some(border_radius_bottom_right) = border_radius_bottom_right {
+      border_radius.set_bottom_right(border_radius_bottom_right.to_string().as_str());
+      style_value.remove("borderRadiusBottomRight");
+    }
+    if border_radius.is_zero() {
+      style_value.remove("borderRadius");
+    } else {
       style_value.insert(
         "borderRadius".to_string(),
-        StyleValueType::BorderRadius(BorderRadius::from(border_radius.to_string().as_str())),
+        StyleValueType::BorderRadius(border_radius),
       );
     }
+    
   }
 
   pub fn calc(&self) -> StyleData {

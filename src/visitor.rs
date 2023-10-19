@@ -20,7 +20,7 @@ use swc_ecma_visit::{
 
 use crate::{
   scraper::Element,
-  style_parser::{BorderRadius, StyleValue, StyleValueType, TextDecoration, ToObjectExpr},
+  style_parser::{BorderRadius, StyleValue, StyleValueType, TextDecoration, ToObjectExpr, MarginPadding},
   utils::{create_qualname, is_starts_with_uppercase, recursion_jsx_member, to_camel_case},
 };
 
@@ -188,6 +188,7 @@ pub fn parse_style_kv(key: &str, value: &StyleValueType) -> KeyValueProp {
       StyleValueType::Normal(value) => value.to_string().into(),
       StyleValueType::TextDecoration(text_decoration) => text_decoration.to_object_expr().into(),
       StyleValueType::BorderRadius(border_radius) => border_radius.to_object_expr().into(),
+      StyleValueType::MarginPadding(margin_padding) => margin_padding.to_object_expr().into(),
     },
   }
 }
@@ -483,20 +484,20 @@ impl VisitMut for JSXMutVisitor {
                                           .key
                                         {
                                           PropName::Ident(ident) => {
+                                            let value = match &*key_value_prop.value {
+                                              Expr::Lit(lit) => match lit {
+                                                Lit::Str(str) => to_camel_case(
+                                                  str.value.to_string().as_str(),
+                                                  true,
+                                                ),
+                                                _ => "".to_string(),
+                                              },
+                                              _ => {
+                                                has_dynamic_style = true;
+                                                "".to_string()
+                                              }
+                                            };
                                             if ident.sym.to_string() == "textDecoration" {
-                                              let value = match &*key_value_prop.value {
-                                                Expr::Lit(lit) => match lit {
-                                                  Lit::Str(str) => to_camel_case(
-                                                    str.value.to_string().as_str(),
-                                                    true,
-                                                  ),
-                                                  _ => "None".to_string(),
-                                                },
-                                                _ => {
-                                                  has_dynamic_style = true;
-                                                  "".to_string()
-                                                }
-                                              };
                                               if !has_dynamic_style {
                                                 let mut text_decoration =
                                                   TextDecoration::from(value.to_string().as_str());
@@ -517,24 +518,25 @@ impl VisitMut for JSXMutVisitor {
                                                   text_decoration.to_object_expr().into();
                                               }
                                             } else if ident.sym.to_string() == "borderRadius" {
-                                              let value = match &*key_value_prop.value {
-                                                Expr::Lit(lit) => match lit {
-                                                  Lit::Str(str) => to_camel_case(
-                                                    str.value.to_string().as_str(),
-                                                    true,
-                                                  ),
-                                                  _ => "".to_string(),
-                                                },
-                                                _ => {
-                                                  has_dynamic_style = true;
-                                                  "".to_string()
-                                                }
-                                              };
                                               if !has_dynamic_style {
                                                 let border_radius =
                                                   BorderRadius::from(value.to_string().as_str());
                                                 key_value_prop.value =
                                                   border_radius.to_object_expr().into();
+                                              }
+                                            } else if ident.sym.to_string() == "margin" {
+                                              if !has_dynamic_style {
+                                                let margin_padding =
+                                                  MarginPadding::from(value.to_string().as_str());
+                                                key_value_prop.value =
+                                                  margin_padding.to_object_expr().into();
+                                              }
+                                            } else if ident.sym.to_string() == "padding" {
+                                              if !has_dynamic_style {
+                                                let margin_padding =
+                                                MarginPadding::from(value.to_string().as_str());
+                                                key_value_prop.value =
+                                                  margin_padding.to_object_expr().into();
                                               }
                                             }
                                           }

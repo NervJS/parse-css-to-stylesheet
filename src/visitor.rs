@@ -1,6 +1,6 @@
 use std::{
   cell::RefCell,
-  collections::{HashMap, VecDeque, BTreeMap},
+  collections::{BTreeMap, HashMap, VecDeque},
   hash::{Hash, Hasher},
   rc::Rc,
 };
@@ -8,11 +8,11 @@ use std::{
 use html5ever::{tendril::StrTendril, Attribute};
 use swc_common::{Span, DUMMY_SP};
 use swc_ecma_ast::{
-  BindingIdent, CallExpr, Callee, ComputedPropName, Decl, Expr, ExprOrSpread, Ident, ImportDecl,
+  BindingIdent, CallExpr, Callee, Decl, Expr, ExprOrSpread, Ident, ImportDecl,
   ImportNamedSpecifier, ImportSpecifier, JSXAttr, JSXAttrName, JSXAttrOrSpread, JSXAttrValue,
-  JSXElement, JSXElementName, JSXExpr, JSXExprContainer, JSXFragment, KeyValueProp, Lit,
-  MemberExpr, MemberProp, Module, ModuleDecl, ModuleExportName, ModuleItem, Null, ObjectLit, Pat,
-  Prop, PropName, PropOrSpread, Stmt, Str, VarDecl, VarDeclKind, VarDeclarator,
+  JSXElement, JSXElementName, JSXExpr, JSXExprContainer, JSXFragment, KeyValueProp, Lit, Module,
+  ModuleDecl, ModuleExportName, ModuleItem, Null, ObjectLit, Pat, Prop, PropName, PropOrSpread,
+  Stmt, Str, VarDecl, VarDeclKind, VarDeclarator,
 };
 use swc_ecma_visit::{
   noop_visit_mut_type, noop_visit_type, Visit, VisitAll, VisitAllWith, VisitMut, VisitMutWith,
@@ -20,7 +20,7 @@ use swc_ecma_visit::{
 
 use crate::{
   scraper::Element,
-  style_parser::{StyleValue, StyleValueType},
+  style_parser::{BorderRadius, StyleValue, StyleValueType, TextDecoration, ToObjectExpr},
   utils::{create_qualname, is_starts_with_uppercase, recursion_jsx_member, to_camel_case},
 };
 
@@ -186,29 +186,8 @@ pub fn parse_style_kv(key: &str, value: &StyleValueType) -> KeyValueProp {
     key: PropName::Ident(Ident::new(key.to_string().into(), DUMMY_SP)),
     value: match value {
       StyleValueType::Normal(value) => value.to_string().into(),
-      StyleValueType::TextDecoration(text_decoration) => Expr::Object(ObjectLit {
-        span: DUMMY_SP,
-        props: vec![
-          PropOrSpread::Prop(Box::new(Prop::KeyValue(KeyValueProp {
-            key: PropName::Ident(Ident::new("type".into(), DUMMY_SP)),
-            value: Expr::Member(MemberExpr {
-              span: DUMMY_SP,
-              obj: Box::new(Expr::Ident(Ident::new("TextDecoration".into(), DUMMY_SP))),
-              prop: MemberProp::Computed(ComputedPropName {
-                span: DUMMY_SP,
-                expr: Expr::Lit(Lit::Str(Str::from(value.to_string()))).into(),
-              }),
-            })
-            .into(),
-          }))),
-          PropOrSpread::Prop(Box::new(Prop::KeyValue(KeyValueProp {
-            key: PropName::Ident(Ident::new("color".into(), DUMMY_SP)),
-            value: Expr::Lit(Lit::Str(Str::from(text_decoration.color.to_string()))).into(),
-          }))),
-        ]
-        .into(),
-      })
-      .into(),
+      StyleValueType::TextDecoration(text_decoration) => text_decoration.to_object_expr().into(),
+      StyleValueType::BorderRadius(border_radius) => border_radius.to_object_expr().into(),
     },
   }
 }
@@ -495,7 +474,7 @@ impl VisitMut for JSXMutVisitor {
                                   };
                                   color
                                 });
-                                lit.props = deque
+                                let mut props = deque
                                   .iter_mut()
                                   .map(|p| {
                                     match p {
@@ -505,70 +484,58 @@ impl VisitMut for JSXMutVisitor {
                                         {
                                           PropName::Ident(ident) => {
                                             if ident.sym.to_string() == "textDecoration" {
-                                              key_value_prop.value =
-                                                Box::new(Expr::Object(ObjectLit {
-                                                  span: DUMMY_SP,
-                                                  props: vec![
-                                                    PropOrSpread::Prop(Box::new(Prop::KeyValue(
-                                                      KeyValueProp {
-                                                        key: PropName::Ident(Ident::new(
-                                                          "type".into(),
-                                                          DUMMY_SP,
-                                                        )),
-                                                        value: Expr::Member(MemberExpr {
-                                                          span: DUMMY_SP,
-                                                          obj: Box::new(Expr::Ident(Ident::new(
-                                                            "TextDecoration".into(),
-                                                            DUMMY_SP,
-                                                          ))),
-                                                          prop: MemberProp::Computed(
-                                                            ComputedPropName {
-                                                              span: DUMMY_SP,
-                                                              expr: match &*key_value_prop.value {
-                                                                Expr::Lit(lit) => match lit {
-                                                                  Lit::Str(str) => {
-                                                                    Expr::Lit(Lit::Str(Str::from(
-                                                                      to_camel_case(
-                                                                        str
-                                                                          .value
-                                                                          .to_string()
-                                                                          .as_str(),
-                                                                        false,
-                                                                      ),
-                                                                    )))
-                                                                  }
-                                                                  _ => Expr::Lit(Lit::Str(
-                                                                    Str::from("None".to_string()),
-                                                                  )),
-                                                                },
-                                                                _ => {
-                                                                  (*key_value_prop.value).clone()
-                                                                }
-                                                              }
-                                                              .into(),
-                                                            },
-                                                          ),
-                                                        })
-                                                        .into(),
+                                              let value = match &*key_value_prop.value {
+                                                Expr::Lit(lit) => match lit {
+                                                  Lit::Str(str) => to_camel_case(
+                                                    str.value.to_string().as_str(),
+                                                    true,
+                                                  ),
+                                                  _ => "None".to_string(),
+                                                },
+                                                _ => {
+                                                  has_dynamic_style = true;
+                                                  "".to_string()
+                                                }
+                                              };
+                                              if !has_dynamic_style {
+                                                let mut text_decoration =
+                                                  TextDecoration::from(value.to_string().as_str());
+                                                text_decoration.change_color(
+                                                  match &color {
+                                                    Some(color) => match &**color {
+                                                      Expr::Lit(lit) => match lit {
+                                                        Lit::Str(str) => str.value.to_string(),
+                                                        _ => "black".to_string(),
                                                       },
-                                                    ))),
-                                                    PropOrSpread::Prop(Box::new(Prop::KeyValue(
-                                                      KeyValueProp {
-                                                        key: PropName::Ident(Ident::new(
-                                                          "color".into(),
-                                                          DUMMY_SP,
-                                                        )),
-                                                        value: match &color {
-                                                          Some(value) => (*value).clone(),
-                                                          None => Box::new(Expr::Lit(Lit::Str(
-                                                            Str::from("black".to_string()),
-                                                          ))),
-                                                        },
-                                                      },
-                                                    ))),
-                                                  ]
-                                                  .into(),
-                                                }));
+                                                      _ => "black".to_string(),
+                                                    },
+                                                    None => "black".to_string(),
+                                                  }
+                                                  .as_str(),
+                                                );
+                                                key_value_prop.value =
+                                                  text_decoration.to_object_expr().into();
+                                              }
+                                            } else if ident.sym.to_string() == "borderRadius" {
+                                              let value = match &*key_value_prop.value {
+                                                Expr::Lit(lit) => match lit {
+                                                  Lit::Str(str) => to_camel_case(
+                                                    str.value.to_string().as_str(),
+                                                    true,
+                                                  ),
+                                                  _ => "".to_string(),
+                                                },
+                                                _ => {
+                                                  has_dynamic_style = true;
+                                                  "".to_string()
+                                                }
+                                              };
+                                              if !has_dynamic_style {
+                                                let border_radius =
+                                                  BorderRadius::from(value.to_string().as_str());
+                                                key_value_prop.value =
+                                                  border_radius.to_object_expr().into();
+                                              }
                                             }
                                           }
                                           _ => {}
@@ -579,7 +546,31 @@ impl VisitMut for JSXMutVisitor {
                                     }
                                     (*p).clone()
                                   })
-                                  .collect();
+                                  .collect::<Vec<_>>();
+                                props.sort_by(|a, b| {
+                                  let a = match a {
+                                    PropOrSpread::Prop(prop) => match &**prop {
+                                      Prop::KeyValue(key_value_prop) => match &key_value_prop.key {
+                                        PropName::Ident(ident) => ident.sym.to_string(),
+                                        _ => "".to_string(),
+                                      },
+                                      _ => "".to_string(),
+                                    },
+                                    _ => "".to_string(),
+                                  };
+                                  let b = match b {
+                                    PropOrSpread::Prop(prop) => match &**prop {
+                                      Prop::KeyValue(key_value_prop) => match &key_value_prop.key {
+                                        PropName::Ident(ident) => ident.sym.to_string(),
+                                        _ => "".to_string(),
+                                      },
+                                      _ => "".to_string(),
+                                    },
+                                    _ => "".to_string(),
+                                  };
+                                  a.cmp(&b)
+                                });
+                                lit.props = props;
                               }
                             }
                             _ => {

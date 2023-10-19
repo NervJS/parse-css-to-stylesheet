@@ -12,6 +12,11 @@ use lightningcss::{
   visit_types,
   visitor::{Visit, VisitTypes, Visitor},
 };
+use swc_common::DUMMY_SP;
+use swc_ecma_ast::{
+  ComputedPropName, Expr, Ident, KeyValueProp, Lit, MemberExpr, MemberProp, ObjectLit, Prop,
+  PropName, PropOrSpread, Str,
+};
 
 use crate::{document::JSXDocument, utils::to_camel_case, visitor::SpanKey};
 
@@ -22,16 +27,138 @@ pub struct StyleData {
   pub all_style: Rc<RefCell<HashMap<String, StyleValue>>>,
 }
 
+pub trait ToObjectExpr {
+  fn to_object_expr(&self) -> Expr;
+}
+
 #[derive(Debug, Clone)]
 pub struct TextDecoration {
   pub kind: String,
   pub color: String,
 }
 
+impl TextDecoration {
+  pub fn change_color(&mut self, color: &str) {
+    self.color = color.to_string();
+  }
+}
+
+impl ToObjectExpr for TextDecoration {
+  fn to_object_expr(&self) -> Expr {
+    Expr::Object(ObjectLit {
+      span: DUMMY_SP,
+      props: vec![
+        PropOrSpread::Prop(Box::new(Prop::KeyValue(KeyValueProp {
+          key: PropName::Ident(Ident::new("type".into(), DUMMY_SP)),
+          value: Expr::Member(MemberExpr {
+            span: DUMMY_SP,
+            obj: Box::new(Expr::Ident(Ident::new("TextDecoration".into(), DUMMY_SP))),
+            prop: MemberProp::Computed(ComputedPropName {
+              span: DUMMY_SP,
+              expr: Expr::Lit(Lit::Str(Str::from(self.kind.to_string()))).into(),
+            }),
+          })
+          .into(),
+        }))),
+        PropOrSpread::Prop(Box::new(Prop::KeyValue(KeyValueProp {
+          key: PropName::Ident(Ident::new("color".into(), DUMMY_SP)),
+          value: Expr::Lit(Lit::Str(Str::from(self.color.to_string()))).into(),
+        }))),
+      ]
+      .into(),
+    })
+  }
+}
+
+impl From<&str> for TextDecoration {
+  fn from(value: &str) -> Self {
+    TextDecoration {
+      kind: value.to_string(),
+      color: "black".to_string(),
+    }
+  }
+}
+
+#[derive(Debug, Clone)]
+pub struct BorderRadius {
+  pub top_left: String,
+  pub top_right: String,
+  pub bottom_left: String,
+  pub bottom_right: String,
+}
+
+impl ToObjectExpr for BorderRadius {
+  fn to_object_expr(&self) -> Expr {
+    Expr::Object(ObjectLit {
+      span: DUMMY_SP,
+      props: vec![
+        PropOrSpread::Prop(Box::new(Prop::KeyValue(KeyValueProp {
+          key: PropName::Ident(Ident::new("topLeft".into(), DUMMY_SP)),
+          value: Expr::Lit(Lit::Str(Str::from(self.top_left.to_string()))).into(),
+        }))),
+        PropOrSpread::Prop(Box::new(Prop::KeyValue(KeyValueProp {
+          key: PropName::Ident(Ident::new("topRight".into(), DUMMY_SP)),
+          value: Expr::Lit(Lit::Str(Str::from(self.top_right.to_string()))).into(),
+        }))),
+        PropOrSpread::Prop(Box::new(Prop::KeyValue(KeyValueProp {
+          key: PropName::Ident(Ident::new("bottomLeft".into(), DUMMY_SP)),
+          value: Expr::Lit(Lit::Str(Str::from(self.bottom_left.to_string()))).into(),
+        }))),
+        PropOrSpread::Prop(Box::new(Prop::KeyValue(KeyValueProp {
+          key: PropName::Ident(Ident::new("bottomRight".into(), DUMMY_SP)),
+          value: Expr::Lit(Lit::Str(Str::from(self.bottom_right.to_string()))).into(),
+        }))),
+      ]
+      .into(),
+    })
+  }
+}
+
+impl From<&str> for BorderRadius {
+  fn from(value: &str) -> Self {
+    let border_radius = value.to_string();
+    let border_radius = border_radius.split(" ").collect::<Vec<&str>>();
+    let border_radius = match border_radius.len() {
+      1 => BorderRadius {
+        top_left: border_radius[0].to_string(),
+        top_right: border_radius[0].to_string(),
+        bottom_left: border_radius[0].to_string(),
+        bottom_right: border_radius[0].to_string(),
+      },
+      2 => BorderRadius {
+        top_left: border_radius[0].to_string(),
+        top_right: border_radius[1].to_string(),
+        bottom_left: border_radius[0].to_string(),
+        bottom_right: border_radius[1].to_string(),
+      },
+      3 => BorderRadius {
+        top_left: border_radius[0].to_string(),
+        top_right: border_radius[1].to_string(),
+        bottom_left: border_radius[2].to_string(),
+        bottom_right: border_radius[1].to_string(),
+      },
+      4 => BorderRadius {
+        top_left: border_radius[0].to_string(),
+        top_right: border_radius[1].to_string(),
+        bottom_left: border_radius[2].to_string(),
+        bottom_right: border_radius[3].to_string(),
+      },
+      _ => BorderRadius {
+        top_left: "0".to_string(),
+        top_right: "0".to_string(),
+        bottom_left: "0".to_string(),
+        bottom_right: "0".to_string(),
+      },
+    };
+    border_radius
+  }
+}
+
 #[derive(Debug, Clone)]
 pub enum StyleValueType {
   Normal(String),
   TextDecoration(TextDecoration),
+  BorderRadius(BorderRadius),
 }
 
 impl Display for StyleValueType {
@@ -40,6 +167,13 @@ impl Display for StyleValueType {
       StyleValueType::Normal(value) => write!(f, "{}", value),
       StyleValueType::TextDecoration(value) => {
         write!(f, "{}", to_camel_case(value.kind.as_str(), true))
+      }
+      StyleValueType::BorderRadius(value) => {
+        write!(
+          f,
+          "{} {} {} {}",
+          value.top_left, value.top_right, value.bottom_left, value.bottom_right
+        )
       }
     }
   }
@@ -165,11 +299,14 @@ impl<'i> StyleParser<'i> {
   fn parse_style_value(&self, style_value: &mut StyleValue) {
     let mut text_decoration = None;
     let mut color = None;
+    let mut border_radius = None;
     for property in style_value.iter_mut() {
       if property.0 == "textDecoration" {
         text_decoration = Some(property.1.clone());
       } else if property.0 == "color" {
         color = Some(property.1.clone());
+      } else if property.0 == "borderRadius" {
+        border_radius = Some(property.1.clone());
       }
     }
 
@@ -183,6 +320,13 @@ impl<'i> StyleParser<'i> {
             None => "black".to_string(),
           },
         }),
+      );
+    }
+
+    if let Some(border_radius) = border_radius {
+      style_value.insert(
+        "borderRadius".to_string(),
+        StyleValueType::BorderRadius(BorderRadius::from(border_radius.to_string().as_str())),
       );
     }
   }

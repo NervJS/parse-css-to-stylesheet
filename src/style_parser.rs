@@ -52,7 +52,7 @@ impl ToObjectExpr for TextDecoration {
           key: PropName::Ident(Ident::new("type".into(), DUMMY_SP)),
           value: Expr::Member(MemberExpr {
             span: DUMMY_SP,
-            obj: Box::new(Expr::Ident(Ident::new("TextDecoration".into(), DUMMY_SP))),
+            obj: Box::new(Expr::Ident(Ident::new("TextDecorationType".into(), DUMMY_SP))),
             prop: MemberProp::Computed(ComputedPropName {
               span: DUMMY_SP,
               expr: Expr::Lit(Lit::Str(Str::from(to_camel_case(self.kind.as_str(), true)))).into(),

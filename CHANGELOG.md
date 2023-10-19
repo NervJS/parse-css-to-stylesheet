@@ -1,3 +1,22 @@
+## [0.0.13](https://github.com/NervJS/parse-css-to-stylesheet/compare/v0.0.11...v0.0.13) (2023-10-19)
+
+
+### Bug Fixes
+
+* 遗漏样式属性添加情况 ([b698459](https://github.com/NervJS/parse-css-to-stylesheet/commit/b698459608d91030b2c4b8ba28c46e15bbe08189))
+
+
+### Features
+
+* 开始尝试在在编译时按需处理样式 ([82aa6f5](https://github.com/NervJS/parse-css-to-stylesheet/commit/82aa6f5a3a715d7e3ac50ac784b3a19cd4fe06e6))
+* 优化样式处理逻辑 ([d8954ae](https://github.com/NervJS/parse-css-to-stylesheet/commit/d8954aed25438151a7c48e477b462dd0235507d5))
+* 支持 margin/padding/borderRadius 各自的 longhand 样式名 ([7e112f6](https://github.com/NervJS/parse-css-to-stylesheet/commit/7e112f6dff71e35a289bab646c993f1144bfd9fe))
+* 支持 style 属性中写 lognhand 样式 ([68246b2](https://github.com/NervJS/parse-css-to-stylesheet/commit/68246b2757a9fc6ee468c937962920e50ca1a932))
+* 支持优化处理 border-radius 属性 ([8a79d76](https://github.com/NervJS/parse-css-to-stylesheet/commit/8a79d7660cdac449f214bb79d9d25ff041aa70e4))
+* 支持优化处理 text-decoration 属性 ([9799f94](https://github.com/NervJS/parse-css-to-stylesheet/commit/9799f94e9136346e52e2029099b991bfb077f643))
+
+
+
 ## [0.0.12](https://github.com/NervJS/parse-css-to-stylesheet/compare/v0.0.11...v0.0.12) (2023-10-18)
 
 

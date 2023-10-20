@@ -52,7 +52,10 @@ impl ToObjectExpr for TextDecoration {
           key: PropName::Ident(Ident::new("type".into(), DUMMY_SP)),
           value: Expr::Member(MemberExpr {
             span: DUMMY_SP,
-            obj: Box::new(Expr::Ident(Ident::new("TextDecorationType".into(), DUMMY_SP))),
+            obj: Box::new(Expr::Ident(Ident::new(
+              "TextDecorationType".into(),
+              DUMMY_SP,
+            ))),
             prop: MemberProp::Computed(ComputedPropName {
               span: DUMMY_SP,
               expr: Expr::Lit(Lit::Str(Str::from(to_camel_case(self.kind.as_str(), true)))).into(),
@@ -92,6 +95,14 @@ pub struct BorderRadius {
 }
 
 impl BorderRadius {
+  pub fn new() -> Self {
+    BorderRadius {
+      top_left: "0".to_string(),
+      top_right: "0".to_string(),
+      bottom_left: "0".to_string(),
+      bottom_right: "0".to_string(),
+    }
+  }
   pub fn is_zero(&self) -> bool {
     self.top_left == "0"
       && self.top_right == "0"
@@ -192,6 +203,15 @@ pub struct MarginPadding {
 }
 
 impl MarginPadding {
+  pub fn new() -> Self {
+    MarginPadding {
+      top: "0".to_string(),
+      right: "0".to_string(),
+      bottom: "0".to_string(),
+      left: "0".to_string(),
+    }
+  }
+
   pub fn is_zero(&self) -> bool {
     self.top == "0" && self.right == "0" && self.bottom == "0" && self.left == "0"
   }
@@ -430,7 +450,26 @@ impl<'i> StyleParser<'i> {
     final_style_record
   }
 
-  fn parse_style_value(&self, style_value: &mut StyleValue) {
+  fn parse_style_style(&self, style_value: &mut StyleDeclaration<'i>) -> StyleValue {
+    let properties = style_value
+      .declaration
+      .declarations
+      .iter()
+      .map(|property| {
+        (
+          to_camel_case(
+            property
+              .property_id()
+              .to_css_string(PrinterOptions::default())
+              .unwrap()
+              .as_str(),
+            false,
+          ),
+          property,
+        )
+      })
+      .collect::<HashMap<_, _>>();
+    let mut final_properties = HashMap::new();
     let mut margin = None;
     let mut margin_left = None;
     let mut margin_right = None;
@@ -448,7 +487,8 @@ impl<'i> StyleParser<'i> {
     let mut border_radius_bottom_right = None;
     let mut text_decoration = None;
     let mut color = None;
-    for (id, value) in style_value.iter_mut() {
+
+    for (id, value) in properties.into_iter() {
       if id == "margin" {
         margin = Some(value.clone());
       } else if id == "marginLeft" {
@@ -483,153 +523,339 @@ impl<'i> StyleParser<'i> {
         text_decoration = Some(value.clone());
       } else if id == "color" {
         color = Some(value.clone());
+        final_properties.insert(
+          id,
+          StyleValueType::Normal(
+            value
+              .value_to_css_string(PrinterOptions {
+                minify: false,
+                targets: Targets {
+                  include: Features::HexAlphaColors,
+                  ..Targets::default()
+                },
+                ..PrinterOptions::default()
+              })
+              .unwrap(),
+          ),
+        );
+      } else {
+        final_properties.insert(
+          id,
+          StyleValueType::Normal(
+            value
+              .value_to_css_string(PrinterOptions {
+                minify: false,
+                targets: Targets {
+                  include: Features::HexAlphaColors,
+                  ..Targets::default()
+                },
+                ..PrinterOptions::default()
+              })
+              .unwrap(),
+          ),
+        );
       }
     }
 
     if let Some(text_decoration) = text_decoration {
-      style_value.insert(
-        "textDecoration".to_string(),
-        StyleValueType::TextDecoration(TextDecoration {
-          kind: text_decoration.to_string(),
-          color: match color {
-            Some(color) => color.to_string(),
-            None => "black".to_string(),
-          },
-        }),
-      );
+      match &text_decoration {
+        Property::TextDecoration(decoration, _) => {
+          final_properties.insert(
+            "textDecoration".to_string(),
+            StyleValueType::TextDecoration(TextDecoration {
+              kind: decoration
+                .line
+                .to_css_string(PrinterOptions::default())
+                .unwrap(),
+              color: match color {
+                Some(color) => to_camel_case(
+                  color
+                    .value_to_css_string(PrinterOptions::default())
+                    .unwrap()
+                    .as_str(),
+                  true,
+                ),
+                None => "black".to_string(),
+              },
+            }),
+          );
+        }
+        _ => {}
+      }
     }
 
     let mut margin = match margin {
-      Some(margin) => MarginPadding::from(margin.to_string().as_str()),
-      None => MarginPadding::from("0"),
+      Some(margin) => match margin {
+        Property::Margin(value) => {
+          let mut margin = MarginPadding::new();
+          margin.set_top(
+            value
+              .top
+              .to_css_string(PrinterOptions::default())
+              .unwrap()
+              .as_str(),
+          );
+          margin.set_right(
+            value
+              .right
+              .to_css_string(PrinterOptions::default())
+              .unwrap()
+              .as_str(),
+          );
+          margin.set_bottom(
+            value
+              .bottom
+              .to_css_string(PrinterOptions::default())
+              .unwrap()
+              .as_str(),
+          );
+          margin.set_left(
+            value
+              .left
+              .to_css_string(PrinterOptions::default())
+              .unwrap()
+              .as_str(),
+          );
+          margin
+        }
+        _ => MarginPadding::new(),
+      },
+      None => MarginPadding::new(),
     };
+
     if let Some(margin_left) = margin_left {
-      margin.set_left(margin_left.to_string().as_str());
-      style_value.remove("marginLeft");
+      margin.set_left(
+        match margin_left {
+          Property::MarginLeft(value) => value.to_css_string(PrinterOptions::default()).unwrap(),
+          _ => "0".to_string(),
+        }
+        .as_str(),
+      );
     }
     if let Some(margin_right) = margin_right {
-      margin.set_right(margin_right.to_string().as_str());
-      style_value.remove("marginRight");
+      margin.set_right(
+        match margin_right {
+          Property::MarginRight(value) => value.to_css_string(PrinterOptions::default()).unwrap(),
+          _ => "0".to_string(),
+        }
+        .as_str(),
+      );
     }
     if let Some(margin_top) = margin_top {
-      margin.set_top(margin_top.to_string().as_str());
-      style_value.remove("marginTop");
+      margin.set_top(
+        match margin_top {
+          Property::MarginTop(value) => value.to_css_string(PrinterOptions::default()).unwrap(),
+          _ => "0".to_string(),
+        }
+        .as_str(),
+      );
     }
     if let Some(margin_bottom) = margin_bottom {
-      margin.set_bottom(margin_bottom.to_string().as_str());
-      style_value.remove("marginBottom");
+      margin.set_bottom(
+        match margin_bottom {
+          Property::MarginBottom(value) => value.to_css_string(PrinterOptions::default()).unwrap(),
+          _ => "0".to_string(),
+        }
+        .as_str(),
+      );
     }
     if margin.is_zero() {
-      style_value.remove("margin");
+      final_properties.remove("margin");
     } else {
-      style_value.insert("margin".to_string(), StyleValueType::MarginPadding(margin));
+      final_properties.insert("margin".to_string(), StyleValueType::MarginPadding(margin));
     }
 
     let mut padding = match padding {
-      Some(padding) => MarginPadding::from(padding.to_string().as_str()),
-      None => MarginPadding::from("0"),
+      Some(padding) => match padding {
+        Property::Padding(value) => {
+          let mut padding = MarginPadding::new();
+          padding.set_top(
+            value
+              .top
+              .to_css_string(PrinterOptions::default())
+              .unwrap()
+              .as_str(),
+          );
+          padding.set_right(
+            value
+              .right
+              .to_css_string(PrinterOptions::default())
+              .unwrap()
+              .as_str(),
+          );
+          padding.set_bottom(
+            value
+              .bottom
+              .to_css_string(PrinterOptions::default())
+              .unwrap()
+              .as_str(),
+          );
+          padding.set_left(
+            value
+              .left
+              .to_css_string(PrinterOptions::default())
+              .unwrap()
+              .as_str(),
+          );
+          padding
+        }
+        _ => MarginPadding::new(),
+      },
+      None => MarginPadding::new(),
     };
+
     if let Some(padding_left) = padding_left {
-      padding.set_left(padding_left.to_string().as_str());
-      style_value.remove("paddingLeft");
+      padding.set_left(
+        match padding_left {
+          Property::PaddingLeft(value) => value.to_css_string(PrinterOptions::default()).unwrap(),
+          _ => "0".to_string(),
+        }
+        .as_str(),
+      );
     }
     if let Some(padding_right) = padding_right {
-      padding.set_right(padding_right.to_string().as_str());
-      style_value.remove("paddingRight");
+      padding.set_right(
+        match padding_right {
+          Property::PaddingRight(value) => value.to_css_string(PrinterOptions::default()).unwrap(),
+          _ => "0".to_string(),
+        }
+        .as_str(),
+      );
     }
     if let Some(padding_top) = padding_top {
-      padding.set_top(padding_top.to_string().as_str());
-      style_value.remove("paddingTop");
+      padding.set_top(
+        match padding_top {
+          Property::PaddingTop(value) => value.to_css_string(PrinterOptions::default()).unwrap(),
+          _ => "0".to_string(),
+        }
+        .as_str(),
+      );
     }
     if let Some(padding_bottom) = padding_bottom {
-      padding.set_bottom(padding_bottom.to_string().as_str());
-      style_value.remove("paddingBottom");
+      padding.set_bottom(
+        match padding_bottom {
+          Property::PaddingBottom(value) => value.to_css_string(PrinterOptions::default()).unwrap(),
+          _ => "0".to_string(),
+        }
+        .as_str(),
+      );
     }
     if padding.is_zero() {
-      style_value.remove("padding");
+      final_properties.remove("padding");
     } else {
-      style_value.insert(
+      final_properties.insert(
         "padding".to_string(),
         StyleValueType::MarginPadding(padding),
       );
     }
 
     let mut border_radius = match border_radius {
-      Some(border_radius) => BorderRadius::from(border_radius.to_string().as_str()),
-      None => BorderRadius::from("0"),
+      Some(border_radius) => match border_radius {
+        Property::BorderRadius(value, _) => {
+          let mut border_radius = BorderRadius::new();
+          border_radius.set_top_left(
+            value
+              .top_left
+              .to_css_string(PrinterOptions::default())
+              .unwrap()
+              .as_str(),
+          );
+          border_radius.set_top_right(
+            value
+              .top_right
+              .to_css_string(PrinterOptions::default())
+              .unwrap()
+              .as_str(),
+          );
+          border_radius.set_bottom_left(
+            value
+              .bottom_left
+              .to_css_string(PrinterOptions::default())
+              .unwrap()
+              .as_str(),
+          );
+          border_radius.set_bottom_right(
+            value
+              .bottom_right
+              .to_css_string(PrinterOptions::default())
+              .unwrap()
+              .as_str(),
+          );
+          border_radius
+        }
+        _ => BorderRadius::new(),
+      },
+      None => BorderRadius::new(),
     };
+
     if let Some(border_radius_top_left) = border_radius_top_left {
-      border_radius.set_top_left(border_radius_top_left.to_string().as_str());
-      style_value.remove("borderRadiusTopLeft");
+      border_radius.set_top_left(
+        match border_radius_top_left {
+          Property::BorderTopLeftRadius(value, _) => {
+            value.to_css_string(PrinterOptions::default()).unwrap()
+          }
+          _ => "0".to_string(),
+        }
+        .as_str(),
+      );
     }
     if let Some(border_radius_top_right) = border_radius_top_right {
-      border_radius.set_top_right(border_radius_top_right.to_string().as_str());
-      style_value.remove("borderRadiusTopRight");
+      border_radius.set_top_right(
+        match border_radius_top_right {
+          Property::BorderTopRightRadius(value, _) => {
+            value.to_css_string(PrinterOptions::default()).unwrap()
+          }
+          _ => "0".to_string(),
+        }
+        .as_str(),
+      );
     }
     if let Some(border_radius_bottom_left) = border_radius_bottom_left {
-      border_radius.set_bottom_left(border_radius_bottom_left.to_string().as_str());
-      style_value.remove("borderRadiusBottomLeft");
+      border_radius.set_bottom_left(
+        match border_radius_bottom_left {
+          Property::BorderBottomLeftRadius(value, _) => {
+            value.to_css_string(PrinterOptions::default()).unwrap()
+          }
+          _ => "0".to_string(),
+        }
+        .as_str(),
+      );
     }
     if let Some(border_radius_bottom_right) = border_radius_bottom_right {
-      border_radius.set_bottom_right(border_radius_bottom_right.to_string().as_str());
-      style_value.remove("borderRadiusBottomRight");
+      border_radius.set_bottom_right(
+        match border_radius_bottom_right {
+          Property::BorderBottomRightRadius(value, _) => {
+            value.to_css_string(PrinterOptions::default()).unwrap()
+          }
+          _ => "0".to_string(),
+        }
+        .as_str(),
+      );
     }
     if border_radius.is_zero() {
-      style_value.remove("borderRadius");
+      final_properties.remove("borderRadius");
     } else {
-      style_value.insert(
+      final_properties.insert(
         "borderRadius".to_string(),
         StyleValueType::BorderRadius(border_radius),
       );
     }
+
+    final_properties
   }
 
   pub fn calc(&self) -> StyleData {
     // 遍历 style_record，计算每个节点的最终样式
     let mut all_style = self.all_style.borrow_mut();
     let mut style_record = HashMap::new();
-    let final_all_style = self.calc_style_record(&mut all_style);
+    let mut final_all_style = self.calc_style_record(&mut all_style);
 
     let mut final_all_style = final_all_style
-      .iter()
-      .map(|(selector, style_value)| {
-        (
-          selector.to_owned(),
-          style_value
-            .declaration
-            .declarations
-            .iter()
-            .map(|property| {
-              (
-                to_camel_case(
-                  property
-                    .property_id()
-                    .to_css_string(PrinterOptions::default())
-                    .unwrap()
-                    .as_str(),
-                  false,
-                ),
-                StyleValueType::Normal(
-                  property
-                    .value_to_css_string(PrinterOptions {
-                      minify: false,
-                      targets: Targets {
-                        include: Features::HexAlphaColors,
-                        ..Targets::default()
-                      },
-                      ..PrinterOptions::default()
-                    })
-                    .unwrap(),
-                ),
-              )
-            })
-            .collect::<HashMap<_, _>>(),
-        )
-      })
+      .iter_mut()
+      .map(|(selector, style_value)| (selector.to_owned(), self.parse_style_style(style_value)))
       .collect::<HashMap<_, _>>();
 
     for (selector, style_value) in final_all_style.iter_mut() {
-      self.parse_style_value(style_value);
       let elements = self.document.select(selector);
       for element in elements {
         let declarations = style_record.entry(element.span).or_insert(vec![]);

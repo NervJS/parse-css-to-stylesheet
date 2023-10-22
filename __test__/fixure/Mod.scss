@@ -9,6 +9,7 @@
 	text-overflow:ellipsis;
 	white-space:nowrap;
 	overflow:hidden;
+	background: red url(https://img.alicdn.com/imgextra/i1/O1CN01QYQY2e1Q1QYQY2e1Q_!!6000000000000-2-tps-18-18.png) no-repeat center;
 }
 .instruction {
 	color:rgb(255,255,255);
@@ -16,6 +17,8 @@
 	line-height:1;
 	flex-shrink:0px;
 	display:inline-flex;
+	background: black;
+	
 }
 .cnt_row {
 	border-radius:100px;
@@ -31,6 +34,12 @@
 	padding-right:8px;
 	padding-top:8px;
 	padding-bottom:8px;
+	background-image: url(firefox.png), url(bubbles.png), linear-gradient(to right, rgba(30, 75, 115, 1), rgba(255, 255, 255, 0));
+	background-repeat: no-repeat, no-repeat, no-repeat;
+	background-position:
+		bottom right,
+		left,
+		right;
 }
 .img {
 	width:50px;

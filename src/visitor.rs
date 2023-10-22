@@ -21,7 +21,7 @@ use swc_ecma_visit::{
 use crate::{
   scraper::Element,
   style_parser::{
-    BorderRadius, MarginPadding, StyleValue, StyleValueType, TextDecoration, ToObjectExpr,
+    BorderRadius, MarginPadding, StyleValue, StyleValueType, TextDecoration, ToExpr,
   },
   utils::{
     create_qualname, delete_items, is_starts_with_uppercase, recursion_jsx_member, to_camel_case,
@@ -190,9 +190,13 @@ pub fn parse_style_kv(key: &str, value: &StyleValueType) -> KeyValueProp {
     key: PropName::Ident(Ident::new(key.to_string().into(), DUMMY_SP)),
     value: match value {
       StyleValueType::Normal(value) => value.to_string().into(),
-      StyleValueType::TextDecoration(text_decoration) => text_decoration.to_object_expr().into(),
-      StyleValueType::BorderRadius(border_radius) => border_radius.to_object_expr().into(),
-      StyleValueType::MarginPadding(margin_padding) => margin_padding.to_object_expr().into(),
+      StyleValueType::TextDecoration(text_decoration) => text_decoration.to_expr().into(),
+      StyleValueType::BorderRadius(border_radius) => border_radius.to_expr().into(),
+      StyleValueType::MarginPadding(margin_padding) => margin_padding.to_expr().into(),
+      StyleValueType::BackgroundImage(background_image) => background_image.to_expr().into(),
+      StyleValueType::BackgroundImageSize(background_size) => background_size.to_expr().into(),
+      StyleValueType::BackgroundImagePosition(background_position) => background_position.to_expr().into(),
+      StyleValueType::BackgroundColor(background_color) => background_color.to_expr().into(),
     },
   }
 }
@@ -700,7 +704,7 @@ impl VisitMut for JSXMutVisitor {
                                                   .as_str(),
                                                 );
                                                 key_value_prop.value =
-                                                  text_decoration.to_object_expr().into();
+                                                  text_decoration.to_expr().into();
                                               }
                                             }
                                           }
@@ -777,7 +781,7 @@ impl VisitMut for JSXMutVisitor {
                                     props.push(PropOrSpread::Prop(Box::new(Prop::KeyValue(
                                       KeyValueProp {
                                         key: PropName::Ident(Ident::new("margin".into(), DUMMY_SP)),
-                                        value: margin.to_object_expr().into(),
+                                        value: margin.to_expr().into(),
                                       },
                                     ))));
                                   }
@@ -788,7 +792,7 @@ impl VisitMut for JSXMutVisitor {
                                           "padding".into(),
                                           DUMMY_SP,
                                         )),
-                                        value: padding.to_object_expr().into(),
+                                        value: padding.to_expr().into(),
                                       },
                                     ))));
                                   }
@@ -799,7 +803,7 @@ impl VisitMut for JSXMutVisitor {
                                           "borderRadius".into(),
                                           DUMMY_SP,
                                         )),
-                                        value: border_radius.to_object_expr().into(),
+                                        value: border_radius.to_expr().into(),
                                       },
                                     ))));
                                   }

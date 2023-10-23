@@ -16,8 +16,10 @@ use lightningcss::{
   targets::{Features, Targets},
   traits::ToCss,
   values::{
+    gradient::{Gradient, GradientItem, LineDirection},
     image::Image,
-    length::LengthPercentageOrAuto,
+    length::{LengthPercentageOrAuto, LengthValue},
+    percentage::DimensionPercentage,
     position::{
       HorizontalPositionKeyword,
       PositionComponent::{Center, Length, Side},
@@ -30,8 +32,8 @@ use lightningcss::{
 use smallvec::SmallVec;
 use swc_common::DUMMY_SP;
 use swc_ecma_ast::{
-  ArrayLit, ComputedPropName, Expr, Ident, KeyValueProp, Lit, MemberExpr, MemberProp, ObjectLit,
-  Prop, PropName, PropOrSpread, Str,
+  ArrayLit, Bool, ComputedPropName, Expr, ExprOrSpread, Ident, KeyValueProp, Lit, MemberExpr,
+  MemberProp, ObjectLit, Prop, PropName, PropOrSpread, Str,
 };
 
 use crate::{document::JSXDocument, utils::to_camel_case, visitor::SpanKey};
@@ -154,27 +156,130 @@ fn parse_background_size(size: &SmallVec<[BackgroundSize; 1]>) -> BackgroundImag
   BackgroundImageSize(background_size)
 }
 
+fn parse_background_image_item(
+  image: &Image,
+  repeat: &BackgroundRepeat,
+) -> Option<BackgroundImageItem> {
+  match image {
+    Image::Url(url) => Some(BackgroundImageItem {
+      image: BackgroundImageKind::String(url.to_css_string(PrinterOptions::default()).unwrap()),
+      repeat: Some(ImageRepeat::from(repeat.clone())),
+    }),
+    Image::Gradient(gradient) => {
+      if let Gradient::Linear(gradient) = &**gradient {
+        let mut color_stops = vec![];
+        for item in &gradient.items {
+          match item {
+            GradientItem::ColorStop(color_stop) => {
+              color_stops.push((
+                color_stop
+                  .color
+                  .to_css_string(PrinterOptions::default())
+                  .unwrap(),
+                color_stop
+                  .position
+                  .clone()
+                  .unwrap_or(DimensionPercentage::Dimension(LengthValue::Px(0.0)))
+                  .to_css_string(PrinterOptions::default())
+                  .unwrap(),
+              ));
+            }
+            _ => {}
+          };
+        }
+        let repeating = if repeat.x == BackgroundRepeatKeyword::Repeat
+          && repeat.y == BackgroundRepeatKeyword::Repeat
+        {
+          true
+        } else {
+          false
+        };
+        let direction = &gradient.direction;
+        match direction {
+          LineDirection::Angle(angle) => Some(BackgroundImageItem {
+            image: BackgroundImageKind::LinearGradient(LinearGradientItem {
+              angle: Some(angle.to_css_string(PrinterOptions::default()).unwrap()),
+              color_stops,
+              derection: None,
+              repeating,
+            }),
+            repeat: None,
+          }),
+          LineDirection::Horizontal(horizontal) => Some(BackgroundImageItem {
+            image: BackgroundImageKind::LinearGradient(LinearGradientItem {
+              angle: None,
+              color_stops,
+              derection: Some(match horizontal {
+                HorizontalPositionKeyword::Left => LinearGradientDirection::Left,
+                HorizontalPositionKeyword::Right => LinearGradientDirection::Right,
+              }),
+              repeating,
+            }),
+            repeat: None,
+          }),
+          LineDirection::Vertical(vertical) => Some(BackgroundImageItem {
+            image: BackgroundImageKind::LinearGradient(LinearGradientItem {
+              angle: None,
+              color_stops,
+              derection: Some(match vertical {
+                VerticalPositionKeyword::Top => LinearGradientDirection::Top,
+                VerticalPositionKeyword::Bottom => LinearGradientDirection::Bottom,
+              }),
+              repeating,
+            }),
+            repeat: None,
+          }),
+          LineDirection::Corner {
+            horizontal,
+            vertical,
+          } => Some(BackgroundImageItem {
+            image: BackgroundImageKind::LinearGradient(LinearGradientItem {
+              angle: None,
+              color_stops,
+              derection: Some(match (horizontal, vertical) {
+                (HorizontalPositionKeyword::Left, VerticalPositionKeyword::Top) => {
+                  LinearGradientDirection::LeftTop
+                }
+                (HorizontalPositionKeyword::Left, VerticalPositionKeyword::Bottom) => {
+                  LinearGradientDirection::LeftBottom
+                }
+                (HorizontalPositionKeyword::Right, VerticalPositionKeyword::Top) => {
+                  LinearGradientDirection::RightTop
+                }
+                (HorizontalPositionKeyword::Right, VerticalPositionKeyword::Bottom) => {
+                  LinearGradientDirection::RightBottom
+                }
+              }),
+              repeating,
+            }),
+            repeat: None,
+          }),
+        }
+      } else {
+        None
+      }
+    }
+    _ => None,
+  }
+}
+
 fn parse_background_image(
   image: &SmallVec<[Image; 1]>,
   repeat: Option<&SmallVec<[BackgroundRepeat; 1]>>,
 ) -> BackgroundImage {
   let mut background_image = vec![];
   for (index, item) in image.iter().enumerate() {
-    match item {
-      Image::Url(url) => {
-        background_image.push(BackgroundImageItem {
-          src: url.to_css_string(PrinterOptions::default()).unwrap(),
-          repeat: ImageRepeat::from(repeat.map(|item| item[index].clone()).unwrap_or(
-            BackgroundRepeat {
-              x: BackgroundRepeatKeyword::NoRepeat,
-              y: BackgroundRepeatKeyword::NoRepeat,
-            },
-          )),
-        });
-      }
-      // 需要处理渐变
-      _ => {}
-    };
+    if let Some(item) = parse_background_image_item(
+      item,
+      &repeat
+        .map(|item| item[index].clone())
+        .unwrap_or(BackgroundRepeat {
+          x: BackgroundRepeatKeyword::NoRepeat,
+          y: BackgroundRepeatKeyword::NoRepeat,
+        }),
+    ) {
+      background_image.push(item);
+    }
   }
   BackgroundImage(background_image)
 }
@@ -185,16 +290,9 @@ fn parse_background(background: &SmallVec<[LNBackground<'_>; 1]>) -> Background 
   let mut background_size = vec![];
   let mut background_color = None;
   for item in background.iter() {
-    match &item.image {
-      Image::Url(url) => {
-        background_image.push(BackgroundImageItem {
-          src: url.to_css_string(PrinterOptions::default()).unwrap(),
-          repeat: ImageRepeat::from(item.repeat.clone()),
-        });
-      }
-      // 需要处理渐变
-      _ => {}
-    };
+    if let Some(image) = parse_background_image_item(&item.image, &item.repeat) {
+      background_image.push(image);
+    }
     background_position.push(parse_background_position_item(&item.position));
     if let Some(size) = parse_background_size_item(&item.size) {
       background_size.push(size);
@@ -513,11 +611,102 @@ pub enum LinearGradientDirection {
 }
 
 #[derive(Debug, Clone)]
-pub struct LinearGradient {
-  pub angle: String,
-  pub color_stops: HashMap<String, String>,
-  pub derection: LinearGradientDirection,
+pub struct LinearGradientItem {
+  pub angle: Option<String>,
+  pub color_stops: Vec<(String, String)>,
+  pub derection: Option<LinearGradientDirection>,
   pub repeating: bool,
+}
+
+impl ToExpr for LinearGradientItem {
+  fn to_expr(&self) -> Expr {
+    let mut props = vec![];
+    if let Some(angle) = &self.angle {
+      props.push(PropOrSpread::Prop(Box::new(Prop::KeyValue(KeyValueProp {
+        key: PropName::Ident(Ident::new("angle".into(), DUMMY_SP)),
+        value: Expr::Lit(Lit::Str(Str::from(angle.to_string()))).into(),
+      }))));
+    }
+    props.push(PropOrSpread::Prop(Box::new(Prop::KeyValue(KeyValueProp {
+      key: PropName::Ident(Ident::new("colors".into(), DUMMY_SP)),
+      value: Expr::Array(ArrayLit {
+        span: DUMMY_SP,
+        elems: self
+          .color_stops
+          .iter()
+          .map(|item| {
+            Some(ExprOrSpread {
+              spread: None,
+              expr: Expr::Array(ArrayLit {
+                span: DUMMY_SP,
+                elems: vec![
+                  Some(Expr::Lit(Lit::Str(Str::from(item.0.to_string()))).into()),
+                  Some(Expr::Lit(Lit::Str(Str::from(item.1.to_string()))).into()),
+                ],
+              })
+              .into(),
+            })
+          })
+          .collect::<Vec<_>>(),
+      })
+      .into(),
+    }))));
+    if let Some(derection) = &self.derection {
+      props.push(PropOrSpread::Prop(Box::new(Prop::KeyValue(KeyValueProp {
+        key: PropName::Ident(Ident::new("direction".into(), DUMMY_SP)),
+        value: Expr::Member(MemberExpr {
+          span: DUMMY_SP,
+          obj: Box::new(Expr::Ident(Ident::new(
+            "GradientDirection".into(),
+            DUMMY_SP,
+          ))),
+          prop: MemberProp::Computed(ComputedPropName {
+            span: DUMMY_SP,
+            expr: Expr::Lit(Lit::Str(Str::from(match derection {
+              LinearGradientDirection::Left => "Left",
+              LinearGradientDirection::Right => "Right",
+              LinearGradientDirection::Top => "Top",
+              LinearGradientDirection::Bottom => "Bottom",
+              LinearGradientDirection::LeftTop => "LeftTop",
+              LinearGradientDirection::LeftBottom => "LeftBottom",
+              LinearGradientDirection::RightTop => "RightTop",
+              LinearGradientDirection::RightBottom => "RightBottom",
+            })))
+            .into(),
+          }),
+        })
+        .into(),
+      }))));
+    }
+    props.push(PropOrSpread::Prop(Box::new(Prop::KeyValue(KeyValueProp {
+      key: PropName::Ident(Ident::new("repeating".into(), DUMMY_SP)),
+      value: Expr::Lit(Lit::Bool(Bool {
+        span: DUMMY_SP,
+        value: self.repeating,
+      }))
+      .into(),
+    }))));
+    Expr::Object(ObjectLit {
+      span: DUMMY_SP,
+      props,
+    })
+  }
+}
+
+#[derive(Debug, Clone)]
+pub struct LinearGradient(pub Vec<LinearGradientItem>);
+
+impl ToExpr for LinearGradient {
+  fn to_expr(&self) -> Expr {
+    Expr::Array(ArrayLit {
+      span: DUMMY_SP,
+      elems: self
+        .0
+        .iter()
+        .map(|item| Some(item.to_expr().into()))
+        .collect::<Vec<_>>(),
+    })
+  }
 }
 
 #[derive(Debug, Clone)]
@@ -544,14 +733,14 @@ impl ToExpr for BackgroundImage {
       elems: self
         .0
         .iter()
-        .map(|item| {
-          Some(
+        .map(|item| match &item.image {
+          BackgroundImageKind::String(src) => Some(
             Expr::Object(ObjectLit {
               span: DUMMY_SP,
               props: vec![
                 PropOrSpread::Prop(Box::new(Prop::KeyValue(KeyValueProp {
                   key: PropName::Ident(Ident::new("src".into(), DUMMY_SP)),
-                  value: Expr::Lit(Lit::Str(Str::from(item.src.to_string()))).into(),
+                  value: Expr::Lit(Lit::Str(Str::from(src.to_string()))).into(),
                 }))),
                 PropOrSpread::Prop(Box::new(Prop::KeyValue(KeyValueProp {
                   key: PropName::Ident(Ident::new("repeat".into(), DUMMY_SP)),
@@ -560,13 +749,17 @@ impl ToExpr for BackgroundImage {
                     obj: Box::new(Expr::Ident(Ident::new("ImageRepeat".into(), DUMMY_SP))),
                     prop: MemberProp::Ident(Ident {
                       span: DUMMY_SP,
-                      sym: match self.0[0].repeat {
-                        ImageRepeat::XY => "XY",
-                        ImageRepeat::X => "X",
-                        ImageRepeat::Y => "Y",
-                        ImageRepeat::NoRepeat => "NoRepeat",
-                      }
-                      .into(),
+                      sym: if let Some(repeat) = &self.0[0].repeat {
+                        match repeat {
+                          ImageRepeat::XY => "XY",
+                          ImageRepeat::X => "X",
+                          ImageRepeat::Y => "Y",
+                          ImageRepeat::NoRepeat => "NoRepeat",
+                        }
+                        .into()
+                      } else {
+                        "NoRepeat".into()
+                      },
                       optional: false,
                     }),
                   })
@@ -576,7 +769,10 @@ impl ToExpr for BackgroundImage {
               .into(),
             })
             .into(),
-          )
+          ),
+          BackgroundImageKind::LinearGradient(linear_gradient) => {
+            Some(linear_gradient.to_expr().into())
+          }
         })
         .collect::<Vec<_>>(),
     })
@@ -620,9 +816,15 @@ impl From<&BackgroundImageStr> for BackgroundImage {
 }
 
 #[derive(Debug, Clone)]
+pub enum BackgroundImageKind {
+  String(String),
+  LinearGradient(LinearGradientItem),
+}
+
+#[derive(Debug, Clone)]
 pub struct BackgroundImageItem {
-  src: String,
-  repeat: ImageRepeat,
+  image: BackgroundImageKind,
+  repeat: Option<ImageRepeat>,
 }
 
 #[derive(Debug, Clone)]
@@ -955,6 +1157,7 @@ pub enum StyleValueType {
   BackgroundColor(BackgroundColor),
   BackgroundImageSize(BackgroundImageSize),
   BackgroundImagePosition(BackgroundImagePosition),
+  LinearGradient(LinearGradient),
 }
 
 impl Display for StyleValueType {
@@ -981,23 +1184,27 @@ impl Display for StyleValueType {
       StyleValueType::BackgroundImage(value) => {
         let mut image = "".to_string();
         for item in value.0.iter() {
-          image.push_str(item.src.as_str());
-          image.push_str(" ");
-          match item.repeat {
-            ImageRepeat::XY => {
-              image.push_str("repeat");
-            }
-            ImageRepeat::X => {
-              image.push_str("repeat-x");
-            }
-            ImageRepeat::Y => {
-              image.push_str("repeat-y");
-            }
-            ImageRepeat::NoRepeat => {
-              image.push_str("no-repeat");
+          if let BackgroundImageKind::String(src) = &item.image {
+            image.push_str(src.as_str());
+            image.push_str(" ");
+            if let Some(repeat) = &item.repeat {
+              match repeat {
+                ImageRepeat::XY => {
+                  image.push_str("repeat");
+                }
+                ImageRepeat::X => {
+                  image.push_str("repeat-x");
+                }
+                ImageRepeat::Y => {
+                  image.push_str("repeat-y");
+                }
+                ImageRepeat::NoRepeat => {
+                  image.push_str("no-repeat");
+                }
+              }
+              image.push_str(" ");
             }
           }
-          image.push_str(" ");
         }
         write!(f, "{}", image)
       }
@@ -1066,6 +1273,25 @@ impl Display for StyleValueType {
         }
         write!(f, "{}", position)
       }
+      StyleValueType::LinearGradient(linear_gradient) => {
+        let mut linear_gradient_str = "".to_string();
+        for item in linear_gradient.0.iter() {
+          if let Some(angle) = &item.angle {
+            linear_gradient_str.push_str(angle.as_str());
+            linear_gradient_str.push_str(" ");
+          }
+          for (index, color_stop) in item.color_stops.iter().enumerate() {
+            linear_gradient_str.push_str(color_stop.0.as_str());
+            linear_gradient_str.push_str(" ");
+            linear_gradient_str.push_str(color_stop.1.as_str());
+            if index != item.color_stops.len() - 1 {
+              linear_gradient_str.push_str(", ");
+            }
+          }
+          linear_gradient_str.push_str(" ");
+        }
+        write!(f, "{}", linear_gradient_str)
+      }
     }
   }
 }
@@ -1083,6 +1309,7 @@ impl ToExpr for StyleValueType {
         background_position.to_expr().into()
       }
       StyleValueType::BackgroundColor(background_color) => background_color.to_expr().into(),
+      StyleValueType::LinearGradient(linear_gradient) => linear_gradient.to_expr().into(),
     }
   }
 }
@@ -1540,10 +1767,27 @@ impl<'i> StyleParser<'i> {
         "background" => match value {
           Property::Background(value) => {
             let background = parse_background(value);
-            final_properties.insert(
-              "backgroundImage".to_string(),
-              StyleValueType::BackgroundImage(background.image),
-            );
+            let mut images = vec![];
+            let mut linear_gradient = vec![];
+            for item in background.image.0.iter() {
+              if let BackgroundImageKind::String(_) = &item.image {
+                images.push(item.clone());
+              } else if let BackgroundImageKind::LinearGradient(gradient) = &item.image {
+                linear_gradient.push(gradient.clone());
+              }
+            }
+            if images.len() > 0 {
+              final_properties.insert(
+                "backgroundImage".to_string(),
+                StyleValueType::BackgroundImage(BackgroundImage(images)),
+              );
+            }
+            if linear_gradient.len() > 0 {
+              final_properties.insert(
+                "linearGradient".to_string(),
+                StyleValueType::LinearGradient(LinearGradient(linear_gradient)),
+              );
+            }
             final_properties.insert(
               "backgroundImagePosition".to_string(),
               StyleValueType::BackgroundImagePosition(background.position),
@@ -1588,10 +1832,27 @@ impl<'i> StyleParser<'i> {
               }
             }
             let background_image = parse_background_image(value, repeat);
-            final_properties.insert(
-              id.to_string(),
-              StyleValueType::BackgroundImage(background_image),
-            );
+            let mut images = vec![];
+            let mut linear_gradient = vec![];
+            for item in background_image.0.iter() {
+              if let BackgroundImageKind::String(_) = &item.image {
+                images.push(item.clone());
+              } else if let BackgroundImageKind::LinearGradient(gradient) = &item.image {
+                linear_gradient.push(gradient.clone());
+              }
+            }
+            if images.len() > 0 {
+              final_properties.insert(
+                id.to_string(),
+                StyleValueType::BackgroundImage(BackgroundImage(images)),
+              );
+            }
+            if linear_gradient.len() > 0 {
+              final_properties.insert(
+                "linearGradient".to_string(),
+                StyleValueType::LinearGradient(LinearGradient(linear_gradient)),
+              );
+            }
           }
           _ => {}
         },

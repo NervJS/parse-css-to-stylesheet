@@ -4,7 +4,7 @@ use std::{
 
 use lightningcss::{
   declaration::DeclarationBlock,
-  properties::{Property, background::{BackgroundRepeat, BackgroundRepeatKeyword, BackgroundSize, BackgroundPosition}},
+  properties::{Property, background::{BackgroundRepeat, BackgroundRepeatKeyword, BackgroundSize, BackgroundPosition, Background as LNBackground}, PropertyId},
   rules::CssRule,
   stylesheet::{ParserOptions, PrinterOptions, StyleSheet},
   targets::{Features, Targets},
@@ -13,6 +13,7 @@ use lightningcss::{
   visitor::{Visit, VisitTypes, Visitor},
   values::{image::Image, position::{PositionComponent::{Center, Side, Length}, VerticalPositionKeyword, HorizontalPositionKeyword}, length::LengthPercentageOrAuto},
 };
+use smallvec::SmallVec;
 use swc_common::DUMMY_SP;
 use swc_ecma_ast::{
   ComputedPropName, Expr, Ident, KeyValueProp, Lit, MemberExpr, MemberProp, ObjectLit, Prop,
@@ -20,6 +21,187 @@ use swc_ecma_ast::{
 };
 
 use crate::{document::JSXDocument, utils::to_camel_case, visitor::SpanKey};
+
+fn parse_background_position_item(position: &BackgroundPosition) -> ImagePosition {
+  match &position.x {
+    Center => {
+      match &position.y {
+        Center => {
+          ImagePosition::Center
+        }
+        Side { side, .. } => {
+          match side {
+            VerticalPositionKeyword::Top => ImagePosition::Top,
+            VerticalPositionKeyword::Bottom => ImagePosition::Bottom
+          }
+        }
+        Length(length_percentage) => ImagePosition::ImagePositionXY(
+          "50%".to_string(),
+          length_percentage.to_css_string(PrinterOptions::default()).unwrap(),
+        )
+      }
+    }
+    Side { side, .. } => {
+      match side {
+        HorizontalPositionKeyword::Left => {
+          match &position.y {
+            Center => ImagePosition::Start,
+            Side { side, .. } => {
+              match side {
+                VerticalPositionKeyword::Top => ImagePosition::TopStart,
+                VerticalPositionKeyword::Bottom => ImagePosition::BottomStart
+              }
+            }
+            Length(length_percentage) => ImagePosition::ImagePositionXY(
+              "0".to_string(),
+              length_percentage.to_css_string(PrinterOptions::default()).unwrap(),
+            )
+          }
+        }
+        HorizontalPositionKeyword::Right => {
+          match &position.y {
+            Center => ImagePosition::End,
+            Side { side, .. } => {
+              match side {
+                VerticalPositionKeyword::Top => ImagePosition::TopEnd,
+                VerticalPositionKeyword::Bottom => ImagePosition::BottomEnd
+              }
+            }
+            Length(length_percentage) => ImagePosition::ImagePositionXY(
+              "100%".to_string(),
+              length_percentage.to_css_string(PrinterOptions::default()).unwrap(),
+            )
+          }
+        }
+      }
+    }
+    Length(length_percentage) => {
+      match &position.y {
+        Center => ImagePosition::ImagePositionXY(
+          length_percentage.to_css_string(PrinterOptions::default()).unwrap(),
+          "50%".to_string(),
+        ),
+        Side { side, .. } => {
+          match side {
+            VerticalPositionKeyword::Top => ImagePosition::ImagePositionXY(
+              length_percentage.to_css_string(PrinterOptions::default()).unwrap(),
+              "0".to_string(),
+            ),
+            VerticalPositionKeyword::Bottom => ImagePosition::ImagePositionXY(
+              length_percentage.to_css_string(PrinterOptions::default()).unwrap(),
+              "100%".to_string(),
+            )
+          }
+        }
+        Length(length_percentage) => ImagePosition::ImagePositionXY(
+          length_percentage.to_css_string(PrinterOptions::default()).unwrap(),
+          length_percentage.to_css_string(PrinterOptions::default()).unwrap(),
+        )
+      }
+    }
+  }
+}
+
+fn parse_background_position(position: &SmallVec<[BackgroundPosition; 1]>) -> BackgroundImagePosition {
+  let mut background_position = vec![];
+  for item in position {
+    background_position.push(parse_background_position_item(item));
+  }
+  BackgroundImagePosition(background_position)
+}
+
+fn parse_background_size_item(size_item: &BackgroundSize) -> Option<ImageSize> {
+  match size_item {
+    BackgroundSize::Contain => Some(ImageSize::Contain),
+    BackgroundSize::Cover => Some(ImageSize::Cover),
+    BackgroundSize::Explicit { width, height } => {
+      match width {
+        LengthPercentageOrAuto::Auto => {
+          match height {
+            LengthPercentageOrAuto::Auto => Some(ImageSize::Auto),
+            _ => None
+          }
+        }
+        LengthPercentageOrAuto::LengthPercentage(x) => {
+          match height {
+            LengthPercentageOrAuto::LengthPercentage(y) => Some(ImageSize::ImageSizeWH(
+              x.to_css_string(PrinterOptions::default()).unwrap(),
+              y.to_css_string(PrinterOptions::default()).unwrap(),
+            )),
+            _ => None
+          }
+        }
+      }
+    }
+  }
+}
+
+fn parse_background_size(size: &SmallVec<[BackgroundSize; 1]>) -> BackgroundImageSize {
+  let mut background_size = vec![];
+  for item in size {
+    let item_size = parse_background_size_item(item);
+    if let Some(size) = item_size {
+      background_size.push(size);
+    }
+  }
+
+  BackgroundImageSize(background_size)
+  
+}
+
+fn parse_background_image(image: &SmallVec<[Image; 1]>, repeat: Option<&SmallVec<[BackgroundRepeat; 1]>>) -> BackgroundImage {
+  let mut background_image = vec![];
+  for (index, item) in image.iter().enumerate() {
+    match item {
+      Image::Url(url) => {
+        background_image.push(BackgroundImageItem {
+          src: url.to_css_string(PrinterOptions::default()).unwrap(),
+          repeat: ImageRepeat::from(
+            repeat
+              .map(|item| item[index].clone())
+              .unwrap_or(BackgroundRepeat {
+                x: BackgroundRepeatKeyword::NoRepeat,
+                y: BackgroundRepeatKeyword::NoRepeat,
+              }),
+          ),
+        });
+      },
+      // 需要处理渐变
+      _ => {}
+    };
+  }
+  BackgroundImage(background_image)
+}
+
+fn parse_background(background: &SmallVec<[LNBackground<'_>; 1]>) -> Background {
+  let mut background_image = vec![];
+  let mut background_position = vec![];
+  let mut background_size = vec![];
+  let mut background_color = None;
+  for item in background.iter() {
+    match &item.image {
+      Image::Url(url) => {
+        background_image.push(BackgroundImageItem {
+          src: url.to_css_string(PrinterOptions::default()).unwrap(),
+          repeat: ImageRepeat::from(item.repeat.clone()),
+        });
+      },
+      // 需要处理渐变
+      _ => {}
+    };
+    background_position.push(parse_background_position_item(&item.position));
+    if let Some(size) = parse_background_size_item(&item.size) {
+      background_size.push(size);
+    }
+    background_color = Some(item.color.to_css_string(PrinterOptions::default()).unwrap());
+  }
+  Background {
+    image: BackgroundImage(background_image),
+    position: BackgroundImagePosition(background_position),
+    size: BackgroundImageSize(background_size),
+    color: BackgroundColor(background_color.unwrap_or("".to_string())),
+  }
+}
 
 pub type StyleValue = HashMap<String, StyleValueType>;
 
@@ -157,40 +339,43 @@ impl ToExpr for BorderRadius {
 
 impl From<&str> for BorderRadius {
   fn from(value: &str) -> Self {
-    let border_radius = value.to_string();
-    let border_radius = border_radius.split(" ").collect::<Vec<&str>>();
-    let border_radius = match border_radius.len() {
-      1 => BorderRadius {
-        top_left: border_radius[0].to_string(),
-        top_right: border_radius[0].to_string(),
-        bottom_left: border_radius[0].to_string(),
-        bottom_right: border_radius[0].to_string(),
-      },
-      2 => BorderRadius {
-        top_left: border_radius[0].to_string(),
-        top_right: border_radius[1].to_string(),
-        bottom_left: border_radius[0].to_string(),
-        bottom_right: border_radius[1].to_string(),
-      },
-      3 => BorderRadius {
-        top_left: border_radius[0].to_string(),
-        top_right: border_radius[1].to_string(),
-        bottom_left: border_radius[2].to_string(),
-        bottom_right: border_radius[1].to_string(),
-      },
-      4 => BorderRadius {
-        top_left: border_radius[0].to_string(),
-        top_right: border_radius[1].to_string(),
-        bottom_left: border_radius[2].to_string(),
-        bottom_right: border_radius[3].to_string(),
-      },
-      _ => BorderRadius {
-        top_left: "0".to_string(),
-        top_right: "0".to_string(),
-        bottom_left: "0".to_string(),
-        bottom_right: "0".to_string(),
-      },
-    };
+    let border_radius_parsed = Property::parse_string(PropertyId::from("border-radius"), value, ParserOptions::default());
+    let mut border_radius = BorderRadius::new();
+    if let Ok(value) = border_radius_parsed {
+      match value {
+        Property::BorderRadius(value, _) => {
+          border_radius.set_top_left(
+            value
+              .top_left
+              .to_css_string(PrinterOptions::default())
+              .unwrap()
+              .as_str(),
+          );
+          border_radius.set_top_right(
+            value
+              .top_right
+              .to_css_string(PrinterOptions::default())
+              .unwrap()
+              .as_str(),
+          );
+          border_radius.set_bottom_left(
+            value
+              .bottom_left
+              .to_css_string(PrinterOptions::default())
+              .unwrap()
+              .as_str(),
+          );
+          border_radius.set_bottom_right(
+            value
+              .bottom_right
+              .to_css_string(PrinterOptions::default())
+              .unwrap()
+              .as_str(),
+          );
+        }
+        _ => {},
+      }
+    }
     border_radius
   }
 }
@@ -263,40 +448,43 @@ impl ToExpr for MarginPadding {
 
 impl From<&str> for MarginPadding {
   fn from(value: &str) -> Self {
-    let margin_padding = value.to_string();
-    let margin_padding = margin_padding.split(" ").collect::<Vec<&str>>();
-    let margin_padding = match margin_padding.len() {
-      1 => MarginPadding {
-        top: margin_padding[0].to_string(),
-        right: margin_padding[0].to_string(),
-        bottom: margin_padding[0].to_string(),
-        left: margin_padding[0].to_string(),
-      },
-      2 => MarginPadding {
-        top: margin_padding[0].to_string(),
-        right: margin_padding[1].to_string(),
-        bottom: margin_padding[0].to_string(),
-        left: margin_padding[1].to_string(),
-      },
-      3 => MarginPadding {
-        top: margin_padding[0].to_string(),
-        right: margin_padding[1].to_string(),
-        bottom: margin_padding[2].to_string(),
-        left: margin_padding[1].to_string(),
-      },
-      4 => MarginPadding {
-        top: margin_padding[0].to_string(),
-        right: margin_padding[1].to_string(),
-        bottom: margin_padding[2].to_string(),
-        left: margin_padding[3].to_string(),
-      },
-      _ => MarginPadding {
-        top: "0".to_string(),
-        right: "0".to_string(),
-        bottom: "0".to_string(),
-        left: "0".to_string(),
-      },
-    };
+    let margin_padding_parsed = Property::parse_string(PropertyId::from("Margin"), value, ParserOptions::default());
+    let mut margin_padding = MarginPadding::new();
+    if let Ok(value) = margin_padding_parsed {
+      match value {
+        Property::Margin(value) => {
+          margin_padding.set_top(
+            value
+              .top
+              .to_css_string(PrinterOptions::default())
+              .unwrap()
+              .as_str(),
+          );
+          margin_padding.set_right(
+            value
+              .right
+              .to_css_string(PrinterOptions::default())
+              .unwrap()
+              .as_str(),
+          );
+          margin_padding.set_bottom(
+            value
+              .bottom
+              .to_css_string(PrinterOptions::default())
+              .unwrap()
+              .as_str(),
+          );
+          margin_padding.set_left(
+            value
+              .left
+              .to_css_string(PrinterOptions::default())
+              .unwrap()
+              .as_str(),
+          );
+        }
+        _ => {},
+      }
+    }
     margin_padding
   }
 }
@@ -322,18 +510,17 @@ pub struct LinearGradient {
 }
 
 #[derive(Debug, Clone)]
-pub struct BackgroundColor(String);
+pub struct BackgroundColor(pub String);
 
 impl ToExpr for BackgroundColor {
   fn to_expr(&self) -> Expr {
-    Expr::Object(ObjectLit {
-      span: DUMMY_SP,
-      props: vec![PropOrSpread::Prop(Box::new(Prop::KeyValue(KeyValueProp {
-        key: PropName::Ident(Ident::new("color".into(), DUMMY_SP)),
-        value: Expr::Lit(Lit::Str(Str::from(self.0.to_string()))).into(),
-      })))],
-    })
+    Expr::Lit(Lit::Str(Str::from(self.0.to_string()))).into()
   }
+}
+
+pub struct BackgroundImageStr {
+  pub src: String,
+  pub repeat: Option<String>,
 }
 
 #[derive(Debug, Clone)]
@@ -384,6 +571,31 @@ impl ToExpr for BackgroundImage {
   }
 }
 
+impl From<&BackgroundImageStr> for BackgroundImage {
+  fn from(value: &BackgroundImageStr) -> Self {
+    let repeat_str = value.repeat.clone().unwrap_or("no-repeat".to_string());
+    let background_image_parsed = Property::parse_string(PropertyId::from("background-image"), &value.src, ParserOptions::default());
+    let background_image_repeat_parsed = Property::parse_string(PropertyId::from("background-repeat"), &repeat_str, ParserOptions::default());
+    let mut background_image = BackgroundImage(vec![]);
+    if let Ok(value) = background_image_parsed {
+      match value {
+        Property::BackgroundImage(value) => {
+          background_image = parse_background_image(&value, if let Ok(repeat_parsed) = &background_image_repeat_parsed {
+            match repeat_parsed {
+              Property::BackgroundRepeat(value) => Some(value),
+              _ => None
+            }
+          } else {
+            None
+          });
+        }
+        _ => {}
+      }
+    }
+    background_image
+  }
+}
+
 #[derive(Debug, Clone)]
 pub struct BackgroundImageItem {
   src: String,
@@ -391,7 +603,7 @@ pub struct BackgroundImageItem {
 }
 
 #[derive(Debug, Clone)]
-pub struct BackgroundImageSize(Vec<ImageSize>);
+pub struct BackgroundImageSize(pub Vec<ImageSize>);
 
 impl ToExpr for BackgroundImageSize {
   fn to_expr(&self) -> Expr {
@@ -459,12 +671,39 @@ impl ToExpr for BackgroundImageSize {
   }
 }
 
+impl From<&str> for BackgroundImageSize {
+  fn from(value: &str) -> Self {
+    let background_image_size_parsed = Property::parse_string(PropertyId::from("background-size"), value, ParserOptions::default());
+    let mut background_image_size = BackgroundImageSize(vec![]);
+    if let Ok(value) = background_image_size_parsed {
+      match value {
+        Property::BackgroundSize(value) => {
+          background_image_size = parse_background_size(&value);
+        }
+        _ => {}
+      }
+    }
+    background_image_size
+  }
+}
+
 #[derive(Debug, Clone)]
 pub enum ImageRepeat {
   XY,
   X,
   Y,
   NoRepeat,
+}
+
+impl From<&str> for ImageRepeat {
+  fn from(value: &str) -> Self {
+    match value {
+      "repeat" => ImageRepeat::XY,
+      "repeat-x" => ImageRepeat::X,
+      "repeat-y" => ImageRepeat::Y,
+      _ => ImageRepeat::NoRepeat,
+    }
+  }
 }
 
 impl From<BackgroundRepeat> for ImageRepeat {
@@ -504,7 +743,7 @@ pub enum ImagePosition {
 }
 
 #[derive(Debug, Clone)]
-pub struct BackgroundImagePosition(Vec<ImagePosition>);
+pub struct BackgroundImagePosition(pub Vec<ImagePosition>);
 
 impl ToExpr for BackgroundImagePosition {
   fn to_expr(&self) -> Expr {
@@ -644,6 +883,56 @@ impl ToExpr for BackgroundImagePosition {
   }
 }
 
+impl From<&str> for BackgroundImagePosition {
+  fn from(value: &str) -> Self {
+    let background_image_position_parsed = Property::parse_string(PropertyId::from("background-position"), value, ParserOptions::default());
+    let mut background_image_position = BackgroundImagePosition(vec![]);
+    if let Ok(value) = background_image_position_parsed {
+      match value {
+        Property::BackgroundPosition(value) => {
+          background_image_position = parse_background_position(&value);
+        }
+        _ => {}
+      }
+    }
+    background_image_position
+  }
+    
+}
+
+#[derive(Debug, Clone)]
+pub struct Background {
+  pub image: BackgroundImage,
+  pub color: BackgroundColor,
+  pub size: BackgroundImageSize,
+  pub position: BackgroundImagePosition,
+}
+
+impl From<&str> for Background {
+  fn from(value: &str) -> Self {
+    let background_parsed = Property::parse_string(PropertyId::from("background"), value, ParserOptions::default());
+    let mut background = Background {
+      image: BackgroundImage(vec![]),
+      color: BackgroundColor("".to_string()),
+      size: BackgroundImageSize(vec![]),
+      position: BackgroundImagePosition(vec![]),
+    };
+    if let Ok(property) = background_parsed {
+      if let Property::Background(value) = property {
+        background = parse_background(&value);
+      }
+    }
+
+    background
+  }
+}
+
+impl From<&SmallVec<[LNBackground<'_>; 1]>> for Background {
+  fn from(value: &SmallVec<[LNBackground<'_>; 1]>) -> Self {
+    parse_background(value)
+  }
+}
+
 #[derive(Debug, Clone)]
 pub enum StyleValueType {
   Normal(String),
@@ -769,6 +1058,21 @@ impl Display for StyleValueType {
   }
 }
 
+impl ToExpr for StyleValueType{
+  fn to_expr(&self) -> Expr {
+    match self {
+      StyleValueType::Normal(value) => value.to_string().into(),
+      StyleValueType::TextDecoration(text_decoration) => text_decoration.to_expr().into(),
+      StyleValueType::BorderRadius(border_radius) => border_radius.to_expr().into(),
+      StyleValueType::MarginPadding(margin_padding) => margin_padding.to_expr().into(),
+      StyleValueType::BackgroundImage(background_image) => background_image.to_expr().into(),
+      StyleValueType::BackgroundImageSize(background_size) => background_size.to_expr().into(),
+      StyleValueType::BackgroundImagePosition(background_position) => background_position.to_expr().into(),
+      StyleValueType::BackgroundColor(background_color) => background_color.to_expr().into(),
+    }
+  }
+}
+
 #[derive(Debug, Clone)]
 pub struct StyleDeclaration<'i> {
   pub specificity: u32,
@@ -886,112 +1190,6 @@ impl<'i> StyleParser<'i> {
     final_style_record
   }
 
-  fn parse_background_position(&self, position: &BackgroundPosition) -> ImagePosition {
-    match &position.x {
-      Center => {
-        match &position.y {
-          Center => {
-            ImagePosition::Center
-          }
-          Side { side, .. } => {
-            match side {
-              VerticalPositionKeyword::Top => ImagePosition::Top,
-              VerticalPositionKeyword::Bottom => ImagePosition::Bottom
-            }
-          }
-          Length(length_percentage) => ImagePosition::ImagePositionXY(
-            "50%".to_string(),
-            length_percentage.to_css_string(PrinterOptions::default()).unwrap(),
-          )
-        }
-      }
-      Side { side, .. } => {
-        match side {
-          HorizontalPositionKeyword::Left => {
-            match &position.y {
-              Center => ImagePosition::Start,
-              Side { side, .. } => {
-                match side {
-                  VerticalPositionKeyword::Top => ImagePosition::TopStart,
-                  VerticalPositionKeyword::Bottom => ImagePosition::BottomStart
-                }
-              }
-              Length(length_percentage) => ImagePosition::ImagePositionXY(
-                "0".to_string(),
-                length_percentage.to_css_string(PrinterOptions::default()).unwrap(),
-              )
-            }
-          }
-          HorizontalPositionKeyword::Right => {
-            match &position.y {
-              Center => ImagePosition::End,
-              Side { side, .. } => {
-                match side {
-                  VerticalPositionKeyword::Top => ImagePosition::TopEnd,
-                  VerticalPositionKeyword::Bottom => ImagePosition::BottomEnd
-                }
-              }
-              Length(length_percentage) => ImagePosition::ImagePositionXY(
-                "100%".to_string(),
-                length_percentage.to_css_string(PrinterOptions::default()).unwrap(),
-              )
-            }
-          }
-        }
-      }
-      Length(length_percentage) => {
-        match &position.y {
-          Center => ImagePosition::ImagePositionXY(
-            length_percentage.to_css_string(PrinterOptions::default()).unwrap(),
-            "50%".to_string(),
-          ),
-          Side { side, .. } => {
-            match side {
-              VerticalPositionKeyword::Top => ImagePosition::ImagePositionXY(
-                length_percentage.to_css_string(PrinterOptions::default()).unwrap(),
-                "0".to_string(),
-              ),
-              VerticalPositionKeyword::Bottom => ImagePosition::ImagePositionXY(
-                length_percentage.to_css_string(PrinterOptions::default()).unwrap(),
-                "100%".to_string(),
-              )
-            }
-          }
-          Length(length_percentage) => ImagePosition::ImagePositionXY(
-            length_percentage.to_css_string(PrinterOptions::default()).unwrap(),
-            length_percentage.to_css_string(PrinterOptions::default()).unwrap(),
-          )
-        }
-      }
-    }
-  }
-
-  fn parse_background_size(&self, size: &BackgroundSize) -> Option<ImageSize> {
-    match &size {
-      BackgroundSize::Contain => Some(ImageSize::Contain),
-      BackgroundSize::Cover => Some(ImageSize::Cover),
-      BackgroundSize::Explicit { width, height } => {
-        match width {
-          LengthPercentageOrAuto::Auto => {
-            match height {
-              LengthPercentageOrAuto::Auto => Some(ImageSize::Auto),
-              _ => None
-            }
-          }
-          LengthPercentageOrAuto::LengthPercentage(x) => {
-            match height {
-              LengthPercentageOrAuto::LengthPercentage(y) => Some(ImageSize::ImageSizeWH(
-                x.to_css_string(PrinterOptions::default()).unwrap(),
-                y.to_css_string(PrinterOptions::default()).unwrap(),
-              )),
-              _ => None
-            }
-          }
-        }
-      }
-    }
-  }
-
   fn parse_style_style(&self, style_value: &mut StyleDeclaration<'i>) -> StyleValue {
     let properties = style_value
       .declaration
@@ -1061,143 +1259,47 @@ impl<'i> StyleParser<'i> {
           }
         },
         "marginLeft" => {
-          if final_properties.contains_key("margin") {
-            if let Some(StyleValueType::MarginPadding(margin)) = final_properties.get_mut("margin") {
-              margin.set_left(
-                match value {
-                  Property::MarginLeft(value) => {
-                    value.to_css_string(PrinterOptions::default()).unwrap()
-                  }
-                  _ => "0".to_string(),
-                }
+          let margin = final_properties.entry("margin".to_string()).or_insert(StyleValueType::MarginPadding(MarginPadding::new()));
+          if let StyleValueType::MarginPadding(margin) = margin {
+            margin.set_left(
+              value
+                .value_to_css_string(PrinterOptions::default())
+                .unwrap()
                 .as_str(),
-              );
-            }
-          } else {
-            let margin = match value {
-              Property::MarginLeft(value) => {
-                let mut margin = MarginPadding::new();
-                margin.set_left(
-                  value
-                    .to_css_string(PrinterOptions::default())
-                    .unwrap()
-                    .as_str(),
-                );
-                margin
-              }
-              _ => MarginPadding::new(),
-            };
-            if !margin.is_zero() {
-              final_properties.insert(
-                "margin".to_string(),
-                StyleValueType::MarginPadding(margin),
-              );
-            }
+            )
           }
         },
         "marginRight" => {
-          if final_properties.contains_key("margin") {
-            if let Some(StyleValueType::MarginPadding(margin)) = final_properties.get_mut("margin") {
-              margin.set_right(
-                match value {
-                  Property::MarginRight(value) => {
-                    value.to_css_string(PrinterOptions::default()).unwrap()
-                  }
-                  _ => "0".to_string(),
-                }
+          let margin = final_properties.entry("margin".to_string()).or_insert(StyleValueType::MarginPadding(MarginPadding::new()));
+          if let StyleValueType::MarginPadding(margin) = margin {
+            margin.set_right(
+              value
+                .value_to_css_string(PrinterOptions::default())
+                .unwrap()
                 .as_str(),
-              );
-            }
-          } else {
-            let margin = match value {
-              Property::MarginRight(value) => {
-                let mut margin = MarginPadding::new();
-                margin.set_right(
-                  value
-                    .to_css_string(PrinterOptions::default())
-                    .unwrap()
-                    .as_str(),
-                );
-                margin
-              }
-              _ => MarginPadding::new(),
-            };
-            if !margin.is_zero() {
-              final_properties.insert(
-                "margin".to_string(),
-                StyleValueType::MarginPadding(margin),
-              );
-            }
+            )
           }
         },
         "marginTop" => {
-          if final_properties.contains_key("margin") {
-            if let Some(StyleValueType::MarginPadding(margin)) = final_properties.get_mut("margin") {
-              margin.set_top(
-                match value {
-                  Property::MarginTop(value) => {
-                    value.to_css_string(PrinterOptions::default()).unwrap()
-                  }
-                  _ => "0".to_string(),
-                }
+          let margin = final_properties.entry("margin".to_string()).or_insert(StyleValueType::MarginPadding(MarginPadding::new()));
+          if let StyleValueType::MarginPadding(margin) = margin {
+            margin.set_top(
+              value
+                .value_to_css_string(PrinterOptions::default())
+                .unwrap()
                 .as_str(),
-              );
-            }
-          } else {
-            let margin = match value {
-              Property::MarginTop(value) => {
-                let mut margin = MarginPadding::new();
-                margin.set_top(
-                  value
-                    .to_css_string(PrinterOptions::default())
-                    .unwrap()
-                    .as_str(),
-                );
-                margin
-              }
-              _ => MarginPadding::new(),
-            };
-            if !margin.is_zero() {
-              final_properties.insert(
-                "margin".to_string(),
-                StyleValueType::MarginPadding(margin),
-              );
-            }
+            )
           }
         },
         "marginBottom" => {
-          if final_properties.contains_key("margin") {
-            if let Some(StyleValueType::MarginPadding(margin)) = final_properties.get_mut("margin") {
-              margin.set_bottom(
-                match value {
-                  Property::MarginBottom(value) => {
-                    value.to_css_string(PrinterOptions::default()).unwrap()
-                  }
-                  _ => "0".to_string(),
-                }
+          let margin = final_properties.entry("margin".to_string()).or_insert(StyleValueType::MarginPadding(MarginPadding::new()));
+          if let StyleValueType::MarginPadding(margin) = margin {
+            margin.set_bottom(
+              value
+                .value_to_css_string(PrinterOptions::default())
+                .unwrap()
                 .as_str(),
-              );
-            }
-          } else {
-            let margin = match value {
-              Property::MarginBottom(value) => {
-                let mut margin = MarginPadding::new();
-                margin.set_bottom(
-                  value
-                    .to_css_string(PrinterOptions::default())
-                    .unwrap()
-                    .as_str(),
-                );
-                margin
-              }
-              _ => MarginPadding::new(),
-            };
-            if !margin.is_zero() {
-              final_properties.insert(
-                "margin".to_string(),
-                StyleValueType::MarginPadding(margin),
-              );
-            }
+            )
           }
         },
         "padding" => {
@@ -1243,143 +1345,47 @@ impl<'i> StyleParser<'i> {
           }
         },
         "paddingLeft" => {
-          if final_properties.contains_key("padding") {
-            if let Some(StyleValueType::MarginPadding(padding)) = final_properties.get_mut("padding") {
-              padding.set_left(
-                match value {
-                  Property::PaddingLeft(value) => {
-                    value.to_css_string(PrinterOptions::default()).unwrap()
-                  }
-                  _ => "0".to_string(),
-                }
+          let padding = final_properties.entry("padding".to_string()).or_insert(StyleValueType::MarginPadding(MarginPadding::new()));
+          if let StyleValueType::MarginPadding(padding) = padding {
+            padding.set_left(
+              value
+                .value_to_css_string(PrinterOptions::default())
+                .unwrap()
                 .as_str(),
-              );
-            }
-          } else {
-            let padding = match value {
-              Property::PaddingLeft(value) => {
-                let mut padding = MarginPadding::new();
-                padding.set_left(
-                  value
-                    .to_css_string(PrinterOptions::default())
-                    .unwrap()
-                    .as_str(),
-                );
-                padding
-              }
-              _ => MarginPadding::new(),
-            };
-            if !padding.is_zero() {
-              final_properties.insert(
-                "padding".to_string(),
-                StyleValueType::MarginPadding(padding),
-              );
-            }
+            )
           }
         },
         "paddingRight" => {
-          if final_properties.contains_key("padding") {
-            if let Some(StyleValueType::MarginPadding(padding)) = final_properties.get_mut("padding") {
-              padding.set_right(
-                match value {
-                  Property::PaddingRight(value) => {
-                    value.to_css_string(PrinterOptions::default()).unwrap()
-                  }
-                  _ => "0".to_string(),
-                }
+          let padding = final_properties.entry("padding".to_string()).or_insert(StyleValueType::MarginPadding(MarginPadding::new()));
+          if let StyleValueType::MarginPadding(padding) = padding {
+            padding.set_right(
+              value
+                .value_to_css_string(PrinterOptions::default())
+                .unwrap()
                 .as_str(),
-              );
-            }
-          } else {
-            let padding = match value {
-              Property::PaddingRight(value) => {
-                let mut padding = MarginPadding::new();
-                padding.set_right(
-                  value
-                    .to_css_string(PrinterOptions::default())
-                    .unwrap()
-                    .as_str(),
-                );
-                padding
-              }
-              _ => MarginPadding::new(),
-            };
-            if !padding.is_zero() {
-              final_properties.insert(
-                "padding".to_string(),
-                StyleValueType::MarginPadding(padding),
-              );
-            }
+            )
           }
         },
         "paddingTop" => {
-          if final_properties.contains_key("padding") {
-            if let Some(StyleValueType::MarginPadding(padding)) = final_properties.get_mut("padding") {
-              padding.set_top(
-                match value {
-                  Property::PaddingTop(value) => {
-                    value.to_css_string(PrinterOptions::default()).unwrap()
-                  }
-                  _ => "0".to_string(),
-                }
+          let padding = final_properties.entry("padding".to_string()).or_insert(StyleValueType::MarginPadding(MarginPadding::new()));
+          if let StyleValueType::MarginPadding(padding) = padding {
+            padding.set_top(
+              value
+                .value_to_css_string(PrinterOptions::default())
+                .unwrap()
                 .as_str(),
-              );
-            }
-          } else {
-            let padding = match value {
-              Property::PaddingTop(value) => {
-                let mut padding = MarginPadding::new();
-                padding.set_top(
-                  value
-                    .to_css_string(PrinterOptions::default())
-                    .unwrap()
-                    .as_str(),
-                );
-                padding
-              }
-              _ => MarginPadding::new(),
-            };
-            if !padding.is_zero() {
-              final_properties.insert(
-                "padding".to_string(),
-                StyleValueType::MarginPadding(padding),
-              );
-            }
+            )
           }
         },
         "paddingBottom" => {
-          if final_properties.contains_key("padding") {
-            if let Some(StyleValueType::MarginPadding(padding)) = final_properties.get_mut("padding") {
-              padding.set_bottom(
-                match value {
-                  Property::PaddingBottom(value) => {
-                    value.to_css_string(PrinterOptions::default()).unwrap()
-                  }
-                  _ => "0".to_string(),
-                }
+          let padding = final_properties.entry("padding".to_string()).or_insert(StyleValueType::MarginPadding(MarginPadding::new()));
+          if let StyleValueType::MarginPadding(padding) = padding {
+            padding.set_bottom(
+              value
+                .value_to_css_string(PrinterOptions::default())
+                .unwrap()
                 .as_str(),
-              );
-            }
-          } else {
-            let padding = match value {
-              Property::PaddingBottom(value) => {
-                let mut padding = MarginPadding::new();
-                padding.set_bottom(
-                  value
-                    .to_css_string(PrinterOptions::default())
-                    .unwrap()
-                    .as_str(),
-                );
-                padding
-              }
-              _ => MarginPadding::new(),
-            };
-            if !padding.is_zero() {
-              final_properties.insert(
-                "padding".to_string(),
-                StyleValueType::MarginPadding(padding),
-              );
-            }
+            )
           }
         },
         "borderRadius" => {
@@ -1428,147 +1434,51 @@ impl<'i> StyleParser<'i> {
           }
         },
         "borderRadiusTopLeft" => {
-          if final_properties.contains_key("borderRadius") {
-            if let Some(StyleValueType::BorderRadius(border_radius)) = final_properties.get_mut("borderRadius") {
-              border_radius.set_top_left(
-                match value {
-                  Property::BorderTopLeftRadius(value, _) => {
-                    value.to_css_string(PrinterOptions::default()).unwrap()
-                  }
-                  _ => "0".to_string(),
-                }
+          let border_radius = final_properties.entry("borderRadius".to_string()).or_insert(StyleValueType::BorderRadius(BorderRadius::new()));
+          if let StyleValueType::BorderRadius(border_radius) = border_radius {
+            border_radius.set_top_left(
+              value
+                .value_to_css_string(PrinterOptions::default())
+                .unwrap()
                 .as_str(),
-              );
-            }
-          } else {
-            let border_radius = match value {
-              Property::BorderTopLeftRadius(value, _) => {
-                let mut border_radius = BorderRadius::new();
-                border_radius.set_top_left(
-                  value
-                    .to_css_string(PrinterOptions::default())
-                    .unwrap()
-                    .as_str(),
-                );
-                border_radius
-              }
-              _ => BorderRadius::new(),
-            };
-            if !border_radius.is_zero() {
-              final_properties.insert(
-                "borderRadius".to_string(),
-                StyleValueType::BorderRadius(border_radius),
-              );
-            }
+            )
           }
         },
         "borderRadiusTopRight" => {
-          if final_properties.contains_key("borderRadius") {
-            if let Some(StyleValueType::BorderRadius(border_radius)) = final_properties.get_mut("borderRadius") {
-              border_radius.set_top_right(
-                match value {
-                  Property::BorderTopRightRadius(value, _) => {
-                    value.to_css_string(PrinterOptions::default()).unwrap()
-                  }
-                  _ => "0".to_string(),
-                }
+          let border_radius = final_properties.entry("borderRadius".to_string()).or_insert(StyleValueType::BorderRadius(BorderRadius::new()));
+          if let StyleValueType::BorderRadius(border_radius) = border_radius {
+            border_radius.set_top_right(
+              value
+                .value_to_css_string(PrinterOptions::default())
+                .unwrap()
                 .as_str(),
-              );
-            }
-          } else {
-            let border_radius = match value {
-              Property::BorderTopRightRadius(value, _) => {
-                let mut border_radius = BorderRadius::new();
-                border_radius.set_top_right(
-                  value
-                    .to_css_string(PrinterOptions::default())
-                    .unwrap()
-                    .as_str(),
-                );
-                border_radius
-              }
-              _ => BorderRadius::new(),
-            };
-            if !border_radius.is_zero() {
-              final_properties.insert(
-                "borderRadius".to_string(),
-                StyleValueType::BorderRadius(border_radius),
-              );
-            }
+            )
           }
         },
         "borderRadiusBottomLeft" => {
-          if final_properties.contains_key("borderRadius") {
-            if let Some(StyleValueType::BorderRadius(border_radius)) = final_properties.get_mut("borderRadius") {
-              border_radius.set_bottom_left(
-                match value {
-                  Property::BorderBottomLeftRadius(value, _) => {
-                    value.to_css_string(PrinterOptions::default()).unwrap()
-                  }
-                  _ => "0".to_string(),
-                }
+          let border_radius = final_properties.entry("borderRadius".to_string()).or_insert(StyleValueType::BorderRadius(BorderRadius::new()));
+          if let StyleValueType::BorderRadius(border_radius) = border_radius {
+            border_radius.set_bottom_left(
+              value
+                .value_to_css_string(PrinterOptions::default())
+                .unwrap()
                 .as_str(),
-              );
-            }
-          } else {
-            let border_radius = match value {
-              Property::BorderBottomLeftRadius(value, _) => {
-                let mut border_radius = BorderRadius::new();
-                border_radius.set_bottom_left(
-                  value
-                    .to_css_string(PrinterOptions::default())
-                    .unwrap()
-                    .as_str(),
-                );
-                border_radius
-              }
-              _ => BorderRadius::new(),
-            };
-            if !border_radius.is_zero() {
-              final_properties.insert(
-                "borderRadius".to_string(),
-                StyleValueType::BorderRadius(border_radius),
-              );
-            }
+            )
           }
         },
         "borderRadiusBottomRight" => {
-          if final_properties.contains_key("borderRadius") {
-            if let Some(StyleValueType::BorderRadius(border_radius)) = final_properties.get_mut("borderRadius") {
-              border_radius.set_bottom_right(
-                match value {
-                  Property::BorderBottomRightRadius(value, _) => {
-                    value.to_css_string(PrinterOptions::default()).unwrap()
-                  }
-                  _ => "0".to_string(),
-                }
+          let border_radius = final_properties.entry("borderRadius".to_string()).or_insert(StyleValueType::BorderRadius(BorderRadius::new()));
+          if let StyleValueType::BorderRadius(border_radius) = border_radius {
+            border_radius.set_bottom_right(
+              value
+                .value_to_css_string(PrinterOptions::default())
+                .unwrap()
                 .as_str(),
-              );
-            }
-          } else {
-            let border_radius = match value {
-              Property::BorderBottomRightRadius(value, _) => {
-                let mut border_radius = BorderRadius::new();
-                border_radius.set_bottom_right(
-                  value
-                    .to_css_string(PrinterOptions::default())
-                    .unwrap()
-                    .as_str(),
-                );
-                border_radius
-              }
-              _ => BorderRadius::new(),
-            };
-            if !border_radius.is_zero() {
-              final_properties.insert(
-                "borderRadius".to_string(),
-                StyleValueType::BorderRadius(border_radius),
-              );
-            }
+            )
           }
         },
         "textDecoration" => {
-          text_decoration = Some(value.clone())
+          text_decoration = Some((*value).clone())
         },
         "color" => {
           color = Some((*value).clone());
@@ -1591,54 +1501,22 @@ impl<'i> StyleParser<'i> {
         "background" => {
           match value {
             Property::Background(value) => {
-              let mut background_image = vec![];
-              let mut background_position = vec![];
-              let mut background_size = vec![];
-              let mut background_color = None;
-              for item in value.iter() {
-                match &item.image {
-                  Image::Url(url) => {
-                    background_image.push(BackgroundImageItem {
-                      src: url.to_css_string(PrinterOptions::default()).unwrap(),
-                      repeat: ImageRepeat::from(item.repeat.clone()),
-                    });
-                  },
-                  // 需要处理渐变
-                  _ => {}
-                };
-                background_position.push(self.parse_background_position(&item.position));
-                if let Some(size) = self.parse_background_size(&item.size) {
-                  background_size.push(size);
-                }
-                background_color = Some(item.color.clone());
-              }
+              let background = parse_background(value);
               final_properties.insert(
                 "backgroundImage".to_string(),
-                StyleValueType::BackgroundImage(BackgroundImage(background_image)),
+                StyleValueType::BackgroundImage(background.image),
               );
               final_properties.insert(
-                "backgroundPosition".to_string(),
-                StyleValueType::BackgroundImagePosition(BackgroundImagePosition(background_position)),
+                "backgroundImagePosition".to_string(),
+                StyleValueType::BackgroundImagePosition(background.position),
               );
               final_properties.insert(
-                "backgroundSize".to_string(),
-                StyleValueType::BackgroundImageSize(BackgroundImageSize(background_size)),
+                "backgroundImageSize".to_string(),
+                StyleValueType::BackgroundImageSize(background.size),
               );
               final_properties.insert(
                 "backgroundColor".to_string(),
-                StyleValueType::Normal(
-                  background_color
-                    .unwrap()
-                    .to_css_string(PrinterOptions {
-                      minify: false,
-                      targets: Targets {
-                        include: Features::HexAlphaColors,
-                        ..Targets::default()
-                      },
-                      ..PrinterOptions::default()
-                    })
-                    .unwrap(),
-                ),
+                StyleValueType::BackgroundColor(background.color),
               );
             }
             _ => {}
@@ -1649,7 +1527,7 @@ impl<'i> StyleParser<'i> {
             Property::BackgroundColor(value) => {
               final_properties.insert(
                 id.to_string(),
-                StyleValueType::Normal(
+                StyleValueType::BackgroundColor(BackgroundColor(
                   value
                     .to_css_string(PrinterOptions {
                       minify: false,
@@ -1660,7 +1538,7 @@ impl<'i> StyleParser<'i> {
                       ..PrinterOptions::default()
                     })
                     .unwrap(),
-                ),
+                )),
               );
             }
             _ => {}
@@ -1669,34 +1547,16 @@ impl<'i> StyleParser<'i> {
         "backgroundImage" => {
           match value {
             Property::BackgroundImage(value) => {
-              let mut background_image = vec![];
-              let mut background_repeat = vec![];
-              if properties.get("backgroundRepeat").is_some() {
-                match properties.get("backgroundRepeat").unwrap() {
-                  Property::BackgroundRepeat(value) => {
-                    for item in value.iter() {
-                      background_repeat.push(item.clone())
-                    }
-                  }
-                  _ => {},
+              let mut repeat = None;
+              if let Some(value) = properties.get("backgroundRepeat") {
+                if let Property::BackgroundRepeat(repeat_value) = value {
+                  repeat = Some(repeat_value);
                 }
               }
-              // TODO: 需要处理 background-image 与 background-repeat 个数对应不上情况
-              for (index, item) in value.iter().enumerate() {
-                match &item {
-                  Image::Url(url) => {
-                    background_image.push(BackgroundImageItem {
-                      src: url.to_css_string(PrinterOptions::default()).unwrap(),
-                      repeat: if background_repeat.is_empty() { ImageRepeat::NoRepeat } else { ImageRepeat::from(background_repeat[index].clone()) },
-                    });
-                  }
-                  // 需要处理渐变
-                  _ => {}
-                };
-              }
+              let background_image = parse_background_image(value, repeat);
               final_properties.insert(
                 id.to_string(),
-                StyleValueType::BackgroundImage(BackgroundImage(background_image)),
+                StyleValueType::BackgroundImage(background_image),
               );
             }
             _ => {}
@@ -1705,14 +1565,13 @@ impl<'i> StyleParser<'i> {
         "backgroundPosition" => {
           match value {
             Property::BackgroundPosition(value) => {
-              let mut background_position = vec![];
-              for item in value {
-                background_position.push(self.parse_background_position(&item));
+              let background_position = parse_background_position(value);
+              if background_position.0.len() > 0 {
+                final_properties.insert(
+                  "backgroundImagePosition".to_string(),
+                  StyleValueType::BackgroundImagePosition(background_position),
+                );
               }
-              final_properties.insert(
-                id.to_string(),
-                StyleValueType::BackgroundImagePosition(BackgroundImagePosition(background_position)),
-              );
             }
             _ => {}
           }
@@ -1720,16 +1579,11 @@ impl<'i> StyleParser<'i> {
         "backgroundSize" => {
           match value {
             Property::BackgroundSize(value) => {
-              let mut background_size = vec![];
-              for item in value {
-                if let Some(size) = self.parse_background_size(&item) {
-                  background_size.push(size);
-                }
-              }
-              if !background_size.is_empty() {
+              let background_size = parse_background_size(value);
+              if background_size.0.len() > 0 {
                 final_properties.insert(
-                  id.to_string(),
-                  StyleValueType::BackgroundImageSize(BackgroundImageSize(background_size)),
+                  "backgroundImageSize".to_string(),
+                  StyleValueType::BackgroundImageSize(background_size),
                 );
               }
             }

@@ -21,10 +21,10 @@ use swc_ecma_visit::{
 use crate::{
   scraper::Element,
   style_parser::{
-    BorderRadius, MarginPadding, StyleValue, StyleValueType, TextDecoration, ToExpr,
+    BorderRadius, MarginPadding, StyleValue, StyleValueType, TextDecoration, ToExpr, Background, BackgroundImage, BackgroundImageStr, BackgroundImageSize, BackgroundImagePosition,
   },
   utils::{
-    create_qualname, delete_items, is_starts_with_uppercase, recursion_jsx_member, to_camel_case,
+    create_qualname, is_starts_with_uppercase, recursion_jsx_member, to_camel_case,
   },
 };
 
@@ -188,16 +188,7 @@ fn properties_to_object_lit_props(
 pub fn parse_style_kv(key: &str, value: &StyleValueType) -> KeyValueProp {
   KeyValueProp {
     key: PropName::Ident(Ident::new(key.to_string().into(), DUMMY_SP)),
-    value: match value {
-      StyleValueType::Normal(value) => value.to_string().into(),
-      StyleValueType::TextDecoration(text_decoration) => text_decoration.to_expr().into(),
-      StyleValueType::BorderRadius(border_radius) => border_radius.to_expr().into(),
-      StyleValueType::MarginPadding(margin_padding) => margin_padding.to_expr().into(),
-      StyleValueType::BackgroundImage(background_image) => background_image.to_expr().into(),
-      StyleValueType::BackgroundImageSize(background_size) => background_size.to_expr().into(),
-      StyleValueType::BackgroundImagePosition(background_position) => background_position.to_expr().into(),
-      StyleValueType::BackgroundColor(background_color) => background_color.to_expr().into(),
-    },
+    value: value.to_expr().into(),
   }
 }
 
@@ -464,63 +455,58 @@ impl VisitMut for JSXMutVisitor {
                                     },
                                   ))));
                                 }
-                                let color = deque.iter().fold(None, |c, p| {
-                                  let color = match p {
+                                let mut color = None;
+                                let mut repeat_str = None;
+                                deque.iter().for_each(|p| {
+                                  match p {
                                     PropOrSpread::Prop(prop) => match &**prop {
                                       Prop::KeyValue(key_value_prop) => match &key_value_prop.key {
                                         PropName::Ident(ident) => {
                                           if ident.sym.to_string() == "color" {
-                                            Some(key_value_prop.value.clone())
-                                          } else {
-                                            c
+                                            color = Some(key_value_prop.value.clone())
+                                          } else if ident.sym.to_string() == "background-repeat" {
+                                            match &*key_value_prop.value {
+                                              Expr::Lit(lit) => match lit {
+                                                Lit::Str(str) => {
+                                                  repeat_str = Some(str.value.to_string())
+                                                }
+                                                _ => {}
+                                              },
+                                              _ => {}
+                                            }
                                           }
                                         }
-                                        _ => c,
+                                        PropName::Str(str) => {
+                                          if str.value.to_string() == "color" {
+                                            color = Some(key_value_prop.value.clone())
+                                          } else if str.value.to_string() == "background-repeat" {
+                                            match &*key_value_prop.value {
+                                              Expr::Lit(lit) => match lit {
+                                                Lit::Str(str) => {
+                                                  repeat_str = Some(str.value.to_string())
+                                                }
+                                                _ => {}
+                                              },
+                                              _ => {}
+                                            }
+                                          }
+                                        }
+                                        _ => {},
                                       },
-                                      _ => c,
+                                      _ => {},
                                     },
-                                    _ => c,
+                                    _ => {},
                                   };
-                                  color
                                 });
-                                let mut margin = None;
-                                let mut margin_index = None;
-                                let mut margin_left = None;
-                                let mut margin_left_index = None;
-                                let mut margin_right = None;
-                                let mut margin_right_index = None;
-                                let mut margin_top = None;
-                                let mut margin_top_index = None;
-                                let mut margin_bottom = None;
-                                let mut margin_bottom_index = None;
-                                let mut padding = None;
-                                let mut padding_index = None;
-                                let mut padding_left = None;
-                                let mut padding_left_index = None;
-                                let mut padding_right = None;
-                                let mut padding_right_index = None;
-                                let mut padding_top = None;
-                                let mut padding_top_index = None;
-                                let mut padding_bottom = None;
-                                let mut padding_bottom_index = None;
-                                let mut border_radius = None;
-                                let mut border_radius_index = None;
-                                let mut border_radius_top_left = None;
-                                let mut border_radius_top_left_index = None;
-                                let mut border_radius_top_right = None;
-                                let mut border_radius_top_right_index = None;
-                                let mut border_radius_bottom_left = None;
-                                let mut border_radius_bottom_left_index = None;
-                                let mut border_radius_bottom_right = None;
-                                let mut border_radius_bottom_right_index = None;
-                                deque.iter_mut().enumerate().for_each(|(index, p)| match p {
+
+                                let mut temp_props = HashMap::new();
+                                deque.iter().for_each(|p| match p {
                                   PropOrSpread::Prop(prop) => match &**prop {
                                     Prop::KeyValue(key_value_prop) => {
                                       let value = match &*key_value_prop.value {
                                         Expr::Lit(lit) => match lit {
-                                          Lit::Str(str) => {
-                                            to_camel_case(str.value.to_string().as_str(), true)
-                                          }
+                                          Lit::Str(str) => str.value.to_string(),
+                                          Lit::Num(num) => num.to_string(),
                                           _ => "".to_string(),
                                         },
                                         _ => {
@@ -539,50 +525,122 @@ impl VisitMut for JSXMutVisitor {
                                       };
                                       if let Some(name) = name {
                                         if name == "margin" {
-                                          margin = Some(value);
-                                          margin_index = Some(index);
+                                          let margin = StyleValueType::MarginPadding(MarginPadding::from(value.as_str()));
+                                          temp_props.insert(name.to_string(), margin);
                                         } else if name == "marginLeft" {
-                                          margin_left = Some(value);
-                                          margin_left_index = Some(index);
+                                          let margin = temp_props.entry("margin".to_string()).or_insert(StyleValueType::MarginPadding(MarginPadding::new()));
+                                          if let StyleValueType::MarginPadding(margin) = margin {
+                                            margin.set_left(value.as_str())
+                                          }
                                         } else if name == "marginRight" {
-                                          margin_right = Some(value);
-                                          margin_right_index = Some(index);
+                                          let margin = temp_props.entry("margin".to_string()).or_insert(StyleValueType::MarginPadding(MarginPadding::new()));
+                                          if let StyleValueType::MarginPadding(margin) = margin {
+                                            margin.set_right(value.as_str())
+                                          }
                                         } else if name == "marginTop" {
-                                          margin_top = Some(value);
-                                          margin_top_index = Some(index);
+                                          let margin = temp_props.entry("margin".to_string()).or_insert(StyleValueType::MarginPadding(MarginPadding::new()));
+                                          if let StyleValueType::MarginPadding(margin) = margin {
+                                            margin.set_top(value.as_str())
+                                          }
                                         } else if name == "marginBottom" {
-                                          margin_bottom = Some(value);
-                                          margin_bottom_index = Some(index);
+                                          let margin = temp_props.entry("margin".to_string()).or_insert(StyleValueType::MarginPadding(MarginPadding::new()));
+                                          if let StyleValueType::MarginPadding(margin) = margin {
+                                            margin.set_bottom(value.as_str())
+                                          }
                                         } else if name == "padding" {
-                                          padding = Some(value);
-                                          padding_index = Some(index);
+                                          let padding = StyleValueType::MarginPadding(MarginPadding::from(value.as_str()));
+                                          temp_props.insert(name.to_string(), padding);
                                         } else if name == "paddingLeft" {
-                                          padding_left = Some(value);
-                                          padding_left_index = Some(index);
+                                          let padding = temp_props.entry("padding".to_string()).or_insert(StyleValueType::MarginPadding(MarginPadding::new()));
+                                          if let StyleValueType::MarginPadding(padding) = padding {
+                                            padding.set_left(value.as_str())
+                                          }
                                         } else if name == "paddingRight" {
-                                          padding_right = Some(value);
-                                          padding_right_index = Some(index);
+                                          let padding = temp_props.entry("padding".to_string()).or_insert(StyleValueType::MarginPadding(MarginPadding::new()));
+                                          if let StyleValueType::MarginPadding(padding) = padding {
+                                            padding.set_right(value.as_str())
+                                          }
                                         } else if name == "paddingTop" {
-                                          padding_top = Some(value);
-                                          padding_top_index = Some(index);
+                                          let padding = temp_props.entry("padding".to_string()).or_insert(StyleValueType::MarginPadding(MarginPadding::new()));
+                                          if let StyleValueType::MarginPadding(padding) = padding {
+                                            padding.set_top(value.as_str())
+                                          }
                                         } else if name == "paddingBottom" {
-                                          padding_bottom = Some(value);
-                                          padding_bottom_index = Some(index);
+                                          let padding = temp_props.entry("padding".to_string()).or_insert(StyleValueType::MarginPadding(MarginPadding::new()));
+                                          if let StyleValueType::MarginPadding(padding) = padding {
+                                            padding.set_bottom(value.as_str())
+                                          }
                                         } else if name == "borderRadius" {
-                                          border_radius = Some(value);
-                                          border_radius_index = Some(index);
+                                          let border_radius = StyleValueType::BorderRadius(BorderRadius::from(value.as_str()));
+                                          temp_props.insert(name.to_string(), border_radius);
                                         } else if name == "borderTopLeftRadius" {
-                                          border_radius_top_left = Some(value);
-                                          border_radius_top_left_index = Some(index);
+                                          let border_radius = temp_props.entry("borderRadius".to_string()).or_insert(StyleValueType::BorderRadius(BorderRadius::new()));
+                                          if let StyleValueType::BorderRadius(border_radius) = border_radius {
+                                            border_radius.set_top_left(value.as_str())
+                                          }
                                         } else if name == "borderTopRightRadius" {
-                                          border_radius_top_right = Some(value);
-                                          border_radius_top_right_index = Some(index);
+                                          let border_radius = temp_props.entry("borderRadius".to_string()).or_insert(StyleValueType::BorderRadius(BorderRadius::new()));
+                                          if let StyleValueType::BorderRadius(border_radius) = border_radius {
+                                            border_radius.set_top_right(value.as_str())
+                                          }
                                         } else if name == "borderBottomLeftRadius" {
-                                          border_radius_bottom_left = Some(value);
-                                          border_radius_bottom_left_index = Some(index);
+                                          let border_radius = temp_props.entry("borderRadius".to_string()).or_insert(StyleValueType::BorderRadius(BorderRadius::new()));
+                                          if let StyleValueType::BorderRadius(border_radius) = border_radius {
+                                            border_radius.set_bottom_left(value.as_str())
+                                          }
                                         } else if name == "borderBottomRightRadius" {
-                                          border_radius_bottom_right = Some(value);
-                                          border_radius_bottom_right_index = Some(index);
+                                          let border_radius = temp_props.entry("borderRadius".to_string()).or_insert(StyleValueType::BorderRadius(BorderRadius::new()));
+                                          if let StyleValueType::BorderRadius(border_radius) = border_radius {
+                                            border_radius.set_bottom_right(value.as_str())
+                                          }
+                                        } else if name == "textDecoration" {
+                                          let mut text_decoration =
+                                            TextDecoration::from(value.to_string().as_str());
+                                          text_decoration.change_color(
+                                            match &color {
+                                              Some(color) => match &**color {
+                                                Expr::Lit(lit) => match lit {
+                                                  Lit::Str(str) => str.value.to_string(),
+                                                  _ => "black".to_string(),
+                                                },
+                                                _ => "black".to_string(),
+                                              },
+                                              None => "black".to_string(),
+                                            }
+                                            .as_str(),
+                                          );
+                                          temp_props.insert(name.to_string(), StyleValueType::TextDecoration(text_decoration));
+                                        } else if name == "background" {
+                                          let background = Background::from(value.to_string().as_str());
+                                          temp_props.insert("backgroundImage".to_string(), StyleValueType::BackgroundImage(background.image));
+                                          if background.color.0 != "" {
+                                            temp_props.insert("backgroundColor".to_string(), StyleValueType::BackgroundColor(background.color));
+                                          }
+                                          temp_props.insert("backgroundImageSize".to_string(), StyleValueType::BackgroundImageSize(background.size));
+                                          temp_props.insert("backgroundImagePosition".to_string(), StyleValueType::BackgroundImagePosition(background.position));
+                                        } else if name == "backgroundImage" {
+                                          let background_image_str = BackgroundImageStr {
+                                            src: value.to_string(),
+                                            repeat: if let Some(repeat) = &repeat_str {
+                                              Some(repeat.clone())
+                                            } else {
+                                              None
+                                            }
+                                          };
+                                          let background_image = BackgroundImage::from(&background_image_str);
+                                          temp_props.insert(name.to_string(), StyleValueType::BackgroundImage(background_image));
+                                        } else if name == "backgroundSize" {
+                                          let background_size = BackgroundImageSize::from(value.to_string().as_str());
+                                          if background_size.0.len() > 0 {
+                                            temp_props.insert("backgroundImageSize".to_string(), StyleValueType::BackgroundImageSize(background_size));
+                                          }
+                                        } else if name == "backgroundPosition" {
+                                          let background_position = BackgroundImagePosition::from(value.to_string().as_str());
+                                          if background_position.0.len() > 0 {
+                                            temp_props.insert("backgroundImagePosition".to_string(), StyleValueType::BackgroundImagePosition(background_position));
+                                          }
+                                        } else {
+                                          temp_props.insert(name.to_string(), StyleValueType::Normal(value.to_string()));
                                         }
                                       }
                                     }
@@ -590,224 +648,12 @@ impl VisitMut for JSXMutVisitor {
                                   },
                                   PropOrSpread::Spread(_) => {}
                                 });
-                                let mut margin = match &margin {
-                                  Some(margin) => MarginPadding::from(margin.to_string().as_str()),
-                                  None => MarginPadding::from("0"),
-                                };
-                                if let Some(margin_left) = &margin_left {
-                                  margin.set_left(margin_left.to_string().as_str());
-                                }
-                                if let Some(margin_right) = &margin_right {
-                                  margin.set_right(margin_right.to_string().as_str());
-                                }
-                                if let Some(margin_top) = &margin_top {
-                                  margin.set_top(margin_top.to_string().as_str());
-                                }
-                                if let Some(margin_bottom) = &margin_bottom {
-                                  margin.set_bottom(margin_bottom.to_string().as_str());
-                                }
-
-                                let mut padding = match &padding {
-                                  Some(padding) => {
-                                    MarginPadding::from(padding.to_string().as_str())
-                                  }
-                                  None => MarginPadding::from("0"),
-                                };
-
-                                if let Some(padding_left) = &padding_left {
-                                  padding.set_left(padding_left.to_string().as_str());
-                                }
-                                if let Some(padding_right) = &padding_right {
-                                  padding.set_right(padding_right.to_string().as_str());
-                                }
-                                if let Some(padding_top) = &padding_top {
-                                  padding.set_top(padding_top.to_string().as_str());
-                                }
-                                if let Some(padding_bottom) = &padding_bottom {
-                                  padding.set_bottom(padding_bottom.to_string().as_str());
-                                }
-
-                                let mut border_radius = match &border_radius {
-                                  Some(border_radius) => {
-                                    BorderRadius::from(border_radius.to_string().as_str())
-                                  }
-                                  None => BorderRadius::from("0"),
-                                };
-
-                                if let Some(border_radius_top_left) = &border_radius_top_left {
-                                  border_radius
-                                    .set_top_left(border_radius_top_left.to_string().as_str());
-                                }
-                                if let Some(border_radius_top_right) = &border_radius_top_right {
-                                  border_radius
-                                    .set_top_right(border_radius_top_right.to_string().as_str());
-                                }
-                                if let Some(border_radius_bottom_left) = &border_radius_bottom_left
-                                {
-                                  border_radius.set_bottom_left(
-                                    border_radius_bottom_left.to_string().as_str(),
-                                  );
-                                }
-                                if let Some(border_radius_bottom_right) =
-                                  &border_radius_bottom_right
-                                {
-                                  border_radius.set_bottom_right(
-                                    border_radius_bottom_right.to_string().as_str(),
-                                  );
-                                }
-
-                                let mut props = deque
+                                let mut props = temp_props
                                   .iter_mut()
                                   .map(|p| {
-                                    match p {
-                                      PropOrSpread::Prop(prop) => match &mut **prop {
-                                        Prop::KeyValue(key_value_prop) => {
-                                          let value = match &*key_value_prop.value {
-                                            Expr::Lit(lit) => match lit {
-                                              Lit::Str(str) => {
-                                                to_camel_case(str.value.to_string().as_str(), true)
-                                              }
-                                              _ => "".to_string(),
-                                            },
-                                            _ => {
-                                              has_dynamic_style = true;
-                                              "".to_string()
-                                            }
-                                          };
-                                          let name = match &key_value_prop.key {
-                                            PropName::Ident(ident) => Some(to_camel_case(
-                                              ident.sym.to_string().as_str(),
-                                              false,
-                                            )),
-                                            PropName::Str(str) => Some(to_camel_case(
-                                              str.value.to_string().as_str(),
-                                              false,
-                                            )),
-                                            _ => None,
-                                          };
-                                          if let Some(name) = name {
-                                            if name == "textDecoration" {
-                                              if !has_dynamic_style {
-                                                let mut text_decoration =
-                                                  TextDecoration::from(value.to_string().as_str());
-                                                text_decoration.change_color(
-                                                  match &color {
-                                                    Some(color) => match &**color {
-                                                      Expr::Lit(lit) => match lit {
-                                                        Lit::Str(str) => str.value.to_string(),
-                                                        _ => "black".to_string(),
-                                                      },
-                                                      _ => "black".to_string(),
-                                                    },
-                                                    None => "black".to_string(),
-                                                  }
-                                                  .as_str(),
-                                                );
-                                                key_value_prop.value =
-                                                  text_decoration.to_expr().into();
-                                              }
-                                            }
-                                          }
-                                        }
-                                        _ => {}
-                                      },
-                                      PropOrSpread::Spread(_) => {}
-                                    }
-                                    (*p).clone()
+                                    PropOrSpread::Prop(Prop::KeyValue(parse_style_kv(p.0, p.1)).into())
                                   })
                                   .collect::<Vec<_>>();
-                                if !has_dynamic_style {
-                                  let mut delete_indexs = vec![];
-
-                                  if let Some(margin_index) = margin_index {
-                                    delete_indexs.push(margin_index);
-                                  }
-                                  if let Some(margin_left_index) = margin_left_index {
-                                    delete_indexs.push(margin_left_index);
-                                  }
-                                  if let Some(margin_right_index) = margin_right_index {
-                                    delete_indexs.push(margin_right_index);
-                                  }
-                                  if let Some(margin_top_index) = margin_top_index {
-                                    delete_indexs.push(margin_top_index);
-                                  }
-                                  if let Some(margin_bottom_index) = margin_bottom_index {
-                                    delete_indexs.push(margin_bottom_index);
-                                  }
-
-                                  if let Some(padding_index) = padding_index {
-                                    delete_indexs.push(padding_index);
-                                  }
-                                  if let Some(padding_left_index) = padding_left_index {
-                                    delete_indexs.push(padding_left_index);
-                                  }
-                                  if let Some(padding_right_index) = padding_right_index {
-                                    delete_indexs.push(padding_right_index);
-                                  }
-                                  if let Some(padding_top_index) = padding_top_index {
-                                    delete_indexs.push(padding_top_index);
-                                  }
-                                  if let Some(padding_bottom_index) = padding_bottom_index {
-                                    delete_indexs.push(padding_bottom_index);
-                                  }
-
-                                  if let Some(border_radius_index) = border_radius_index {
-                                    delete_indexs.push(border_radius_index);
-                                  }
-                                  if let Some(border_radius_top_left_index) =
-                                    border_radius_top_left_index
-                                  {
-                                    delete_indexs.push(border_radius_top_left_index);
-                                  }
-                                  if let Some(border_radius_top_right_index) =
-                                    border_radius_top_right_index
-                                  {
-                                    delete_indexs.push(border_radius_top_right_index);
-                                  }
-                                  if let Some(border_radius_bottom_left_index) =
-                                    border_radius_bottom_left_index
-                                  {
-                                    delete_indexs.push(border_radius_bottom_left_index);
-                                  }
-                                  if let Some(border_radius_bottom_right_index) =
-                                    border_radius_bottom_right_index
-                                  {
-                                    delete_indexs.push(border_radius_bottom_right_index);
-                                  }
-
-                                  delete_items(&mut props, delete_indexs);
-
-                                  if !margin.is_zero() {
-                                    props.push(PropOrSpread::Prop(Box::new(Prop::KeyValue(
-                                      KeyValueProp {
-                                        key: PropName::Ident(Ident::new("margin".into(), DUMMY_SP)),
-                                        value: margin.to_expr().into(),
-                                      },
-                                    ))));
-                                  }
-                                  if !padding.is_zero() {
-                                    props.push(PropOrSpread::Prop(Box::new(Prop::KeyValue(
-                                      KeyValueProp {
-                                        key: PropName::Ident(Ident::new(
-                                          "padding".into(),
-                                          DUMMY_SP,
-                                        )),
-                                        value: padding.to_expr().into(),
-                                      },
-                                    ))));
-                                  }
-                                  if !border_radius.is_zero() {
-                                    props.push(PropOrSpread::Prop(Box::new(Prop::KeyValue(
-                                      KeyValueProp {
-                                        key: PropName::Ident(Ident::new(
-                                          "borderRadius".into(),
-                                          DUMMY_SP,
-                                        )),
-                                        value: border_radius.to_expr().into(),
-                                      },
-                                    ))));
-                                  }
-                                }
                                 props.sort_by(|a, b| {
                                   let a = match a {
                                     PropOrSpread::Prop(prop) => match &**prop {
@@ -831,6 +677,12 @@ impl VisitMut for JSXMutVisitor {
                                   };
                                   a.cmp(&b)
                                 });
+                                lit.props.iter()
+                                  .for_each(|prop| {
+                                    if let PropOrSpread::Spread(_) = prop {
+                                      props.push(prop.clone())
+                                    }
+                                  });
                                 lit.props = props;
                               }
                             }

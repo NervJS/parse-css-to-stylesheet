@@ -39,12 +39,3 @@ pub fn to_camel_case(s: &str, is_first: bool) -> String {
   }
   result
 }
-
-pub fn delete_items<T>(items: &mut Vec<T>, indexs: Vec<usize>) {
-  let mut indexs = indexs;
-  indexs.sort();
-  indexs.reverse();
-  for index in indexs {
-    items.remove(index);
-  }
-}

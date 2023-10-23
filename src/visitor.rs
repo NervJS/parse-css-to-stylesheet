@@ -21,11 +21,10 @@ use swc_ecma_visit::{
 use crate::{
   scraper::Element,
   style_parser::{
-    BorderRadius, MarginPadding, StyleValue, StyleValueType, TextDecoration, ToExpr, Background, BackgroundImage, BackgroundImageStr, BackgroundImageSize, BackgroundImagePosition,
+    Background, BackgroundImage, BackgroundImagePosition, BackgroundImageSize, BackgroundImageStr,
+    BorderRadius, MarginPadding, StyleValue, StyleValueType, TextDecoration, ToExpr,
   },
-  utils::{
-    create_qualname, is_starts_with_uppercase, recursion_jsx_member, to_camel_case,
-  },
+  utils::{create_qualname, is_starts_with_uppercase, recursion_jsx_member, to_camel_case},
 };
 
 #[derive(Eq, Clone, Copy, Debug)]
@@ -491,11 +490,11 @@ impl VisitMut for JSXMutVisitor {
                                             }
                                           }
                                         }
-                                        _ => {},
+                                        _ => {}
                                       },
-                                      _ => {},
+                                      _ => {}
                                     },
-                                    _ => {},
+                                    _ => {}
                                   };
                                 });
 
@@ -525,72 +524,122 @@ impl VisitMut for JSXMutVisitor {
                                       };
                                       if let Some(name) = name {
                                         if name == "margin" {
-                                          let margin = StyleValueType::MarginPadding(MarginPadding::from(value.as_str()));
+                                          let margin = StyleValueType::MarginPadding(
+                                            MarginPadding::from(value.as_str()),
+                                          );
                                           temp_props.insert(name.to_string(), margin);
                                         } else if name == "marginLeft" {
-                                          let margin = temp_props.entry("margin".to_string()).or_insert(StyleValueType::MarginPadding(MarginPadding::new()));
+                                          let margin =
+                                            temp_props.entry("margin".to_string()).or_insert(
+                                              StyleValueType::MarginPadding(MarginPadding::new()),
+                                            );
                                           if let StyleValueType::MarginPadding(margin) = margin {
                                             margin.set_left(value.as_str())
                                           }
                                         } else if name == "marginRight" {
-                                          let margin = temp_props.entry("margin".to_string()).or_insert(StyleValueType::MarginPadding(MarginPadding::new()));
+                                          let margin =
+                                            temp_props.entry("margin".to_string()).or_insert(
+                                              StyleValueType::MarginPadding(MarginPadding::new()),
+                                            );
                                           if let StyleValueType::MarginPadding(margin) = margin {
                                             margin.set_right(value.as_str())
                                           }
                                         } else if name == "marginTop" {
-                                          let margin = temp_props.entry("margin".to_string()).or_insert(StyleValueType::MarginPadding(MarginPadding::new()));
+                                          let margin =
+                                            temp_props.entry("margin".to_string()).or_insert(
+                                              StyleValueType::MarginPadding(MarginPadding::new()),
+                                            );
                                           if let StyleValueType::MarginPadding(margin) = margin {
                                             margin.set_top(value.as_str())
                                           }
                                         } else if name == "marginBottom" {
-                                          let margin = temp_props.entry("margin".to_string()).or_insert(StyleValueType::MarginPadding(MarginPadding::new()));
+                                          let margin =
+                                            temp_props.entry("margin".to_string()).or_insert(
+                                              StyleValueType::MarginPadding(MarginPadding::new()),
+                                            );
                                           if let StyleValueType::MarginPadding(margin) = margin {
                                             margin.set_bottom(value.as_str())
                                           }
                                         } else if name == "padding" {
-                                          let padding = StyleValueType::MarginPadding(MarginPadding::from(value.as_str()));
+                                          let padding = StyleValueType::MarginPadding(
+                                            MarginPadding::from(value.as_str()),
+                                          );
                                           temp_props.insert(name.to_string(), padding);
                                         } else if name == "paddingLeft" {
-                                          let padding = temp_props.entry("padding".to_string()).or_insert(StyleValueType::MarginPadding(MarginPadding::new()));
+                                          let padding =
+                                            temp_props.entry("padding".to_string()).or_insert(
+                                              StyleValueType::MarginPadding(MarginPadding::new()),
+                                            );
                                           if let StyleValueType::MarginPadding(padding) = padding {
                                             padding.set_left(value.as_str())
                                           }
                                         } else if name == "paddingRight" {
-                                          let padding = temp_props.entry("padding".to_string()).or_insert(StyleValueType::MarginPadding(MarginPadding::new()));
+                                          let padding =
+                                            temp_props.entry("padding".to_string()).or_insert(
+                                              StyleValueType::MarginPadding(MarginPadding::new()),
+                                            );
                                           if let StyleValueType::MarginPadding(padding) = padding {
                                             padding.set_right(value.as_str())
                                           }
                                         } else if name == "paddingTop" {
-                                          let padding = temp_props.entry("padding".to_string()).or_insert(StyleValueType::MarginPadding(MarginPadding::new()));
+                                          let padding =
+                                            temp_props.entry("padding".to_string()).or_insert(
+                                              StyleValueType::MarginPadding(MarginPadding::new()),
+                                            );
                                           if let StyleValueType::MarginPadding(padding) = padding {
                                             padding.set_top(value.as_str())
                                           }
                                         } else if name == "paddingBottom" {
-                                          let padding = temp_props.entry("padding".to_string()).or_insert(StyleValueType::MarginPadding(MarginPadding::new()));
+                                          let padding =
+                                            temp_props.entry("padding".to_string()).or_insert(
+                                              StyleValueType::MarginPadding(MarginPadding::new()),
+                                            );
                                           if let StyleValueType::MarginPadding(padding) = padding {
                                             padding.set_bottom(value.as_str())
                                           }
                                         } else if name == "borderRadius" {
-                                          let border_radius = StyleValueType::BorderRadius(BorderRadius::from(value.as_str()));
+                                          let border_radius = StyleValueType::BorderRadius(
+                                            BorderRadius::from(value.as_str()),
+                                          );
                                           temp_props.insert(name.to_string(), border_radius);
                                         } else if name == "borderTopLeftRadius" {
-                                          let border_radius = temp_props.entry("borderRadius".to_string()).or_insert(StyleValueType::BorderRadius(BorderRadius::new()));
-                                          if let StyleValueType::BorderRadius(border_radius) = border_radius {
+                                          let border_radius =
+                                            temp_props.entry("borderRadius".to_string()).or_insert(
+                                              StyleValueType::BorderRadius(BorderRadius::new()),
+                                            );
+                                          if let StyleValueType::BorderRadius(border_radius) =
+                                            border_radius
+                                          {
                                             border_radius.set_top_left(value.as_str())
                                           }
                                         } else if name == "borderTopRightRadius" {
-                                          let border_radius = temp_props.entry("borderRadius".to_string()).or_insert(StyleValueType::BorderRadius(BorderRadius::new()));
-                                          if let StyleValueType::BorderRadius(border_radius) = border_radius {
+                                          let border_radius =
+                                            temp_props.entry("borderRadius".to_string()).or_insert(
+                                              StyleValueType::BorderRadius(BorderRadius::new()),
+                                            );
+                                          if let StyleValueType::BorderRadius(border_radius) =
+                                            border_radius
+                                          {
                                             border_radius.set_top_right(value.as_str())
                                           }
                                         } else if name == "borderBottomLeftRadius" {
-                                          let border_radius = temp_props.entry("borderRadius".to_string()).or_insert(StyleValueType::BorderRadius(BorderRadius::new()));
-                                          if let StyleValueType::BorderRadius(border_radius) = border_radius {
+                                          let border_radius =
+                                            temp_props.entry("borderRadius".to_string()).or_insert(
+                                              StyleValueType::BorderRadius(BorderRadius::new()),
+                                            );
+                                          if let StyleValueType::BorderRadius(border_radius) =
+                                            border_radius
+                                          {
                                             border_radius.set_bottom_left(value.as_str())
                                           }
                                         } else if name == "borderBottomRightRadius" {
-                                          let border_radius = temp_props.entry("borderRadius".to_string()).or_insert(StyleValueType::BorderRadius(BorderRadius::new()));
-                                          if let StyleValueType::BorderRadius(border_radius) = border_radius {
+                                          let border_radius =
+                                            temp_props.entry("borderRadius".to_string()).or_insert(
+                                              StyleValueType::BorderRadius(BorderRadius::new()),
+                                            );
+                                          if let StyleValueType::BorderRadius(border_radius) =
+                                            border_radius
+                                          {
                                             border_radius.set_bottom_right(value.as_str())
                                           }
                                         } else if name == "textDecoration" {
@@ -609,15 +658,33 @@ impl VisitMut for JSXMutVisitor {
                                             }
                                             .as_str(),
                                           );
-                                          temp_props.insert(name.to_string(), StyleValueType::TextDecoration(text_decoration));
+                                          temp_props.insert(
+                                            name.to_string(),
+                                            StyleValueType::TextDecoration(text_decoration),
+                                          );
                                         } else if name == "background" {
-                                          let background = Background::from(value.to_string().as_str());
-                                          temp_props.insert("backgroundImage".to_string(), StyleValueType::BackgroundImage(background.image));
+                                          let background =
+                                            Background::from(value.to_string().as_str());
+                                          temp_props.insert(
+                                            "backgroundImage".to_string(),
+                                            StyleValueType::BackgroundImage(background.image),
+                                          );
                                           if background.color.0 != "" {
-                                            temp_props.insert("backgroundColor".to_string(), StyleValueType::BackgroundColor(background.color));
+                                            temp_props.insert(
+                                              "backgroundColor".to_string(),
+                                              StyleValueType::BackgroundColor(background.color),
+                                            );
                                           }
-                                          temp_props.insert("backgroundImageSize".to_string(), StyleValueType::BackgroundImageSize(background.size));
-                                          temp_props.insert("backgroundImagePosition".to_string(), StyleValueType::BackgroundImagePosition(background.position));
+                                          temp_props.insert(
+                                            "backgroundImageSize".to_string(),
+                                            StyleValueType::BackgroundImageSize(background.size),
+                                          );
+                                          temp_props.insert(
+                                            "backgroundImagePosition".to_string(),
+                                            StyleValueType::BackgroundImagePosition(
+                                              background.position,
+                                            ),
+                                          );
                                         } else if name == "backgroundImage" {
                                           let background_image_str = BackgroundImageStr {
                                             src: value.to_string(),
@@ -625,22 +692,40 @@ impl VisitMut for JSXMutVisitor {
                                               Some(repeat.clone())
                                             } else {
                                               None
-                                            }
+                                            },
                                           };
-                                          let background_image = BackgroundImage::from(&background_image_str);
-                                          temp_props.insert(name.to_string(), StyleValueType::BackgroundImage(background_image));
+                                          let background_image =
+                                            BackgroundImage::from(&background_image_str);
+                                          temp_props.insert(
+                                            name.to_string(),
+                                            StyleValueType::BackgroundImage(background_image),
+                                          );
                                         } else if name == "backgroundSize" {
-                                          let background_size = BackgroundImageSize::from(value.to_string().as_str());
+                                          let background_size =
+                                            BackgroundImageSize::from(value.to_string().as_str());
                                           if background_size.0.len() > 0 {
-                                            temp_props.insert("backgroundImageSize".to_string(), StyleValueType::BackgroundImageSize(background_size));
+                                            temp_props.insert(
+                                              "backgroundImageSize".to_string(),
+                                              StyleValueType::BackgroundImageSize(background_size),
+                                            );
                                           }
                                         } else if name == "backgroundPosition" {
-                                          let background_position = BackgroundImagePosition::from(value.to_string().as_str());
+                                          let background_position = BackgroundImagePosition::from(
+                                            value.to_string().as_str(),
+                                          );
                                           if background_position.0.len() > 0 {
-                                            temp_props.insert("backgroundImagePosition".to_string(), StyleValueType::BackgroundImagePosition(background_position));
+                                            temp_props.insert(
+                                              "backgroundImagePosition".to_string(),
+                                              StyleValueType::BackgroundImagePosition(
+                                                background_position,
+                                              ),
+                                            );
                                           }
                                         } else {
-                                          temp_props.insert(name.to_string(), StyleValueType::Normal(value.to_string()));
+                                          temp_props.insert(
+                                            name.to_string(),
+                                            StyleValueType::Normal(value.to_string()),
+                                          );
                                         }
                                       }
                                     }
@@ -651,7 +736,9 @@ impl VisitMut for JSXMutVisitor {
                                 let mut props = temp_props
                                   .iter_mut()
                                   .map(|p| {
-                                    PropOrSpread::Prop(Prop::KeyValue(parse_style_kv(p.0, p.1)).into())
+                                    PropOrSpread::Prop(
+                                      Prop::KeyValue(parse_style_kv(p.0, p.1)).into(),
+                                    )
                                   })
                                   .collect::<Vec<_>>();
                                 props.sort_by(|a, b| {
@@ -677,12 +764,11 @@ impl VisitMut for JSXMutVisitor {
                                   };
                                   a.cmp(&b)
                                 });
-                                lit.props.iter()
-                                  .for_each(|prop| {
-                                    if let PropOrSpread::Spread(_) = prop {
-                                      props.push(prop.clone())
-                                    }
-                                  });
+                                lit.props.iter().for_each(|prop| {
+                                  if let PropOrSpread::Spread(_) = prop {
+                                    props.push(prop.clone())
+                                  }
+                                });
                                 lit.props = props;
                               }
                             }

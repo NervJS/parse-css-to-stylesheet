@@ -44,7 +44,7 @@ export default class Mod extends React.Component {
             </>
           </>
         </div>
-        <div className='cnt_row1'>
+        <div className='cnt_row1' style={{ background: 'url(//img12.360buyimg.com/img/jfs/t1/100881/15/44805/18567/64f58062F1b45e0cb/caf065a7410087ce.png)' }}>
           <img
             className='img'
             src='//img12.360buyimg.com/img/jfs/t1/100881/15/44805/18567/64f58062F1b45e0cb/caf065a7410087ce.png'

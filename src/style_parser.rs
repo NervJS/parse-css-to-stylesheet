@@ -724,7 +724,7 @@ pub struct BackgroundImageStr {
 }
 
 #[derive(Debug, Clone)]
-pub struct BackgroundImage(Vec<BackgroundImageItem>);
+pub struct BackgroundImage(pub Vec<BackgroundImageItem>);
 
 impl ToExpr for BackgroundImage {
   fn to_expr(&self) -> Expr {
@@ -823,8 +823,8 @@ pub enum BackgroundImageKind {
 
 #[derive(Debug, Clone)]
 pub struct BackgroundImageItem {
-  image: BackgroundImageKind,
-  repeat: Option<ImageRepeat>,
+  pub image: BackgroundImageKind,
+  pub repeat: Option<ImageRepeat>,
 }
 
 #[derive(Debug, Clone)]

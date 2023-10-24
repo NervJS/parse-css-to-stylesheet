@@ -21,8 +21,9 @@ use swc_ecma_visit::{
 use crate::{
   scraper::Element,
   style_parser::{
-    Background, BackgroundImage, BackgroundImagePosition, BackgroundImageSize, BackgroundImageStr,
-    BorderRadius, MarginPadding, StyleValue, StyleValueType, TextDecoration, ToExpr,
+    Background, BackgroundImage, BackgroundImageKind, BackgroundImagePosition, BackgroundImageSize,
+    BackgroundImageStr, BorderRadius, LinearGradient, MarginPadding, StyleValue, StyleValueType,
+    TextDecoration, ToExpr,
   },
   utils::{create_qualname, is_starts_with_uppercase, recursion_jsx_member, to_camel_case},
 };
@@ -665,10 +666,34 @@ impl VisitMut for JSXMutVisitor {
                                         } else if name == "background" {
                                           let background =
                                             Background::from(value.to_string().as_str());
-                                          temp_props.insert(
-                                            "backgroundImage".to_string(),
-                                            StyleValueType::BackgroundImage(background.image),
-                                          );
+                                          let mut images = vec![];
+                                          let mut linear_gradient = vec![];
+                                          for item in background.image.0.iter() {
+                                            if let BackgroundImageKind::String(_) = &item.image {
+                                              images.push(item.clone());
+                                            } else if let BackgroundImageKind::LinearGradient(
+                                              gradient,
+                                            ) = &item.image
+                                            {
+                                              linear_gradient.push(gradient.clone());
+                                            }
+                                          }
+                                          if images.len() > 0 {
+                                            temp_props.insert(
+                                              "backgroundImage".to_string(),
+                                              StyleValueType::BackgroundImage(BackgroundImage(
+                                                images,
+                                              )),
+                                            );
+                                          }
+                                          if linear_gradient.len() > 0 {
+                                            temp_props.insert(
+                                              "linearGradient".to_string(),
+                                              StyleValueType::LinearGradient(LinearGradient(
+                                                linear_gradient,
+                                              )),
+                                            );
+                                          }
                                           if background.color.0 != "" {
                                             temp_props.insert(
                                               "backgroundColor".to_string(),
@@ -696,10 +721,34 @@ impl VisitMut for JSXMutVisitor {
                                           };
                                           let background_image =
                                             BackgroundImage::from(&background_image_str);
-                                          temp_props.insert(
-                                            name.to_string(),
-                                            StyleValueType::BackgroundImage(background_image),
-                                          );
+                                          let mut images = vec![];
+                                          let mut linear_gradient = vec![];
+                                          for item in background_image.0.iter() {
+                                            if let BackgroundImageKind::String(_) = &item.image {
+                                              images.push(item.clone());
+                                            } else if let BackgroundImageKind::LinearGradient(
+                                              gradient,
+                                            ) = &item.image
+                                            {
+                                              linear_gradient.push(gradient.clone());
+                                            }
+                                          }
+                                          if images.len() > 0 {
+                                            temp_props.insert(
+                                              "backgroundImage".to_string(),
+                                              StyleValueType::BackgroundImage(BackgroundImage(
+                                                images,
+                                              )),
+                                            );
+                                          }
+                                          if linear_gradient.len() > 0 {
+                                            temp_props.insert(
+                                              "linearGradient".to_string(),
+                                              StyleValueType::LinearGradient(LinearGradient(
+                                                linear_gradient,
+                                              )),
+                                            );
+                                          }
                                         } else if name == "backgroundSize" {
                                           let background_size =
                                             BackgroundImageSize::from(value.to_string().as_str());

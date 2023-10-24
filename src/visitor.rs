@@ -16,6 +16,7 @@ use swc_ecma_ast::{
 };
 use swc_ecma_visit::{
   noop_visit_mut_type, noop_visit_type, Visit, VisitAll, VisitAllWith, VisitMut, VisitMutWith,
+  VisitWith,
 };
 
 use crate::{
@@ -46,6 +47,20 @@ impl Hash for SpanKey {
 }
 
 pub type JSXRecord = HashMap<SpanKey, Element>;
+
+struct VarChecker {
+  found: bool,
+}
+
+impl Visit for VarChecker {
+  noop_visit_type!();
+
+  fn visit_ident(&mut self, ident: &Ident) {
+    if ident.sym == "__inner_style__" {
+      self.found = true;
+    }
+  }
+}
 
 pub struct CollectVisitor {
   pub taro_components: Vec<String>,
@@ -276,9 +291,15 @@ impl VisitMut for ModuleMutVisitor {
       })),
     );
     last_import_index += 1;
-    module
-      .body
-      .insert(last_import_index, ModuleItem::Stmt(inner_style_stmt));
+    let mut var_checker = VarChecker { found: false };
+    module.visit_with(&mut var_checker);
+    println!("var_checker.found: {}", var_checker.found);
+    if var_checker.found {
+      // 插入代码 const __inner_style__ = calcDynamicStyle(__inner_style__)
+      module
+        .body
+        .insert(last_import_index, ModuleItem::Stmt(inner_style_stmt));
+    }
   }
 }
 

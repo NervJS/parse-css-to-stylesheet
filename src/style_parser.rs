@@ -15,6 +15,7 @@ use lightningcss::{
       BackgroundSize,
     },
     flex::{Flex, FlexDirection as LNFlexDirection, FlexWrap as LNFlexWrap},
+    transform::Transform,
     Property, PropertyId,
   },
   rules::CssRule,
@@ -24,12 +25,12 @@ use lightningcss::{
   values::{
     gradient::{Gradient, GradientItem, LineDirection},
     image::Image,
-    length::{LengthPercentageOrAuto, LengthValue},
+    length::{Length, LengthPercentageOrAuto, LengthValue},
     number::CSSNumber,
-    percentage::DimensionPercentage,
+    percentage::{DimensionPercentage, NumberOrPercentage},
     position::{
       HorizontalPositionKeyword,
-      PositionComponent::{Center, Length, Side},
+      PositionComponent::{self, Center, Side},
       VerticalPositionKeyword,
     },
   },
@@ -53,7 +54,7 @@ fn parse_background_position_item(position: &BackgroundPosition) -> ImagePositio
         VerticalPositionKeyword::Top => ImagePosition::Top,
         VerticalPositionKeyword::Bottom => ImagePosition::Bottom,
       },
-      Length(length_percentage) => ImagePosition::ImagePositionXY(
+      PositionComponent::Length(length_percentage) => ImagePosition::ImagePositionXY(
         "50%".to_string(),
         length_percentage
           .to_css_string(PrinterOptions::default())
@@ -67,7 +68,7 @@ fn parse_background_position_item(position: &BackgroundPosition) -> ImagePositio
           VerticalPositionKeyword::Top => ImagePosition::TopStart,
           VerticalPositionKeyword::Bottom => ImagePosition::BottomStart,
         },
-        Length(length_percentage) => ImagePosition::ImagePositionXY(
+        PositionComponent::Length(length_percentage) => ImagePosition::ImagePositionXY(
           "0".to_string(),
           length_percentage
             .to_css_string(PrinterOptions::default())
@@ -80,7 +81,7 @@ fn parse_background_position_item(position: &BackgroundPosition) -> ImagePositio
           VerticalPositionKeyword::Top => ImagePosition::TopEnd,
           VerticalPositionKeyword::Bottom => ImagePosition::BottomEnd,
         },
-        Length(length_percentage) => ImagePosition::ImagePositionXY(
+        PositionComponent::Length(length_percentage) => ImagePosition::ImagePositionXY(
           "100%".to_string(),
           length_percentage
             .to_css_string(PrinterOptions::default())
@@ -88,7 +89,7 @@ fn parse_background_position_item(position: &BackgroundPosition) -> ImagePositio
         ),
       },
     },
-    Length(length_percentage) => match &position.y {
+    PositionComponent::Length(length_percentage) => match &position.y {
       Center => ImagePosition::ImagePositionXY(
         length_percentage
           .to_css_string(PrinterOptions::default())
@@ -109,7 +110,7 @@ fn parse_background_position_item(position: &BackgroundPosition) -> ImagePositio
           "100%".to_string(),
         ),
       },
-      Length(length_percentage) => ImagePosition::ImagePositionXY(
+      PositionComponent::Length(length_percentage) => ImagePosition::ImagePositionXY(
         length_percentage
           .to_css_string(PrinterOptions::default())
           .unwrap(),
@@ -353,6 +354,26 @@ fn parse_flex_basis(flex_basis: &LengthPercentageOrAuto) -> FlexBasis {
       }
       _ => FlexBasis::String("auto".to_string()),
     },
+  }
+}
+
+fn parse_dimension_percentage(value: &DimensionPercentage<LengthValue>) -> Option<StringNumber> {
+  match value {
+    DimensionPercentage::Dimension(value) => Some(StringNumber::Number(value.to_unit_value().0)),
+    _ => value
+      .to_css_string(PrinterOptions::default())
+      .ok()
+      .map(StringNumber::String),
+  }
+}
+
+fn parse_length(value: &Length) -> Option<StringNumber> {
+  match value {
+    Length::Value(value) => Some(StringNumber::Number(value.to_unit_value().0)),
+    _ => value
+      .to_css_string(PrinterOptions::default())
+      .ok()
+      .map(StringNumber::String),
   }
 }
 
@@ -1803,6 +1824,368 @@ impl From<&str> for FlexSize {
 }
 
 #[derive(Debug, Clone)]
+pub enum StringNumber {
+  String(String),
+  Number(CSSNumber),
+}
+
+impl Display for StringNumber {
+  fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+    match self {
+      StringNumber::String(value) => write!(f, "{}", value),
+      StringNumber::Number(value) => write!(f, "{}", value),
+    }
+  }
+}
+
+impl ToExpr for StringNumber {
+  fn to_expr(&self) -> Expr {
+    match self {
+      StringNumber::String(value) => Expr::Lit(Lit::Str(Str::from(value.to_string()))).into(),
+      StringNumber::Number(value) => Expr::Lit(Lit::Num(Number {
+        span: DUMMY_SP,
+        value: *value as f64,
+        raw: None,
+      }))
+      .into(),
+    }
+  }
+}
+
+#[derive(Debug, Clone)]
+pub struct Translate {
+  pub x: Option<StringNumber>,
+  pub y: Option<StringNumber>,
+  pub z: Option<StringNumber>,
+}
+
+impl Translate {
+  pub fn new() -> Self {
+    Translate {
+      x: None,
+      y: None,
+      z: None,
+    }
+  }
+}
+
+impl Display for Translate {
+  fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+    let mut translate_str = "".to_string();
+    if let Some(x) = &self.x {
+      translate_str.push_str(x.to_string().as_str());
+      translate_str.push_str(", ");
+    }
+    if let Some(y) = &self.y {
+      translate_str.push_str(y.to_string().as_str());
+      translate_str.push_str(", ");
+    }
+    if let Some(z) = &self.z {
+      translate_str.push_str(z.to_string().as_str());
+    }
+    write!(f, "{}", translate_str)
+  }
+}
+
+#[macro_export]
+macro_rules! impl_to_expr_for_transform_mem {
+  ($class:ty; $($name:ident),*; $($var:ident),*) => {
+    impl ToExpr for $class {
+      fn to_expr(&self) -> Expr {
+        let mut props = vec![];
+        $(
+          if let Some(ref value) = self.$name {
+            props.push(PropOrSpread::Prop(Box::new(Prop::KeyValue(KeyValueProp {
+              key: PropName::Ident(Ident::new(to_camel_case(stringify!($name), false).into(), DUMMY_SP)),
+              value: value.to_expr().into(),
+            }))));
+          }
+        )*
+        $(
+          props.push(PropOrSpread::Prop(Box::new(Prop::KeyValue(KeyValueProp {
+            key: PropName::Ident(Ident::new(to_camel_case(stringify!($var), false).into(), DUMMY_SP)),
+            value: self.$var.to_expr().into(),
+          }))));
+        )*
+        Expr::Object(ObjectLit {
+          span: DUMMY_SP,
+          props,
+        })
+      }
+    }
+  };
+}
+
+impl_to_expr_for_transform_mem!(Translate; x, y;);
+
+#[derive(Debug, Clone)]
+pub struct WrapCSSNumber(pub CSSNumber);
+
+impl Display for WrapCSSNumber {
+  fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+    write!(f, "{}", self.0)
+  }
+}
+
+impl ToExpr for WrapCSSNumber {
+  fn to_expr(&self) -> Expr {
+    Expr::Lit(Lit::Num(Number {
+      span: DUMMY_SP,
+      value: self.0 as f64,
+      raw: None,
+    }))
+    .into()
+  }
+}
+
+#[derive(Debug, Clone)]
+pub struct Rotate {
+  pub x: Option<WrapCSSNumber>,
+  pub y: Option<WrapCSSNumber>,
+  pub z: Option<WrapCSSNumber>,
+  pub angle: StringNumber,
+  pub center_x: Option<StringNumber>,
+  pub center_y: Option<StringNumber>,
+}
+
+impl Rotate {
+  pub fn new() -> Self {
+    Rotate {
+      x: None,
+      y: None,
+      z: None,
+      angle: StringNumber::Number(0.0),
+      center_x: None,
+      center_y: None,
+    }
+  }
+}
+
+impl Display for Rotate {
+  fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+    let mut rotate_str = "".to_string();
+    if let Some(x) = &self.x {
+      rotate_str.push_str(x.to_string().as_str());
+      rotate_str.push_str(", ");
+    }
+    if let Some(y) = &self.y {
+      rotate_str.push_str(y.to_string().as_str());
+      rotate_str.push_str(", ");
+    }
+    if let Some(z) = &self.z {
+      rotate_str.push_str(z.to_string().as_str());
+      rotate_str.push_str(", ");
+    }
+    rotate_str.push_str(self.angle.to_string().as_str());
+    if let Some(center_x) = &self.center_x {
+      rotate_str.push_str(", ");
+      rotate_str.push_str(center_x.to_string().as_str());
+    }
+    if let Some(center_y) = &self.center_y {
+      rotate_str.push_str(", ");
+      rotate_str.push_str(center_y.to_string().as_str());
+    }
+    write!(f, "{}", rotate_str)
+  }
+}
+
+impl_to_expr_for_transform_mem!(Rotate; x, y, z, center_x, center_y; angle);
+
+#[derive(Debug, Clone)]
+pub struct Scale {
+  pub x: Option<WrapCSSNumber>,
+  pub y: Option<WrapCSSNumber>,
+  pub z: Option<WrapCSSNumber>,
+  pub center_x: Option<StringNumber>,
+  pub center_y: Option<StringNumber>,
+}
+
+impl Scale {
+  pub fn new() -> Self {
+    Scale {
+      x: None,
+      y: None,
+      z: None,
+      center_x: None,
+      center_y: None,
+    }
+  }
+}
+
+impl Display for Scale {
+  fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+    let mut scale_str = "".to_string();
+    if let Some(x) = &self.x {
+      scale_str.push_str(x.to_string().as_str());
+      scale_str.push_str(", ");
+    }
+    if let Some(y) = &self.y {
+      scale_str.push_str(y.to_string().as_str());
+      scale_str.push_str(", ");
+    }
+    if let Some(z) = &self.z {
+      scale_str.push_str(z.to_string().as_str());
+      scale_str.push_str(", ");
+    }
+    if let Some(center_x) = &self.center_x {
+      scale_str.push_str(center_x.to_string().as_str());
+      scale_str.push_str(", ");
+    }
+    if let Some(center_y) = &self.center_y {
+      scale_str.push_str(center_y.to_string().as_str());
+    }
+    write!(f, "{}", scale_str)
+  }
+}
+
+impl_to_expr_for_transform_mem!(Scale; x, y, z, center_x, center_y;);
+
+#[derive(Debug, Clone)]
+pub struct Matrix {
+  pub m00: WrapCSSNumber,
+  pub m01: WrapCSSNumber,
+  pub m02: WrapCSSNumber,
+  pub m03: WrapCSSNumber,
+  pub m10: WrapCSSNumber,
+  pub m11: WrapCSSNumber,
+  pub m12: WrapCSSNumber,
+  pub m13: WrapCSSNumber,
+  pub m20: WrapCSSNumber,
+  pub m21: WrapCSSNumber,
+  pub m22: WrapCSSNumber,
+  pub m23: WrapCSSNumber,
+  pub m30: WrapCSSNumber,
+  pub m31: WrapCSSNumber,
+  pub m32: WrapCSSNumber,
+  pub m33: WrapCSSNumber,
+}
+
+impl Matrix {
+  pub fn new() -> Self {
+    Matrix {
+      m00: WrapCSSNumber(1.0),
+      m01: WrapCSSNumber(0.0),
+      m02: WrapCSSNumber(0.0),
+      m03: WrapCSSNumber(0.0),
+      m10: WrapCSSNumber(0.0),
+      m11: WrapCSSNumber(1.0),
+      m12: WrapCSSNumber(0.0),
+      m13: WrapCSSNumber(0.0),
+      m20: WrapCSSNumber(0.0),
+      m21: WrapCSSNumber(0.0),
+      m22: WrapCSSNumber(1.0),
+      m23: WrapCSSNumber(0.0),
+      m30: WrapCSSNumber(0.0),
+      m31: WrapCSSNumber(0.0),
+      m32: WrapCSSNumber(0.0),
+      m33: WrapCSSNumber(1.0),
+    }
+  }
+}
+
+impl Display for Matrix {
+  fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+    let mut matrix_str = "".to_string();
+    matrix_str.push_str(self.m00.to_string().as_str());
+    matrix_str.push_str(", ");
+    matrix_str.push_str(self.m01.to_string().as_str());
+    matrix_str.push_str(", ");
+    matrix_str.push_str(self.m02.to_string().as_str());
+    matrix_str.push_str(", ");
+    matrix_str.push_str(self.m03.to_string().as_str());
+    matrix_str.push_str(", ");
+    matrix_str.push_str(self.m10.to_string().as_str());
+    matrix_str.push_str(", ");
+    matrix_str.push_str(self.m11.to_string().as_str());
+    matrix_str.push_str(", ");
+    matrix_str.push_str(self.m12.to_string().as_str());
+    matrix_str.push_str(", ");
+    matrix_str.push_str(self.m13.to_string().as_str());
+    matrix_str.push_str(", ");
+    matrix_str.push_str(self.m20.to_string().as_str());
+    matrix_str.push_str(", ");
+    matrix_str.push_str(self.m21.to_string().as_str());
+    matrix_str.push_str(", ");
+    matrix_str.push_str(self.m22.to_string().as_str());
+    matrix_str.push_str(", ");
+    matrix_str.push_str(self.m23.to_string().as_str());
+    matrix_str.push_str(", ");
+    matrix_str.push_str(self.m30.to_string().as_str());
+    matrix_str.push_str(", ");
+    matrix_str.push_str(self.m31.to_string().as_str());
+    matrix_str.push_str(", ");
+    matrix_str.push_str(self.m32.to_string().as_str());
+    matrix_str.push_str(", ");
+    matrix_str.push_str(self.m33.to_string().as_str());
+    write!(f, "{}", matrix_str)
+  }
+}
+
+impl ToExpr for Matrix {
+  fn to_expr(&self) -> Expr {
+    Expr::Array(ArrayLit {
+      span: DUMMY_SP,
+      elems: vec![
+        Some(self.m00.to_expr().into()),
+        Some(self.m01.to_expr().into()),
+        Some(self.m02.to_expr().into()),
+        Some(self.m03.to_expr().into()),
+        Some(self.m10.to_expr().into()),
+        Some(self.m11.to_expr().into()),
+        Some(self.m12.to_expr().into()),
+        Some(self.m13.to_expr().into()),
+        Some(self.m20.to_expr().into()),
+        Some(self.m21.to_expr().into()),
+        Some(self.m22.to_expr().into()),
+        Some(self.m23.to_expr().into()),
+        Some(self.m30.to_expr().into()),
+        Some(self.m31.to_expr().into()),
+        Some(self.m32.to_expr().into()),
+        Some(self.m33.to_expr().into()),
+      ],
+    })
+  }
+}
+
+#[macro_export]
+macro_rules! generate_transform_item {
+  ($class:ident, $item:ty) => {
+    #[derive(Debug, Clone)]
+    pub struct $class(pub Vec<$item>);
+    impl Display for $class {
+      fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+        let mut show_str = "".to_string();
+        for (index, item) in self.0.iter().enumerate() {
+          show_str.push_str(item.to_string().as_str());
+          if index != self.0.len() - 1 {
+            show_str.push_str(", ");
+          }
+        }
+        write!(f, "{}", show_str)
+      }
+    }
+
+    impl ToExpr for $class {
+      fn to_expr(&self) -> Expr {
+        let mut items = vec![];
+        for item in self.0.iter() {
+          items.push(Some(item.to_expr().into()));
+        }
+        Expr::Array(ArrayLit {
+          span: DUMMY_SP,
+          elems: items,
+        })
+      }
+    }
+  };
+}
+
+generate_transform_item!(Translates, Translate);
+generate_transform_item!(Rotates, Rotate);
+generate_transform_item!(Scales, Scale);
+generate_transform_item!(Matrices, Matrix);
+
+#[derive(Debug, Clone)]
 pub enum StyleValueType {
   Normal(String),
   TextDecoration(TextDecoration),
@@ -1815,6 +2198,10 @@ pub enum StyleValueType {
   FlexGrow(FlexGrow),
   FlexShrink(FlexShrink),
   FlexBasis(FlexBasis),
+  Translates(Translates),
+  Rotates(Rotates),
+  Scales(Scales),
+  Matrices(Matrices),
 }
 
 impl Display for StyleValueType {
@@ -1944,6 +2331,18 @@ impl Display for StyleValueType {
         FlexBasis::String(value) => write!(f, "{}", value),
         FlexBasis::Number(value) => write!(f, "{}", value),
       },
+      StyleValueType::Translates(translates) => {
+        write!(f, "{}", translates)
+      }
+      StyleValueType::Rotates(rotates) => {
+        write!(f, "{}", rotates)
+      }
+      StyleValueType::Scales(scales) => {
+        write!(f, "{}", scales)
+      }
+      StyleValueType::Matrices(matrices) => {
+        write!(f, "{}", matrices)
+      }
     }
   }
 }
@@ -1962,6 +2361,10 @@ impl ToExpr for StyleValueType {
       StyleValueType::FlexGrow(flex_grow) => flex_grow.to_expr().into(),
       StyleValueType::FlexShrink(flex_shrink) => flex_shrink.to_expr().into(),
       StyleValueType::FlexBasis(flex_basis) => flex_basis.to_expr().into(),
+      StyleValueType::Translates(translates) => translates.to_expr().into(),
+      StyleValueType::Rotates(rotates) => rotates.to_expr().into(),
+      StyleValueType::Scales(scales) => scales.to_expr().into(),
+      StyleValueType::Matrices(matrices) => matrices.to_expr().into(),
     }
   }
 }
@@ -2635,6 +3038,280 @@ impl<'i> StyleParser<'i> {
             if align_self != ItemAlign::Ignore {
               final_properties.insert(id.to_string(), StyleValueType::AlignSelf(align_self));
             }
+          }
+        }
+        "transform" => {
+          let mut translates = vec![];
+          let mut rotates = vec![];
+          let mut scales = vec![];
+          let mut matrixs = vec![];
+          if let Property::Transform(value, _) = value {
+            for item in value.0.iter() {
+              let transform_origin = properties.get("transformOrigin").map(|p| {
+                if let Property::TransformOrigin(value, _) = p {
+                  Some(value)
+                } else {
+                  None
+                }
+              });
+              let mut center_x = None;
+              let mut center_y = None;
+              match transform_origin {
+                Some(position) => match position {
+                  Some(position) => {
+                    match &position.x {
+                      Center => {
+                        center_x = Some(StringNumber::String("50%".to_string()));
+                      }
+                      PositionComponent::Length(length) => {
+                        center_x = parse_dimension_percentage(&length);
+                      }
+                      Side { side, .. } => match &side {
+                        HorizontalPositionKeyword::Left => {
+                          center_x = Some(StringNumber::String("0%".to_string()));
+                        }
+                        HorizontalPositionKeyword::Right => {
+                          center_x = Some(StringNumber::String("100%".to_string()));
+                        }
+                      },
+                    }
+                    match &position.y {
+                      Center => {
+                        center_y = Some(StringNumber::String("50%".to_string()));
+                      }
+                      PositionComponent::Length(length) => {
+                        center_y = parse_dimension_percentage(&length);
+                      }
+                      Side { side, .. } => match &side {
+                        VerticalPositionKeyword::Top => {
+                          center_y = Some(StringNumber::String("0%".to_string()));
+                        }
+                        VerticalPositionKeyword::Bottom => {
+                          center_y = Some(StringNumber::String("100%".to_string()));
+                        }
+                      },
+                    }
+                  }
+                  None => {}
+                },
+                None => {}
+              }
+              match item {
+                Transform::Translate(x, y) => {
+                  let mut translate = Translate::new();
+                  translate.x = parse_dimension_percentage(x);
+                  translate.y = parse_dimension_percentage(y);
+                  translates.push(translate);
+                }
+                Transform::TranslateX(x) => {
+                  let mut translate = Translate::new();
+                  translate.x = parse_dimension_percentage(x);
+                  translates.push(translate);
+                }
+                Transform::TranslateY(y) => {
+                  let mut translate = Translate::new();
+                  translate.y = parse_dimension_percentage(y);
+                  translates.push(translate);
+                }
+                Transform::TranslateZ(z) => {
+                  let mut translate = Translate::new();
+                  translate.z = parse_length(z);
+                  translates.push(translate);
+                }
+                Transform::Translate3d(x, y, z) => {
+                  let mut translate = Translate::new();
+                  translate.x = parse_dimension_percentage(x);
+                  translate.y = parse_dimension_percentage(y);
+                  translate.z = parse_length(z);
+                  translates.push(translate);
+                }
+                Transform::Rotate(angle) | Transform::RotateZ(angle) => {
+                  let mut rotate = Rotate::new();
+                  rotate.x = Some(WrapCSSNumber(0.0));
+                  rotate.y = Some(WrapCSSNumber(0.0));
+                  rotate.z = Some(WrapCSSNumber(1.0));
+                  rotate.angle =
+                    StringNumber::String(angle.to_css_string(PrinterOptions::default()).unwrap());
+                  rotate.center_x = center_x.clone();
+                  rotate.center_y = center_y.clone();
+                  rotates.push(rotate);
+                }
+                Transform::RotateX(angle) => {
+                  let mut rotate = Rotate::new();
+                  rotate.x = Some(WrapCSSNumber(1.0));
+                  rotate.y = Some(WrapCSSNumber(0.0));
+                  rotate.z = Some(WrapCSSNumber(0.0));
+                  rotate.angle =
+                    StringNumber::String(angle.to_css_string(PrinterOptions::default()).unwrap());
+                  rotate.center_x = center_x.clone();
+                  rotate.center_y = center_y.clone();
+                  rotates.push(rotate);
+                }
+                Transform::RotateY(angle) => {
+                  let mut rotate = Rotate::new();
+                  rotate.x = Some(WrapCSSNumber(0.0));
+                  rotate.y = Some(WrapCSSNumber(1.0));
+                  rotate.z = Some(WrapCSSNumber(0.0));
+                  rotate.angle =
+                    StringNumber::String(angle.to_css_string(PrinterOptions::default()).unwrap());
+                  rotate.center_x = center_x.clone();
+                  rotate.center_y = center_y.clone();
+                  rotates.push(rotate);
+                }
+                Transform::Rotate3d(x, y, z, angle) => {
+                  let mut rotate = Rotate::new();
+                  rotate.x = Some(WrapCSSNumber(*x));
+                  rotate.y = Some(WrapCSSNumber(*y));
+                  rotate.z = Some(WrapCSSNumber(*z));
+                  rotate.angle =
+                    StringNumber::String(angle.to_css_string(PrinterOptions::default()).unwrap());
+                  rotate.center_x = center_x.clone();
+                  rotate.center_y = center_y.clone();
+                  rotates.push(rotate);
+                }
+                Transform::Scale(x, y) => {
+                  let mut scale = Scale::new();
+                  match x {
+                    NumberOrPercentage::Number(x) => {
+                      scale.x = Some(WrapCSSNumber(*x));
+                    }
+                    _ => {}
+                  }
+                  match y {
+                    NumberOrPercentage::Number(y) => {
+                      scale.y = Some(WrapCSSNumber(*y));
+                    }
+                    _ => {}
+                  }
+                  scale.center_x = center_x.clone();
+                  scale.center_y = center_y.clone();
+                  scales.push(scale);
+                }
+                Transform::ScaleX(x) => {
+                  let mut scale = Scale::new();
+                  match x {
+                    NumberOrPercentage::Number(x) => {
+                      scale.x = Some(WrapCSSNumber(*x));
+                    }
+                    _ => {}
+                  }
+                  scale.center_x = center_x.clone();
+                  scale.center_y = center_y.clone();
+                  scales.push(scale);
+                }
+                Transform::ScaleY(y) => {
+                  let mut scale = Scale::new();
+                  match y {
+                    NumberOrPercentage::Number(y) => {
+                      scale.y = Some(WrapCSSNumber(*y));
+                    }
+                    _ => {}
+                  }
+                  scale.center_x = center_x.clone();
+                  scale.center_y = center_y.clone();
+                  scales.push(scale);
+                }
+                Transform::ScaleZ(z) => {
+                  let mut scale = Scale::new();
+                  match z {
+                    NumberOrPercentage::Number(z) => {
+                      scale.z = Some(WrapCSSNumber(*z));
+                    }
+                    _ => {}
+                  }
+                  scale.center_x = center_x.clone();
+                  scale.center_y = center_y.clone();
+                  scales.push(scale);
+                }
+                Transform::Scale3d(x, y, z) => {
+                  let mut scale = Scale::new();
+                  match x {
+                    NumberOrPercentage::Number(x) => {
+                      scale.x = Some(WrapCSSNumber(*x));
+                    }
+                    _ => {}
+                  }
+                  match y {
+                    NumberOrPercentage::Number(y) => {
+                      scale.y = Some(WrapCSSNumber(*y));
+                    }
+                    _ => {}
+                  }
+                  match z {
+                    NumberOrPercentage::Number(z) => {
+                      scale.z = Some(WrapCSSNumber(*z));
+                    }
+                    _ => {}
+                  }
+                  scale.center_x = center_x.clone();
+                  scale.center_y = center_y.clone();
+                  scales.push(scale);
+                }
+                Transform::Matrix(m) => {
+                  let mut matrix = Matrix::new();
+                  let matrix3d = m.to_matrix3d();
+                  matrix.m00 = WrapCSSNumber(matrix3d.m11);
+                  matrix.m01 = WrapCSSNumber(matrix3d.m12);
+                  matrix.m02 = WrapCSSNumber(matrix3d.m13);
+                  matrix.m03 = WrapCSSNumber(matrix3d.m14);
+                  matrix.m10 = WrapCSSNumber(matrix3d.m21);
+                  matrix.m11 = WrapCSSNumber(matrix3d.m22);
+                  matrix.m12 = WrapCSSNumber(matrix3d.m23);
+                  matrix.m13 = WrapCSSNumber(matrix3d.m24);
+                  matrix.m20 = WrapCSSNumber(matrix3d.m31);
+                  matrix.m21 = WrapCSSNumber(matrix3d.m32);
+                  matrix.m22 = WrapCSSNumber(matrix3d.m33);
+                  matrix.m23 = WrapCSSNumber(matrix3d.m34);
+                  matrix.m30 = WrapCSSNumber(matrix3d.m41);
+                  matrix.m31 = WrapCSSNumber(matrix3d.m42);
+                  matrix.m32 = WrapCSSNumber(matrix3d.m43);
+                  matrix.m33 = WrapCSSNumber(matrix3d.m44);
+                  matrixs.push(matrix);
+                }
+                Transform::Matrix3d(m) => {
+                  let mut matrix = Matrix::new();
+                  matrix.m00 = WrapCSSNumber(m.m11);
+                  matrix.m01 = WrapCSSNumber(m.m12);
+                  matrix.m02 = WrapCSSNumber(m.m13);
+                  matrix.m03 = WrapCSSNumber(m.m14);
+                  matrix.m10 = WrapCSSNumber(m.m21);
+                  matrix.m11 = WrapCSSNumber(m.m22);
+                  matrix.m12 = WrapCSSNumber(m.m23);
+                  matrix.m13 = WrapCSSNumber(m.m24);
+                  matrix.m20 = WrapCSSNumber(m.m31);
+                  matrix.m21 = WrapCSSNumber(m.m32);
+                  matrix.m22 = WrapCSSNumber(m.m33);
+                  matrix.m23 = WrapCSSNumber(m.m34);
+                  matrix.m30 = WrapCSSNumber(m.m41);
+                  matrix.m31 = WrapCSSNumber(m.m42);
+                  matrix.m32 = WrapCSSNumber(m.m43);
+                  matrix.m33 = WrapCSSNumber(m.m44);
+                  matrixs.push(matrix);
+                }
+                _ => {}
+              }
+            }
+          }
+          if translates.len() > 0 {
+            final_properties.insert(
+              "translate".to_string(),
+              StyleValueType::Translates(Translates(translates)),
+            );
+          }
+          if rotates.len() > 0 {
+            final_properties.insert(
+              "rotate".to_string(),
+              StyleValueType::Rotates(Rotates(rotates)),
+            );
+          }
+          if scales.len() > 0 {
+            final_properties.insert("scale".to_string(), StyleValueType::Scales(Scales(scales)));
+          }
+          if matrixs.len() > 0 {
+            final_properties.insert(
+              "matrix".to_string(),
+              StyleValueType::Matrices(Matrices(matrixs)),
+            );
           }
         }
         _ => {

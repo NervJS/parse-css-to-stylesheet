@@ -1,3 +1,17 @@
+## [0.0.16](https://github.com/NervJS/parse-css-to-stylesheet/compare/v0.0.15...v0.0.16) (2023-10-24)
+
+
+### Bug Fixes
+
+* 当用到 __inner_style__ 时才插入 ([c10cffc](https://github.com/NervJS/parse-css-to-stylesheet/commit/c10cffc7093b9e2878ee59fdd1038ec774934713))
+
+
+### Features
+
+* 不拆分 Background ([0f3111b](https://github.com/NervJS/parse-css-to-stylesheet/commit/0f3111b023ca91095d2fdaf55e4d0388a626b49a))
+
+
+
 ## [0.0.15](https://github.com/NervJS/parse-css-to-stylesheet/compare/v0.0.14...v0.0.15) (2023-10-24)
 
 

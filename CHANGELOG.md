@@ -1,3 +1,17 @@
+## [0.0.15](https://github.com/NervJS/parse-css-to-stylesheet/compare/v0.0.14...v0.0.15) (2023-10-24)
+
+
+### Features
+
+* 将线性渐变解析出来 ([3d8ddb6](https://github.com/NervJS/parse-css-to-stylesheet/commit/3d8ddb6ede437c2fbc9c35e938dfd87204979201))
+* 优化样式解析处理 ([efe85d3](https://github.com/NervJS/parse-css-to-stylesheet/commit/efe85d3bc41986fb12dceb4ccb361eba5f53bc11))
+* 支持 background 相关属性解析 ([7fdd888](https://github.com/NervJS/parse-css-to-stylesheet/commit/7fdd888776f93ecc99dd5a43e2d90b4d5b3921cc))
+* 支持 flex 相关属性解析转换 ([f2caa6b](https://github.com/NervJS/parse-css-to-stylesheet/commit/f2caa6b8be2b94722139637c58d3c54a63ed7255))
+* 支持拆解处理 style 属性中的渐变 ([e7f9391](https://github.com/NervJS/parse-css-to-stylesheet/commit/e7f9391a801cec327e3343b05d914d0593b761d0))
+* style 属性中也支持写 Background 相关样式属性 ([91f611f](https://github.com/NervJS/parse-css-to-stylesheet/commit/91f611f33340dc394ef312abc9db69ad5583354e))
+
+
+
 ## [0.0.14](https://github.com/NervJS/parse-css-to-stylesheet/compare/v0.0.13...v0.0.14) (2023-10-19)
 
 

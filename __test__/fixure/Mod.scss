@@ -10,6 +10,7 @@
 	white-space:nowrap;
 	overflow:hidden;
 	background: red url(https://img.alicdn.com/imgextra/i1/O1CN01QYQY2e1Q1QYQY2e1Q_!!6000000000000-2-tps-18-18.png) no-repeat center;
+	flex: 2 2 10%;
 }
 .instruction {
 	color:rgb(255,255,255);
@@ -20,6 +21,10 @@
 	background: linear-gradient(217deg, rgba(255,0,0,.8), rgba(255,0,0,0) 70.71%),
             linear-gradient(127deg, rgba(0,255,0,.8), rgba(0,255,0,0) 70.71%),
             linear-gradient(336deg, rgba(0,0,255,.8), rgba(0,0,255,0) 70.71%);
+	margin-top: -12px;
+	margin-right: 10;
+	margin-bottom: 12;
+	margin-left: 32px;
 }
 .cnt_row {
 	border-radius:100px;

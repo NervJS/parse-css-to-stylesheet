@@ -29,7 +29,14 @@ export default class Mod extends React.Component {
   }
   render () {
     return (
-      <div className='mod' style={{ width: '500px', height: 800 }}>
+      <div className='mod' style={{
+        width: '500px',
+        height: 800,
+        marginTop: '-12px',
+        marginRight: 10,
+        marginBottom: 12,
+        marginLeft: '32px',
+      }}>
         <div className={classnames('cnt_row')} style>
           <>
             <img

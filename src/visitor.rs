@@ -22,8 +22,9 @@ use crate::{
   scraper::Element,
   style_parser::{
     Background, BackgroundImage, BackgroundImageKind, BackgroundImagePosition, BackgroundImageSize,
-    BackgroundImageStr, BorderRadius, LinearGradient, MarginPadding, StyleValue, StyleValueType,
-    TextDecoration, ToExpr,
+    BackgroundImageStr, BorderRadius, FlexAlign, FlexBasis, FlexDirection, FlexGrow, FlexOptions,
+    FlexShrink, FlexSize, FlexWrap, ItemAlign, LinearGradient, MarginPadding, StyleValue,
+    StyleValueType, TextDecoration, ToExpr,
   },
   utils::{create_qualname, is_starts_with_uppercase, recursion_jsx_member, to_camel_case},
 };
@@ -523,6 +524,7 @@ impl VisitMut for JSXMutVisitor {
                                         }
                                         _ => None,
                                       };
+                                      let mut flex_options = FlexOptions::new();
                                       if let Some(name) = name {
                                         if name == "margin" {
                                           let margin = StyleValueType::MarginPadding(
@@ -770,6 +772,79 @@ impl VisitMut for JSXMutVisitor {
                                               ),
                                             );
                                           }
+                                        } else if name == "flexDirection" {
+                                          let flex_direction =
+                                            FlexDirection::from(value.to_string().as_str());
+                                          flex_options.direction = Some(flex_direction);
+                                        } else if name == "flexWrap" {
+                                          let flex_wrap =
+                                            FlexWrap::from(value.to_string().as_str());
+                                          flex_options.wrap = Some(flex_wrap);
+                                        } else if name == "justifyContent" {
+                                          let justify_content =
+                                            FlexAlign::from(value.to_string().as_str());
+                                          flex_options.justify_content = Some(justify_content);
+                                        } else if name == "alignItems" {
+                                          let align_items =
+                                            ItemAlign::from(value.to_string().as_str());
+                                          if align_items != ItemAlign::Ignore {
+                                            flex_options.align_items = Some(align_items);
+                                          }
+                                        } else if name == "alignContent" {
+                                          let align_content =
+                                            FlexAlign::from(value.to_string().as_str());
+                                          flex_options.align_content = Some(align_content);
+                                        } else if name == "flex" {
+                                          let flex_size =
+                                            FlexSize::from(value.to_string().as_str());
+                                          if let Some(flex_grow) = flex_size.grow {
+                                            temp_props.insert(
+                                              "flexGrow".to_string(),
+                                              StyleValueType::FlexGrow(flex_grow),
+                                            );
+                                          }
+                                          if let Some(flex_shrink) = flex_size.shrink {
+                                            temp_props.insert(
+                                              "flexShrink".to_string(),
+                                              StyleValueType::FlexShrink(flex_shrink),
+                                            );
+                                          }
+                                          if let Some(flex_basis) = flex_size.basis {
+                                            temp_props.insert(
+                                              "flexBasis".to_string(),
+                                              StyleValueType::FlexBasis(flex_basis),
+                                            );
+                                          }
+                                        } else if name == "flexGrow" {
+                                          let flex_grow =
+                                            FlexGrow::from(value.to_string().as_str());
+                                          temp_props.insert(
+                                            "flexGrow".to_string(),
+                                            StyleValueType::FlexGrow(flex_grow),
+                                          );
+                                        } else if name == "flexShrink" {
+                                          let flex_shrink =
+                                            FlexShrink::from(value.to_string().as_str());
+                                          temp_props.insert(
+                                            "flexShrink".to_string(),
+                                            StyleValueType::FlexShrink(flex_shrink),
+                                          );
+                                        } else if name == "flexBasis" {
+                                          let flex_basis =
+                                            FlexBasis::from(value.to_string().as_str());
+                                          temp_props.insert(
+                                            "flexBasis".to_string(),
+                                            StyleValueType::FlexBasis(flex_basis),
+                                          );
+                                        } else if name == "alignSelf" {
+                                          let align_self =
+                                            ItemAlign::from(value.to_string().as_str());
+                                          if align_self != ItemAlign::Ignore {
+                                            temp_props.insert(
+                                              "alignSelf".to_string(),
+                                              StyleValueType::AlignSelf(align_self),
+                                            );
+                                          }
                                         } else {
                                           temp_props.insert(
                                             name.to_string(),
@@ -777,11 +852,16 @@ impl VisitMut for JSXMutVisitor {
                                           );
                                         }
                                       }
+                                      temp_props.insert(
+                                        "flexOptions".to_string(),
+                                        StyleValueType::FlexOptions(flex_options),
+                                      );
                                     }
                                     _ => {}
                                   },
                                   PropOrSpread::Spread(_) => {}
                                 });
+
                                 let mut props = temp_props
                                   .iter_mut()
                                   .map(|p| {

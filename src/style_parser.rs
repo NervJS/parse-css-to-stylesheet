@@ -5,10 +5,16 @@ use std::{
 use lightningcss::{
   declaration::DeclarationBlock,
   properties::{
+    align::{
+      AlignContent as LNAlignContent, AlignItems as LNAlignItems, AlignSelf as LNAlignSelf,
+      BaselinePosition, ContentDistribution, ContentPosition, JustifyContent as LNJustifyContent,
+      SelfPosition,
+    },
     background::{
       Background as LNBackground, BackgroundPosition, BackgroundRepeat, BackgroundRepeatKeyword,
       BackgroundSize,
     },
+    flex::{Flex, FlexDirection as LNFlexDirection, FlexWrap as LNFlexWrap},
     Property, PropertyId,
   },
   rules::CssRule,
@@ -19,6 +25,7 @@ use lightningcss::{
     gradient::{Gradient, GradientItem, LineDirection},
     image::Image,
     length::{LengthPercentageOrAuto, LengthValue},
+    number::CSSNumber,
     percentage::DimensionPercentage,
     position::{
       HorizontalPositionKeyword,
@@ -33,7 +40,7 @@ use smallvec::SmallVec;
 use swc_common::DUMMY_SP;
 use swc_ecma_ast::{
   ArrayLit, Bool, ComputedPropName, Expr, ExprOrSpread, Ident, KeyValueProp, Lit, MemberExpr,
-  MemberProp, ObjectLit, Prop, PropName, PropOrSpread, Str,
+  MemberProp, Number, ObjectLit, Prop, PropName, PropOrSpread, Str,
 };
 
 use crate::{document::JSXDocument, utils::to_camel_case, visitor::SpanKey};
@@ -304,6 +311,48 @@ fn parse_background(background: &SmallVec<[LNBackground<'_>; 1]>) -> Background 
     position: BackgroundImagePosition(background_position),
     size: BackgroundImageSize(background_size),
     color: BackgroundColor(background_color.unwrap_or("".to_string())),
+  }
+}
+
+fn parse_flex_size(flex: &Flex) -> FlexSize {
+  let mut flex_size = FlexSize {
+    grow: None,
+    shrink: None,
+    basis: None,
+  };
+  flex_size.grow = Some(FlexGrow(flex.grow));
+  flex_size.shrink = Some(FlexShrink(flex.shrink));
+  match &flex.basis {
+    LengthPercentageOrAuto::Auto => {
+      flex_size.basis = Some(FlexBasis::String("auto".to_string()));
+    }
+    LengthPercentageOrAuto::LengthPercentage(value) => match value {
+      DimensionPercentage::Dimension(value) => {
+        flex_size.basis = Some(FlexBasis::Number(value.to_unit_value().0));
+      }
+      DimensionPercentage::Percentage(value) => {
+        flex_size.basis = Some(FlexBasis::String(
+          value.to_css_string(PrinterOptions::default()).unwrap(),
+        ));
+      }
+      _ => {
+        flex_size.basis = Some(FlexBasis::String("auto".to_string()));
+      }
+    },
+  }
+  flex_size
+}
+
+fn parse_flex_basis(flex_basis: &LengthPercentageOrAuto) -> FlexBasis {
+  match flex_basis {
+    LengthPercentageOrAuto::Auto => FlexBasis::String("auto".to_string()),
+    LengthPercentageOrAuto::LengthPercentage(value) => match value {
+      DimensionPercentage::Dimension(value) => FlexBasis::Number(value.to_unit_value().0),
+      DimensionPercentage::Percentage(value) => {
+        FlexBasis::String(value.to_css_string(PrinterOptions::default()).unwrap())
+      }
+      _ => FlexBasis::String("auto".to_string()),
+    },
   }
 }
 
@@ -1148,6 +1197,496 @@ impl From<&SmallVec<[LNBackground<'_>; 1]>> for Background {
 }
 
 #[derive(Debug, Clone)]
+pub enum FlexDirection {
+  Row,
+  RowReverse,
+  Column,
+  ColumnReverse,
+}
+
+impl From<&str> for FlexDirection {
+  fn from(value: &str) -> Self {
+    match value {
+      "row" => FlexDirection::Row,
+      "row-reverse" => FlexDirection::RowReverse,
+      "column" => FlexDirection::Column,
+      "column-reverse" => FlexDirection::ColumnReverse,
+      _ => FlexDirection::Row,
+    }
+  }
+}
+
+impl From<&LNFlexDirection> for FlexDirection {
+  fn from(value: &LNFlexDirection) -> Self {
+    match value {
+      LNFlexDirection::Row => FlexDirection::Row,
+      LNFlexDirection::RowReverse => FlexDirection::RowReverse,
+      LNFlexDirection::Column => FlexDirection::Column,
+      LNFlexDirection::ColumnReverse => FlexDirection::ColumnReverse,
+    }
+  }
+}
+
+#[derive(Debug, Clone)]
+pub enum FlexWrap {
+  Wrap,
+  WrapReverse,
+  NoWrap,
+}
+
+impl From<&str> for FlexWrap {
+  fn from(value: &str) -> Self {
+    match value {
+      "wrap" => FlexWrap::Wrap,
+      "wrap-reverse" => FlexWrap::WrapReverse,
+      "nowrap" => FlexWrap::NoWrap,
+      _ => FlexWrap::NoWrap,
+    }
+  }
+}
+
+impl From<&LNFlexWrap> for FlexWrap {
+  fn from(value: &LNFlexWrap) -> Self {
+    match value {
+      LNFlexWrap::Wrap => FlexWrap::Wrap,
+      LNFlexWrap::WrapReverse => FlexWrap::WrapReverse,
+      LNFlexWrap::NoWrap => FlexWrap::NoWrap,
+    }
+  }
+}
+
+#[derive(Debug, Clone)]
+pub enum FlexAlign {
+  Start,
+  Center,
+  End,
+  SpaceBetween,
+  SpaceAround,
+  SpaceEvenly,
+}
+
+impl From<&str> for FlexAlign {
+  fn from(value: &str) -> Self {
+    match value {
+      "flex-start" | "start" => FlexAlign::Start,
+      "center" => FlexAlign::Center,
+      "flex-end" | "end" => FlexAlign::End,
+      "space-between" => FlexAlign::SpaceBetween,
+      "space-around" => FlexAlign::SpaceAround,
+      "space-evenly" => FlexAlign::SpaceEvenly,
+      _ => FlexAlign::Start,
+    }
+  }
+}
+
+impl From<&LNJustifyContent> for FlexAlign {
+  fn from(value: &LNJustifyContent) -> Self {
+    match value {
+      LNJustifyContent::ContentPosition { value, .. } => match value {
+        ContentPosition::Start | ContentPosition::FlexStart => FlexAlign::Start,
+        ContentPosition::Center => FlexAlign::Center,
+        ContentPosition::End | ContentPosition::FlexEnd => FlexAlign::End,
+      },
+      LNJustifyContent::ContentDistribution(value) => match value {
+        ContentDistribution::SpaceBetween => FlexAlign::SpaceBetween,
+        ContentDistribution::SpaceAround => FlexAlign::SpaceAround,
+        ContentDistribution::SpaceEvenly => FlexAlign::SpaceEvenly,
+        _ => FlexAlign::Start,
+      },
+      _ => FlexAlign::Start,
+    }
+  }
+}
+
+impl From<&LNAlignContent> for FlexAlign {
+  fn from(value: &LNAlignContent) -> Self {
+    match value {
+      LNAlignContent::ContentPosition { value, .. } => match value {
+        ContentPosition::Start | ContentPosition::FlexStart => FlexAlign::Start,
+        ContentPosition::Center => FlexAlign::Center,
+        ContentPosition::End | ContentPosition::FlexEnd => FlexAlign::End,
+      },
+      LNAlignContent::ContentDistribution(value) => match value {
+        ContentDistribution::SpaceBetween => FlexAlign::SpaceBetween,
+        ContentDistribution::SpaceAround => FlexAlign::SpaceAround,
+        ContentDistribution::SpaceEvenly => FlexAlign::SpaceEvenly,
+        _ => FlexAlign::Start,
+      },
+      _ => FlexAlign::Start,
+    }
+  }
+}
+
+#[derive(Debug, Clone, PartialEq)]
+pub enum ItemAlign {
+  Auto,
+  Start,
+  Center,
+  End,
+  Stretch,
+  Baseline,
+  Ignore,
+}
+
+impl ToExpr for ItemAlign {
+  fn to_expr(&self) -> Expr {
+    Expr::Member(MemberExpr {
+      span: DUMMY_SP,
+      obj: Box::new(Expr::Ident(Ident::new("ItemAlign".into(), DUMMY_SP))),
+      prop: MemberProp::Ident(Ident {
+        span: DUMMY_SP,
+        sym: match self {
+          ItemAlign::Auto => "Auto",
+          ItemAlign::Start => "Start",
+          ItemAlign::Center => "Center",
+          ItemAlign::End => "End",
+          ItemAlign::Stretch => "Stretch",
+          ItemAlign::Baseline => "Baseline",
+          ItemAlign::Ignore => "",
+        }
+        .into(),
+        optional: false,
+      }),
+    })
+    .into()
+  }
+}
+
+impl From<&str> for ItemAlign {
+  fn from(value: &str) -> Self {
+    match value {
+      "auto" => ItemAlign::Auto,
+      "flex-start" | "start" => ItemAlign::Start,
+      "center" => ItemAlign::Center,
+      "flex-end" | "end" => ItemAlign::End,
+      "stretch" => ItemAlign::Stretch,
+      "baseline" => ItemAlign::Baseline,
+      _ => ItemAlign::Auto,
+    }
+  }
+}
+
+impl From<&LNAlignItems> for ItemAlign {
+  fn from(value: &LNAlignItems) -> Self {
+    match value {
+      LNAlignItems::Stretch => ItemAlign::Stretch,
+      LNAlignItems::SelfPosition { value, .. } => match value {
+        SelfPosition::Start => ItemAlign::Start,
+        SelfPosition::Center => ItemAlign::Center,
+        SelfPosition::End => ItemAlign::End,
+        _ => ItemAlign::Ignore,
+      },
+      LNAlignItems::BaselinePosition(value) => match value {
+        BaselinePosition::Last => ItemAlign::Ignore,
+        _ => ItemAlign::Baseline,
+      },
+      _ => ItemAlign::Auto,
+    }
+  }
+}
+
+impl From<&LNAlignSelf> for ItemAlign {
+  fn from(value: &LNAlignSelf) -> Self {
+    match value {
+      LNAlignSelf::Auto => ItemAlign::Auto,
+      LNAlignSelf::SelfPosition { value, .. } => match value {
+        SelfPosition::Start => ItemAlign::Start,
+        SelfPosition::Center => ItemAlign::Center,
+        SelfPosition::End => ItemAlign::End,
+        _ => ItemAlign::Ignore,
+      },
+      LNAlignSelf::BaselinePosition(value) => match value {
+        BaselinePosition::Last => ItemAlign::Ignore,
+        _ => ItemAlign::Baseline,
+      },
+      _ => ItemAlign::Auto,
+    }
+  }
+}
+
+#[derive(Debug, Clone)]
+pub struct FlexOptions {
+  pub direction: Option<FlexDirection>,
+  pub wrap: Option<FlexWrap>,
+  pub justify_content: Option<FlexAlign>,
+  pub align_items: Option<ItemAlign>,
+  pub align_content: Option<FlexAlign>,
+}
+
+impl FlexOptions {
+  pub fn new() -> Self {
+    FlexOptions {
+      direction: None,
+      wrap: None,
+      justify_content: None,
+      align_items: None,
+      align_content: None,
+    }
+  }
+}
+
+impl ToExpr for FlexOptions {
+  fn to_expr(&self) -> Expr {
+    let mut props = vec![];
+    if let Some(direction) = &self.direction {
+      props.push(PropOrSpread::Prop(Box::new(Prop::KeyValue(KeyValueProp {
+        key: PropName::Ident(Ident::new("direction".into(), DUMMY_SP)),
+        value: Expr::Member(MemberExpr {
+          span: DUMMY_SP,
+          obj: Box::new(Expr::Ident(Ident::new("FlexDirection".into(), DUMMY_SP))),
+          prop: MemberProp::Ident(Ident {
+            span: DUMMY_SP,
+            sym: match direction {
+              FlexDirection::Row => "Row",
+              FlexDirection::RowReverse => "RowReverse",
+              FlexDirection::Column => "Column",
+              FlexDirection::ColumnReverse => "ColumnReverse",
+            }
+            .into(),
+            optional: false,
+          }),
+        })
+        .into(),
+      }))));
+    }
+    if let Some(wrap) = &self.wrap {
+      props.push(PropOrSpread::Prop(Box::new(Prop::KeyValue(KeyValueProp {
+        key: PropName::Ident(Ident::new("wrap".into(), DUMMY_SP)),
+        value: Expr::Member(MemberExpr {
+          span: DUMMY_SP,
+          obj: Box::new(Expr::Ident(Ident::new("FlexWrap".into(), DUMMY_SP))),
+          prop: MemberProp::Ident(Ident {
+            span: DUMMY_SP,
+            sym: match wrap {
+              FlexWrap::Wrap => "Wrap",
+              FlexWrap::WrapReverse => "WrapReverse",
+              FlexWrap::NoWrap => "NoWrap",
+            }
+            .into(),
+            optional: false,
+          }),
+        })
+        .into(),
+      }))));
+    }
+    if let Some(justify_content) = &self.justify_content {
+      props.push(PropOrSpread::Prop(Box::new(Prop::KeyValue(KeyValueProp {
+        key: PropName::Ident(Ident::new("justifyContent".into(), DUMMY_SP)),
+        value: Expr::Member(MemberExpr {
+          span: DUMMY_SP,
+          obj: Box::new(Expr::Ident(Ident::new("FlexAlign".into(), DUMMY_SP))),
+          prop: MemberProp::Ident(Ident {
+            span: DUMMY_SP,
+            sym: match justify_content {
+              FlexAlign::Start => "Start",
+              FlexAlign::Center => "Center",
+              FlexAlign::End => "End",
+              FlexAlign::SpaceBetween => "SpaceBetween",
+              FlexAlign::SpaceAround => "SpaceAround",
+              FlexAlign::SpaceEvenly => "SpaceEvenly",
+            }
+            .into(),
+            optional: false,
+          }),
+        })
+        .into(),
+      }))));
+    }
+    if let Some(align_items) = &self.align_items {
+      props.push(PropOrSpread::Prop(Box::new(Prop::KeyValue(KeyValueProp {
+        key: PropName::Ident(Ident::new("alignItems".into(), DUMMY_SP)),
+        value: Expr::Member(MemberExpr {
+          span: DUMMY_SP,
+          obj: Box::new(Expr::Ident(Ident::new("ItemAlign".into(), DUMMY_SP))),
+          prop: MemberProp::Ident(Ident {
+            span: DUMMY_SP,
+            sym: match align_items {
+              ItemAlign::Auto => "Auto",
+              ItemAlign::Start => "Start",
+              ItemAlign::Center => "Center",
+              ItemAlign::End => "End",
+              ItemAlign::Stretch => "Stretch",
+              ItemAlign::Baseline => "Baseline",
+              ItemAlign::Ignore => "",
+            }
+            .into(),
+            optional: false,
+          }),
+        })
+        .into(),
+      }))));
+    }
+    if let Some(align_content) = &self.align_content {
+      props.push(PropOrSpread::Prop(Box::new(Prop::KeyValue(KeyValueProp {
+        key: PropName::Ident(Ident::new("alignContent".into(), DUMMY_SP)),
+        value: Expr::Member(MemberExpr {
+          span: DUMMY_SP,
+          obj: Box::new(Expr::Ident(Ident::new("FlexAlign".into(), DUMMY_SP))),
+          prop: MemberProp::Ident(Ident {
+            span: DUMMY_SP,
+            sym: match align_content {
+              FlexAlign::Start => "Start",
+              FlexAlign::Center => "Center",
+              FlexAlign::End => "End",
+              FlexAlign::SpaceBetween => "SpaceBetween",
+              FlexAlign::SpaceAround => "SpaceAround",
+              FlexAlign::SpaceEvenly => "SpaceEvenly",
+            }
+            .into(),
+            optional: false,
+          }),
+        })
+        .into(),
+      }))));
+    }
+    Expr::Object(ObjectLit {
+      span: DUMMY_SP,
+      props,
+    })
+  }
+}
+
+#[derive(Debug, Clone)]
+pub struct FlexGrow(pub CSSNumber);
+
+impl ToExpr for FlexGrow {
+  fn to_expr(&self) -> Expr {
+    Expr::Lit(Lit::Num(Number {
+      span: DUMMY_SP,
+      value: self.0 as f64,
+      raw: None,
+    }))
+    .into()
+  }
+}
+
+impl From<&str> for FlexGrow {
+  fn from(value: &str) -> Self {
+    let flex_grow_parsed = Property::parse_string(
+      PropertyId::from("flex-grow"),
+      value,
+      ParserOptions::default(),
+    );
+    let mut flex_grow = FlexGrow(0.0);
+    if let Ok(value) = flex_grow_parsed {
+      match value {
+        Property::FlexGrow(value, _) => {
+          flex_grow = FlexGrow(value);
+        }
+        _ => {}
+      }
+    }
+    flex_grow
+  }
+}
+
+#[derive(Debug, Clone)]
+pub struct FlexShrink(pub CSSNumber);
+
+impl ToExpr for FlexShrink {
+  fn to_expr(&self) -> Expr {
+    Expr::Lit(Lit::Num(Number {
+      span: DUMMY_SP,
+      value: self.0 as f64,
+      raw: None,
+    }))
+    .into()
+  }
+}
+
+impl From<&str> for FlexShrink {
+  fn from(value: &str) -> Self {
+    let flex_shrink_parsed = Property::parse_string(
+      PropertyId::from("flex-shrink"),
+      value,
+      ParserOptions::default(),
+    );
+    let mut flex_shrink = FlexShrink(0.0);
+    if let Ok(value) = flex_shrink_parsed {
+      match value {
+        Property::FlexShrink(value, _) => {
+          flex_shrink = FlexShrink(value);
+        }
+        _ => {}
+      }
+    }
+    flex_shrink
+  }
+}
+
+#[derive(Debug, Clone)]
+pub enum FlexBasis {
+  String(String),
+  Number(CSSNumber),
+}
+
+impl ToExpr for FlexBasis {
+  fn to_expr(&self) -> Expr {
+    match self {
+      FlexBasis::String(value) => Expr::Lit(Lit::Str(Str::from(value.to_string()))).into(),
+      FlexBasis::Number(value) => Expr::Lit(Lit::Num(Number {
+        span: DUMMY_SP,
+        value: *value as f64,
+        raw: None,
+      }))
+      .into(),
+    }
+  }
+}
+
+impl From<&str> for FlexBasis {
+  fn from(value: &str) -> Self {
+    let flex_basis_parsed = Property::parse_string(
+      PropertyId::from("flex-basis"),
+      value,
+      ParserOptions::default(),
+    );
+    let mut flex_basis = FlexBasis::String("auto".to_string());
+    if let Ok(value) = flex_basis_parsed {
+      match value {
+        Property::FlexBasis(value, _) => {
+          flex_basis = parse_flex_basis(&value);
+        }
+        _ => {}
+      }
+    }
+    flex_basis
+  }
+}
+
+#[derive(Debug, Clone)]
+pub struct FlexSize {
+  pub grow: Option<FlexGrow>,
+  pub shrink: Option<FlexShrink>,
+  pub basis: Option<FlexBasis>,
+}
+
+impl FlexSize {
+  pub fn new() -> Self {
+    FlexSize {
+      grow: None,
+      shrink: None,
+      basis: None,
+    }
+  }
+}
+
+impl From<&str> for FlexSize {
+  fn from(value: &str) -> Self {
+    let flex_size_parsed =
+      Property::parse_string(PropertyId::from("flex"), value, ParserOptions::default());
+    if let Ok(flex_size_parsed) = flex_size_parsed {
+      match flex_size_parsed {
+        Property::Flex(flex, _) => parse_flex_size(&flex),
+        _ => FlexSize::new(),
+      }
+    } else {
+      FlexSize::new()
+    }
+  }
+}
+
+#[derive(Debug, Clone)]
 pub enum StyleValueType {
   Normal(String),
   TextDecoration(TextDecoration),
@@ -1158,6 +1697,11 @@ pub enum StyleValueType {
   BackgroundImageSize(BackgroundImageSize),
   BackgroundImagePosition(BackgroundImagePosition),
   LinearGradient(LinearGradient),
+  FlexOptions(FlexOptions),
+  AlignSelf(ItemAlign),
+  FlexGrow(FlexGrow),
+  FlexShrink(FlexShrink),
+  FlexBasis(FlexBasis),
 }
 
 impl Display for StyleValueType {
@@ -1292,6 +1836,86 @@ impl Display for StyleValueType {
         }
         write!(f, "{}", linear_gradient_str)
       }
+      StyleValueType::FlexOptions(flex_options) => {
+        let mut flex_options_str = "".to_string();
+        if let Some(direction) = &flex_options.direction {
+          flex_options_str.push_str(match direction {
+            FlexDirection::Row => "row",
+            FlexDirection::RowReverse => "row-reverse",
+            FlexDirection::Column => "column",
+            FlexDirection::ColumnReverse => "column-reverse",
+          });
+          flex_options_str.push_str(" ");
+        }
+        if let Some(wrap) = &flex_options.wrap {
+          flex_options_str.push_str(match wrap {
+            FlexWrap::Wrap => "wrap",
+            FlexWrap::WrapReverse => "wrap-reverse",
+            FlexWrap::NoWrap => "nowrap",
+          });
+          flex_options_str.push_str(" ");
+        }
+        if let Some(justify_content) = &flex_options.justify_content {
+          flex_options_str.push_str(match justify_content {
+            FlexAlign::Start => "start",
+            FlexAlign::Center => "center",
+            FlexAlign::End => "end",
+            FlexAlign::SpaceBetween => "space-between",
+            FlexAlign::SpaceAround => "space-around",
+            FlexAlign::SpaceEvenly => "space-evenly",
+          });
+          flex_options_str.push_str(" ");
+        }
+        if let Some(align_items) = &flex_options.align_items {
+          flex_options_str.push_str(match align_items {
+            ItemAlign::Auto => "auto",
+            ItemAlign::Start => "start",
+            ItemAlign::Center => "center",
+            ItemAlign::End => "end",
+            ItemAlign::Stretch => "stretch",
+            ItemAlign::Baseline => "baseline",
+            ItemAlign::Ignore => "",
+          });
+          flex_options_str.push_str(" ");
+        }
+        if let Some(align_content) = &flex_options.align_content {
+          flex_options_str.push_str(match align_content {
+            FlexAlign::Start => "start",
+            FlexAlign::Center => "center",
+            FlexAlign::End => "end",
+            FlexAlign::SpaceBetween => "space-between",
+            FlexAlign::SpaceAround => "space-around",
+            FlexAlign::SpaceEvenly => "space-evenly",
+          });
+          flex_options_str.push_str(" ");
+        }
+        write!(f, "{}", flex_options_str)
+      }
+      StyleValueType::AlignSelf(align_self) => {
+        write!(
+          f,
+          "{}",
+          match align_self {
+            ItemAlign::Auto => "auto",
+            ItemAlign::Start => "start",
+            ItemAlign::Center => "center",
+            ItemAlign::End => "end",
+            ItemAlign::Stretch => "stretch",
+            ItemAlign::Baseline => "baseline",
+            ItemAlign::Ignore => "",
+          }
+        )
+      }
+      StyleValueType::FlexGrow(flex_grow) => {
+        write!(f, "{}", flex_grow.0)
+      }
+      StyleValueType::FlexShrink(flex_shrink) => {
+        write!(f, "{}", flex_shrink.0)
+      }
+      StyleValueType::FlexBasis(flex_basis) => match flex_basis {
+        FlexBasis::String(value) => write!(f, "{}", value),
+        FlexBasis::Number(value) => write!(f, "{}", value),
+      },
     }
   }
 }
@@ -1310,6 +1934,11 @@ impl ToExpr for StyleValueType {
       }
       StyleValueType::BackgroundColor(background_color) => background_color.to_expr().into(),
       StyleValueType::LinearGradient(linear_gradient) => linear_gradient.to_expr().into(),
+      StyleValueType::FlexOptions(flex_options) => flex_options.to_expr().into(),
+      StyleValueType::AlignSelf(align_self) => align_self.to_expr().into(),
+      StyleValueType::FlexGrow(flex_grow) => flex_grow.to_expr().into(),
+      StyleValueType::FlexShrink(flex_shrink) => flex_shrink.to_expr().into(),
+      StyleValueType::FlexBasis(flex_basis) => flex_basis.to_expr().into(),
     }
   }
 }
@@ -1454,6 +2083,7 @@ impl<'i> StyleParser<'i> {
 
     let mut text_decoration = None;
     let mut color = None;
+    let mut flex_options = FlexOptions::new();
 
     for (id, value) in properties.iter() {
       match id.as_str() {
@@ -1881,6 +2511,113 @@ impl<'i> StyleParser<'i> {
           _ => {}
         },
         "backgroundRepeat" => {}
+        "flexDirection" => {
+          flex_options.direction = match value {
+            Property::FlexDirection(value, _) => Some(FlexDirection::from(value)),
+            _ => None,
+          }
+        }
+        "flexWrap" => {
+          flex_options.wrap = match value {
+            Property::FlexWrap(value, _) => Some(FlexWrap::from(value)),
+            _ => None,
+          }
+        }
+        "justifyContent" => {
+          flex_options.justify_content = match value {
+            Property::JustifyContent(value, _) => Some(FlexAlign::from(value)),
+            _ => None,
+          }
+        }
+        "alignItems" => {
+          flex_options.align_items = match value {
+            Property::AlignItems(value, _) => {
+              let value = ItemAlign::from(value);
+              if value == ItemAlign::Ignore {
+                None
+              } else {
+                Some(value)
+              }
+            }
+            _ => None,
+          }
+        }
+        "alignContent" => {
+          flex_options.align_content = match value {
+            Property::AlignContent(value, _) => Some(FlexAlign::from(value)),
+            _ => None,
+          }
+        }
+        "flex" => {
+          let mut flex_grow = None;
+          let mut flex_shrink = None;
+          let mut flex_basis = None;
+          if let Property::Flex(value, _) = value {
+            let flex_size = parse_flex_size(value);
+            flex_grow = flex_size.grow;
+            flex_shrink = flex_size.shrink;
+            flex_basis = flex_size.basis;
+          }
+          if let Some(flex_grow) = flex_grow {
+            final_properties.insert("flexGrow".to_string(), StyleValueType::FlexGrow(flex_grow));
+          }
+          if let Some(flex_shrink) = flex_shrink {
+            final_properties.insert(
+              "flexShrink".to_string(),
+              StyleValueType::FlexShrink(flex_shrink),
+            );
+          }
+          if let Some(flex_basis) = flex_basis {
+            final_properties.insert(
+              "flexBasis".to_string(),
+              StyleValueType::FlexBasis(flex_basis),
+            );
+          }
+        }
+        "flexGrow" => {
+          let mut flex_grow = None;
+          if let Property::FlexGrow(value, _) = value {
+            flex_grow = Some(*value);
+          }
+          if let Some(flex_grow) = flex_grow {
+            final_properties.insert(
+              id.to_string(),
+              StyleValueType::FlexGrow(FlexGrow(flex_grow)),
+            );
+          }
+        }
+        "flexShrink" => {
+          let mut flex_shrink = None;
+          if let Property::FlexShrink(value, _) = value {
+            flex_shrink = Some(*value);
+          }
+          if let Some(flex_shrink) = flex_shrink {
+            final_properties.insert(
+              id.to_string(),
+              StyleValueType::FlexShrink(FlexShrink(flex_shrink)),
+            );
+          }
+        }
+        "flexBasis" => {
+          let mut flex_basis = None;
+          if let Property::FlexBasis(value, _) = value {
+            flex_basis = Some(parse_flex_basis(value));
+          }
+          if let Some(flex_basis) = flex_basis {
+            final_properties.insert(id.to_string(), StyleValueType::FlexBasis(flex_basis));
+          }
+        }
+        "alignSelf" => {
+          let mut align_self = None;
+          if let Property::AlignSelf(value, _) = value {
+            align_self = Some(ItemAlign::from(value));
+          }
+          if let Some(align_self) = align_self {
+            if align_self != ItemAlign::Ignore {
+              final_properties.insert(id.to_string(), StyleValueType::AlignSelf(align_self));
+            }
+          }
+        }
         _ => {
           final_properties.insert(
             id.to_string(),
@@ -1926,6 +2663,11 @@ impl<'i> StyleParser<'i> {
         _ => {}
       }
     }
+
+    final_properties.insert(
+      "flexOptions".to_string(),
+      StyleValueType::FlexOptions(flex_options),
+    );
 
     final_properties
   }

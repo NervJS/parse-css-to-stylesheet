@@ -767,6 +767,12 @@ impl ToExpr for BackgroundColor {
   }
 }
 
+impl Display for BackgroundColor {
+  fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+    write!(f, "{}", self.0.to_string())
+  }
+}
+
 pub struct BackgroundImageStr {
   pub src: String,
   pub repeat: Option<String>,
@@ -864,6 +870,30 @@ impl From<&BackgroundImageStr> for BackgroundImage {
   }
 }
 
+impl Display for BackgroundImage {
+  fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+    let mut background_image = "".to_string();
+    for (index, item) in self.0.iter().enumerate() {
+      if let BackgroundImageKind::String(src) = &item.image {
+        background_image.push_str(src);
+        if let Some(repeat) = &item.repeat {
+          background_image.push_str(" ");
+          background_image.push_str(match repeat {
+            ImageRepeat::XY => "repeat",
+            ImageRepeat::X => "repeat-x",
+            ImageRepeat::Y => "repeat-y",
+            ImageRepeat::NoRepeat => "no-repeat",
+          });
+        }
+        if index != self.0.len() - 1 {
+          background_image.push_str(", ");
+        }
+      }
+    }
+    write!(f, "{}", background_image)
+  }
+}
+
 #[derive(Debug, Clone)]
 pub enum BackgroundImageKind {
   String(String),
@@ -957,6 +987,27 @@ impl From<&str> for BackgroundImageSize {
       }
     }
     background_image_size
+  }
+}
+
+impl Display for BackgroundImageSize {
+  fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+    let mut background_image_size = "".to_string();
+    for (index, item) in self.0.iter().enumerate() {
+      background_image_size.push_str(
+        match item {
+          ImageSize::Cover => "cover".to_string(),
+          ImageSize::Contain => "contain".to_string(),
+          ImageSize::Auto => "auto".to_string(),
+          ImageSize::ImageSizeWH(width, height) => format!("{} {}", width, height),
+        }
+        .as_str(),
+      );
+      if index != self.0.len() - 1 {
+        background_image_size.push_str(", ");
+      }
+    }
+    write!(f, "{}", background_image_size)
   }
 }
 
@@ -1159,12 +1210,77 @@ impl From<&str> for BackgroundImagePosition {
   }
 }
 
+impl Display for BackgroundImagePosition {
+  fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+    let mut background_image_position = "".to_string();
+    for (index, item) in self.0.iter().enumerate() {
+      background_image_position.push_str(
+        match item {
+          ImagePosition::ImagePositionXY(x, y) => format!("{} {}", x, y),
+          ImagePosition::TopStart => "top left".to_string(),
+          ImagePosition::Top => "top center".to_string(),
+          ImagePosition::TopEnd => "top right".to_string(),
+          ImagePosition::Start => "center left".to_string(),
+          ImagePosition::Center => "center center".to_string(),
+          ImagePosition::End => "center right".to_string(),
+          ImagePosition::BottomStart => "bottom left".to_string(),
+          ImagePosition::Bottom => "bottom center".to_string(),
+          ImagePosition::BottomEnd => "bottom right".to_string(),
+        }
+        .as_str(),
+      );
+      if index != self.0.len() - 1 {
+        background_image_position.push_str(", ");
+      }
+    }
+    write!(f, "{}", background_image_position)
+  }
+}
+
 #[derive(Debug, Clone)]
 pub struct Background {
   pub image: BackgroundImage,
   pub color: BackgroundColor,
   pub size: BackgroundImageSize,
   pub position: BackgroundImagePosition,
+}
+
+impl Background {
+  pub fn new() -> Self {
+    Background {
+      image: BackgroundImage(vec![]),
+      color: BackgroundColor("".to_string()),
+      size: BackgroundImageSize(vec![]),
+      position: BackgroundImagePosition(vec![]),
+    }
+  }
+}
+
+impl ToExpr for Background {
+  fn to_expr(&self) -> Expr {
+    Expr::Object(ObjectLit {
+      span: DUMMY_SP,
+      props: vec![
+        PropOrSpread::Prop(Box::new(Prop::KeyValue(KeyValueProp {
+          key: PropName::Ident(Ident::new("image".into(), DUMMY_SP)),
+          value: self.image.to_expr().into(),
+        }))),
+        PropOrSpread::Prop(Box::new(Prop::KeyValue(KeyValueProp {
+          key: PropName::Ident(Ident::new("color".into(), DUMMY_SP)),
+          value: self.color.to_expr().into(),
+        }))),
+        PropOrSpread::Prop(Box::new(Prop::KeyValue(KeyValueProp {
+          key: PropName::Ident(Ident::new("size".into(), DUMMY_SP)),
+          value: self.size.to_expr().into(),
+        }))),
+        PropOrSpread::Prop(Box::new(Prop::KeyValue(KeyValueProp {
+          key: PropName::Ident(Ident::new("position".into(), DUMMY_SP)),
+          value: self.position.to_expr().into(),
+        }))),
+      ]
+      .into(),
+    })
+  }
 }
 
 impl From<&str> for Background {
@@ -1692,10 +1808,7 @@ pub enum StyleValueType {
   TextDecoration(TextDecoration),
   BorderRadius(BorderRadius),
   MarginPadding(MarginPadding),
-  BackgroundImage(BackgroundImage),
-  BackgroundColor(BackgroundColor),
-  BackgroundImageSize(BackgroundImageSize),
-  BackgroundImagePosition(BackgroundImagePosition),
+  Background(Background),
   LinearGradient(LinearGradient),
   FlexOptions(FlexOptions),
   AlignSelf(ItemAlign),
@@ -1725,97 +1838,12 @@ impl Display for StyleValueType {
           value.top, value.right, value.bottom, value.left
         )
       }
-      StyleValueType::BackgroundImage(value) => {
-        let mut image = "".to_string();
-        for item in value.0.iter() {
-          if let BackgroundImageKind::String(src) = &item.image {
-            image.push_str(src.as_str());
-            image.push_str(" ");
-            if let Some(repeat) = &item.repeat {
-              match repeat {
-                ImageRepeat::XY => {
-                  image.push_str("repeat");
-                }
-                ImageRepeat::X => {
-                  image.push_str("repeat-x");
-                }
-                ImageRepeat::Y => {
-                  image.push_str("repeat-y");
-                }
-                ImageRepeat::NoRepeat => {
-                  image.push_str("no-repeat");
-                }
-              }
-              image.push_str(" ");
-            }
-          }
-        }
-        write!(f, "{}", image)
-      }
-      StyleValueType::BackgroundColor(value) => write!(f, "{}", value.0),
-      StyleValueType::BackgroundImageSize(value) => {
-        let mut size = "".to_string();
-        for item in value.0.iter() {
-          match item {
-            ImageSize::Cover => {
-              size.push_str("cover");
-            }
-            ImageSize::Contain => {
-              size.push_str("contain");
-            }
-            ImageSize::Auto => {
-              size.push_str("auto");
-            }
-            ImageSize::ImageSizeWH(width, height) => {
-              size.push_str(width.as_str());
-              size.push_str(" ");
-              size.push_str(height.as_str());
-            }
-          }
-          size.push_str(" ");
-        }
-        write!(f, "{}", size)
-      }
-      StyleValueType::BackgroundImagePosition(value) => {
-        let mut position = "".to_string();
-        for item in value.0.iter() {
-          match item {
-            ImagePosition::ImagePositionXY(x, y) => {
-              position.push_str(x.as_str());
-              position.push_str(" ");
-              position.push_str(y.as_str());
-            }
-            ImagePosition::TopStart => {
-              position.push_str("top left");
-            }
-            ImagePosition::Top => {
-              position.push_str("top center");
-            }
-            ImagePosition::TopEnd => {
-              position.push_str("top right");
-            }
-            ImagePosition::Start => {
-              position.push_str("center left");
-            }
-            ImagePosition::Center => {
-              position.push_str("center center");
-            }
-            ImagePosition::End => {
-              position.push_str("center right");
-            }
-            ImagePosition::BottomStart => {
-              position.push_str("bottom left");
-            }
-            ImagePosition::Bottom => {
-              position.push_str("bottom center");
-            }
-            ImagePosition::BottomEnd => {
-              position.push_str("bottom right");
-            }
-          }
-          position.push_str(" ");
-        }
-        write!(f, "{}", position)
+      StyleValueType::Background(value) => {
+        write!(
+          f,
+          "{} {} {} {}",
+          value.image, value.color, value.size, value.position
+        )
       }
       StyleValueType::LinearGradient(linear_gradient) => {
         let mut linear_gradient_str = "".to_string();
@@ -1927,12 +1955,7 @@ impl ToExpr for StyleValueType {
       StyleValueType::TextDecoration(text_decoration) => text_decoration.to_expr().into(),
       StyleValueType::BorderRadius(border_radius) => border_radius.to_expr().into(),
       StyleValueType::MarginPadding(margin_padding) => margin_padding.to_expr().into(),
-      StyleValueType::BackgroundImage(background_image) => background_image.to_expr().into(),
-      StyleValueType::BackgroundImageSize(background_size) => background_size.to_expr().into(),
-      StyleValueType::BackgroundImagePosition(background_position) => {
-        background_position.to_expr().into()
-      }
-      StyleValueType::BackgroundColor(background_color) => background_color.to_expr().into(),
+      StyleValueType::Background(background) => background.to_expr().into(),
       StyleValueType::LinearGradient(linear_gradient) => linear_gradient.to_expr().into(),
       StyleValueType::FlexOptions(flex_options) => flex_options.to_expr().into(),
       StyleValueType::AlignSelf(align_self) => align_self.to_expr().into(),
@@ -2396,7 +2419,7 @@ impl<'i> StyleParser<'i> {
         }
         "background" => match value {
           Property::Background(value) => {
-            let background = parse_background(value);
+            let mut background = parse_background(value);
             let mut images = vec![];
             let mut linear_gradient = vec![];
             for item in background.image.0.iter() {
@@ -2406,11 +2429,11 @@ impl<'i> StyleParser<'i> {
                 linear_gradient.push(gradient.clone());
               }
             }
+            final_properties.remove("background");
+            final_properties.remove("linearGradient");
             if images.len() > 0 {
-              final_properties.insert(
-                "backgroundImage".to_string(),
-                StyleValueType::BackgroundImage(BackgroundImage(images)),
-              );
+              background.image = BackgroundImage(images);
+              final_properties.insert(id.to_string(), StyleValueType::Background(background));
             }
             if linear_gradient.len() > 0 {
               final_properties.insert(
@@ -2418,26 +2441,16 @@ impl<'i> StyleParser<'i> {
                 StyleValueType::LinearGradient(LinearGradient(linear_gradient)),
               );
             }
-            final_properties.insert(
-              "backgroundImagePosition".to_string(),
-              StyleValueType::BackgroundImagePosition(background.position),
-            );
-            final_properties.insert(
-              "backgroundImageSize".to_string(),
-              StyleValueType::BackgroundImageSize(background.size),
-            );
-            final_properties.insert(
-              "backgroundColor".to_string(),
-              StyleValueType::BackgroundColor(background.color),
-            );
           }
           _ => {}
         },
         "backgroundColor" => match value {
           Property::BackgroundColor(value) => {
-            final_properties.insert(
-              id.to_string(),
-              StyleValueType::BackgroundColor(BackgroundColor(
+            let background = final_properties
+              .entry("background".to_string())
+              .or_insert(StyleValueType::Background(Background::new()));
+            if let StyleValueType::Background(background) = background {
+              background.color = BackgroundColor(
                 value
                   .to_css_string(PrinterOptions {
                     minify: false,
@@ -2448,8 +2461,8 @@ impl<'i> StyleParser<'i> {
                     ..PrinterOptions::default()
                   })
                   .unwrap(),
-              )),
-            );
+              );
+            }
           }
           _ => {}
         },
@@ -2472,10 +2485,12 @@ impl<'i> StyleParser<'i> {
               }
             }
             if images.len() > 0 {
-              final_properties.insert(
-                id.to_string(),
-                StyleValueType::BackgroundImage(BackgroundImage(images)),
-              );
+              let background = final_properties
+                .entry("background".to_string())
+                .or_insert(StyleValueType::Background(Background::new()));
+              if let StyleValueType::Background(background) = background {
+                background.image = BackgroundImage(images);
+              }
             }
             if linear_gradient.len() > 0 {
               final_properties.insert(
@@ -2490,10 +2505,12 @@ impl<'i> StyleParser<'i> {
           Property::BackgroundPosition(value) => {
             let background_position = parse_background_position(value);
             if background_position.0.len() > 0 {
-              final_properties.insert(
-                "backgroundImagePosition".to_string(),
-                StyleValueType::BackgroundImagePosition(background_position),
-              );
+              let background = final_properties
+                .entry("background".to_string())
+                .or_insert(StyleValueType::Background(Background::new()));
+              if let StyleValueType::Background(background) = background {
+                background.position = background_position;
+              }
             }
           }
           _ => {}
@@ -2502,10 +2519,12 @@ impl<'i> StyleParser<'i> {
           Property::BackgroundSize(value) => {
             let background_size = parse_background_size(value);
             if background_size.0.len() > 0 {
-              final_properties.insert(
-                "backgroundImageSize".to_string(),
-                StyleValueType::BackgroundImageSize(background_size),
-              );
+              let background = final_properties
+                .entry("background".to_string())
+                .or_insert(StyleValueType::Background(Background::new()));
+              if let StyleValueType::Background(background) = background {
+                background.size = background_size;
+              }
             }
           }
           _ => {}

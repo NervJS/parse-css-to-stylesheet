@@ -666,7 +666,7 @@ impl VisitMut for JSXMutVisitor {
                                             StyleValueType::TextDecoration(text_decoration),
                                           );
                                         } else if name == "background" {
-                                          let background =
+                                          let mut background =
                                             Background::from(value.to_string().as_str());
                                           let mut images = vec![];
                                           let mut linear_gradient = vec![];
@@ -680,12 +680,13 @@ impl VisitMut for JSXMutVisitor {
                                               linear_gradient.push(gradient.clone());
                                             }
                                           }
+                                          temp_props.remove("background");
+                                          temp_props.remove("linearGradient");
                                           if images.len() > 0 {
+                                            background.image = BackgroundImage(images);
                                             temp_props.insert(
-                                              "backgroundImage".to_string(),
-                                              StyleValueType::BackgroundImage(BackgroundImage(
-                                                images,
-                                              )),
+                                              name.to_string(),
+                                              StyleValueType::Background(background),
                                             );
                                           }
                                           if linear_gradient.len() > 0 {
@@ -696,22 +697,6 @@ impl VisitMut for JSXMutVisitor {
                                               )),
                                             );
                                           }
-                                          if background.color.0 != "" {
-                                            temp_props.insert(
-                                              "backgroundColor".to_string(),
-                                              StyleValueType::BackgroundColor(background.color),
-                                            );
-                                          }
-                                          temp_props.insert(
-                                            "backgroundImageSize".to_string(),
-                                            StyleValueType::BackgroundImageSize(background.size),
-                                          );
-                                          temp_props.insert(
-                                            "backgroundImagePosition".to_string(),
-                                            StyleValueType::BackgroundImagePosition(
-                                              background.position,
-                                            ),
-                                          );
                                         } else if name == "backgroundImage" {
                                           let background_image_str = BackgroundImageStr {
                                             src: value.to_string(),
@@ -736,12 +721,15 @@ impl VisitMut for JSXMutVisitor {
                                             }
                                           }
                                           if images.len() > 0 {
-                                            temp_props.insert(
-                                              "backgroundImage".to_string(),
-                                              StyleValueType::BackgroundImage(BackgroundImage(
-                                                images,
-                                              )),
-                                            );
+                                            let background =
+                                              temp_props.entry("background".to_string()).or_insert(
+                                                StyleValueType::Background(Background::new()),
+                                              );
+                                            if let StyleValueType::Background(background) =
+                                              background
+                                            {
+                                              background.image = BackgroundImage(images);
+                                            }
                                           }
                                           if linear_gradient.len() > 0 {
                                             temp_props.insert(
@@ -755,22 +743,30 @@ impl VisitMut for JSXMutVisitor {
                                           let background_size =
                                             BackgroundImageSize::from(value.to_string().as_str());
                                           if background_size.0.len() > 0 {
-                                            temp_props.insert(
-                                              "backgroundImageSize".to_string(),
-                                              StyleValueType::BackgroundImageSize(background_size),
-                                            );
+                                            let background =
+                                              temp_props.entry("background".to_string()).or_insert(
+                                                StyleValueType::Background(Background::new()),
+                                              );
+                                            if let StyleValueType::Background(background) =
+                                              background
+                                            {
+                                              background.size = background_size;
+                                            }
                                           }
                                         } else if name == "backgroundPosition" {
                                           let background_position = BackgroundImagePosition::from(
                                             value.to_string().as_str(),
                                           );
                                           if background_position.0.len() > 0 {
-                                            temp_props.insert(
-                                              "backgroundImagePosition".to_string(),
-                                              StyleValueType::BackgroundImagePosition(
-                                                background_position,
-                                              ),
-                                            );
+                                            let background =
+                                              temp_props.entry("background".to_string()).or_insert(
+                                                StyleValueType::Background(Background::new()),
+                                              );
+                                            if let StyleValueType::Background(background) =
+                                              background
+                                            {
+                                              background.position = background_position;
+                                            }
                                           }
                                         } else if name == "flexDirection" {
                                           let flex_direction =

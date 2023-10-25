@@ -23,6 +23,7 @@ use lightningcss::{
   targets::{Features, Targets},
   traits::ToCss,
   values::{
+    color::CssColor,
     gradient::{Gradient, GradientItem, LineDirection},
     image::Image,
     length::{Length, LengthPercentageOrAuto, LengthValue},
@@ -170,7 +171,7 @@ fn parse_background_image_item(
 ) -> Option<BackgroundImageItem> {
   match image {
     Image::Url(url) => Some(BackgroundImageItem {
-      image: BackgroundImageKind::String(url.to_css_string(PrinterOptions::default()).unwrap()),
+      image: BackgroundImageKind::String(url.url.to_string()),
       repeat: Some(ImageRepeat::from(repeat.clone())),
     }),
     Image::Gradient(gradient) => {
@@ -305,7 +306,21 @@ fn parse_background(background: &SmallVec<[LNBackground<'_>; 1]>) -> Background 
     if let Some(size) = parse_background_size_item(&item.size) {
       background_size.push(size);
     }
-    background_color = Some(item.color.to_css_string(PrinterOptions::default()).unwrap());
+    if item.color != CssColor::default() {
+      background_color = Some(
+        item
+          .color
+          .to_css_string(PrinterOptions {
+            minify: false,
+            targets: Targets {
+              include: Features::HexAlphaColors,
+              ..Targets::default()
+            },
+            ..PrinterOptions::default()
+          })
+          .unwrap(),
+      );
+    }
   }
   Background {
     image: BackgroundImage(background_image),
@@ -1273,27 +1288,34 @@ impl Background {
 
 impl ToExpr for Background {
   fn to_expr(&self) -> Expr {
+    let mut arr = vec![];
+    if self.image.0.len() > 0 {
+      arr.push(PropOrSpread::Prop(Box::new(Prop::KeyValue(KeyValueProp {
+        key: PropName::Ident(Ident::new("image".into(), DUMMY_SP)),
+        value: self.image.to_expr().into(),
+      }))))
+    }
+    if self.color.to_string() != "" {
+      arr.push(PropOrSpread::Prop(Box::new(Prop::KeyValue(KeyValueProp {
+        key: PropName::Ident(Ident::new("color".into(), DUMMY_SP)),
+        value: self.color.to_expr().into(),
+      }))))
+    }
+    if self.size.0.len() > 0 {
+      arr.push(PropOrSpread::Prop(Box::new(Prop::KeyValue(KeyValueProp {
+        key: PropName::Ident(Ident::new("size".into(), DUMMY_SP)),
+        value: self.size.to_expr().into(),
+      }))))
+    }
+    if self.position.0.len() > 0 {
+      arr.push(PropOrSpread::Prop(Box::new(Prop::KeyValue(KeyValueProp {
+        key: PropName::Ident(Ident::new("position".into(), DUMMY_SP)),
+        value: self.position.to_expr().into(),
+      }))))
+    }
     Expr::Object(ObjectLit {
       span: DUMMY_SP,
-      props: vec![
-        PropOrSpread::Prop(Box::new(Prop::KeyValue(KeyValueProp {
-          key: PropName::Ident(Ident::new("image".into(), DUMMY_SP)),
-          value: self.image.to_expr().into(),
-        }))),
-        PropOrSpread::Prop(Box::new(Prop::KeyValue(KeyValueProp {
-          key: PropName::Ident(Ident::new("color".into(), DUMMY_SP)),
-          value: self.color.to_expr().into(),
-        }))),
-        PropOrSpread::Prop(Box::new(Prop::KeyValue(KeyValueProp {
-          key: PropName::Ident(Ident::new("size".into(), DUMMY_SP)),
-          value: self.size.to_expr().into(),
-        }))),
-        PropOrSpread::Prop(Box::new(Prop::KeyValue(KeyValueProp {
-          key: PropName::Ident(Ident::new("position".into(), DUMMY_SP)),
-          value: self.position.to_expr().into(),
-        }))),
-      ]
-      .into(),
+      props: arr.into(),
     })
   }
 }
@@ -2411,7 +2433,7 @@ impl<'i> Visitor<'i> for StyleVisitor<'i> {
   }
 }
 
-pub fn parse_style_properties(properties: &HashMap<String, Property<'_>>) -> StyleValue {
+pub fn parse_style_properties(properties: &Vec<(String, Property<'_>)>) -> StyleValue {
   let mut final_properties = HashMap::new();
 
   let mut text_decoration = None;
@@ -2710,7 +2732,7 @@ pub fn parse_style_properties(properties: &HashMap<String, Property<'_>>) -> Sty
       }
       "textDecoration" => {
         text_decoration = Some((*value).clone());
-      },
+      }
       "color" => {
         color = Some((*value).clone());
         final_properties.insert(
@@ -2762,18 +2784,20 @@ pub fn parse_style_properties(properties: &HashMap<String, Property<'_>>) -> Sty
             .entry("background".to_string())
             .or_insert(StyleValueType::Background(Background::new()));
           if let StyleValueType::Background(background) = background {
-            background.color = BackgroundColor(
-              value
-                .to_css_string(PrinterOptions {
-                  minify: false,
-                  targets: Targets {
-                    include: Features::HexAlphaColors,
-                    ..Targets::default()
-                  },
-                  ..PrinterOptions::default()
-                })
-                .unwrap(),
-            );
+            if *value != CssColor::default() {
+              background.color = BackgroundColor(
+                value
+                  .to_css_string(PrinterOptions {
+                    minify: false,
+                    targets: Targets {
+                      include: Features::HexAlphaColors,
+                      ..Targets::default()
+                    },
+                    ..PrinterOptions::default()
+                  })
+                  .unwrap(),
+              );
+            }
           }
         }
         _ => {}
@@ -2781,8 +2805,8 @@ pub fn parse_style_properties(properties: &HashMap<String, Property<'_>>) -> Sty
       "backgroundImage" => match value {
         Property::BackgroundImage(value) => {
           let mut repeat = None;
-          if let Some(value) = properties.get("backgroundRepeat") {
-            if let Property::BackgroundRepeat(repeat_value) = value {
+          if let Some(value) = properties.iter().find(|(id, _)| id == "backgroundRepeat") {
+            if let Property::BackgroundRepeat(repeat_value) = &value.1 {
               repeat = Some(repeat_value);
             }
           }
@@ -2956,13 +2980,16 @@ pub fn parse_style_properties(properties: &HashMap<String, Property<'_>>) -> Sty
         let mut matrixs = vec![];
         if let Property::Transform(value, _) = value {
           for item in value.0.iter() {
-            let transform_origin = properties.get("transformOrigin").map(|p| {
-              if let Property::TransformOrigin(value, _) = p {
-                Some(value)
-              } else {
-                None
-              }
-            });
+            let transform_origin = properties
+              .iter()
+              .find(|(id, _)| id == "transformOrigin")
+              .map(|p| {
+                if let Property::TransformOrigin(value, _) = &p.1 {
+                  Some(value)
+                } else {
+                  None
+                }
+              });
             let mut center_x = None;
             let mut center_y = None;
             match transform_origin {
@@ -3255,7 +3282,14 @@ pub fn parse_style_properties(properties: &HashMap<String, Property<'_>>) -> Sty
             color: match color {
               Some(color) => to_camel_case(
                 color
-                  .value_to_css_string(PrinterOptions::default())
+                  .value_to_css_string(PrinterOptions {
+                    minify: false,
+                    targets: Targets {
+                      include: Features::HexAlphaColors,
+                      ..Targets::default()
+                    },
+                    ..PrinterOptions::default()
+                  })
                   .unwrap()
                   .as_str(),
                 true,
@@ -3405,7 +3439,12 @@ impl<'i> StyleParser<'i> {
       .map(|(selector, properties)| {
         (
           selector.to_owned(),
-          parse_style_properties(&properties),
+          parse_style_properties(
+            &properties
+              .iter()
+              .map(|(k, v)| (k.to_owned(), v.clone()))
+              .collect::<Vec<_>>(),
+          ),
         )
       })
       .collect::<HashMap<_, _>>();

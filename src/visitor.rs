@@ -3,10 +3,14 @@ use std::{
   collections::{BTreeMap, HashMap, VecDeque},
   hash::{Hash, Hasher},
   rc::Rc,
+  vec,
 };
 
 use html5ever::{tendril::StrTendril, Attribute};
-use lightningcss::{properties::{Property, PropertyId}, stylesheet::ParserOptions};
+use lightningcss::{
+  properties::{Property, PropertyId},
+  stylesheet::ParserOptions,
+};
 use swc_common::{Span, DUMMY_SP};
 use swc_ecma_ast::{
   BindingIdent, CallExpr, Callee, Decl, Expr, ExprOrSpread, Ident, ImportDecl,
@@ -22,10 +26,10 @@ use swc_ecma_visit::{
 
 use crate::{
   scraper::Element,
-  style_parser::{StyleValue,
-    StyleValueType, ToExpr, parse_style_properties,
+  style_parser::{parse_style_properties, StyleValue, StyleValueType, ToExpr},
+  utils::{
+    create_qualname, is_starts_with_uppercase, recursion_jsx_member, to_camel_case, to_kebab_case,
   },
-  utils::{create_qualname, is_starts_with_uppercase, recursion_jsx_member, to_camel_case, to_kebab_case},
 };
 
 #[derive(Eq, Clone, Copy, Debug)]
@@ -382,7 +386,11 @@ impl<'i> VisitMut for JSXMutVisitor<'i> {
                                 .map(|s| s.to_owned())
                                 .collect::<Vec<String>>();
                               if property.len() == 2 {
-                                let property_parsed = Property::parse_string(PropertyId::from(property[0].as_str()), property[1].as_str(), ParserOptions::default());
+                                let property_parsed = Property::parse_string(
+                                  PropertyId::from(property[0].as_str()),
+                                  property[1].as_str(),
+                                  ParserOptions::default(),
+                                );
                                 if property_parsed.is_ok() {
                                   properties.insert(
                                     property[0].clone(),
@@ -391,8 +399,14 @@ impl<'i> VisitMut for JSXMutVisitor<'i> {
                                 }
                               }
                             }
-                            let parsed_properties = parse_style_properties(&properties);
-                            let properties_entries: BTreeMap<_, _> = parsed_properties.iter().collect();
+                            let parsed_properties = parse_style_properties(
+                              &properties
+                                .iter()
+                                .map(|(key, value)| (key.to_owned(), value.clone()))
+                                .collect::<Vec<_>>(),
+                            );
+                            let properties_entries: BTreeMap<_, _> =
+                              parsed_properties.iter().collect();
                             attr.value = Some(JSXAttrValue::JSXExprContainer(JSXExprContainer {
                               span: DUMMY_SP,
                               expr: JSXExpr::Expr(Box::new(Expr::Object(ObjectLit {
@@ -478,9 +492,16 @@ impl<'i> VisitMut for JSXMutVisitor<'i> {
                                         };
                                         if let Some(name) = name {
                                           let property_id = PropertyId::from(name.as_str());
-                                          let property = Property::parse_string(property_id, value.as_str(), ParserOptions::default());
+                                          let property = Property::parse_string(
+                                            property_id,
+                                            value.as_str(),
+                                            ParserOptions::default(),
+                                          );
                                           if property.is_ok() {
-                                            temp_properties.insert(to_camel_case(name.as_str(), false), property.unwrap().into_owned());
+                                            temp_properties.insert(
+                                              to_camel_case(name.as_str(), false),
+                                              property.unwrap().into_owned(),
+                                            );
                                           }
                                         }
                                       }
@@ -489,12 +510,16 @@ impl<'i> VisitMut for JSXMutVisitor<'i> {
                                     PropOrSpread::Spread(_) => {}
                                   }
                                 }
-                                let mut temp_props = HashMap::new();
-                                
+                                let mut temp_props = vec![];
+
                                 for property in properties.iter() {
-                                  temp_props.insert(property.0.to_string(), property.1.clone());
+                                  temp_props.push((property.0.to_string(), property.1.clone()));
                                 }
-                                temp_props.extend(temp_properties);
+                                temp_props.extend(
+                                  temp_properties
+                                    .iter()
+                                    .map(|(key, value)| (key.to_string(), value.clone())),
+                                );
                                 let mut temp_props = parse_style_properties(&temp_props);
 
                                 let mut props = temp_props
@@ -571,7 +596,12 @@ impl<'i> VisitMut for JSXMutVisitor<'i> {
               .iter()
               .map(|property| (property.0.to_string(), property.1.clone()))
               .collect::<HashMap<_, _>>();
-            let parsed_properties = parse_style_properties(&properties);
+            let parsed_properties = parse_style_properties(
+              &properties
+                .iter()
+                .map(|(key, value)| (key.to_owned(), value.clone()))
+                .collect::<Vec<_>>(),
+            );
             let properties_entries: BTreeMap<_, _> = parsed_properties.iter().collect();
             if has_empty_style {
               for attr in &mut n.opening.attrs {

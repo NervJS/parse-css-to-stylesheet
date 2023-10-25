@@ -1,5 +1,6 @@
 use std::{cell::RefCell, collections::HashMap, rc::Rc};
 
+use lightningcss::properties::Property;
 use swc_ecma_ast::Program;
 use swc_ecma_visit::VisitMutWith;
 
@@ -8,18 +9,18 @@ use crate::{
   visitor::{JSXMutVisitor, JSXRecord, ModuleMutVisitor, SpanKey},
 };
 
-pub struct StyleWrite {
+pub struct StyleWrite<'i> {
   pub module: Rc<RefCell<Program>>,
   pub jsx_record: Rc<RefCell<JSXRecord>>,
-  pub style_record: Rc<RefCell<HashMap<SpanKey, StyleValue>>>,
+  pub style_record: Rc<RefCell<HashMap<SpanKey, HashMap<String, Property<'i>>>>>,
   pub all_style: Rc<RefCell<HashMap<String, StyleValue>>>,
 }
 
-impl StyleWrite {
+impl<'i> StyleWrite<'i> {
   pub fn new(
     module: Rc<RefCell<Program>>,
     jsx_record: Rc<RefCell<JSXRecord>>,
-    style_record: Rc<RefCell<HashMap<SpanKey, StyleValue>>>,
+    style_record: Rc<RefCell<HashMap<SpanKey, HashMap<String, Property<'i>>>>>,
     all_style: Rc<RefCell<HashMap<String, StyleValue>>>,
   ) -> Self {
     StyleWrite {

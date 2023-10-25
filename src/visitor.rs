@@ -6,6 +6,7 @@ use std::{
 };
 
 use html5ever::{tendril::StrTendril, Attribute};
+use lightningcss::{properties::{Property, PropertyId}, stylesheet::ParserOptions};
 use swc_common::{Span, DUMMY_SP};
 use swc_ecma_ast::{
   BindingIdent, CallExpr, Callee, Decl, Expr, ExprOrSpread, Ident, ImportDecl,
@@ -21,13 +22,10 @@ use swc_ecma_visit::{
 
 use crate::{
   scraper::Element,
-  style_parser::{
-    Background, BackgroundImage, BackgroundImageKind, BackgroundImagePosition, BackgroundImageSize,
-    BackgroundImageStr, BorderRadius, FlexAlign, FlexBasis, FlexDirection, FlexGrow, FlexOptions,
-    FlexShrink, FlexSize, FlexWrap, ItemAlign, LinearGradient, MarginPadding, StyleValue,
-    StyleValueType, TextDecoration, ToExpr,
+  style_parser::{StyleValue,
+    StyleValueType, ToExpr, parse_style_properties,
   },
-  utils::{create_qualname, is_starts_with_uppercase, recursion_jsx_member, to_camel_case},
+  utils::{create_qualname, is_starts_with_uppercase, recursion_jsx_member, to_camel_case, to_kebab_case},
 };
 
 #[derive(Eq, Clone, Copy, Debug)]
@@ -193,7 +191,7 @@ impl<'a> VisitAll for AstVisitor<'a> {
 }
 
 fn properties_to_object_lit_props(
-  properties: &BTreeMap<&String, &mut StyleValueType>,
+  properties: &BTreeMap<&String, &StyleValueType>,
 ) -> Vec<PropOrSpread> {
   properties
     .iter()
@@ -293,7 +291,6 @@ impl VisitMut for ModuleMutVisitor {
     last_import_index += 1;
     let mut var_checker = VarChecker { found: false };
     module.visit_with(&mut var_checker);
-    println!("var_checker.found: {}", var_checker.found);
     if var_checker.found {
       // 插入代码 const __inner_style__ = calcDynamicStyle(__inner_style__)
       module
@@ -303,15 +300,15 @@ impl VisitMut for ModuleMutVisitor {
   }
 }
 
-pub struct JSXMutVisitor {
+pub struct JSXMutVisitor<'i> {
   pub jsx_record: Rc<RefCell<JSXRecord>>,
-  pub style_record: Rc<RefCell<HashMap<SpanKey, StyleValue>>>,
+  pub style_record: Rc<RefCell<HashMap<SpanKey, HashMap<String, Property<'i>>>>>,
 }
 
-impl JSXMutVisitor {
+impl<'i> JSXMutVisitor<'i> {
   pub fn new(
     jsx_record: Rc<RefCell<JSXRecord>>,
-    style_record: Rc<RefCell<HashMap<SpanKey, StyleValue>>>,
+    style_record: Rc<RefCell<HashMap<SpanKey, HashMap<String, Property<'i>>>>>,
   ) -> Self {
     JSXMutVisitor {
       jsx_record,
@@ -320,7 +317,7 @@ impl JSXMutVisitor {
   }
 }
 
-impl VisitMut for JSXMutVisitor {
+impl<'i> VisitMut for JSXMutVisitor<'i> {
   noop_visit_mut_type!();
 
   fn visit_mut_jsx_element(&mut self, n: &mut JSXElement) {
@@ -385,29 +382,17 @@ impl VisitMut for JSXMutVisitor {
                                 .map(|s| s.to_owned())
                                 .collect::<Vec<String>>();
                               if property.len() == 2 {
-                                properties.insert(
-                                  property[0].clone(),
-                                  StyleValueType::Normal(property[1].clone()),
-                                );
+                                let property_parsed = Property::parse_string(PropertyId::from(property[0].as_str()), property[1].as_str(), ParserOptions::default());
+                                if property_parsed.is_ok() {
+                                  properties.insert(
+                                    property[0].clone(),
+                                    property_parsed.unwrap().into_owned(),
+                                  );
+                                }
                               }
                             }
-                            let color = properties.get("color").cloned();
-                            let properties_entries: BTreeMap<_, _> = properties
-                              .iter_mut()
-                              .map(|(key, value)| {
-                                if key == "textDecoration" {
-                                  if let Some(color) = &color {
-                                    match value {
-                                      StyleValueType::TextDecoration(text_decoration) => {
-                                        text_decoration.color = color.to_string();
-                                      }
-                                      _ => {}
-                                    }
-                                  }
-                                }
-                                (key, value)
-                              })
-                              .collect();
+                            let parsed_properties = parse_style_properties(&properties);
+                            let properties_entries: BTreeMap<_, _> = parsed_properties.iter().collect();
                             attr.value = Some(JSXAttrValue::JSXExprContainer(JSXExprContainer {
                               span: DUMMY_SP,
                               expr: JSXExpr::Expr(Box::new(Expr::Object(ObjectLit {
@@ -465,419 +450,52 @@ impl VisitMut for JSXMutVisitor {
                                     }
                                   }
                                 }
-                                let mut deque = VecDeque::from(lit.props.clone());
-                                for property in properties.iter() {
-                                  deque.push_front(PropOrSpread::Prop(Box::new(Prop::KeyValue(
-                                    KeyValueProp {
-                                      key: PropName::Ident(Ident::new(
-                                        property.0.to_string().into(),
-                                        DUMMY_SP,
-                                      )),
-                                      value: property.1.to_string().into(),
-                                    },
-                                  ))));
-                                }
-                                let mut color = None;
-                                let mut repeat_str = None;
-                                deque.iter().for_each(|p| {
+                                let deque = VecDeque::from(lit.props.clone());
+                                let mut temp_properties = HashMap::new();
+                                for p in deque.iter() {
                                   match p {
                                     PropOrSpread::Prop(prop) => match &**prop {
-                                      Prop::KeyValue(key_value_prop) => match &key_value_prop.key {
-                                        PropName::Ident(ident) => {
-                                          if ident.sym.to_string() == "color" {
-                                            color = Some(key_value_prop.value.clone())
-                                          } else if ident.sym.to_string() == "background-repeat" {
-                                            match &*key_value_prop.value {
-                                              Expr::Lit(lit) => match lit {
-                                                Lit::Str(str) => {
-                                                  repeat_str = Some(str.value.to_string())
-                                                }
-                                                _ => {}
-                                              },
-                                              _ => {}
-                                            }
+                                      Prop::KeyValue(key_value_prop) => {
+                                        let value = match &*key_value_prop.value {
+                                          Expr::Lit(lit) => match lit {
+                                            Lit::Str(str) => str.value.to_string(),
+                                            Lit::Num(num) => num.to_string(),
+                                            _ => "".to_string(),
+                                          },
+                                          _ => {
+                                            has_dynamic_style = true;
+                                            "".to_string()
                                           }
-                                        }
-                                        PropName::Str(str) => {
-                                          if str.value.to_string() == "color" {
-                                            color = Some(key_value_prop.value.clone())
-                                          } else if str.value.to_string() == "background-repeat" {
-                                            match &*key_value_prop.value {
-                                              Expr::Lit(lit) => match lit {
-                                                Lit::Str(str) => {
-                                                  repeat_str = Some(str.value.to_string())
-                                                }
-                                                _ => {}
-                                              },
-                                              _ => {}
-                                            }
+                                        };
+                                        let name = match &key_value_prop.key {
+                                          PropName::Ident(ident) => {
+                                            Some(to_kebab_case(ident.sym.to_string().as_str()))
                                           }
-                                        }
-                                        _ => {}
-                                      },
-                                      _ => {}
-                                    },
-                                    _ => {}
-                                  };
-                                });
-
-                                let mut temp_props = HashMap::new();
-                                deque.iter().for_each(|p| match p {
-                                  PropOrSpread::Prop(prop) => match &**prop {
-                                    Prop::KeyValue(key_value_prop) => {
-                                      let value = match &*key_value_prop.value {
-                                        Expr::Lit(lit) => match lit {
-                                          Lit::Str(str) => str.value.to_string(),
-                                          Lit::Num(num) => num.to_string(),
-                                          _ => "".to_string(),
-                                        },
-                                        _ => {
-                                          has_dynamic_style = true;
-                                          "".to_string()
-                                        }
-                                      };
-                                      let name = match &key_value_prop.key {
-                                        PropName::Ident(ident) => {
-                                          Some(to_camel_case(ident.sym.to_string().as_str(), false))
-                                        }
-                                        PropName::Str(str) => {
-                                          Some(to_camel_case(str.value.to_string().as_str(), false))
-                                        }
-                                        _ => None,
-                                      };
-                                      let mut flex_options = FlexOptions::new();
-                                      if let Some(name) = name {
-                                        if name == "margin" {
-                                          let margin = StyleValueType::MarginPadding(
-                                            MarginPadding::from(value.as_str()),
-                                          );
-                                          temp_props.insert(name.to_string(), margin);
-                                        } else if name == "marginLeft" {
-                                          let margin =
-                                            temp_props.entry("margin".to_string()).or_insert(
-                                              StyleValueType::MarginPadding(MarginPadding::new()),
-                                            );
-                                          if let StyleValueType::MarginPadding(margin) = margin {
-                                            margin.set_left(value.as_str())
+                                          PropName::Str(str) => {
+                                            Some(to_kebab_case(str.value.to_string().as_str()))
                                           }
-                                        } else if name == "marginRight" {
-                                          let margin =
-                                            temp_props.entry("margin".to_string()).or_insert(
-                                              StyleValueType::MarginPadding(MarginPadding::new()),
-                                            );
-                                          if let StyleValueType::MarginPadding(margin) = margin {
-                                            margin.set_right(value.as_str())
+                                          _ => None,
+                                        };
+                                        if let Some(name) = name {
+                                          let property_id = PropertyId::from(name.as_str());
+                                          let property = Property::parse_string(property_id, value.as_str(), ParserOptions::default());
+                                          if property.is_ok() {
+                                            temp_properties.insert(to_camel_case(name.as_str(), false), property.unwrap().into_owned());
                                           }
-                                        } else if name == "marginTop" {
-                                          let margin =
-                                            temp_props.entry("margin".to_string()).or_insert(
-                                              StyleValueType::MarginPadding(MarginPadding::new()),
-                                            );
-                                          if let StyleValueType::MarginPadding(margin) = margin {
-                                            margin.set_top(value.as_str())
-                                          }
-                                        } else if name == "marginBottom" {
-                                          let margin =
-                                            temp_props.entry("margin".to_string()).or_insert(
-                                              StyleValueType::MarginPadding(MarginPadding::new()),
-                                            );
-                                          if let StyleValueType::MarginPadding(margin) = margin {
-                                            margin.set_bottom(value.as_str())
-                                          }
-                                        } else if name == "padding" {
-                                          let padding = StyleValueType::MarginPadding(
-                                            MarginPadding::from(value.as_str()),
-                                          );
-                                          temp_props.insert(name.to_string(), padding);
-                                        } else if name == "paddingLeft" {
-                                          let padding =
-                                            temp_props.entry("padding".to_string()).or_insert(
-                                              StyleValueType::MarginPadding(MarginPadding::new()),
-                                            );
-                                          if let StyleValueType::MarginPadding(padding) = padding {
-                                            padding.set_left(value.as_str())
-                                          }
-                                        } else if name == "paddingRight" {
-                                          let padding =
-                                            temp_props.entry("padding".to_string()).or_insert(
-                                              StyleValueType::MarginPadding(MarginPadding::new()),
-                                            );
-                                          if let StyleValueType::MarginPadding(padding) = padding {
-                                            padding.set_right(value.as_str())
-                                          }
-                                        } else if name == "paddingTop" {
-                                          let padding =
-                                            temp_props.entry("padding".to_string()).or_insert(
-                                              StyleValueType::MarginPadding(MarginPadding::new()),
-                                            );
-                                          if let StyleValueType::MarginPadding(padding) = padding {
-                                            padding.set_top(value.as_str())
-                                          }
-                                        } else if name == "paddingBottom" {
-                                          let padding =
-                                            temp_props.entry("padding".to_string()).or_insert(
-                                              StyleValueType::MarginPadding(MarginPadding::new()),
-                                            );
-                                          if let StyleValueType::MarginPadding(padding) = padding {
-                                            padding.set_bottom(value.as_str())
-                                          }
-                                        } else if name == "borderRadius" {
-                                          let border_radius = StyleValueType::BorderRadius(
-                                            BorderRadius::from(value.as_str()),
-                                          );
-                                          temp_props.insert(name.to_string(), border_radius);
-                                        } else if name == "borderTopLeftRadius" {
-                                          let border_radius =
-                                            temp_props.entry("borderRadius".to_string()).or_insert(
-                                              StyleValueType::BorderRadius(BorderRadius::new()),
-                                            );
-                                          if let StyleValueType::BorderRadius(border_radius) =
-                                            border_radius
-                                          {
-                                            border_radius.set_top_left(value.as_str())
-                                          }
-                                        } else if name == "borderTopRightRadius" {
-                                          let border_radius =
-                                            temp_props.entry("borderRadius".to_string()).or_insert(
-                                              StyleValueType::BorderRadius(BorderRadius::new()),
-                                            );
-                                          if let StyleValueType::BorderRadius(border_radius) =
-                                            border_radius
-                                          {
-                                            border_radius.set_top_right(value.as_str())
-                                          }
-                                        } else if name == "borderBottomLeftRadius" {
-                                          let border_radius =
-                                            temp_props.entry("borderRadius".to_string()).or_insert(
-                                              StyleValueType::BorderRadius(BorderRadius::new()),
-                                            );
-                                          if let StyleValueType::BorderRadius(border_radius) =
-                                            border_radius
-                                          {
-                                            border_radius.set_bottom_left(value.as_str())
-                                          }
-                                        } else if name == "borderBottomRightRadius" {
-                                          let border_radius =
-                                            temp_props.entry("borderRadius".to_string()).or_insert(
-                                              StyleValueType::BorderRadius(BorderRadius::new()),
-                                            );
-                                          if let StyleValueType::BorderRadius(border_radius) =
-                                            border_radius
-                                          {
-                                            border_radius.set_bottom_right(value.as_str())
-                                          }
-                                        } else if name == "textDecoration" {
-                                          let mut text_decoration =
-                                            TextDecoration::from(value.to_string().as_str());
-                                          text_decoration.change_color(
-                                            match &color {
-                                              Some(color) => match &**color {
-                                                Expr::Lit(lit) => match lit {
-                                                  Lit::Str(str) => str.value.to_string(),
-                                                  _ => "black".to_string(),
-                                                },
-                                                _ => "black".to_string(),
-                                              },
-                                              None => "black".to_string(),
-                                            }
-                                            .as_str(),
-                                          );
-                                          temp_props.insert(
-                                            name.to_string(),
-                                            StyleValueType::TextDecoration(text_decoration),
-                                          );
-                                        } else if name == "background" {
-                                          let mut background =
-                                            Background::from(value.to_string().as_str());
-                                          let mut images = vec![];
-                                          let mut linear_gradient = vec![];
-                                          for item in background.image.0.iter() {
-                                            if let BackgroundImageKind::String(_) = &item.image {
-                                              images.push(item.clone());
-                                            } else if let BackgroundImageKind::LinearGradient(
-                                              gradient,
-                                            ) = &item.image
-                                            {
-                                              linear_gradient.push(gradient.clone());
-                                            }
-                                          }
-                                          temp_props.remove("background");
-                                          temp_props.remove("linearGradient");
-                                          if images.len() > 0 {
-                                            background.image = BackgroundImage(images);
-                                            temp_props.insert(
-                                              name.to_string(),
-                                              StyleValueType::Background(background),
-                                            );
-                                          }
-                                          if linear_gradient.len() > 0 {
-                                            temp_props.insert(
-                                              "linearGradient".to_string(),
-                                              StyleValueType::LinearGradient(LinearGradient(
-                                                linear_gradient,
-                                              )),
-                                            );
-                                          }
-                                        } else if name == "backgroundImage" {
-                                          let background_image_str = BackgroundImageStr {
-                                            src: value.to_string(),
-                                            repeat: if let Some(repeat) = &repeat_str {
-                                              Some(repeat.clone())
-                                            } else {
-                                              None
-                                            },
-                                          };
-                                          let background_image =
-                                            BackgroundImage::from(&background_image_str);
-                                          let mut images = vec![];
-                                          let mut linear_gradient = vec![];
-                                          for item in background_image.0.iter() {
-                                            if let BackgroundImageKind::String(_) = &item.image {
-                                              images.push(item.clone());
-                                            } else if let BackgroundImageKind::LinearGradient(
-                                              gradient,
-                                            ) = &item.image
-                                            {
-                                              linear_gradient.push(gradient.clone());
-                                            }
-                                          }
-                                          if images.len() > 0 {
-                                            let background =
-                                              temp_props.entry("background".to_string()).or_insert(
-                                                StyleValueType::Background(Background::new()),
-                                              );
-                                            if let StyleValueType::Background(background) =
-                                              background
-                                            {
-                                              background.image = BackgroundImage(images);
-                                            }
-                                          }
-                                          if linear_gradient.len() > 0 {
-                                            temp_props.insert(
-                                              "linearGradient".to_string(),
-                                              StyleValueType::LinearGradient(LinearGradient(
-                                                linear_gradient,
-                                              )),
-                                            );
-                                          }
-                                        } else if name == "backgroundSize" {
-                                          let background_size =
-                                            BackgroundImageSize::from(value.to_string().as_str());
-                                          if background_size.0.len() > 0 {
-                                            let background =
-                                              temp_props.entry("background".to_string()).or_insert(
-                                                StyleValueType::Background(Background::new()),
-                                              );
-                                            if let StyleValueType::Background(background) =
-                                              background
-                                            {
-                                              background.size = background_size;
-                                            }
-                                          }
-                                        } else if name == "backgroundPosition" {
-                                          let background_position = BackgroundImagePosition::from(
-                                            value.to_string().as_str(),
-                                          );
-                                          if background_position.0.len() > 0 {
-                                            let background =
-                                              temp_props.entry("background".to_string()).or_insert(
-                                                StyleValueType::Background(Background::new()),
-                                              );
-                                            if let StyleValueType::Background(background) =
-                                              background
-                                            {
-                                              background.position = background_position;
-                                            }
-                                          }
-                                        } else if name == "flexDirection" {
-                                          let flex_direction =
-                                            FlexDirection::from(value.to_string().as_str());
-                                          flex_options.direction = Some(flex_direction);
-                                        } else if name == "flexWrap" {
-                                          let flex_wrap =
-                                            FlexWrap::from(value.to_string().as_str());
-                                          flex_options.wrap = Some(flex_wrap);
-                                        } else if name == "justifyContent" {
-                                          let justify_content =
-                                            FlexAlign::from(value.to_string().as_str());
-                                          flex_options.justify_content = Some(justify_content);
-                                        } else if name == "alignItems" {
-                                          let align_items =
-                                            ItemAlign::from(value.to_string().as_str());
-                                          if align_items != ItemAlign::Ignore {
-                                            flex_options.align_items = Some(align_items);
-                                          }
-                                        } else if name == "alignContent" {
-                                          let align_content =
-                                            FlexAlign::from(value.to_string().as_str());
-                                          flex_options.align_content = Some(align_content);
-                                        } else if name == "flex" {
-                                          let flex_size =
-                                            FlexSize::from(value.to_string().as_str());
-                                          if let Some(flex_grow) = flex_size.grow {
-                                            temp_props.insert(
-                                              "flexGrow".to_string(),
-                                              StyleValueType::FlexGrow(flex_grow),
-                                            );
-                                          }
-                                          if let Some(flex_shrink) = flex_size.shrink {
-                                            temp_props.insert(
-                                              "flexShrink".to_string(),
-                                              StyleValueType::FlexShrink(flex_shrink),
-                                            );
-                                          }
-                                          if let Some(flex_basis) = flex_size.basis {
-                                            temp_props.insert(
-                                              "flexBasis".to_string(),
-                                              StyleValueType::FlexBasis(flex_basis),
-                                            );
-                                          }
-                                        } else if name == "flexGrow" {
-                                          let flex_grow =
-                                            FlexGrow::from(value.to_string().as_str());
-                                          temp_props.insert(
-                                            "flexGrow".to_string(),
-                                            StyleValueType::FlexGrow(flex_grow),
-                                          );
-                                        } else if name == "flexShrink" {
-                                          let flex_shrink =
-                                            FlexShrink::from(value.to_string().as_str());
-                                          temp_props.insert(
-                                            "flexShrink".to_string(),
-                                            StyleValueType::FlexShrink(flex_shrink),
-                                          );
-                                        } else if name == "flexBasis" {
-                                          let flex_basis =
-                                            FlexBasis::from(value.to_string().as_str());
-                                          temp_props.insert(
-                                            "flexBasis".to_string(),
-                                            StyleValueType::FlexBasis(flex_basis),
-                                          );
-                                        } else if name == "alignSelf" {
-                                          let align_self =
-                                            ItemAlign::from(value.to_string().as_str());
-                                          if align_self != ItemAlign::Ignore {
-                                            temp_props.insert(
-                                              "alignSelf".to_string(),
-                                              StyleValueType::AlignSelf(align_self),
-                                            );
-                                          }
-                                        } else {
-                                          temp_props.insert(
-                                            name.to_string(),
-                                            StyleValueType::Normal(value.to_string()),
-                                          );
                                         }
                                       }
-                                      temp_props.insert(
-                                        "flexOptions".to_string(),
-                                        StyleValueType::FlexOptions(flex_options),
-                                      );
-                                    }
-                                    _ => {}
-                                  },
-                                  PropOrSpread::Spread(_) => {}
-                                });
+                                      _ => {}
+                                    },
+                                    PropOrSpread::Spread(_) => {}
+                                  }
+                                }
+                                let mut temp_props = HashMap::new();
+                                
+                                for property in properties.iter() {
+                                  temp_props.insert(property.0.to_string(), property.1.clone());
+                                }
+                                temp_props.extend(temp_properties);
+                                let mut temp_props = parse_style_properties(&temp_props);
 
                                 let mut props = temp_props
                                   .iter_mut()
@@ -949,11 +567,12 @@ impl VisitMut for JSXMutVisitor {
             for declaration in style_declaration.iter() {
               properties.push(declaration.clone());
             }
-            let mut properties = properties
+            let properties = properties
               .iter()
               .map(|property| (property.0.to_string(), property.1.clone()))
               .collect::<HashMap<_, _>>();
-            let properties_entries: BTreeMap<_, _> = properties.iter_mut().collect();
+            let parsed_properties = parse_style_properties(&properties);
+            let properties_entries: BTreeMap<_, _> = parsed_properties.iter().collect();
             if has_empty_style {
               for attr in &mut n.opening.attrs {
                 if let JSXAttrOrSpread::JSXAttr(attr) = attr {

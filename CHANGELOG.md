@@ -1,3 +1,20 @@
+## [0.0.17](https://github.com/NervJS/parse-css-to-stylesheet/compare/v0.0.15...v0.0.17) (2023-10-25)
+
+
+### Bug Fixes
+
+* 当用到 __inner_style__ 时才插入 ([c10cffc](https://github.com/NervJS/parse-css-to-stylesheet/commit/c10cffc7093b9e2878ee59fdd1038ec774934713))
+* 优化 Background 处理 ([c4a4367](https://github.com/NervJS/parse-css-to-stylesheet/commit/c4a4367aed0c29651e607acea6cc7728d2040cde))
+
+
+### Features
+
+* 不拆分 Background ([0f3111b](https://github.com/NervJS/parse-css-to-stylesheet/commit/0f3111b023ca91095d2fdaf55e4d0388a626b49a))
+* 调整生成逻辑 ([84dcb1a](https://github.com/NervJS/parse-css-to-stylesheet/commit/84dcb1ad9984b3446a5dcc2aa81c6bfcf6dc7252))
+* 支持解析 css 代码中的 transform 属性 ([197a922](https://github.com/NervJS/parse-css-to-stylesheet/commit/197a92285d055ee51fca38888e523275ec9c3d71))
+
+
+
 ## [0.0.16](https://github.com/NervJS/parse-css-to-stylesheet/compare/v0.0.15...v0.0.16) (2023-10-24)
 
 

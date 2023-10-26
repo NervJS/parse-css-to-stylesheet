@@ -42,7 +42,7 @@ use crate::{
 pub type StyleValue = HashMap<String, StyleValueType>;
 
 pub struct StyleData<'i> {
-  pub style_record: Rc<RefCell<HashMap<SpanKey, HashMap<String, Property<'i>>>>>,
+  pub style_record: Rc<RefCell<HashMap<SpanKey, Vec<(String, Property<'i>)>>>>,
   pub all_style: Rc<RefCell<HashMap<String, StyleValue>>>,
 }
 
@@ -53,14 +53,14 @@ pub struct StyleDeclaration<'i> {
 }
 
 pub struct StyleVisitor<'i> {
-  pub all_style: Rc<RefCell<HashMap<String, Vec<StyleDeclaration<'i>>>>>,
+  pub all_style: Rc<RefCell<Vec<(String, Vec<StyleDeclaration<'i>>)>>>,
   pub document: &'i JSXDocument,
 }
 
 impl<'i> StyleVisitor<'i> {
   pub fn new(
     document: &'i JSXDocument,
-    all_style: Rc<RefCell<HashMap<String, Vec<StyleDeclaration<'i>>>>>,
+    all_style: Rc<RefCell<Vec<(String, Vec<StyleDeclaration<'i>>)>>>,
   ) -> Self {
     StyleVisitor {
       all_style,
@@ -80,12 +80,21 @@ impl<'i> Visitor<'i> for StyleVisitor<'i> {
         for index in 0..selectors.len() {
           let selector = selectors[index].trim().replace(".", "");
           let mut all_style = self.all_style.borrow_mut();
-          let declarations: &mut Vec<StyleDeclaration<'_>> =
-            all_style.entry(selector.clone()).or_insert(vec![]);
-          declarations.push(StyleDeclaration {
-            specificity: style.selectors.0.get(index).unwrap().specificity(),
-            declaration: style.declarations.clone(),
-          });
+          let decorations = all_style.iter_mut().find(|(id, _)| id == &selector);
+          if let Some((_, declarations)) = decorations {
+            declarations.push(StyleDeclaration {
+              specificity: style.selectors.0.get(index).unwrap().specificity(),
+              declaration: style.declarations.clone(),
+            });
+          } else {
+            all_style.push((
+              selector.clone(),
+              vec![StyleDeclaration {
+                specificity: style.selectors.0.get(index).unwrap().specificity(),
+                declaration: style.declarations.clone(),
+              }],
+            ));
+          }
         }
       }
       _ => {}
@@ -520,14 +529,14 @@ pub fn parse_style_properties(properties: &Vec<(String, Property<'_>)>) -> Style
 }
 
 pub struct StyleParser<'i> {
-  pub all_style: Rc<RefCell<HashMap<String, Vec<StyleDeclaration<'i>>>>>,
+  pub all_style: Rc<RefCell<Vec<(String, Vec<StyleDeclaration<'i>>)>>>,
   pub document: &'i JSXDocument,
 }
 
 impl<'i> StyleParser<'i> {
   pub fn new(document: &'i JSXDocument) -> Self {
     StyleParser {
-      all_style: Rc::new(RefCell::new(HashMap::new())),
+      all_style: Rc::new(RefCell::new(vec![])),
       document,
     }
   }
@@ -540,9 +549,9 @@ impl<'i> StyleParser<'i> {
 
   fn calc_style_record<T: Hash + Eq + Clone>(
     &self,
-    style_record: &mut HashMap<T, Vec<StyleDeclaration<'i>>>,
-  ) -> HashMap<T, StyleDeclaration<'i>> {
-    let mut final_style_record = HashMap::new();
+    style_record: &mut Vec<(T, Vec<StyleDeclaration<'i>>)>,
+  ) -> Vec<(T, StyleDeclaration<'i>)> {
+    let mut final_style_record = vec![];
     for (id, declarations) in style_record.iter_mut() {
       declarations.sort_by(|a, b| a.specificity.cmp(&b.specificity));
       let mut final_properties: Vec<Property<'i>> = Vec::new();
@@ -574,7 +583,7 @@ impl<'i> StyleParser<'i> {
           }
         }
       }
-      final_style_record.insert(
+      final_style_record.push((
         (*id).clone(),
         StyleDeclaration {
           specificity: 0,
@@ -583,7 +592,7 @@ impl<'i> StyleParser<'i> {
             important_declarations: vec![],
           },
         },
-      );
+      ));
     }
     final_style_record
   }
@@ -614,11 +623,11 @@ impl<'i> StyleParser<'i> {
               property.clone(),
             )
           })
-          .collect::<HashMap<_, _>>();
+          .collect::<Vec<(_, _)>>();
         // (selector.to_owned(), parse_style_properties(&properties))
         (selector.to_owned(), properties)
       })
-      .collect::<HashMap<_, _>>();
+      .collect::<Vec<(_, _)>>();
 
     for (selector, style_value) in final_all_style.iter_mut() {
       let elements = self.document.select(selector);
@@ -635,7 +644,16 @@ impl<'i> StyleParser<'i> {
           style_value
             .iter_mut()
             .reduce(|a, b| {
-              a.extend(b.drain());
+              for (key, value) in b.iter() {
+                let has_property_index = a
+                  .iter()
+                  .position(|property| property.0 == key.to_owned());
+                if let Some(index) = has_property_index {
+                  a[index] = (key.to_owned(), value.clone());
+                } else {
+                  a.push((key.to_owned(), value.clone()));
+                }
+              }
               a
             })
             .unwrap()

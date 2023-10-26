@@ -34,7 +34,7 @@ use crate::{
 };
 
 #[derive(Eq, Clone, Copy, Debug)]
-pub struct SpanKey(Span);
+pub struct SpanKey(pub Span);
 
 impl PartialEq for SpanKey {
   fn eq(&self, other: &Self) -> bool {
@@ -307,13 +307,13 @@ impl VisitMut for ModuleMutVisitor {
 
 pub struct JSXMutVisitor<'i> {
   pub jsx_record: Rc<RefCell<JSXRecord>>,
-  pub style_record: Rc<RefCell<HashMap<SpanKey, HashMap<String, Property<'i>>>>>,
+  pub style_record: Rc<RefCell<HashMap<SpanKey, Vec<(String, Property<'i>)>>>>,
 }
 
 impl<'i> JSXMutVisitor<'i> {
   pub fn new(
     jsx_record: Rc<RefCell<JSXRecord>>,
-    style_record: Rc<RefCell<HashMap<SpanKey, HashMap<String, Property<'i>>>>>,
+    style_record: Rc<RefCell<HashMap<SpanKey, Vec<(String, Property<'i>)>>>>,
   ) -> Self {
     JSXMutVisitor {
       jsx_record,
@@ -356,7 +356,7 @@ impl<'i> VisitMut for JSXMutVisitor<'i> {
         }
         false
       });
-      for attr in attrs {
+      for attr in attrs.iter_mut() {
         if let JSXAttrOrSpread::JSXAttr(attr) = attr {
           if let JSXAttrName::Ident(ident) = &attr.name {
             if ident.sym.to_string() == "style" {
@@ -589,20 +589,7 @@ impl<'i> VisitMut for JSXMutVisitor<'i> {
       if !has_dynamic_class && !has_dynamic_style {
         if !has_style {
           if let Some(style_declaration) = style_record.get(&element.span) {
-            let mut properties = Vec::new();
-            for declaration in style_declaration.iter() {
-              properties.push(declaration.clone());
-            }
-            let properties = properties
-              .iter()
-              .map(|property| (property.0.to_string(), property.1.clone()))
-              .collect::<HashMap<_, _>>();
-            let parsed_properties = parse_style_properties(
-              &properties
-                .iter()
-                .map(|(key, value)| (key.to_owned(), value.clone()))
-                .collect::<Vec<_>>(),
-            );
+            let parsed_properties = parse_style_properties(&style_declaration);
             let properties_entries: BTreeMap<_, _> = parsed_properties.iter().collect();
             if has_empty_style {
               for attr in &mut n.opening.attrs {

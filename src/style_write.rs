@@ -12,7 +12,7 @@ use crate::{
 pub struct StyleWrite<'i> {
   pub module: Rc<RefCell<Program>>,
   pub jsx_record: Rc<RefCell<JSXRecord>>,
-  pub style_record: Rc<RefCell<HashMap<SpanKey, HashMap<String, Property<'i>>>>>,
+  pub style_record: Rc<RefCell<HashMap<SpanKey, Vec<(String, Property<'i>)>>>>,
   pub all_style: Rc<RefCell<HashMap<String, StyleValue>>>,
 }
 
@@ -20,7 +20,7 @@ impl<'i> StyleWrite<'i> {
   pub fn new(
     module: Rc<RefCell<Program>>,
     jsx_record: Rc<RefCell<JSXRecord>>,
-    style_record: Rc<RefCell<HashMap<SpanKey, HashMap<String, Property<'i>>>>>,
+    style_record: Rc<RefCell<HashMap<SpanKey, Vec<(String, Property<'i>)>>>>,
     all_style: Rc<RefCell<HashMap<String, StyleValue>>>,
   ) -> Self {
     StyleWrite {

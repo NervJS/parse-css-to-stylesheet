@@ -18,7 +18,7 @@
 	color:rgb(255,255,255);
 	font-size:12px;
 	line-height:1;
-	flex-shrink:0px;
+	flex-shrink:0;
 	display:inline-flex;
 	margin-top: -12px;
 	margin-right: 10;
@@ -31,7 +31,7 @@
 	display:flex;
 	align-items:center;
 	justify-content:center;
-	flex-shrink:0px;
+	flex-shrink:0;
 	gap:4px;
 	width:176px !important;
 	height:24px;
@@ -57,7 +57,7 @@
 	color:rgb(0,0,0);
 	font-size:16px;
 	line-height:1;
-	flex-shrink:0px;
+	flex-shrink:0;
 	width:116px;
 	display:inline-flex;
 }
@@ -65,7 +65,7 @@
 	color:rgb(153,153,153);
 	font-size:12px;
 	line-height:1;
-	flex-shrink:0px;
+	flex-shrink:0;
 	display:inline-flex;
 }
 .cnt_col {
@@ -86,7 +86,7 @@
 	font-size:11px;
 	line-height:1.36;
 	text-align:center;
-	flex-shrink:0px;
+	flex-shrink:0;
 	overflow:hidden;
 }
 .txt1 {
@@ -94,7 +94,7 @@
 	font-size:11px;
 	line-height:1.36;
 	text-align:center;
-	flex-shrink:0px;
+	flex-shrink:0;
 }
 .cnt_row2 {
 	border-width:1px;
@@ -104,7 +104,7 @@
 	display:flex;
 	align-items:flex-start;
 	justify-content:space-between;
-	flex-shrink:0px;
+	flex-shrink:0;
 	gap:-94px;
 	position:absolute;
 	top:3px;
@@ -130,7 +130,7 @@
 	color:rgb(153,153,153);
 	font-size:12px;
 	line-height:1.83;
-	flex-shrink:0px;
+	flex-shrink:0;
 	width:290px;
 	display:inline-flex;
 }
@@ -157,7 +157,7 @@
 	flex-direction:column;
 	align-items:flex-start;
 	justify-content:center;
-	flex-shrink:0px;
+	flex-shrink:0;
 	gap:8px;
 	padding-left:16px;
 	padding-right:16px;

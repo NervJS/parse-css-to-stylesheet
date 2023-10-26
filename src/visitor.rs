@@ -26,7 +26,8 @@ use swc_ecma_visit::{
 
 use crate::{
   scraper::Element,
-  style_parser::{parse_style_properties, StyleValue, StyleValueType, ToExpr},
+  style_parser::{parse_style_properties, StyleValue},
+  style_transform::{style_value_type::StyleValueType, traits::ToExpr},
   utils::{
     create_qualname, is_starts_with_uppercase, recursion_jsx_member, to_camel_case, to_kebab_case,
   },

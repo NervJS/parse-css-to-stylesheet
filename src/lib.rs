@@ -13,6 +13,7 @@ extern crate napi_derive;
 mod document;
 mod scraper;
 mod style_parser;
+mod style_transform;
 mod style_write;
 mod utils;
 mod visitor;

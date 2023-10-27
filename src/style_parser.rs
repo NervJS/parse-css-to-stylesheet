@@ -113,13 +113,8 @@ pub fn parse_style_properties(properties: &Vec<(String, Property<'_>)>) -> Style
   for (id, value) in properties.iter() {
     match id.as_str() {
       "margin" => {
-        let margin = MarginPadding::from(value);
-        if margin.is_zero() {
-          final_properties.remove("margin");
-        } else {
-          final_properties.insert("margin".to_string(), StyleValueType::MarginPadding(margin));
-        }
-      }
+        final_properties.insert("margin".to_string(), StyleValueType::MarginPadding(MarginPadding::from(value)));
+      },
       "marginLeft" => {
         let margin = final_properties
           .entry("margin".to_string())
@@ -173,15 +168,7 @@ pub fn parse_style_properties(properties: &Vec<(String, Property<'_>)>) -> Style
         }
       }
       "padding" => {
-        let padding = MarginPadding::from(value);
-        if padding.is_zero() {
-          final_properties.remove("padding");
-        } else {
-          final_properties.insert(
-            "padding".to_string(),
-            StyleValueType::MarginPadding(padding),
-          );
-        }
+        final_properties.insert("padding".to_string(), StyleValueType::MarginPadding(MarginPadding::from(value)));
       }
       "paddingLeft" => {
         let padding = final_properties

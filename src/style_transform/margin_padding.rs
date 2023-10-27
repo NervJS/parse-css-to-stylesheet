@@ -22,10 +22,6 @@ impl MarginPadding {
     }
   }
 
-  pub fn is_zero(&self) -> bool {
-    self.top == "0" && self.right == "0" && self.bottom == "0" && self.left == "0"
-  }
-
   pub fn set_top(&mut self, top: &str) {
     self.top = top.to_string();
   }

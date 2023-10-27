@@ -322,6 +322,16 @@ pub fn parse_style_properties(properties: &Vec<(String, Property<'_>)>) -> Style
         if images.len() > 0 {
           background.image = BackgroundImage(images);
           final_properties.insert(id.to_string(), StyleValueType::Background(background));
+        } else if background.color.0 != "" {
+          final_properties.insert(
+            id.to_string(),
+            StyleValueType::Background(Background {
+              color: background.color,
+              image: BackgroundImage(vec![]),
+              position: BackgroundImagePosition(vec![]),
+              size: BackgroundImageSize(vec![]),
+            }),
+          );
         }
         if linear_gradient.len() > 0 {
           final_properties.insert(

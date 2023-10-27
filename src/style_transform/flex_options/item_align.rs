@@ -38,9 +38,9 @@ impl From<&Property<'_>> for ItemAlign {
       Property::AlignItems(value, _) => match value {
         LNAlignItems::Stretch => ItemAlign::Stretch,
         LNAlignItems::SelfPosition { value, .. } => match value {
-          SelfPosition::Start => ItemAlign::Start,
+          SelfPosition::Start | SelfPosition::FlexStart => ItemAlign::Start,
           SelfPosition::Center => ItemAlign::Center,
-          SelfPosition::End => ItemAlign::End,
+          SelfPosition::End | SelfPosition::FlexEnd => ItemAlign::End,
           _ => ItemAlign::Ignore,
         },
         LNAlignItems::BaselinePosition(value) => match value {
@@ -52,9 +52,9 @@ impl From<&Property<'_>> for ItemAlign {
       Property::AlignSelf(value, _) => match value {
         LNAlignSelf::Auto => ItemAlign::Auto,
         LNAlignSelf::SelfPosition { value, .. } => match value {
-          SelfPosition::Start => ItemAlign::Start,
+          SelfPosition::Start | SelfPosition::FlexStart => ItemAlign::Start,
           SelfPosition::Center => ItemAlign::Center,
-          SelfPosition::End => ItemAlign::End,
+          SelfPosition::End | SelfPosition::FlexEnd => ItemAlign::End,
           _ => ItemAlign::Ignore,
         },
         LNAlignSelf::BaselinePosition(value) => match value {

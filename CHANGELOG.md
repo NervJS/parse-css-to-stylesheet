@@ -1,3 +1,21 @@
+## [0.0.19](https://github.com/NervJS/parse-css-to-stylesheet/compare/v0.0.17...v0.0.19) (2023-10-27)
+
+
+### Bug Fixes
+
+* 修复 align-items 丢失问题 ([cc4618e](https://github.com/NervJS/parse-css-to-stylesheet/commit/cc4618e7c3d6fcb439f966329d834735a3214e99))
+* 修复动态样式，类名静态时，调用 calcDynamicStyle 函数第二参数为 null ([d5f6091](https://github.com/NervJS/parse-css-to-stylesheet/commit/d5f6091bd7e7916ffc74099133b02c0b7b4d4c3b))
+* 修复对 linearGradient 的角度及 color-stop 处理 ([22f648a](https://github.com/NervJS/parse-css-to-stylesheet/commit/22f648ac9e3a7578b3a7462f17819b5da77cc6d3))
+* 修复样式单独设置 background 的 color 值时丢失 background color 的问题 ([6103a4c](https://github.com/NervJS/parse-css-to-stylesheet/commit/6103a4c2c04161d69ecb107306384b529578c535))
+* margin/padding 为 0 被忽略 ([b9eeec0](https://github.com/NervJS/parse-css-to-stylesheet/commit/b9eeec0271e514f4480c0f6197ca8c551c72dd23))
+
+
+### Features
+
+* 将样式转换处理拆分出去 ([6de1b02](https://github.com/NervJS/parse-css-to-stylesheet/commit/6de1b029b06a45e2dd5298e4ca883425b5d438c6))
+
+
+
 ## [0.0.18](https://github.com/NervJS/parse-css-to-stylesheet/compare/v0.0.17...v0.0.18) (2023-10-26)
 
 

@@ -341,14 +341,20 @@ impl<'i> VisitMut for JSXMutVisitor<'i> {
           if let JSXAttrName::Ident(ident) = &attr.name {
             if ident.sym.to_string() == "className" {
               if let Some(value) = &attr.value {
-                if let JSXAttrValue::JSXExprContainer(expr_container) = value {
-                  match &expr_container.expr {
-                    JSXExpr::JSXEmptyExpr(_) => {}
-                    JSXExpr::Expr(expr) => {
-                      class_attr_value = Some((**expr).clone());
-                    }
-                  };
-                  return true;
+                match value {
+                  JSXAttrValue::JSXExprContainer(expr_container) => {
+                    match &expr_container.expr {
+                      JSXExpr::JSXEmptyExpr(_) => {}
+                      JSXExpr::Expr(expr) => {
+                        class_attr_value = Some((**expr).clone());
+                      }
+                    };
+                    return true;
+                  }
+                  JSXAttrValue::Lit(lit) => {
+                    class_attr_value = Some(lit.clone().into());
+                  },
+                  _ => {}
                 }
               }
             }

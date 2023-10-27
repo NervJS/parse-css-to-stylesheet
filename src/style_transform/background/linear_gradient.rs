@@ -4,7 +4,7 @@ use swc_ecma_ast::{
   MemberProp, ObjectLit, Prop, PropName, PropOrSpread, Str,
 };
 
-use crate::style_transform::traits::ToExpr;
+use crate::style_transform::{traits::ToExpr, utils::StringNumber};
 
 #[derive(Debug, Clone)]
 pub enum LinearGradientDirection {
@@ -20,7 +20,7 @@ pub enum LinearGradientDirection {
 
 #[derive(Debug, Clone)]
 pub struct LinearGradientItem {
-  pub angle: Option<String>,
+  pub angle: Option<StringNumber>,
   pub color_stops: Vec<(String, String)>,
   pub derection: Option<LinearGradientDirection>,
   pub repeating: bool,
@@ -32,7 +32,7 @@ impl ToExpr for LinearGradientItem {
     if let Some(angle) = &self.angle {
       props.push(PropOrSpread::Prop(Box::new(Prop::KeyValue(KeyValueProp {
         key: PropName::Ident(Ident::new("angle".into(), DUMMY_SP)),
-        value: Expr::Lit(Lit::Str(Str::from(angle.to_string()))).into(),
+        value: angle.to_expr().into(),
       }))));
     }
     props.push(PropOrSpread::Prop(Box::new(Prop::KeyValue(KeyValueProp {

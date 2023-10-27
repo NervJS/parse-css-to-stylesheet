@@ -113,8 +113,11 @@ pub fn parse_style_properties(properties: &Vec<(String, Property<'_>)>) -> Style
   for (id, value) in properties.iter() {
     match id.as_str() {
       "margin" => {
-        final_properties.insert("margin".to_string(), StyleValueType::MarginPadding(MarginPadding::from(value)));
-      },
+        final_properties.insert(
+          "margin".to_string(),
+          StyleValueType::MarginPadding(MarginPadding::from(value)),
+        );
+      }
       "marginLeft" => {
         let margin = final_properties
           .entry("margin".to_string())
@@ -168,7 +171,10 @@ pub fn parse_style_properties(properties: &Vec<(String, Property<'_>)>) -> Style
         }
       }
       "padding" => {
-        final_properties.insert("padding".to_string(), StyleValueType::MarginPadding(MarginPadding::from(value)));
+        final_properties.insert(
+          "padding".to_string(),
+          StyleValueType::MarginPadding(MarginPadding::from(value)),
+        );
       }
       "paddingLeft" => {
         let padding = final_properties
@@ -642,9 +648,7 @@ impl<'i> StyleParser<'i> {
             .iter_mut()
             .reduce(|a, b| {
               for (key, value) in b.iter() {
-                let has_property_index = a
-                  .iter()
-                  .position(|property| property.0 == key.to_owned());
+                let has_property_index = a.iter().position(|property| property.0 == key.to_owned());
                 if let Some(index) = has_property_index {
                   a[index] = (key.to_owned(), value.clone());
                 } else {

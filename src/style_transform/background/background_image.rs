@@ -6,6 +6,7 @@ use lightningcss::{
   stylesheet::PrinterOptions,
   traits::ToCss,
   values::{
+    angle::Angle,
     gradient::{Gradient, GradientItem, LineDirection},
     image::Image,
     length::LengthValue,
@@ -19,7 +20,7 @@ use swc_ecma_ast::{
   ArrayLit, Expr, Ident, KeyValueProp, Lit, ObjectLit, Prop, PropName, PropOrSpread, Str,
 };
 
-use crate::style_transform::traits::ToExpr;
+use crate::style_transform::{traits::ToExpr, utils::StringNumber};
 
 use super::{
   background_repeat::ImageRepeatItem,
@@ -41,17 +42,24 @@ pub fn parse_background_image_item(
         for item in &gradient.items {
           match item {
             GradientItem::ColorStop(color_stop) => {
+              let color_stop_position = color_stop
+                .position
+                .clone()
+                .unwrap_or(DimensionPercentage::Dimension(LengthValue::Px(0.0)));
               color_stops.push((
                 color_stop
                   .color
                   .to_css_string(PrinterOptions::default())
                   .unwrap(),
-                color_stop
-                  .position
-                  .clone()
-                  .unwrap_or(DimensionPercentage::Dimension(LengthValue::Px(0.0)))
-                  .to_css_string(PrinterOptions::default())
-                  .unwrap(),
+                match &color_stop_position {
+                  DimensionPercentage::Dimension(length) => {
+                    length.to_css_string(PrinterOptions::default()).unwrap()
+                  }
+                  DimensionPercentage::Percentage(percentage) => percentage.0.to_string(),
+                  _ => color_stop_position
+                    .to_css_string(PrinterOptions::default())
+                    .unwrap(),
+                },
               ));
             }
             _ => {}
@@ -66,15 +74,23 @@ pub fn parse_background_image_item(
         };
         let direction = &gradient.direction;
         match direction {
-          LineDirection::Angle(angle) => Some(BackgroundImageItem {
-            image: BackgroundImageKind::LinearGradient(LinearGradientItem {
-              angle: Some(angle.to_css_string(PrinterOptions::default()).unwrap()),
-              color_stops,
-              derection: None,
-              repeating,
-            }),
-            repeat: None,
-          }),
+          LineDirection::Angle(angle) => {
+            let angle = match angle {
+              Angle::Deg(deg) => Some(StringNumber::Number(*deg)),
+              Angle::Rad(rad) => Some(StringNumber::Number(rad.to_degrees())),
+              Angle::Turn(turn) => Some(StringNumber::Number(turn * 360.0)),
+              Angle::Grad(grad) => Some(StringNumber::Number(grad * 0.9)),
+            };
+            Some(BackgroundImageItem {
+              image: BackgroundImageKind::LinearGradient(LinearGradientItem {
+                angle,
+                color_stops,
+                derection: None,
+                repeating,
+              }),
+              repeat: None,
+            })
+          }
           LineDirection::Horizontal(horizontal) => Some(BackgroundImageItem {
             image: BackgroundImageKind::LinearGradient(LinearGradientItem {
               angle: None,

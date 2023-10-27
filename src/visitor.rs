@@ -353,7 +353,7 @@ impl<'i> VisitMut for JSXMutVisitor<'i> {
                   }
                   JSXAttrValue::Lit(lit) => {
                     class_attr_value = Some(lit.clone().into());
-                  },
+                  }
                   _ => {}
                 }
               }

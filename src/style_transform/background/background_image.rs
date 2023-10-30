@@ -233,12 +233,10 @@ impl From<(&Property<'_>, Option<&Property<'_>>)> for BackgroundImage {
         background_image_res = parse_background_image(
           value,
           background_image_repeat
-            .map(|item| match item {
+            .and_then(|item| match item {
               Property::BackgroundRepeat(value) => Some(value),
               _ => None,
             })
-            .or_else(|| None)
-            .unwrap(),
         );
       }
       _ => {}

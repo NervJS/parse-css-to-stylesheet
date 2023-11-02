@@ -1,9 +1,10 @@
 pub mod background;
-pub mod border_radius;
 pub mod flex_options;
 pub mod flex_size;
+pub mod border;
 mod macros;
 pub mod margin_padding;
+pub mod constraint_size;
 pub mod style_value_type;
 pub mod text_decoration;
 pub mod traits;

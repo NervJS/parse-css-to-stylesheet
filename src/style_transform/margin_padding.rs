@@ -1,4 +1,4 @@
-use lightningcss::{properties::Property, stylesheet::PrinterOptions, traits::ToCss};
+use lightningcss::{properties::Property, stylesheet::PrinterOptions, traits::ToCss };
 use swc_common::DUMMY_SP;
 use swc_ecma_ast::{Expr, Ident, KeyValueProp, Lit, ObjectLit, Prop, PropName, PropOrSpread, Str};
 
@@ -18,7 +18,7 @@ impl MarginPadding {
       top: "0".to_string(),
       right: "0".to_string(),
       bottom: "0".to_string(),
-      left: "0".to_string(),
+      left: "0".to_string()
     }
   }
 
@@ -82,7 +82,7 @@ impl From<&Property<'_>> for MarginPadding {
             .top
             .to_css_string(PrinterOptions::default())
             .unwrap()
-            .as_str(),
+            .as_str()
         );
         margin_padding.set_right(
           value

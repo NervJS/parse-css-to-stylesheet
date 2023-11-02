@@ -17,6 +17,7 @@ mod style_transform;
 mod style_write;
 mod utils;
 mod visitor;
+mod constants;
 
 #[napi]
 pub fn parse(component: String, styles: Vec<String>) -> String {

@@ -2,10 +2,11 @@ use swc_ecma_ast::Expr;
 
 use super::{
   background::{background::Background, linear_gradient::LinearGradient},
-  border_radius::BorderRadius,
   flex_options::{flex_options::FlexOptions, item_align::ItemAlign},
   flex_size::{flex_basis::FlexBasis, flex_grow::FlexGrow, flex_shrink::FlexShrink},
+  border::{border_color::BorderColor, border_width::BorderWidth, border_radius::BorderRadius, border_style::BorderStyle},
   margin_padding::MarginPadding,
+  constraint_size::ConstraintSize,
   text_decoration::TextDecoration,
   traits::ToExpr,
   transform::{Matrices, Rotates, Scales, Translates},
@@ -14,6 +15,7 @@ use super::{
 #[derive(Debug, Clone)]
 pub enum StyleValueType {
   Normal(String),
+  // Number(f32),
   TextDecoration(TextDecoration),
   BorderRadius(BorderRadius),
   MarginPadding(MarginPadding),
@@ -28,12 +30,17 @@ pub enum StyleValueType {
   Rotates(Rotates),
   Scales(Scales),
   Matrices(Matrices),
+  ConstraintSize(ConstraintSize),
+  BorderColor(BorderColor),
+  BorderWidth(BorderWidth),
+  BorderStyle(BorderStyle),
 }
 
 impl ToExpr for StyleValueType {
   fn to_expr(&self) -> Expr {
     match self {
       StyleValueType::Normal(value) => value.to_string().into(),
+      // StyleValueType::Number(num) => (*num as f64).into(),
       StyleValueType::TextDecoration(text_decoration) => text_decoration.to_expr().into(),
       StyleValueType::BorderRadius(border_radius) => border_radius.to_expr().into(),
       StyleValueType::MarginPadding(margin_padding) => margin_padding.to_expr().into(),
@@ -48,6 +55,10 @@ impl ToExpr for StyleValueType {
       StyleValueType::Rotates(rotates) => rotates.to_expr().into(),
       StyleValueType::Scales(scales) => scales.to_expr().into(),
       StyleValueType::Matrices(matrices) => matrices.to_expr().into(),
+      StyleValueType::ConstraintSize(constraint_size) => constraint_size.to_expr().into(),
+      StyleValueType::BorderColor(border_color) => border_color.to_expr().into(),
+      StyleValueType::BorderWidth(border_width) => border_width.to_expr().into(),
+      StyleValueType::BorderStyle(border_style) => border_style.to_expr().into()
     }
   }
 }

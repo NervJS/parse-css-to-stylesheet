@@ -1,1 +1,1 @@
-pub const CONVERT_STYLE_PREFIX: &str = "_";
+pub const CONVERT_STYLE_PREFIX: &'static str = "_";

@@ -57,7 +57,10 @@ pub fn to_kebab_case(s: &str) -> String {
 }
 
 pub fn prefix_style_key(s: &str) -> String {
-  CONVERT_STYLE_PREFIX.to_string() + s
+  let mut result = String::with_capacity(CONVERT_STYLE_PREFIX.len() + s.len());
+  result.push_str(CONVERT_STYLE_PREFIX);
+  result.push_str(s);
+  result
 }
 
 // pub fn parse_px_string(input: &str) -> Option<CSSNumber> {

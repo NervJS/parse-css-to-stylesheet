@@ -2,48 +2,40 @@ use lightningcss::{properties::Property, stylesheet::PrinterOptions, traits::ToC
 use swc_common::DUMMY_SP;
 use swc_ecma_ast::{Expr, Ident, KeyValueProp, Lit, ObjectLit, Prop, PropName, PropOrSpread, Str};
 
-use super::{traits::ToExpr, utils::StringNumber };
+use super::traits::ToExpr;
 
 #[derive(Debug, Clone)]
 pub struct MarginPadding {
-  pub top: StringNumber,
-  pub right: StringNumber,
-  pub bottom: StringNumber,
-  pub left: StringNumber,
+  pub top: String,
+  pub right: String,
+  pub bottom: String,
+  pub left: String,
 }
 
 impl MarginPadding {
   pub fn new() -> Self {
     MarginPadding {
-      top: StringNumber::String("0".to_string()),
-      right: StringNumber::String("0".to_string()),
-      bottom: StringNumber::String("0".to_string()),
-      left: StringNumber::String("0".to_string()),
+      top: "0".to_string(),
+      right: "0".to_string(),
+      bottom: "0".to_string(),
+      left: "0".to_string()
     }
   }
 
   pub fn set_top(&mut self, top: &str) {
-    self.top = StringNumber::String(top.to_string());
-    // match parse_px_string(top) {
-    //     Some(num) => {
-    //         self.top = StringNumber::Number(num);
-    //     },
-    //     None => {
-    //       self.top = StringNumber::String(top.to_string());
-    //     }
-    // }
+    self.top = top.to_string();
   }
 
   pub fn set_right(&mut self, right: &str) {
-    self.right = StringNumber::String(right.to_string());
+    self.right = right.to_string();
   }
 
   pub fn set_bottom(&mut self, bottom: &str) {
-    self.bottom = StringNumber::String(bottom.to_string());
+    self.bottom = bottom.to_string();
   }
 
   pub fn set_left(&mut self, left: &str) {
-    self.left = StringNumber::String(left.to_string());
+    self.left = left.to_string();
   }
 }
 
@@ -60,51 +52,19 @@ impl ToExpr for MarginPadding {
       props: vec![
         PropOrSpread::Prop(Box::new(Prop::KeyValue(KeyValueProp {
           key: PropName::Ident(Ident::new("top".into(), DUMMY_SP)),
-          value: Expr::Lit(
-            match &self.top {
-              StringNumber::String(str) => Lit::Str(Str::from(str.to_string())),
-              StringNumber::Number(num) => {
-                let number: swc_ecma_ast::Number = (*num as f64).into();
-                Lit::Num(number)
-              },
-            }
-          ).into(),
+          value: Expr::Lit(Lit::Str(Str::from(self.top.to_string()))).into(),
         }))),
         PropOrSpread::Prop(Box::new(Prop::KeyValue(KeyValueProp {
           key: PropName::Ident(Ident::new("right".into(), DUMMY_SP)),
-          value: Expr::Lit(
-            match &self.right {
-              StringNumber::String(str) => Lit::Str(Str::from(str.to_string())),
-              StringNumber::Number(num) => {
-                let number: swc_ecma_ast::Number = (*num as f64).into();
-                Lit::Num(number)
-              },
-            }
-          ).into(),
+          value: Expr::Lit(Lit::Str(Str::from(self.right.to_string()))).into(),
         }))),
         PropOrSpread::Prop(Box::new(Prop::KeyValue(KeyValueProp {
           key: PropName::Ident(Ident::new("bottom".into(), DUMMY_SP)),
-          value: Expr::Lit(
-            match &self.bottom {
-              StringNumber::String(str) => Lit::Str(Str::from(str.to_string())),
-              StringNumber::Number(num) => {
-                let number: swc_ecma_ast::Number = (*num as f64).into();
-                Lit::Num(number)
-              },
-            }
-          ).into(),
+          value: Expr::Lit(Lit::Str(Str::from(self.bottom.to_string()))).into(),
         }))),
         PropOrSpread::Prop(Box::new(Prop::KeyValue(KeyValueProp {
           key: PropName::Ident(Ident::new("left".into(), DUMMY_SP)),
-          value: Expr::Lit(
-            match &self.left {
-              StringNumber::String(str) => Lit::Str(Str::from(str.to_string())),
-              StringNumber::Number(num) => {
-                let number: swc_ecma_ast::Number = (*num as f64).into();
-                Lit::Num(number)
-              },
-            }
-          ).into(),
+          value: Expr::Lit(Lit::Str(Str::from(self.left.to_string()))).into(),
         }))),
       ]
       .into(),

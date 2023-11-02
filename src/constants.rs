@@ -1,0 +1,1 @@
+pub const CONVERT_STYLE_PREFIX: &str = "_";

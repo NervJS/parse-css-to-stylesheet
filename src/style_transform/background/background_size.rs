@@ -22,12 +22,17 @@ pub fn parse_background_size_item(size_item: &BackgroundSize) -> Option<ImageSiz
         LengthPercentageOrAuto::Auto => Some(ImageSize::Auto),
         _ => None,
       },
-      LengthPercentageOrAuto::LengthPercentage(x) => match height {
-        LengthPercentageOrAuto::LengthPercentage(y) => Some(ImageSize::ImageSizeWH(
-          x.to_css_string(PrinterOptions::default()).unwrap(),
-          y.to_css_string(PrinterOptions::default()).unwrap(),
-        )),
-        _ => None,
+      LengthPercentageOrAuto::LengthPercentage(x) => {
+        let x_str = x.to_css_string(PrinterOptions::default()).unwrap();
+        match height {
+          LengthPercentageOrAuto::LengthPercentage(y) => {
+            let y_str = y.to_css_string(PrinterOptions::default()).unwrap();
+            Some(ImageSize::ImageSizeWH(x_str, Some(y_str)))
+          },
+          LengthPercentageOrAuto::Auto => {
+              Some(ImageSize::ImageSizeWH(x_str, None))
+          }
+        }
       },
     },
   }
@@ -50,7 +55,7 @@ pub enum ImageSize {
   Cover,
   Contain,
   Auto,
-  ImageSizeWH(String, String),
+  ImageSizeWH(String, Option<String>),
 }
 
 #[derive(Debug, Clone)]
@@ -95,21 +100,29 @@ impl ToExpr for BackgroundImageSize {
               }),
             })
             .into(),
-            ImageSize::ImageSizeWH(width, height) => Expr::Object(ObjectLit {
-              span: DUMMY_SP,
-              props: vec![
+            ImageSize::ImageSizeWH(width, height) => {
+              let width_str = width.to_string();
+              let height_str = height.as_ref().map(|h| h.to_string());
+            
+              let mut props = vec![
                 PropOrSpread::Prop(Box::new(Prop::KeyValue(KeyValueProp {
                   key: PropName::Ident(Ident::new("width".into(), DUMMY_SP)),
-                  value: Expr::Lit(Lit::Str(Str::from(width.to_string()))).into(),
-                }))),
-                PropOrSpread::Prop(Box::new(Prop::KeyValue(KeyValueProp {
+                  value: Expr::Lit(Lit::Str(Str::from(width_str))).into(),
+                })))
+              ];
+            
+              if let Some(height_str) = height_str {
+                props.push(PropOrSpread::Prop(Box::new(Prop::KeyValue(KeyValueProp {
                   key: PropName::Ident(Ident::new("height".into(), DUMMY_SP)),
-                  value: Expr::Lit(Lit::Str(Str::from(height.to_string()))).into(),
-                }))),
-              ]
-              .into(),
-            })
-            .into(),
+                  value: Expr::Lit(Lit::Str(Str::from(height_str))).into(),
+                }))))
+              }
+            
+              Expr::Object(ObjectLit {
+                span: DUMMY_SP,
+                props: props.into()
+              }).into()
+            }
           })
         })
         .collect::<Vec<_>>(),

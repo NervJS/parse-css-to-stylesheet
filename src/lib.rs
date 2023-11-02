@@ -17,6 +17,7 @@ mod style_transform;
 mod style_write;
 mod utils;
 mod visitor;
+mod constants;
 
 #[napi]
 pub fn parse(component: String, styles: Vec<String>) -> String {
@@ -33,7 +34,7 @@ pub fn parse(component: String, styles: Vec<String>) -> String {
   let style_data = style_parser.calc();
 
   let program = Rc::new(RefCell::new(document.program.as_ref().unwrap().clone()));
-  let jsx_record = Rc::new(RefCell::new(document.jsx_record.as_ref().unwrap().clone()));
+  let jsx_record: Rc<RefCell<std::collections::HashMap<visitor::SpanKey, scraper::Element>>> = Rc::new(RefCell::new(document.jsx_record.as_ref().unwrap().clone()));
   let mut style_write = StyleWrite::new(
     program.clone(),
     jsx_record.clone(),

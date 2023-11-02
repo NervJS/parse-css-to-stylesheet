@@ -4,6 +4,10 @@ use lightningcss::{
   traits::ToCss,
   values::{length::LengthPercentageOrAuto, percentage::DimensionPercentage},
 };
+use swc_common::DUMMY_SP;
+use swc_ecma_ast::{Expr, ObjectLit, KeyValueProp, PropOrSpread, PropName, Prop, Ident};
+
+use crate::style_transform::traits::ToExpr;
 
 use super::{flex_basis::FlexBasis, flex_grow::FlexGrow, flex_shrink::FlexShrink};
 
@@ -21,7 +25,7 @@ fn parse_flex_size(flex: &Flex) -> FlexSize {
     }
     LengthPercentageOrAuto::LengthPercentage(value) => match value {
       DimensionPercentage::Dimension(value) => {
-        flex_size.basis = Some(FlexBasis::Number(value.to_unit_value().0));
+        flex_size.basis = Some(FlexBasis::String(value.to_css_string(PrinterOptions::default()).unwrap()));
       }
       DimensionPercentage::Percentage(value) => {
         flex_size.basis = Some(FlexBasis::String(
@@ -53,6 +57,39 @@ impl FlexSize {
   }
 }
 
+impl ToExpr for FlexSize {
+  fn to_expr(&self) -> Expr {
+    let mut arr = vec![];
+    
+    if let Some(basis) = &self.basis {
+      arr.push(PropOrSpread::Prop(Box::new(Prop::KeyValue(KeyValueProp {
+        key: PropName::Ident(Ident::new("basis".into(), DUMMY_SP)),
+        value: basis.to_expr().into(),
+      }))))
+    }
+    if let Some(shrink) = &self.shrink {
+      arr.push(PropOrSpread::Prop(Box::new(Prop::KeyValue(KeyValueProp {
+        key: PropName::Ident(Ident::new("shrink".into(), DUMMY_SP)),
+        value: shrink.to_expr().into(),
+      }))))
+    }
+    if let Some(grow) = &self.grow {
+      arr.push(PropOrSpread::Prop(Box::new(Prop::KeyValue(KeyValueProp {
+        key: PropName::Ident(Ident::new("grow".into(), DUMMY_SP)),
+        value: grow.to_expr().into(),
+      }))))
+    }
+
+    Expr::Object(ObjectLit {
+      span: DUMMY_SP,
+      props: arr.into(),
+    })
+
+   
+  }
+}
+
+
 impl From<&Property<'_>> for FlexSize {
   fn from(value: &Property<'_>) -> Self {
     match value {
@@ -61,3 +98,4 @@ impl From<&Property<'_>> for FlexSize {
     }
   }
 }
+

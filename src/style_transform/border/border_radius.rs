@@ -2,7 +2,8 @@ use lightningcss::{properties::Property, stylesheet::PrinterOptions, traits::ToC
 use swc_common::DUMMY_SP;
 use swc_ecma_ast::{Expr, Ident, KeyValueProp, Lit, ObjectLit, Prop, PropName, PropOrSpread, Str};
 
-use super::traits::ToExpr;
+use crate::style_transform::traits::ToExpr;
+
 
 #[derive(Debug, Clone)]
 pub struct BorderRadius {

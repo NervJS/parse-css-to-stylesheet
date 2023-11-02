@@ -79,6 +79,7 @@ export default class Mod extends React.Component {
             src='//img14.360buyimg.com/img/jfs/t1/206378/24/25778/195/64eca527F378f17a2/c1623681708609fd.png'
           ></img>
         </div>
+        <div className='normal'></div>
       </div>
     )
   }

@@ -2,26 +2,13 @@
 
 ## 简介
 
-解析 React 组件与对应的 CSS 文件，为每一个 React 节点计算样式层叠与继承之后的最终样式，应用于 React Native 、鸿蒙等不支持 CSS 写法的场景。
+解析 React 组件与对应的 CSS 文件，为每一个 React 节点计算样式最终样式，应用于 React Native 、鸿蒙等不支持 CSS 写法的场景，目前仅支持类名选择器。
 
-## 实现思路
+## 使用方式
 
-1. 解析 React 语法树，并将其中的 JSX 部分转为类 DOM 结构的树
-2. 解析样式文件
-3. 利用解析后的样式文件中的选择器去反查出第一步 DOM 树中的节点，并收集节点对应的样式块
-4. 根据节点上的选择器特异性及样式顺序、import 等计算节点样式层叠
-5. 遍历节点的所有父节点，计算样式继承
+```typescript
+import { parse } from '@tarojs/parse-css-to-stylesheet'
 
-## 功能特性
+const code = parse(jsxCode, [cssCode1, cssCode2, ...])
 
-### JSX DOM 树构造
-
-- [x] 支持函数组件
-- [x] 支持类组件
-- [x] 支持 JSX 分离的写法
-- [ ] 支持遍历子组件
-
-### 样式计算
-
-- [x] 样式层叠
-- [x] 样式继承
+```

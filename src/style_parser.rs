@@ -506,10 +506,15 @@ pub fn parse_style_properties(properties: &Vec<(String, Property<'_>)>) -> Style
             StyleValueType::Matrices(transform.matrix),
           );
         }
+      },
+      "height" | "width" | "fontSize" | "top" | "left" | "bottom" | "right" => {
+        final_properties.insert(prefix_style_key(property_name), StyleValueType::Normal(
+          value.value_to_css_string(PrinterOptions::default()).unwrap()
+        ));
       }
       _ => {
         final_properties.insert(
-          prefix_style_key(id),
+          id.to_string(),
           StyleValueType::Normal(
             value
               .value_to_css_string(PrinterOptions {

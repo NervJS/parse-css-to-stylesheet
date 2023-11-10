@@ -32,7 +32,7 @@ use crate::{
     margin_padding::MarginPadding,
     style_value_type::StyleValueType,
     text_decoration::TextDecoration,
-    transform::transform::Transform, constraint_size::ConstraintSize, border::{border_width::BorderWidth, border_color::BorderColor, border_radius::BorderRadius, border_style::BorderStyle},
+    transform::transform::Transform, constraint_size::ConstraintSize, border::{border_width::BorderWidth, border_color::BorderColor, border_radius::BorderRadius, border_style::BorderStyle}, text::{line_height::LineHeight, letter_spacing::LetterSpacing, text_align::TextAlign, text_overflow::TextOverflow, font_weight::FontWeight},
   },
   utils::{
     to_camel_case,
@@ -280,6 +280,41 @@ pub fn parse_style_properties(properties: &Vec<(String, Property<'_>)>) -> Style
             _ => {}
           }
         }
+      }
+      "lineHeight" => {
+        let line_height = LineHeight::from(value);
+        final_properties.insert(
+          prefix_style_key("lineHeight"),
+          StyleValueType::LineHeight(line_height),
+        );
+      }
+      "letter-spacing" => {
+        let letter_spacing = LetterSpacing::from(value);
+        final_properties.insert(
+          prefix_style_key("letterSpacing"),
+          StyleValueType::LetterSpacing(letter_spacing),
+        );
+      }
+      "textAlign" => {
+        let text_align = TextAlign::from(value);
+        final_properties.insert(
+          prefix_style_key("textAlign"),
+          StyleValueType::TextAlign(text_align),
+        );
+      }
+      "textOverflow" => {
+        let text_overflow = TextOverflow::from(value);
+        final_properties.insert(
+          prefix_style_key("textOverflow"),
+          StyleValueType::TextOverflow(text_overflow),
+        );
+      }
+      "fontWeight" => {
+        let font_weight = FontWeight::from(value);
+        final_properties.insert(
+          prefix_style_key("fontWeight"),
+          StyleValueType::FontWeight(font_weight),
+        );
       }
       "textDecoration" => {
         text_decoration = Some(value);
@@ -534,7 +569,7 @@ pub fn parse_style_properties(properties: &Vec<(String, Property<'_>)>) -> Style
   if let Some(text_decoration) = text_decoration {
     let text_decoration = TextDecoration::from((text_decoration, color));
     final_properties.insert(
-      prefix_style_key("textDecoration"),
+      prefix_style_key("decoration"),
       StyleValueType::TextDecoration(text_decoration),
     );
   }

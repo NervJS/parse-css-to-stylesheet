@@ -2,6 +2,7 @@ pub mod background;
 pub mod flex_options;
 pub mod flex_size;
 pub mod border;
+pub mod text;
 mod macros;
 pub mod margin_padding;
 pub mod constraint_size;

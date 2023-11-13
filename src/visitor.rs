@@ -30,7 +30,7 @@ use crate::{
   style_transform::{style_value_type::StyleValueType, traits::ToExpr},
   utils::{
     create_qualname, is_starts_with_uppercase, recursion_jsx_member, to_camel_case, to_kebab_case,
-  },
+  }, constants::CONVERT_STYLE_PX_FN,
 };
 
 #[derive(Eq, Clone, Copy, Debug)]
@@ -291,9 +291,9 @@ impl VisitMut for ModuleMutVisitor {
           }),
           ImportSpecifier::Named(ImportNamedSpecifier {
             span: DUMMY_SP,
-            local: Ident::new("convertPx".into(), DUMMY_SP),
+            local: Ident::new(CONVERT_STYLE_PX_FN.into(), DUMMY_SP),
             imported: Some(ModuleExportName::Ident(Ident::new(
-              "convertPx".into(),
+              CONVERT_STYLE_PX_FN.into(),
               DUMMY_SP,
             ))),
             is_type_only: false,

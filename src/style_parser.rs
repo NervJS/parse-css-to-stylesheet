@@ -293,7 +293,7 @@ pub fn parse_style_properties(properties: &Vec<(String, Property<'_>)>) -> Style
           _ => {}
         }
       }
-      "letter-spacing" => {
+      "letterSpacing" => {
         let letter_spacing = LetterSpacing::from(value);
         match letter_spacing {
           LetterSpacing::Px(_) => {

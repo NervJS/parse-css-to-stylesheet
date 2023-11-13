@@ -1,5 +1,7 @@
 use swc_ecma_ast::Expr;
 
+use crate::utils::convert_px_to_units;
+
 use super::{
   background::{background::Background, linear_gradient::LinearGradient},
   flex_options::{flex_options::FlexOptions, item_align::ItemAlign},
@@ -17,6 +19,7 @@ use super::{
 pub enum StyleValueType {
   Normal(String),
   // Number(f32),
+  Px(String),
   TextDecoration(TextDecoration),
   BorderRadius(BorderRadius),
   MarginPadding(MarginPadding),
@@ -47,6 +50,7 @@ impl ToExpr for StyleValueType {
     match self {
       StyleValueType::Normal(value) => value.to_string().into(),
       // StyleValueType::Number(num) => (*num as f64).into(),
+      StyleValueType::Px(value) => convert_px_to_units(value.to_string()).into(),
       StyleValueType::TextDecoration(text_decoration) => text_decoration.to_expr().into(),
       StyleValueType::BorderRadius(border_radius) => border_radius.to_expr().into(),
       StyleValueType::MarginPadding(margin_padding) => margin_padding.to_expr().into(),

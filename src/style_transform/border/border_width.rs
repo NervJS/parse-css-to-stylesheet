@@ -6,7 +6,7 @@ use lightningcss::{
 use swc_common::DUMMY_SP;
 use swc_ecma_ast::{Expr, PropOrSpread, Prop, KeyValueProp, Ident, PropName, ObjectLit};
 
-use crate::style_transform::traits::ToExpr;
+use crate::{style_transform::traits::ToExpr, utils::convert_px_to_units};
 
 
 #[derive(Debug, Clone)]
@@ -58,25 +58,25 @@ impl ToExpr for BorderWidth {
     if let Some(left) = &self.left {
       arr.push(PropOrSpread::Prop(Box::new(Prop::KeyValue(KeyValueProp {
         key: PropName::Ident(Ident::new("left".into(), DUMMY_SP)),
-        value: left.to_string().into(),
+        value: convert_px_to_units(left.to_string()).into(),
       }))))
     }
     if let Some(right) = &self.right {
       arr.push(PropOrSpread::Prop(Box::new(Prop::KeyValue(KeyValueProp {
         key: PropName::Ident(Ident::new("right".into(), DUMMY_SP)),
-        value: right.to_string().into(),
+        value: convert_px_to_units(right.to_string()).into(),
       }))))
     }
     if let Some(bottom) = &self.bottom {
       arr.push(PropOrSpread::Prop(Box::new(Prop::KeyValue(KeyValueProp {
         key: PropName::Ident(Ident::new("bottom".into(), DUMMY_SP)),
-        value: bottom.to_string().into(),
+        value: convert_px_to_units(bottom.to_string()).into(),
       }))))
     }
     if let Some(top) = &self.top {
       arr.push(PropOrSpread::Prop(Box::new(Prop::KeyValue(KeyValueProp {
         key: PropName::Ident(Ident::new("top".into(), DUMMY_SP)),
-        value: top.to_string().into(),
+        value: convert_px_to_units(top.to_string()).into(),
       }))))
     }
 

@@ -849,6 +849,7 @@ dependencies = [
  "napi-build",
  "napi-derive",
  "once_cell",
+ "regex",
  "selectors",
  "smallvec",
  "style",

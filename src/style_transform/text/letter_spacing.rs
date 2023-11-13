@@ -3,13 +3,13 @@ use lightningcss::{
   values
 };
 use swc_common::DUMMY_SP;
-use swc_ecma_ast::{Expr, Lit, Number, Callee, Ident, CallExpr};
+use swc_ecma_ast::{Expr, Lit};
 
-use crate::style_transform::traits::ToExpr;
+use crate::{style_transform::traits::ToExpr, utils::convert_px_to_units};
 
 #[derive(Debug, Clone)]
 pub enum LetterSpacing {
-  Px(f32),
+  Px(String),
   Number(f32)
 }
 
@@ -32,17 +32,7 @@ impl ToExpr for LetterSpacing {
         // })
       },
       LetterSpacing::Px(value) => {
-        letter_spacing = Expr::Call(CallExpr {
-          span: DUMMY_SP,
-          callee: Callee::Expr(Box::new(Expr::Ident(Ident::new(
-            "convertPx".into(),
-            DUMMY_SP,
-          )))),
-          args: vec![
-            Expr::Lit(Lit::Num(Number::from(*value as f64))).into()
-          ],
-          type_args: None,
-        })
+        letter_spacing = convert_px_to_units(value.to_string())
       }
     }
     letter_spacing
@@ -61,7 +51,7 @@ impl From<&Property<'_>> for LetterSpacing {
                 match value {
                   values::length::LengthValue::Px(value) => {
                     // 匹配px单位
-                    letter_spacing = LetterSpacing::Px(*value)
+                    letter_spacing = LetterSpacing::Px(format!("{}px", value))
                   },
                   _ => {}
                 }

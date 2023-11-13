@@ -3,13 +3,13 @@ use lightningcss::{
   values
 };
 use swc_common::DUMMY_SP;
-use swc_ecma_ast::{Expr, Lit, Number, Callee, Ident, CallExpr};
+use swc_ecma_ast::{Expr, Lit};
 
-use crate::style_transform::traits::ToExpr;
+use crate::{style_transform::traits::ToExpr, utils::convert_px_to_units};
 
 #[derive(Debug, Clone)]
 pub enum LineHeight {
-  Px(f32),
+  Px(String),
   Number(f32)
 }
 
@@ -32,17 +32,7 @@ impl ToExpr for LineHeight {
         // })
       },
       LineHeight::Px(value) => {
-        line_height = Expr::Call(CallExpr {
-          span: DUMMY_SP,
-          callee: Callee::Expr(Box::new(Expr::Ident(Ident::new(
-            "convertPx".into(),
-            DUMMY_SP,
-          )))),
-          args: vec![
-            Expr::Lit(Lit::Num(Number::from(*value as f64))).into()
-          ],
-          type_args: None,
-        })
+        line_height = convert_px_to_units(value.to_string())
       }
     }
     line_height
@@ -61,7 +51,7 @@ impl From<&Property<'_>> for LineHeight {
                 match value {
                   values::length::LengthValue::Px(value) => {
                     // 匹配px单位
-                    line_height = LineHeight::Px(*value)
+                    line_height = LineHeight::Px(format!("{}px", value))
                   },
                   _ => {}
                 }

@@ -1,8 +1,10 @@
 use html5ever::{namespace_url, ns, LocalName, QualName};
+use regex::Regex;
+use swc_common::DUMMY_SP;
 // use lightningcss::values::number::CSSNumber;
-use swc_ecma_ast::{JSXMemberExpr, JSXObject};
+use swc_ecma_ast::{JSXMemberExpr, JSXObject, Callee, Expr, CallExpr, Ident, Lit, Number};
 
-use crate::constants::CONVERT_STYLE_PREFIX;
+use crate::constants::{CONVERT_STYLE_PREFIX, CONVERT_STYLE_PX_FN};
 
 pub fn recursion_jsx_member(expr: &JSXMemberExpr) -> String {
   match &expr.obj {
@@ -63,18 +65,30 @@ pub fn prefix_style_key(s: &str) -> String {
   result
 }
 
-// pub fn parse_px_string(input: &str) -> Option<CSSNumber> {
-//   // 检查字符串是否以 "px" 结尾
-//   if input.ends_with("px") {
-//     // 去掉 "px" 单位，然后尝试将其余部分解析为 f32 类型
-//     let numeric_part = &input[..input.len() - 2];
-//     if let Ok(parsed_value) = numeric_part.parse::<f32>() {
-//         return Some(parsed_value);
-//     }
-//   } else if let Ok(parsed_value) = input.parse::<f32>() {
-//       // 如果不以 "px" 结尾但可以解析为 f32 类型，返回纯数字值
-//       return Some(parsed_value);
-//   }
-//   // 如果不以 "px" 结尾或解析失败，返回 None
-//   None
-// }
+pub fn convert_px_to_units(input: String) -> Expr {
+  // 定义匹配 '16px' 的正则表达式
+  let re = Regex::new(r"(\d+)px").unwrap();
+  // 使用正则表达式进行匹配
+  if let Some(captures) = re.captures(&input) {
+      // 提取匹配到的数字部分
+      let input_str = captures.get(1).unwrap().as_str();
+      if let Ok(number) = input_str.parse::<f64>() {
+        let fun_call_expr = Expr::Call(CallExpr {
+          span: DUMMY_SP,
+          callee: Callee::Expr(Box::new(Expr::Ident(Ident::new(
+            CONVERT_STYLE_PX_FN.into(),
+            DUMMY_SP,
+          )))),
+          args: vec![
+            Expr::Lit(Lit::Num(Number::from(number))).into()
+          ],
+          type_args: None,
+        });
+
+        // 替换原始字符串
+        return fun_call_expr;
+      } 
+  }
+  // 如果没有匹配到，则返回原始字符串
+  Expr::Lit(Lit::Str(input.into()))
+}

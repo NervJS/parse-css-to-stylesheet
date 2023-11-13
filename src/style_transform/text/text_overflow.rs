@@ -1,6 +1,6 @@
 use lightningcss::properties::{Property, overflow};
 use swc_common::DUMMY_SP;
-use swc_ecma_ast::{Expr, Ident, MemberExpr, MemberProp};
+use swc_ecma_ast::{Expr, Ident, MemberExpr, MemberProp, ObjectLit, PropOrSpread, Prop, KeyValueProp, PropName};
 
 use crate::style_transform::traits::ToExpr;
 
@@ -13,21 +13,29 @@ pub enum TextOverflow {
 
 impl ToExpr for TextOverflow {
   fn to_expr(&self) -> Expr {
-    Expr::Member(MemberExpr {
+
+    Expr::Object(ObjectLit {
       span: DUMMY_SP,
-      obj: Box::new(Expr::Ident(Ident::new("TextOverflow".into(), DUMMY_SP))),
-      prop: MemberProp::Ident(Ident {
-        span: DUMMY_SP,
-        sym: match self {
-          TextOverflow::Clip => "Clip",
-          TextOverflow::Ellipsis => "Ellipsis",
-          TextOverflow::None => "None",
-        }
-        .into(),
-        optional: false,
-      }),
+      props: vec![
+        PropOrSpread::Prop(Box::new(Prop::KeyValue(KeyValueProp {
+          key: PropName::Ident(Ident::new("overflow".into(), DUMMY_SP)),
+          value: Expr::Member(MemberExpr {
+            span: DUMMY_SP,
+            obj: Box::new(Expr::Ident(Ident::new("TextOverflow".into(), DUMMY_SP))),
+            prop: MemberProp::Ident(Ident {
+              span: DUMMY_SP,
+              sym: match self {
+                TextOverflow::Clip => "Clip",
+                TextOverflow::Ellipsis => "Ellipsis",
+                TextOverflow::None => "None",
+              }
+              .into(),
+              optional: false,
+            }),
+          }).into()
+        }))),
+      ],
     })
-    .into()
   }
 }
 

@@ -21,13 +21,19 @@ use super::{
 };
 
 fn parse_dimension_percentage(value: &DimensionPercentage<LengthValue>) -> Option<StringNumber> {
-  match value {
-    DimensionPercentage::Dimension(value) => Some(StringNumber::Number(value.to_unit_value().0)),
-    _ => value
+  value
       .to_css_string(PrinterOptions::default())
       .ok()
-      .map(StringNumber::String),
-  }
+      .map(StringNumber::String)
+  // match value {
+  //   DimensionPercentage::Dimension(value) => {
+  //     Some(StringNumber::Number(value.to_unit_value().0))
+  //   },
+  //   _ => value
+  //     .to_css_string(PrinterOptions::default())
+  //     .ok()
+  //     .map(StringNumber::String),
+  // }
 }
 
 fn parse_length(value: &Length) -> Option<StringNumber> {

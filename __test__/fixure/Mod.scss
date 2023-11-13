@@ -183,12 +183,12 @@
 	align-self: center;
 
 	flex: 2 1 100px;
-	flex-basis: 200px;
 
-	background-image: linear-gradient(30deg, #f00, #0ff, #00f);
-	background-size: 100%;
+	background-image: url('asdasdas');
+	background-repeat: no-repeat;
+	background-size: 100% 20px;
 	background-color: #0ff00f;
-	background-position: 30% bottom;
+	background-position: 30px bottom;
 
 	transform: translate(20px, 30px) rotate(30deg);
 
@@ -207,7 +207,7 @@
 
 	border-top-style: dashed;
 
-	line-height: 1;
+	line-height: 10px;
 	text-align: center;
 
 	text-decoration: line-through;

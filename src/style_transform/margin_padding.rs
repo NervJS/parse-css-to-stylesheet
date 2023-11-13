@@ -1,6 +1,8 @@
 use lightningcss::{properties::Property, stylesheet::PrinterOptions, traits::ToCss };
 use swc_common::DUMMY_SP;
-use swc_ecma_ast::{Expr, Ident, KeyValueProp, Lit, ObjectLit, Prop, PropName, PropOrSpread, Str};
+use swc_ecma_ast::{Expr, Ident, KeyValueProp, ObjectLit, Prop, PropName, PropOrSpread};
+
+use crate::utils::convert_px_to_units;
 
 use super::traits::ToExpr;
 
@@ -52,19 +54,19 @@ impl ToExpr for MarginPadding {
       props: vec![
         PropOrSpread::Prop(Box::new(Prop::KeyValue(KeyValueProp {
           key: PropName::Ident(Ident::new("top".into(), DUMMY_SP)),
-          value: Expr::Lit(Lit::Str(Str::from(self.top.to_string()))).into(),
+          value: convert_px_to_units(self.top.to_string()).into()
         }))),
         PropOrSpread::Prop(Box::new(Prop::KeyValue(KeyValueProp {
           key: PropName::Ident(Ident::new("right".into(), DUMMY_SP)),
-          value: Expr::Lit(Lit::Str(Str::from(self.right.to_string()))).into(),
+          value: convert_px_to_units(self.right.to_string()).into()
         }))),
         PropOrSpread::Prop(Box::new(Prop::KeyValue(KeyValueProp {
           key: PropName::Ident(Ident::new("bottom".into(), DUMMY_SP)),
-          value: Expr::Lit(Lit::Str(Str::from(self.bottom.to_string()))).into(),
+          value: convert_px_to_units(self.bottom.to_string()).into()
         }))),
         PropOrSpread::Prop(Box::new(Prop::KeyValue(KeyValueProp {
           key: PropName::Ident(Ident::new("left".into(), DUMMY_SP)),
-          value: Expr::Lit(Lit::Str(Str::from(self.left.to_string()))).into(),
+          value: convert_px_to_units(self.left.to_string()).into()
         }))),
       ]
       .into(),

@@ -279,15 +279,26 @@ impl VisitMut for ModuleMutVisitor {
       last_import_index,
       ModuleItem::ModuleDecl(ModuleDecl::Import(ImportDecl {
         span: DUMMY_SP,
-        specifiers: vec![ImportSpecifier::Named(ImportNamedSpecifier {
-          span: DUMMY_SP,
-          local: Ident::new("calcDynamicStyle".into(), DUMMY_SP),
-          imported: Some(ModuleExportName::Ident(Ident::new(
-            "calcDynamicStyle".into(),
-            DUMMY_SP,
-          ))),
-          is_type_only: false,
-        })],
+        specifiers: vec![
+          ImportSpecifier::Named(ImportNamedSpecifier {
+            span: DUMMY_SP,
+            local: Ident::new("calcDynamicStyle".into(), DUMMY_SP),
+            imported: Some(ModuleExportName::Ident(Ident::new(
+              "calcDynamicStyle".into(),
+              DUMMY_SP,
+            ))),
+            is_type_only: false,
+          }),
+          ImportSpecifier::Named(ImportNamedSpecifier {
+            span: DUMMY_SP,
+            local: Ident::new("convertPx".into(), DUMMY_SP),
+            imported: Some(ModuleExportName::Ident(Ident::new(
+              "convertPx".into(),
+              DUMMY_SP,
+            ))),
+            is_type_only: false,
+          })
+        ],
         src: Box::new(Str::from("@tarojs/runtime")),
         type_only: false,
         with: None,

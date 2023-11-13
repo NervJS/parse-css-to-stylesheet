@@ -32,7 +32,7 @@ use crate::{
     margin_padding::MarginPadding,
     style_value_type::StyleValueType,
     text_decoration::TextDecoration,
-    transform::transform::Transform, constraint_size::ConstraintSize, border::{border_width::BorderWidth, border_color::BorderColor, border_radius::BorderRadius, border_style::BorderStyle},
+    transform::transform::Transform, constraint_size::ConstraintSize, border::{border_width::BorderWidth, border_color::BorderColor, border_radius::BorderRadius, border_style::BorderStyle}, text::{line_height::LineHeight, letter_spacing::LetterSpacing, text_align::TextAlign, text_overflow::TextOverflow, font_weight::FontWeight},
   },
   utils::{
     to_camel_case,
@@ -281,6 +281,51 @@ pub fn parse_style_properties(properties: &Vec<(String, Property<'_>)>) -> Style
           }
         }
       }
+      "lineHeight" => {
+        let line_height = LineHeight::from(value);
+        match line_height {
+          LineHeight::Px(_) => {
+            final_properties.insert(
+              prefix_style_key("lineHeight"),
+              StyleValueType::LineHeight(line_height),
+            );
+          }
+          _ => {}
+        }
+      }
+      "letterSpacing" => {
+        let letter_spacing = LetterSpacing::from(value);
+        match letter_spacing {
+          LetterSpacing::Px(_) => {
+            final_properties.insert(
+              prefix_style_key("letterSpacing"),
+              StyleValueType::LetterSpacing(letter_spacing),
+            );
+          }
+          _ => {}
+        }
+      }
+      "textAlign" => {
+        let text_align = TextAlign::from(value);
+        final_properties.insert(
+          prefix_style_key("textAlign"),
+          StyleValueType::TextAlign(text_align),
+        );
+      }
+      "textOverflow" => {
+        let text_overflow = TextOverflow::from(value);
+        final_properties.insert(
+          prefix_style_key("textOverflow"),
+          StyleValueType::TextOverflow(text_overflow),
+        );
+      }
+      "fontWeight" => {
+        let font_weight = FontWeight::from(value);
+        final_properties.insert(
+          prefix_style_key("fontWeight"),
+          StyleValueType::FontWeight(font_weight),
+        );
+      }
       "textDecoration" => {
         text_decoration = Some(value);
       }
@@ -420,18 +465,18 @@ pub fn parse_style_properties(properties: &Vec<(String, Property<'_>)>) -> Style
         let flex_shrink = flex_size.shrink;
         let flex_basis = flex_size.basis;
         if let Some(flex_grow) = flex_grow {
-          final_properties.insert(prefix_style_key("flexGrow"), StyleValueType::FlexGrow(flex_grow));
+          final_properties.insert(prefix_style_key("flexGrow"), StyleValueType::FlexGrow(FlexGrow::from(flex_grow)));
         }
         if let Some(flex_shrink) = flex_shrink {
           final_properties.insert(
             prefix_style_key("flexShrink"),
-            StyleValueType::FlexShrink(flex_shrink),
+            StyleValueType::FlexShrink(FlexShrink::from(flex_shrink)),
           );
         }
         if let Some(flex_basis) = flex_basis {
           final_properties.insert(
             prefix_style_key("flexBasis"),
-            StyleValueType::FlexBasis(flex_basis),
+            StyleValueType::FlexBasis(FlexBasis::from(flex_basis)),
           );
         }
       }
@@ -511,6 +556,9 @@ pub fn parse_style_properties(properties: &Vec<(String, Property<'_>)>) -> Style
         final_properties.insert(prefix_style_key(property_name), StyleValueType::Normal(
           value.value_to_css_string(PrinterOptions::default()).unwrap()
         ));
+        final_properties.insert(prefix_style_key(property_name), StyleValueType::Px(
+          value.value_to_css_string(PrinterOptions::default()).unwrap()
+        ));
       }
       _ => {
         final_properties.insert(
@@ -534,20 +582,34 @@ pub fn parse_style_properties(properties: &Vec<(String, Property<'_>)>) -> Style
   if let Some(text_decoration) = text_decoration {
     let text_decoration = TextDecoration::from((text_decoration, color));
     final_properties.insert(
-      prefix_style_key("textDecoration"),
+      prefix_style_key("decoration"),
       StyleValueType::TextDecoration(text_decoration),
     );
   }
 
-  final_properties.insert(
-    prefix_style_key("constraintSize"),
-    StyleValueType::ConstraintSize(constrant_size),
-  );
+  if constrant_size.max_height.is_some()
+    || constrant_size.max_width.is_some()
+    || constrant_size.min_height.is_some()
+    || constrant_size.min_width.is_some()
+  {
+    final_properties.insert(
+      prefix_style_key("constraintSize"),
+      StyleValueType::ConstraintSize(constrant_size),
+    );
+  }
 
-  final_properties.insert(
-    prefix_style_key("flexOptions"),
-    StyleValueType::FlexOptions(flex_options),
-  );
+  if flex_options.direction.is_some()
+    || flex_options.wrap.is_some()
+    || flex_options.justify_content.is_some()
+    || flex_options.align_items.is_some()
+    || flex_options.align_content.is_some()
+  {
+    final_properties.insert(
+      prefix_style_key("flexOptions"),
+      StyleValueType::FlexOptions(flex_options),
+    );
+  }
+
   final_properties
 }
 

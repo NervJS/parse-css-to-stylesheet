@@ -1,8 +1,8 @@
 use lightningcss::{properties::Property, stylesheet::PrinterOptions, traits::ToCss};
 use swc_common::DUMMY_SP;
-use swc_ecma_ast::{Expr, Ident, KeyValueProp, Lit, ObjectLit, Prop, PropName, PropOrSpread, Str};
+use swc_ecma_ast::{Expr, Ident, KeyValueProp, ObjectLit, Prop, PropName, PropOrSpread};
 
-use crate::style_transform::traits::ToExpr;
+use crate::{style_transform::traits::ToExpr, utils::convert_px_to_units};
 
 
 #[derive(Debug, Clone)]
@@ -59,19 +59,19 @@ impl ToExpr for BorderRadius {
       props: vec![
         PropOrSpread::Prop(Box::new(Prop::KeyValue(KeyValueProp {
           key: PropName::Ident(Ident::new("topLeft".into(), DUMMY_SP)),
-          value: Expr::Lit(Lit::Str(Str::from(self.top_left.to_string()))).into(),
+          value: convert_px_to_units(self.top_left.to_string()).into(),
         }))),
         PropOrSpread::Prop(Box::new(Prop::KeyValue(KeyValueProp {
           key: PropName::Ident(Ident::new("topRight".into(), DUMMY_SP)),
-          value: Expr::Lit(Lit::Str(Str::from(self.top_right.to_string()))).into(),
+          value: convert_px_to_units(self.top_right.to_string()).into(),
         }))),
         PropOrSpread::Prop(Box::new(Prop::KeyValue(KeyValueProp {
           key: PropName::Ident(Ident::new("bottomLeft".into(), DUMMY_SP)),
-          value: Expr::Lit(Lit::Str(Str::from(self.bottom_left.to_string()))).into(),
+          value: convert_px_to_units(self.bottom_left.to_string()).into(),
         }))),
         PropOrSpread::Prop(Box::new(Prop::KeyValue(KeyValueProp {
           key: PropName::Ident(Ident::new("bottomRight".into(), DUMMY_SP)),
-          value: Expr::Lit(Lit::Str(Str::from(self.bottom_right.to_string()))).into(),
+          value: convert_px_to_units(self.bottom_right.to_string()).into(),
         }))),
       ]
       .into(),

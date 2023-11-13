@@ -25,7 +25,7 @@ fn parse_flex_size(flex: &Flex) -> FlexSize {
     }
     LengthPercentageOrAuto::LengthPercentage(value) => match value {
       DimensionPercentage::Dimension(value) => {
-        flex_size.basis = Some(FlexBasis::String(value.to_css_string(PrinterOptions::default()).unwrap()));
+        flex_size.basis = Some(FlexBasis::Px(value.to_css_string(PrinterOptions::default()).unwrap()));
       }
       DimensionPercentage::Percentage(value) => {
         flex_size.basis = Some(FlexBasis::String(

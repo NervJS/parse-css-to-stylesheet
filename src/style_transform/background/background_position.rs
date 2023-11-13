@@ -11,11 +11,11 @@ use lightningcss::{
 use smallvec::SmallVec;
 use swc_common::DUMMY_SP;
 use swc_ecma_ast::{
-  ArrayLit, Expr, Ident, KeyValueProp, Lit, MemberExpr, MemberProp, ObjectLit, Prop, PropName,
-  PropOrSpread, Str,
+  ArrayLit, Expr, Ident, KeyValueProp, MemberExpr, MemberProp, ObjectLit, Prop, PropName,
+  PropOrSpread, 
 };
 
-use crate::style_transform::traits::ToExpr;
+use crate::{style_transform::traits::ToExpr, utils::convert_px_to_units};
 
 pub fn parse_background_position_item(position: &BackgroundPosition) -> ImagePosition {
   match &position.x {
@@ -134,11 +134,11 @@ impl ToExpr for BackgroundImagePosition {
               props: vec![
                 PropOrSpread::Prop(Box::new(Prop::KeyValue(KeyValueProp {
                   key: PropName::Ident(Ident::new("x".into(), DUMMY_SP)),
-                  value: Expr::Lit(Lit::Str(Str::from(x.to_string()))).into(),
+                  value: convert_px_to_units(x.to_string()).into(),
                 }))),
                 PropOrSpread::Prop(Box::new(Prop::KeyValue(KeyValueProp {
                   key: PropName::Ident(Ident::new("y".into(), DUMMY_SP)),
-                  value: Expr::Lit(Lit::Str(Str::from(y.to_string()))).into(),
+                  value: convert_px_to_units(y.to_string()).into(),
                 }))),
               ]
               .into(),

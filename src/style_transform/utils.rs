@@ -1,6 +1,8 @@
 use lightningcss::values::number::CSSNumber;
 use swc_common::DUMMY_SP;
-use swc_ecma_ast::{Expr, Lit, Number, Str};
+use swc_ecma_ast::{Expr, Lit, Number};
+
+use crate::utils::convert_px_to_units;
 
 use super::traits::ToExpr;
 
@@ -13,7 +15,9 @@ pub enum StringNumber {
 impl ToExpr for StringNumber {
   fn to_expr(&self) -> Expr {
     match self {
-      StringNumber::String(value) => Expr::Lit(Lit::Str(Str::from(value.to_string()))).into(),
+      StringNumber::String(value) => {
+        convert_px_to_units(value.to_string()).into()
+      },
       StringNumber::Number(value) => Expr::Lit(Lit::Num(Number {
         span: DUMMY_SP,
         value: *value as f64,

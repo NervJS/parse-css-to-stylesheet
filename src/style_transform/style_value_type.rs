@@ -1,5 +1,7 @@
 use swc_ecma_ast::Expr;
 
+use crate::utils::convert_px_to_units;
+
 use super::{
   background::{background::Background, linear_gradient::LinearGradient},
   flex_options::{flex_options::FlexOptions, item_align::ItemAlign},
@@ -10,12 +12,14 @@ use super::{
   text_decoration::TextDecoration,
   traits::ToExpr,
   transform::{Matrices, Rotates, Scales, Translates},
+  text::{line_height::LineHeight, letter_spacing::LetterSpacing, text_align::TextAlign, text_overflow::TextOverflow, font_weight::FontWeight},
 };
 
 #[derive(Debug, Clone)]
 pub enum StyleValueType {
   Normal(String),
   // Number(f32),
+  Px(String),
   TextDecoration(TextDecoration),
   BorderRadius(BorderRadius),
   MarginPadding(MarginPadding),
@@ -34,6 +38,11 @@ pub enum StyleValueType {
   BorderColor(BorderColor),
   BorderWidth(BorderWidth),
   BorderStyle(BorderStyle),
+  LineHeight(LineHeight),
+  LetterSpacing(LetterSpacing),
+  TextAlign(TextAlign),
+  TextOverflow(TextOverflow),
+  FontWeight(FontWeight)
 }
 
 impl ToExpr for StyleValueType {
@@ -41,6 +50,7 @@ impl ToExpr for StyleValueType {
     match self {
       StyleValueType::Normal(value) => value.to_string().into(),
       // StyleValueType::Number(num) => (*num as f64).into(),
+      StyleValueType::Px(value) => convert_px_to_units(value.to_string()).into(),
       StyleValueType::TextDecoration(text_decoration) => text_decoration.to_expr().into(),
       StyleValueType::BorderRadius(border_radius) => border_radius.to_expr().into(),
       StyleValueType::MarginPadding(margin_padding) => margin_padding.to_expr().into(),
@@ -58,7 +68,12 @@ impl ToExpr for StyleValueType {
       StyleValueType::ConstraintSize(constraint_size) => constraint_size.to_expr().into(),
       StyleValueType::BorderColor(border_color) => border_color.to_expr().into(),
       StyleValueType::BorderWidth(border_width) => border_width.to_expr().into(),
-      StyleValueType::BorderStyle(border_style) => border_style.to_expr().into()
+      StyleValueType::BorderStyle(border_style) => border_style.to_expr().into(),
+      StyleValueType::LineHeight(line_height) => line_height.to_expr().into(),
+      StyleValueType::LetterSpacing(letter_spacing) => letter_spacing.to_expr().into(),
+      StyleValueType::TextAlign(text_align) => text_align.to_expr().into(),
+      StyleValueType::TextOverflow(text_overflow) => text_overflow.to_expr().into(),
+      StyleValueType::FontWeight(font_weight) => font_weight.to_expr().into(),
     }
   }
 }

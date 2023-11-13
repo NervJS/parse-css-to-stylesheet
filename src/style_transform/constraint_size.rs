@@ -2,7 +2,7 @@ use lightningcss::properties::Property;
 use swc_common::DUMMY_SP;
 use swc_ecma_ast::{Expr, ObjectLit, KeyValueProp, PropOrSpread, PropName, Prop, Ident};
 
-use crate::style_transform::traits::ToExpr;
+use crate::{style_transform::traits::ToExpr, utils::convert_px_to_units};
 
 #[derive(Debug, Clone)]
 pub struct ConstraintSize {
@@ -30,25 +30,25 @@ impl ToExpr for ConstraintSize {
     if let Some(min_height) = &self.min_height {
       arr.push(PropOrSpread::Prop(Box::new(Prop::KeyValue(KeyValueProp {
         key: PropName::Ident(Ident::new("minHeight".into(), DUMMY_SP)),
-        value: min_height.to_string().into(),
+        value: convert_px_to_units(min_height.to_string()).into()
       }))))
     }
     if let Some(max_height) = &self.max_height {
       arr.push(PropOrSpread::Prop(Box::new(Prop::KeyValue(KeyValueProp {
         key: PropName::Ident(Ident::new("maxHeight".into(), DUMMY_SP)),
-        value: max_height.to_string().into(),
+      value: convert_px_to_units(max_height.to_string()).into()
       }))))
     }
     if let Some(min_width) = &self.min_width {
       arr.push(PropOrSpread::Prop(Box::new(Prop::KeyValue(KeyValueProp {
         key: PropName::Ident(Ident::new("minWidth".into(), DUMMY_SP)),
-        value: min_width.to_string().into(),
+        value: convert_px_to_units(min_width.to_string()).into()
       }))))
     }
     if let Some(max_width) = &self.max_width {
       arr.push(PropOrSpread::Prop(Box::new(Prop::KeyValue(KeyValueProp {
         key: PropName::Ident(Ident::new("maxWidth".into(), DUMMY_SP)),
-        value: max_width.to_string().into(),
+        value: convert_px_to_units(max_width.to_string()).into()
       }))))
     }
     Expr::Object(ObjectLit {

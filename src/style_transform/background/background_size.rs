@@ -7,11 +7,11 @@ use lightningcss::{
 use smallvec::SmallVec;
 use swc_common::DUMMY_SP;
 use swc_ecma_ast::{
-  ArrayLit, Expr, Ident, KeyValueProp, Lit, MemberExpr, MemberProp, ObjectLit, Prop, PropName,
-  PropOrSpread, Str,
+  ArrayLit, Expr, Ident, KeyValueProp, MemberExpr, MemberProp, ObjectLit, Prop, PropName,
+  PropOrSpread,
 };
 
-use crate::style_transform::traits::ToExpr;
+use crate::{style_transform::traits::ToExpr, utils::convert_px_to_units};
 
 pub fn parse_background_size_item(size_item: &BackgroundSize) -> Option<ImageSize> {
   match size_item {
@@ -107,14 +107,14 @@ impl ToExpr for BackgroundImageSize {
               let mut props = vec![
                 PropOrSpread::Prop(Box::new(Prop::KeyValue(KeyValueProp {
                   key: PropName::Ident(Ident::new("width".into(), DUMMY_SP)),
-                  value: Expr::Lit(Lit::Str(Str::from(width_str))).into(),
+                  value: convert_px_to_units(width_str).into(),
                 })))
               ];
             
               if let Some(height_str) = height_str {
                 props.push(PropOrSpread::Prop(Box::new(Prop::KeyValue(KeyValueProp {
                   key: PropName::Ident(Ident::new("height".into(), DUMMY_SP)),
-                  value: Expr::Lit(Lit::Str(Str::from(height_str))).into(),
+                  value: convert_px_to_units(height_str).into(),
                 }))))
               }
             

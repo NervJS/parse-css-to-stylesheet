@@ -19,7 +19,10 @@ permissions:
       - '**/*.gitignore'
       - .editorconfig
       - docs/**
-  pull_request: null
+  pull_request:
+    branches:
+      - main
+      - master
 jobs:
   build:
     strategy:

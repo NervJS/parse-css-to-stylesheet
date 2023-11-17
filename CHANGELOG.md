@@ -1,3 +1,12 @@
+## [0.0.24](https://github.com/NervJS/parse-css-to-stylesheet/compare/v0.0.23...v0.0.24) (2023-11-17)
+
+
+### Bug Fixes
+
+* 修复px数值单位匹配丢失了负数和小数匹配错误问题 ([8981589](https://github.com/NervJS/parse-css-to-stylesheet/commit/8981589cec79da20c3aed51e55869adec84f1259))
+
+
+
 ## [0.0.23](https://github.com/NervJS/parse-css-to-stylesheet/compare/v0.0.22...v0.0.23) (2023-11-13)
 
 ### Bug Fixes

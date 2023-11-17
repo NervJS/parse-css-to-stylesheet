@@ -67,7 +67,7 @@ pub fn prefix_style_key(s: &str) -> String {
 
 pub fn convert_px_to_units(input: String) -> Expr {
   // 定义匹配 '16px' 的正则表达式
-  let re = Regex::new(r"(\d+)px").unwrap();
+  let re = Regex::new(r"(-?(\d+(\.\d*)?|\.\d+))px").unwrap();
   // 使用正则表达式进行匹配
   if let Some(captures) = re.captures(&input) {
       // 提取匹配到的数字部分

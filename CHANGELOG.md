@@ -1,3 +1,12 @@
+## [0.0.25](https://github.com/NervJS/parse-css-to-stylesheet/compare/v0.0.24...v0.0.25) (2023-11-21)
+
+
+### Features
+
+* 让dynmaic计算放到运行时获取 ([7ba90f8](https://github.com/NervJS/parse-css-to-stylesheet/commit/7ba90f84ef95dd2ac3648e3d5498669a245cb4ab))
+
+
+
 ## [0.0.24](https://github.com/NervJS/parse-css-to-stylesheet/compare/v0.0.23...v0.0.24) (2023-11-17)
 
 

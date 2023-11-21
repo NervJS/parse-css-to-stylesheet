@@ -13,11 +13,11 @@ use lightningcss::{
 };
 use swc_common::{Span, DUMMY_SP};
 use swc_ecma_ast::{
-  BindingIdent, CallExpr, Callee, Decl, Expr, ExprOrSpread, Ident, ImportDecl,
+  CallExpr, Callee, Decl, Expr, ExprOrSpread, Ident, ImportDecl,
   ImportNamedSpecifier, ImportSpecifier, JSXAttr, JSXAttrName, JSXAttrOrSpread, JSXAttrValue,
   JSXElement, JSXElementName, JSXExpr, JSXExprContainer, JSXFragment, KeyValueProp, Lit, Module,
-  ModuleDecl, ModuleExportName, ModuleItem, Null, ObjectLit, Pat, Prop, PropName, PropOrSpread,
-  Stmt, Str, VarDecl, VarDeclKind, VarDeclarator,
+  ModuleDecl, ModuleItem, Null, ObjectLit, Prop, PropName, PropOrSpread,
+  Stmt, Str, ReturnStmt, FnExpr, Function, BlockStmt, FnDecl, IfStmt, VarDecl, BindingIdent, AssignExpr, AssignOp, ExprStmt,
 };
 use swc_ecma_visit::{
   noop_visit_mut_type, noop_visit_type, Visit, VisitAll, VisitAllWith, VisitMut, VisitMutWith,
@@ -30,7 +30,7 @@ use crate::{
   style_transform::{style_value_type::StyleValueType, traits::ToExpr},
   utils::{
     create_qualname, is_starts_with_uppercase, recursion_jsx_member, to_camel_case, to_kebab_case,
-  }, constants::CONVERT_STYLE_PX_FN,
+  }, constants::{CONVERT_STYLE_PX_FN, INNER_STYLE, INNER_STYLE_DATA, CALC_DYMAMIC_STYLE},
 };
 
 #[derive(Eq, Clone, Copy, Debug)]
@@ -59,7 +59,7 @@ impl Visit for VarChecker {
   noop_visit_type!();
 
   fn visit_ident(&mut self, ident: &Ident) {
-    if ident.sym == "__inner_style__" {
+    if ident.sym == INNER_STYLE {
       self.found = true;
     }
   }
@@ -227,42 +227,106 @@ impl VisitMut for ModuleMutVisitor {
   fn visit_mut_module(&mut self, module: &mut Module) {
     let binding = self.all_style.borrow();
     let style_entries: BTreeMap<_, _> = binding.iter().collect();
-    let inner_style_stmt = Stmt::Decl(Decl::Var(Box::new(VarDecl {
+
+    let ident  = Ident::new(INNER_STYLE_DATA.into(), DUMMY_SP);
+
+    let identifier = Stmt::Decl(Decl::Var(Box::new(VarDecl {
       span: DUMMY_SP,
-      kind: VarDeclKind::Var,
+      kind: swc_ecma_ast::VarDeclKind::Let,
       declare: false,
-      decls: vec![VarDeclarator {
+      decls: vec![swc_ecma_ast::VarDeclarator {
         span: DUMMY_SP,
-        name: Pat::Ident(BindingIdent {
-          id: Ident::new("__inner_style__".into(), DUMMY_SP),
+        name: swc_ecma_ast::Pat::Ident(BindingIdent {
+          id: ident.clone(),
           type_ann: None,
         }),
+        init: None,
         definite: false,
-        init: Some(Box::new(Expr::Object(ObjectLit {
-          span: DUMMY_SP,
-          props: style_entries
-            .iter()
-            .map(|(key, value)| {
-              let ordered_value: BTreeMap<_, _> = value.iter().collect();
-              PropOrSpread::Prop(Box::new(Prop::KeyValue(KeyValueProp {
-                key: PropName::Str(Str::from(key.as_str())),
-                value: Box::new(Expr::Object(ObjectLit {
-                  span: DUMMY_SP,
-                  props: ordered_value
-                    .iter()
-                    .map(|(key, value)| {
-                      PropOrSpread::Prop(Box::new(Prop::KeyValue(parse_style_kv(key, value))))
-                    })
-                    .collect::<Vec<PropOrSpread>>()
-                    .into(),
-                })),
-              })))
-            })
-            .collect::<Vec<PropOrSpread>>()
-            .into(),
-        }))),
-      }],
+      }]
     })));
+
+    let inner_style_func = {
+
+      let style_object = Box::new(Expr::Object(ObjectLit {
+        span: DUMMY_SP,
+        props: style_entries
+          .iter()
+          .map(|(key, value)| {
+            let ordered_value: BTreeMap<_, _> = value.iter().collect();
+            PropOrSpread::Prop(Box::new(Prop::KeyValue(KeyValueProp {
+              key: PropName::Str(Str::from(key.as_str())),
+              value: Box::new(Expr::Object(ObjectLit {
+                span: DUMMY_SP,
+                props: ordered_value
+                  .iter()
+                  .map(|(key, value)| {
+                    PropOrSpread::Prop(Box::new(Prop::KeyValue(parse_style_kv(key, value))))
+                  })
+                  .collect::<Vec<PropOrSpread>>()
+                  .into(),
+              })),
+            })))
+          })
+          .collect::<Vec<PropOrSpread>>()
+          .into(),
+      }));
+
+      let body = vec![
+          // if (__inner_style_data__) return __inner_style_data__
+          Stmt::If(IfStmt { 
+            span: DUMMY_SP,
+            test: Box::new(Expr::Ident(ident.clone())),
+            cons: Box::new(
+              Stmt::Return(ReturnStmt { 
+                span: DUMMY_SP,
+                arg: Some(Box::new(Expr::Ident(ident.clone())))
+              })
+            ),
+            alt: None
+          }),
+          // __inner_style_data__ = { ... }
+          Stmt::Expr(
+            ExprStmt {
+              span: DUMMY_SP,
+              expr: Box::new(
+                Expr::Assign(AssignExpr { span: DUMMY_SP, op: AssignOp::Assign, 
+                  left: swc_ecma_ast::PatOrExpr::Expr(Box::new(Expr::Ident(ident.clone()))), 
+                  right: style_object
+                })
+              )
+            }
+          ),
+          // return __inner_style_data__
+          Stmt::Return(ReturnStmt {
+            span: DUMMY_SP,
+            arg: Some(Box::new(Expr::Ident(ident)))
+          })
+        ];
+
+
+      let func = FnExpr {
+        ident: Some(Ident::new(INNER_STYLE.into(), DUMMY_SP)) ,
+        function: Box::new(Function {
+          params: vec![],
+          decorators: vec![],
+          span: DUMMY_SP,
+          body: Some(BlockStmt {
+              span: DUMMY_SP,
+              stmts: body,
+          }),
+          is_generator: false,
+          is_async: false,
+          type_params: None,
+          return_type: None,
+        })
+      };
+
+      Stmt::Decl(Decl::Fn(FnDecl {
+        ident: func.ident.clone().unwrap(),
+        function: func.function,
+        declare: false
+      }))
+    };
 
     // 将 inner_style_stmt 插入到 module 的最后一条 import 语句之后
     let mut last_import_index = 0;
@@ -282,20 +346,22 @@ impl VisitMut for ModuleMutVisitor {
         specifiers: vec![
           ImportSpecifier::Named(ImportNamedSpecifier {
             span: DUMMY_SP,
-            local: Ident::new("calcDynamicStyle".into(), DUMMY_SP),
-            imported: Some(ModuleExportName::Ident(Ident::new(
-              "calcDynamicStyle".into(),
-              DUMMY_SP,
-            ))),
+            local: Ident::new(CALC_DYMAMIC_STYLE.into(), DUMMY_SP),
+            // imported: Some(ModuleExportName::Ident(Ident::new(
+            //   "calcDynamicStyle".into(),
+            //   DUMMY_SP,
+            // ))),
+            imported: None,
             is_type_only: false,
           }),
           ImportSpecifier::Named(ImportNamedSpecifier {
             span: DUMMY_SP,
             local: Ident::new(CONVERT_STYLE_PX_FN.into(), DUMMY_SP),
-            imported: Some(ModuleExportName::Ident(Ident::new(
-              CONVERT_STYLE_PX_FN.into(),
-              DUMMY_SP,
-            ))),
+            // imported: Some(ModuleExportName::Ident(Ident::new(
+            //   CONVERT_STYLE_PX_FN.into(),
+            //   DUMMY_SP,
+            // ))),
+            imported: None,
             is_type_only: false,
           })
         ],
@@ -308,10 +374,13 @@ impl VisitMut for ModuleMutVisitor {
     let mut var_checker = VarChecker { found: false };
     module.visit_with(&mut var_checker);
     if var_checker.found {
-      // 插入代码 const __inner_style__ = calcDynamicStyle(__inner_style__)
+      // 插入代码 let __inner_style_data__;
+      module.body.insert(last_import_index, ModuleItem::Stmt(identifier));
+      last_import_index += 1;
+      // 插入代码 function __inner_style__() { ... }
       module
         .body
-        .insert(last_import_index, ModuleItem::Stmt(inner_style_stmt));
+        .insert(last_import_index, ModuleItem::Stmt(inner_style_func));
     }
   }
 }
@@ -643,14 +712,18 @@ impl<'i> VisitMut for JSXMutVisitor<'i> {
         let fun_call_expr = Expr::Call(CallExpr {
           span: DUMMY_SP,
           callee: Callee::Expr(Box::new(Expr::Ident(Ident::new(
-            "calcDynamicStyle".into(),
+            CALC_DYMAMIC_STYLE.into(),
             DUMMY_SP,
           )))),
           args: vec![
-            ExprOrSpread::from(Box::new(Expr::Ident(Ident {
+            ExprOrSpread::from(Box::new(Expr::Call(CallExpr {
               span: DUMMY_SP,
-              sym: "__inner_style__".into(),
-              optional: false,
+              callee: Callee::Expr(Box::new(Expr::Ident(Ident::new(
+                INNER_STYLE.into(),
+                DUMMY_SP,
+              )))),
+              type_args: None,
+              args: vec![]
             }))),
             match class_attr_value {
               Some(value) => ExprOrSpread::from(Box::new(value)),

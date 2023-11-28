@@ -67,10 +67,11 @@ impl JSXDocument {
       let program = program.fold_with(&mut hygiene());
       let program = program.fold_with(&mut fixer(Some(comments)));
       let mut jsx_record: JSXRecord = HashMap::new();
+      // 收集使用的 Taro Component
       let mut visitor = CollectVisitor::new();
       program.visit_with(&mut visitor);
-      let mut vistor = AstVisitor::new(&mut jsx_record, &visitor.taro_components);
-      program.visit_all_with(&mut vistor);
+      let mut visitor = AstVisitor::new(&mut jsx_record, &visitor.taro_components);
+      program.visit_all_with(&mut visitor);
       self.program = Some(program);
       self.jsx_record = Some(jsx_record);
     });

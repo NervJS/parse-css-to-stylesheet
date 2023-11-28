@@ -17,7 +17,7 @@ use swc_ecma_ast::{
   ImportNamedSpecifier, ImportSpecifier, JSXAttr, JSXAttrName, JSXAttrOrSpread, JSXAttrValue,
   JSXElement, JSXElementName, JSXExpr, JSXExprContainer, JSXFragment, KeyValueProp, Lit, Module,
   ModuleDecl, ModuleItem, Null, ObjectLit, Prop, PropName, PropOrSpread,
-  Stmt, Str, ReturnStmt, FnExpr, Function, BlockStmt, FnDecl, IfStmt, VarDecl, BindingIdent, AssignExpr, AssignOp, ExprStmt,
+  Stmt, Str, ReturnStmt, FnExpr, Function, BlockStmt, FnDecl, IfStmt, VarDecl, BindingIdent, AssignExpr, AssignOp, ExprStmt, MemberProp
 };
 use swc_ecma_visit::{
   noop_visit_mut_type, noop_visit_type, Visit, VisitAll, VisitAllWith, VisitMut, VisitMutWith,
@@ -32,6 +32,12 @@ use crate::{
     create_qualname, is_starts_with_uppercase, recursion_jsx_member, to_camel_case, to_kebab_case,
   }, constants::{CONVERT_STYLE_PX_FN, INNER_STYLE, INNER_STYLE_DATA, CALC_DYMAMIC_STYLE},
 };
+
+#[derive(Debug, Clone)]
+pub enum JSXElementOrJSXCallee<'a> {
+  JSXElement(&'a JSXElement),
+  JSXCallee(&'a CallExpr),
+}
 
 #[derive(Eq, Clone, Copy, Debug)]
 pub struct SpanKey(pub Span);
@@ -105,7 +111,7 @@ impl<'a> AstVisitor<'a> {
     }
   }
 
-  fn create_element(&mut self, jsx_element: &JSXElement) -> Element {
+  fn create_element_from_jsx (&mut self, jsx_element: &JSXElement) -> Element {
     let name = match &jsx_element.opening.name {
       JSXElementName::Ident(ident) => ident.sym.to_string(),
       JSXElementName::JSXMemberExpr(expr) => recursion_jsx_member(expr),
@@ -170,13 +176,71 @@ impl<'a> AstVisitor<'a> {
     }
     Element::new(qual_name, SpanKey(jsx_element.span), attributes)
   }
+
+  fn create_element_from_call_expr (&mut self, jsx_callee: &CallExpr) -> Element {
+    let name_expr = &*jsx_callee.args.first().unwrap().expr;
+    let name = match name_expr {
+      Expr::Lit(lit) => match lit {
+        Lit::Str(str) => {
+          let name = str.value.to_string();
+          name
+        }
+        _ => String::new(),
+      },
+      Expr::Ident(ident) => ident.sym.to_string(),
+      _ => String::new(),
+    };
+    let qual_name = create_qualname(name.as_str());
+    let mut attributes = Vec::new();
+    for arg in jsx_callee.args.iter().skip(1) {
+      if let Expr::Object(object) = &*arg.expr {
+        for prop in object.props.iter() {
+          if let PropOrSpread::Prop(prop) = prop {
+            if let Prop::KeyValue(key_value_prop) = &**prop {
+              let name = match &key_value_prop.key {
+                PropName::Ident(ident) => ident.sym.to_string(),
+                PropName::Str(str) => str.value.to_string(),
+                _ => "".to_string(),
+              };
+              let value = match &*key_value_prop.value {
+                Expr::Lit(lit) => match lit {
+                  Lit::Str(str) => str.value.to_string(),
+                  Lit::Num(num) => num.value.to_string(),
+                  Lit::Bool(bool) => bool.value.to_string(),
+                  Lit::Null(_) => "null".to_string(),
+                  Lit::BigInt(bigint) => bigint.value.to_string(),
+                  Lit::Regex(regex) => regex.exp.to_string(),
+                  Lit::JSXText(text) => text.value.to_string(),
+                },
+                _ => "".to_string(),
+              };
+              attributes.push(Attribute {
+                name: create_qualname(name.as_str()),
+                value: StrTendril::from(value),
+              });
+            }
+          }
+        }
+      }
+    }
+    println!("qual_name: {:?}", qual_name);
+    print!("attributes: {:?}", attributes);
+    Element::new(qual_name, SpanKey(jsx_callee.span), attributes)
+  }
+
+  fn create_element(&mut self, jsx_element: JSXElementOrJSXCallee) -> Element {
+    match jsx_element {
+      JSXElementOrJSXCallee::JSXElement(&ref jsx_element) => self.create_element_from_jsx(&jsx_element),
+      JSXElementOrJSXCallee::JSXCallee(&ref call_expr) => self.create_element_from_call_expr(&call_expr),
+    }
+  }
 }
 
 impl<'a> VisitAll for AstVisitor<'a> {
   noop_visit_type!();
 
   fn visit_jsx_element(&mut self, jsx: &JSXElement) {
-    let element = self.create_element(jsx);
+    let element = self.create_element(JSXElementOrJSXCallee::JSXElement(jsx));
     if let JSXElementName::Ident(ident) = &jsx.opening.name {
       let name = ident.sym.to_string();
       if is_starts_with_uppercase(name.as_str()) {
@@ -192,6 +256,24 @@ impl<'a> VisitAll for AstVisitor<'a> {
 
   fn visit_jsx_fragment(&mut self, jsx: &JSXFragment) {
     jsx.visit_all_children_with(self);
+  }
+
+  // 兼容 React.createElement 的方式
+  fn visit_call_expr(&mut self, call_expr: &CallExpr) {
+    if let Callee::Expr(expr) = &call_expr.callee {
+      if let Expr::Member(member) = &**expr {
+        if let Expr::Ident(ident) = &*member.obj {
+          if ident.sym.to_string() == "React" {
+            if let MemberProp::Ident(ident) = &member.prop {
+              if ident.sym.to_string() == "createElement" {
+                self.create_element(JSXElementOrJSXCallee::JSXCallee(call_expr));
+              }
+            }
+          }
+        }
+      }
+    }
+    call_expr.visit_all_children_with(self);
   }
 }
 

@@ -1,6 +1,24 @@
 import React from 'react'
 import './Mod.scss'
 
+function Bb () {
+  return /*#__PURE__*/ React.createElement("div", {
+    className: boxClass.join(' '),
+    style: bannerStyle
+  }, /*#__PURE__*/ React.createElement("span", {
+      className: "line1 txt"
+  }, "成员123: 4000+"), /*#__PURE__*/ React.createElement("div", {
+      className: "cnt_row4"
+  }, /*#__PURE__*/ React.createElement("img", {
+      className: "icon2",
+      src: "//img11.360buyimg.com/img/jfs/t1/175578/35/40256/1981/64f58062Fddaf1a21/f1111d9988a65ccc.png"
+  }), /*#__PURE__*/ React.createElement("span", {
+      className: "instruction3"
+  }, "slslsl-jsj"), /*#__PURE__*/ React.createElement("span", {
+      className: "txt3"
+  }, "复制")))
+}
+
 function Cc() {
   return (
     <div className={boxClass.join(' ')} style={bannerStyle}>

@@ -28,7 +28,10 @@ pub fn create_qualname(str: &str) -> QualName {
 }
 
 pub fn is_starts_with_uppercase(str: &str) -> bool {
-  str.chars().next().unwrap().is_uppercase()
+  match str.chars().next() {
+    Some(c) => c.is_uppercase(),
+    None => false,
+  }
 }
 
 pub fn to_camel_case(s: &str, is_first: bool) -> String {

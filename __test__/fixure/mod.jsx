@@ -5,7 +5,33 @@ function Bb () {
   return /*#__PURE__*/ React.createElement("div", {
     className: boxClass.join(' '),
     style: bannerStyle
+  }, /*#__PURE__*/ React.createElement("div", {
+    className: "cnt_row1",
+    style: {
+        background: 'url(//img12.360buyimg.com/img/jfs/t1/100881/15/44805/18567/64f58062F1b45e0cb/caf065a7410087ce.png)'
+    }
+  }, /*#__PURE__*/ React.createElement("img", {
+      className: "img",
+      src: "//img12.360buyimg.com/img/jfs/t1/100881/15/44805/18567/64f58062F1b45e0cb/caf065a7410087ce.png"
+  }), /*#__PURE__*/ React.createElement("div", {
+      className: "cnt_col"
   }, /*#__PURE__*/ React.createElement("span", {
+      className: "line1 instruction1"
+  }, "巴拉巴拉小魔仙"), /*#__PURE__*/ React.createElement("span", {
+      className: "line1 txt"
+  }, "成员: 4000+")), /*#__PURE__*/ React.createElement("div", {
+      className: "cnt_row2",
+      style: {
+          "border-top-left-radius": "1000px"
+      }
+  }, this.getDom(), /*#__PURE__*/ React.createElement("img", {
+      className: "icon1",
+      src: "//img11.360buyimg.com/img/jfs/t1/175578/35/40256/1981/64f58062Fddaf1a21/f1111d9988a65ccc.png"
+  }), /*#__PURE__*/ React.createElement("span", {
+      className: "instruction2"
+  }, "slslsl-jsj"), /*#__PURE__*/ React.createElement("span", {
+      className: "txt1"
+  }, "复制"))), /*#__PURE__*/ React.createElement("span", {
       className: "line1 txt"
   }, "成员123: 4000+"), /*#__PURE__*/ React.createElement("div", {
       className: "cnt_row4"

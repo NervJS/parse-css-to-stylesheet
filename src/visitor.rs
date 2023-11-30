@@ -543,7 +543,7 @@ impl<'i> JSXMutVisitor<'i> {
         let mut attributes = get_callee_attributes(call_expr);
         if let Some(value) = attributes.remove("className") {
           class_attr_value = Some((*value).clone());
-          
+
           match *value {
             Expr::Lit(lit) => {
               class_attr_value = Some(lit.into());
@@ -806,21 +806,23 @@ impl<'i> VisitMut for JSXMutVisitor<'i> {
           }
         }
 
-        if !has_dynamic_class && !has_dynamic_style && !has_style {
-          if let Some(style_declaration) = style_record.get(&element.span) {
-            let parsed_properties = parse_style_properties(&style_declaration);
-            let properties_entries: BTreeMap<_, _> = parsed_properties.iter().collect();
-            let attrs = n.args.get_mut(1);
-            
-            if let Some(attr) = attrs {
-              if let Expr::Object(object) = &mut *attr.expr {
-                object.props.push(PropOrSpread::Prop(Box::new(Prop::KeyValue(KeyValueProp {
-                  key: PropName::Ident(Ident::new("style".into(), DUMMY_SP)),
-                  value: Box::new(Expr::Object(ObjectLit {
-                    span: DUMMY_SP,
-                    props: properties_to_object_lit_props(&properties_entries).into(),
-                  })),
-                }))));
+        if !has_dynamic_class && !has_dynamic_style {
+          if !has_style {
+            if let Some(style_declaration) = style_record.get(&element.span) {
+              let parsed_properties = parse_style_properties(&style_declaration);
+              let properties_entries: BTreeMap<_, _> = parsed_properties.iter().collect();
+              let attrs = n.args.get_mut(1);
+              
+              if let Some(attr) = attrs {
+                if let Expr::Object(object) = &mut *attr.expr {
+                  object.props.push(PropOrSpread::Prop(Box::new(Prop::KeyValue(KeyValueProp {
+                    key: PropName::Ident(Ident::new("style".into(), DUMMY_SP)),
+                    value: Box::new(Expr::Object(ObjectLit {
+                      span: DUMMY_SP,
+                      props: properties_to_object_lit_props(&properties_entries).into(),
+                    })),
+                  }))));
+                }
               }
             }
           }
@@ -951,22 +953,24 @@ impl<'i> VisitMut for JSXMutVisitor<'i> {
         }
       }
     
-      if !has_dynamic_class && !has_dynamic_style && !has_style {
-        if let Some(style_declaration) = style_record.get(&element.span) {
-          let parsed_properties = parse_style_properties(&style_declaration);
-          let properties_entries: BTreeMap<_, _> = parsed_properties.iter().collect();
+      if !has_dynamic_class && !has_dynamic_style {
+        if !has_style {
+          if let Some(style_declaration) = style_record.get(&element.span) {
+            let parsed_properties = parse_style_properties(&style_declaration);
+            let properties_entries: BTreeMap<_, _> = parsed_properties.iter().collect();
 
-          n.opening.attrs.push(JSXAttrOrSpread::JSXAttr(JSXAttr {
-            span: DUMMY_SP,
-            name: JSXAttrName::Ident(Ident::new("style".into(), DUMMY_SP)),
-            value: Some(JSXAttrValue::JSXExprContainer(JSXExprContainer {
+            n.opening.attrs.push(JSXAttrOrSpread::JSXAttr(JSXAttr {
               span: DUMMY_SP,
-              expr: JSXExpr::Expr(Box::new(Expr::Object(ObjectLit {
+              name: JSXAttrName::Ident(Ident::new("style".into(), DUMMY_SP)),
+              value: Some(JSXAttrValue::JSXExprContainer(JSXExprContainer {
                 span: DUMMY_SP,
-                props: properties_to_object_lit_props(&properties_entries).into(),
-              }))),
-            })),
-          }));
+                expr: JSXExpr::Expr(Box::new(Expr::Object(ObjectLit {
+                  span: DUMMY_SP,
+                  props: properties_to_object_lit_props(&properties_entries).into(),
+                }))),
+              })),
+            }));
+          }
         }
       } else {
         let fun_call_expr = Expr::Call(CallExpr {

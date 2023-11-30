@@ -1,3 +1,19 @@
+## [0.0.26](https://github.com/NervJS/parse-css-to-stylesheet/compare/v0.0.25...v0.0.26) (2023-11-30)
+
+
+### Bug Fixes
+
+* 修复以前样式解析写法不严谨导致的报错问题以及 ets 样式名错误问题 ([cf6e958](https://github.com/NervJS/parse-css-to-stylesheet/commit/cf6e958c2806d1e0e3a4eeed9129c6cf373211eb))
+* 修复条件判断不正确导致的静态样式被转换成动态样式的问题，并更新项目测试快照 ([151b5c3](https://github.com/NervJS/parse-css-to-stylesheet/commit/151b5c3f44464dccf48978f435bf22482ad270f4))
+
+
+### Features
+
+* 抽离写入逻辑的公共函数，支持 React.createElement 形式的代码 ([d2731f2](https://github.com/NervJS/parse-css-to-stylesheet/commit/d2731f268651ce76f42caa993b893b9da9ec984e))
+* 接入 React.createElement 的输入解析 ([29041fe](https://github.com/NervJS/parse-css-to-stylesheet/commit/29041fe4bea8c41dae2c53859eba1e56572ad154))
+
+
+
 ## [0.0.25](https://github.com/NervJS/parse-css-to-stylesheet/compare/v0.0.24...v0.0.25) (2023-11-21)
 
 

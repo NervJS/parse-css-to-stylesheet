@@ -146,7 +146,7 @@ impl ToExpr for BackgroundImagePosition {
             .into(),
             ImagePosition::TopStart => Expr::Member(MemberExpr {
               span: DUMMY_SP,
-              obj: Box::new(Expr::Ident(Ident::new("ImagePosition".into(), DUMMY_SP))),
+              obj: Box::new(Expr::Ident(Ident::new("Alignment".into(), DUMMY_SP))),
               prop: MemberProp::Ident(Ident {
                 span: DUMMY_SP,
                 sym: "TopStart".into(),
@@ -156,7 +156,7 @@ impl ToExpr for BackgroundImagePosition {
             .into(),
             ImagePosition::Top => Expr::Member(MemberExpr {
               span: DUMMY_SP,
-              obj: Box::new(Expr::Ident(Ident::new("ImagePosition".into(), DUMMY_SP))),
+              obj: Box::new(Expr::Ident(Ident::new("Alignment".into(), DUMMY_SP))),
               prop: MemberProp::Ident(Ident {
                 span: DUMMY_SP,
                 sym: "Top".into(),
@@ -166,7 +166,7 @@ impl ToExpr for BackgroundImagePosition {
             .into(),
             ImagePosition::TopEnd => Expr::Member(MemberExpr {
               span: DUMMY_SP,
-              obj: Box::new(Expr::Ident(Ident::new("ImagePosition".into(), DUMMY_SP))),
+              obj: Box::new(Expr::Ident(Ident::new("Alignment".into(), DUMMY_SP))),
               prop: MemberProp::Ident(Ident {
                 span: DUMMY_SP,
                 sym: "TopEnd".into(),
@@ -176,7 +176,7 @@ impl ToExpr for BackgroundImagePosition {
             .into(),
             ImagePosition::Start => Expr::Member(MemberExpr {
               span: DUMMY_SP,
-              obj: Box::new(Expr::Ident(Ident::new("ImagePosition".into(), DUMMY_SP))),
+              obj: Box::new(Expr::Ident(Ident::new("Alignment".into(), DUMMY_SP))),
               prop: MemberProp::Ident(Ident {
                 span: DUMMY_SP,
                 sym: "Start".into(),
@@ -186,7 +186,7 @@ impl ToExpr for BackgroundImagePosition {
             .into(),
             ImagePosition::Center => Expr::Member(MemberExpr {
               span: DUMMY_SP,
-              obj: Box::new(Expr::Ident(Ident::new("ImagePosition".into(), DUMMY_SP))),
+              obj: Box::new(Expr::Ident(Ident::new("Alignment".into(), DUMMY_SP))),
               prop: MemberProp::Ident(Ident {
                 span: DUMMY_SP,
                 sym: "Center".into(),
@@ -196,7 +196,7 @@ impl ToExpr for BackgroundImagePosition {
             .into(),
             ImagePosition::End => Expr::Member(MemberExpr {
               span: DUMMY_SP,
-              obj: Box::new(Expr::Ident(Ident::new("ImagePosition".into(), DUMMY_SP))),
+              obj: Box::new(Expr::Ident(Ident::new("Alignment".into(), DUMMY_SP))),
               prop: MemberProp::Ident(Ident {
                 span: DUMMY_SP,
                 sym: "End".into(),
@@ -206,7 +206,7 @@ impl ToExpr for BackgroundImagePosition {
             .into(),
             ImagePosition::BottomStart => Expr::Member(MemberExpr {
               span: DUMMY_SP,
-              obj: Box::new(Expr::Ident(Ident::new("ImagePosition".into(), DUMMY_SP))),
+              obj: Box::new(Expr::Ident(Ident::new("Alignment".into(), DUMMY_SP))),
               prop: MemberProp::Ident(Ident {
                 span: DUMMY_SP,
                 sym: "BottomStart".into(),
@@ -216,7 +216,7 @@ impl ToExpr for BackgroundImagePosition {
             .into(),
             ImagePosition::Bottom => Expr::Member(MemberExpr {
               span: DUMMY_SP,
-              obj: Box::new(Expr::Ident(Ident::new("ImagePosition".into(), DUMMY_SP))),
+              obj: Box::new(Expr::Ident(Ident::new("Alignment".into(), DUMMY_SP))),
               prop: MemberProp::Ident(Ident {
                 span: DUMMY_SP,
                 sym: "Bottom".into(),
@@ -226,7 +226,7 @@ impl ToExpr for BackgroundImagePosition {
             .into(),
             ImagePosition::BottomEnd => Expr::Member(MemberExpr {
               span: DUMMY_SP,
-              obj: Box::new(Expr::Ident(Ident::new("ImagePosition".into(), DUMMY_SP))),
+              obj: Box::new(Expr::Ident(Ident::new("Alignment".into(), DUMMY_SP))),
               prop: MemberProp::Ident(Ident {
                 span: DUMMY_SP,
                 sym: "BottomEnd".into(),

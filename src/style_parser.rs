@@ -55,22 +55,20 @@ pub struct StyleDeclaration<'i> {
 }
 
 pub struct StyleVisitor<'i> {
-  pub all_style: Rc<RefCell<Vec<(String, Vec<StyleDeclaration<'i>>)>>>,
-  pub document: &'i JSXDocument,
+  pub all_style: Rc<RefCell<Vec<(String, Vec<StyleDeclaration<'i>>)>>>
 }
 
 impl<'i> StyleVisitor<'i> {
   pub fn new(
-    document: &'i JSXDocument,
     all_style: Rc<RefCell<Vec<(String, Vec<StyleDeclaration<'i>>)>>>,
   ) -> Self {
     StyleVisitor {
-      all_style,
-      document,
+      all_style
     }
   }
 }
 
+// 收集所有的样式到 all_style 中，以元祖的形式存在 (selector, vec[declaration1, declaration2, ...])
 impl<'i> Visitor<'i> for StyleVisitor<'i> {
   type Error = Infallible;
   const TYPES: VisitTypes = visit_types!(RULES);
@@ -628,10 +626,11 @@ impl<'i> StyleParser<'i> {
 
   pub fn parse(&mut self, css: &'i str) {
     let mut stylesheet = StyleSheet::parse(css, ParserOptions::default()).expect("解析样式失败");
-    let mut style_visitor = StyleVisitor::new(self.document, Rc::clone(&self.all_style));
+    let mut style_visitor = StyleVisitor::new(Rc::clone(&self.all_style));
     stylesheet.visit(&mut style_visitor).unwrap();
   }
 
+  // 合并相同类型的 style，比如 .a { color: red } .a { color: blue } => .a { color: blue }，并且 !important 的优先级高于普通的
   fn calc_style_record<T: Hash + Eq + Clone>(
     &self,
     style_record: &mut Vec<(T, Vec<StyleDeclaration<'i>>)>,
@@ -688,6 +687,7 @@ impl<'i> StyleParser<'i> {
     let mut style_record = HashMap::new();
     let mut final_all_style = self.calc_style_record(&mut all_style);
 
+    // final_all_style 转换为驼峰命名
     let mut final_all_style = final_all_style
       .iter_mut()
       .map(|(selector, style_value)| {
@@ -714,6 +714,7 @@ impl<'i> StyleParser<'i> {
       })
       .collect::<Vec<(_, _)>>();
 
+    // 将所有相同 selector 的 style 块合并，所有 style 块的 declarations 都放在都以 selector 对应的 element span 作为 key 放在 style_record 这个 HashMap 中
     for (selector, style_value) in final_all_style.iter_mut() {
       let elements = self.document.select(selector);
       for element in elements {
@@ -726,6 +727,7 @@ impl<'i> StyleParser<'i> {
       .map(|(selector, style_value)| {
         (
           *selector,
+          // calc_style_record 函数里只是做单个 style 块的去重，这里需要对所有相同 selector 的 style 块进行去重
           style_value
             .iter_mut()
             .reduce(|a, b| {
@@ -744,6 +746,7 @@ impl<'i> StyleParser<'i> {
         )
       })
       .collect::<HashMap<_, _>>();
+    // 进行样式解析优化，提前解析 ArkUI 的样式，减少运行时的计算
     let final_all_style = final_all_style
       .iter_mut()
       .map(|(selector, properties)| {

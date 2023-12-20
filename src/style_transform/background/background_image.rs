@@ -12,7 +12,7 @@ use lightningcss::{
     length::LengthValue,
     percentage::DimensionPercentage,
     position::{HorizontalPositionKeyword, VerticalPositionKeyword},
-  },
+  }, targets::{Targets, Features},
 };
 use smallvec::SmallVec;
 use swc_common::DUMMY_SP;
@@ -49,7 +49,14 @@ pub fn parse_background_image_item(
               color_stops.push((
                 color_stop
                   .color
-                  .to_css_string(PrinterOptions::default())
+                  .to_css_string(PrinterOptions {
+                    minify: false,
+                    targets: Targets {
+                      include: Features::HexAlphaColors,
+                      ..Targets::default()
+                    },
+                    ..PrinterOptions::default()
+                  })
                   .unwrap(),
                 match &color_stop_position {
                   DimensionPercentage::Dimension(length) => {

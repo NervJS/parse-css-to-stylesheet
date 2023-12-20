@@ -141,3 +141,22 @@ pub fn get_callee_attributes (callee: &CallExpr) -> HashMap<String, Box<Expr>> {
 
   attributes
 }
+
+pub fn fix_rgba(input: &str) -> String {
+  // 定义匹配 rgba 格式的正则表达式
+  let re = Regex::new(r"rgba\((\d+), (\d+), (\d+), (\.\d+)\)").unwrap();
+  // 使用正则表达式进行替换
+  let result = re.replace_all(input, |caps: &regex::Captures| {
+      // 从捕获组获取每个数字部分
+      let r = &caps[1];
+      let g = &caps[2];
+      let b = &caps[3];
+      let alpha = &caps[4];
+      // 对 alpha 部分进行修正，补全回 0.x 的形式
+      let corrected_alpha = format!("0{:.2}", alpha);
+      // 返回修正后的字符串
+      format!("rgba({}, {}, {}, {})", r, g, b, corrected_alpha)
+  });
+
+  result.into()
+}

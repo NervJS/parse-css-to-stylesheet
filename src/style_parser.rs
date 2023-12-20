@@ -2,13 +2,13 @@ use std::{cell::RefCell, collections::HashMap, convert::Infallible, hash::Hash, 
 
 use lightningcss::{
   declaration::DeclarationBlock,
-  properties::Property,
+  properties::{Property, border::{LineStyle, BorderSideWidth}},
   rules::CssRule,
   stylesheet::{ParserOptions, PrinterOptions, StyleSheet},
   targets::{Features, Targets},
   traits::ToCss,
   visit_types,
-  visitor::{Visit, VisitTypes, Visitor},
+  visitor::{Visit, VisitTypes, Visitor}, values::color::CssColor,
 };
 
 use crate::{
@@ -31,8 +31,7 @@ use crate::{
     },
     margin_padding::MarginPadding,
     style_value_type::StyleValueType,
-    text_decoration::TextDecoration,
-    transform::transform::Transform, constraint_size::ConstraintSize, border::{border_width::BorderWidth, border_color::BorderColor, border_radius::BorderRadius, border_style::BorderStyle}, text::{line_height::LineHeight, letter_spacing::LetterSpacing, text_align::TextAlign, text_overflow::TextOverflow, font_weight::FontWeight},
+    transform::transform::Transform, constraint_size::ConstraintSize, border::{border_width::{BorderWidth, parse_border_width_item}, border_color::{BorderColor, parse_border_color_item}, border_radius::BorderRadius, border_style::{BorderStyle, parse_border_style_item}, border::Border}, text::{line_height::LineHeight, letter_spacing::LetterSpacing, text_align::TextAlign, text_overflow::TextOverflow, font_weight::FontWeight, font_style::FontStyle, text_decoration::{TextDecoration}},
   },
   utils::{
     to_camel_case,
@@ -106,8 +105,6 @@ impl<'i> Visitor<'i> for StyleVisitor<'i> {
 pub fn parse_style_properties(properties: &Vec<(String, Property<'_>)>) -> StyleValue {
   let mut final_properties = HashMap::new();
 
-  let mut text_decoration = None;
-  let mut color = None;
   let mut flex_options = FlexOptions::new();
   let mut constrant_size = ConstraintSize::new();
 
@@ -159,7 +156,116 @@ pub fn parse_style_properties(properties: &Vec<(String, Property<'_>)>) -> Style
             _ => {}
           }
         }
-      }
+      },
+      "border" => {
+        let border = Border::from(value);
+        let border_width = final_properties
+          .entry(prefix_style_key("borderWidth"))
+          .or_insert(StyleValueType::BorderWidth(BorderWidth::new()));
+        if let StyleValueType::BorderWidth(border_width) = border_width {
+          if let Some(width) = border.width.top {
+            border_width.set_all(width.as_str());
+          }
+        }
+        let border_color = final_properties
+          .entry(prefix_style_key("borderColor"))
+          .or_insert(StyleValueType::BorderColor(BorderColor::new()));
+        if let StyleValueType::BorderColor(border_color) = border_color {
+          if let Some(color) = border.color.top {
+            border_color.set_all(color.as_str());
+          }
+        }
+        let border_style = final_properties
+          .entry(prefix_style_key("borderStyle"))
+          .or_insert(StyleValueType::BorderStyle(BorderStyle::new()));
+        if let StyleValueType::BorderStyle(border_style) = border_style {
+          if let Some(style) = border.style.top {
+            border_style.set_all(style.as_str());
+          }
+        }
+      },
+      "borderLeft" | "borderRight" | "borderTop" | "borderBottom" => {
+        let mut width: Option<BorderSideWidth> = None;
+        let mut style: Option<LineStyle> = None;
+        let mut color: Option<CssColor> = None;
+        match &value {
+          Property::BorderLeft(value) => {
+            width = Some(value.width.to_owned());
+            style = Some(value.style);
+            color = Some(value.color.to_owned());
+          },
+          Property::BorderRight(value) => {
+            width = Some(value.width.to_owned());
+            style = Some(value.style);
+            color = Some(value.color.to_owned());
+          },
+          Property::BorderTop(value) => {
+            width = Some(value.width.to_owned());
+            style = Some(value.style);
+            color = Some(value.color.to_owned());
+          },
+          Property::BorderBottom(value) => {
+            width = Some(value.width.to_owned());
+            style = Some(value.style);
+            color = Some(value.color.to_owned());
+          },
+          _ => {}
+        };
+
+        if let Some(width) = width {
+          let width_item = parse_border_width_item(&width);
+          if let Some(width_item) = width_item {
+            let border_width = final_properties
+              .entry(prefix_style_key("borderWidth"))
+              .or_insert(StyleValueType::BorderWidth(BorderWidth::new()));
+            if let StyleValueType::BorderWidth(border_width) = border_width {
+              match property_name {
+                "borderLeft" => border_width.set_left(width_item.left.unwrap().as_str()),
+                "borderRight" => border_width.set_right(width_item.right.unwrap().as_str()),
+                "borderTop" => border_width.set_top(width_item.top.unwrap().as_str()),
+                "borderBottom" => border_width.set_bottom(width_item.bottom.unwrap().as_str()),
+                _ => {}
+              }
+            }
+          }
+          
+        }
+        if let Some(color) = color {
+          let color_item = parse_border_color_item(&color);
+          if let Some(color_item) = color_item {
+            let border_color = final_properties
+              .entry(prefix_style_key("borderColor"))
+              .or_insert(StyleValueType::BorderColor(BorderColor::new()));
+            if let StyleValueType::BorderColor(border_color) = border_color {
+              match property_name {
+                "borderLeft" => border_color.set_left(color_item.left.unwrap().as_str()),
+                "borderRight" => border_color.set_right(color_item.right.unwrap().as_str()),
+                "borderTop" => border_color.set_top(color_item.top.unwrap().as_str()),
+                "borderBottom" => border_color.set_bottom(color_item.bottom.unwrap().as_str()),
+                _ => {}
+              }
+            }
+          }
+          
+        }
+        if let Some(style) = style {
+          let style_item = parse_border_style_item(&style);
+          if let Some(style_item) = style_item {
+              let border_style = final_properties
+                .entry(prefix_style_key("borderStyle"))
+                .or_insert(StyleValueType::BorderStyle(BorderStyle::new()));
+            if let StyleValueType::BorderStyle(border_style) = border_style {
+              match property_name {
+                "borderLeft" => border_style.set_left(style_item.left.unwrap().as_str()),
+                "borderRight" => border_style.set_right(style_item.right.unwrap().as_str()),
+                "borderTop" => border_style.set_top(style_item.top.unwrap().as_str()),
+                "borderBottom" => border_style.set_bottom(style_item.bottom.unwrap().as_str()),
+                _ => {}
+              }
+            }
+          }
+        }
+      },
       "borderWidth" => {
         let border_width = BorderWidth::from(value);
         if border_width.is_zero() {
@@ -324,14 +430,24 @@ pub fn parse_style_properties(properties: &Vec<(String, Property<'_>)>) -> Style
           StyleValueType::FontWeight(font_weight),
         );
       }
+      "fontStyle" => {
+        let font_style = FontStyle::from(value);
+        final_properties.insert(
+          prefix_style_key("fontStyle"),
+          StyleValueType::FontStyle(font_style),
+        );
+      }
       "textDecoration" => {
-        text_decoration = Some(value);
+        let text_decoration = TextDecoration::from(value);
+        final_properties.insert(
+          prefix_style_key("decoration"),
+          StyleValueType::TextDecoration(text_decoration),
+        );
       }
       "color" => {
-        color = Some(value);
         final_properties.insert(
           prefix_style_key(id),
-          StyleValueType::Normal(
+          StyleValueType::Color(
             value
               .value_to_css_string(PrinterOptions {
                 minify: false,
@@ -576,13 +692,6 @@ pub fn parse_style_properties(properties: &Vec<(String, Property<'_>)>) -> Style
         );
       }
     }
-  }
-  if let Some(text_decoration) = text_decoration {
-    let text_decoration = TextDecoration::from((text_decoration, color));
-    final_properties.insert(
-      prefix_style_key("decoration"),
-      StyleValueType::TextDecoration(text_decoration),
-    );
   }
 
   if constrant_size.max_height.is_some()

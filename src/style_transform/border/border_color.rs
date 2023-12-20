@@ -1,13 +1,31 @@
 use lightningcss::{
   properties::Property,
   stylesheet::PrinterOptions,
-  traits::ToCss, targets::{Features, Targets}
+  traits::ToCss, targets::{Features, Targets}, values::color::CssColor
 };
 use swc_common::DUMMY_SP;
 use swc_ecma_ast::{Expr, PropOrSpread, Prop, KeyValueProp, Ident, PropName, ObjectLit};
 
-use crate::style_transform::traits::ToExpr;
+use crate::{style_transform::traits::ToExpr, utils::fix_rgba};
 
+
+pub fn parse_border_color_item(value: &CssColor) -> Option<BorderColor> {
+  if *value != CssColor::default() {
+    let mut border_color = BorderColor::new();
+    let color = value.to_css_string(PrinterOptions {
+      minify: false,
+      targets: Targets {
+        include: Features::HexAlphaColors,
+        ..Targets::default()
+      },
+      ..PrinterOptions::default()
+    }).unwrap();
+    border_color.set_all(color.as_str());
+    Some(border_color)
+  } else {
+    None
+  }
+}
 
 #[derive(Debug, Clone)]
 
@@ -37,6 +55,13 @@ impl BorderColor {
       && self.left == None
   }
 
+  pub fn set_all (&mut self, color: &str) {
+    self.top = Some(color.to_string());
+    self.right = Some(color.to_string());
+    self.bottom = Some(color.to_string());
+    self.left = Some(color.to_string());
+  }
+
   pub fn set_top(&mut self, top: &str) {
     self.top = Some(top.to_string());
   }
@@ -59,25 +84,25 @@ impl ToExpr for BorderColor {
     if let Some(left) = &self.left {
       arr.push(PropOrSpread::Prop(Box::new(Prop::KeyValue(KeyValueProp {
         key: PropName::Ident(Ident::new("left".into(), DUMMY_SP)),
-        value: left.to_string().into(),
+        value: fix_rgba(&left).into(),
       }))))
     }
     if let Some(right) = &self.right {
       arr.push(PropOrSpread::Prop(Box::new(Prop::KeyValue(KeyValueProp {
         key: PropName::Ident(Ident::new("right".into(), DUMMY_SP)),
-        value: right.to_string().into(),
+        value: fix_rgba(&right).into(),
       }))))
     }
     if let Some(bottom) = &self.bottom {
       arr.push(PropOrSpread::Prop(Box::new(Prop::KeyValue(KeyValueProp {
         key: PropName::Ident(Ident::new("bottom".into(), DUMMY_SP)),
-        value: bottom.to_string().into(),
+        value: fix_rgba(&bottom).into(),
       }))))
     }
     if let Some(top) = &self.top {
       arr.push(PropOrSpread::Prop(Box::new(Prop::KeyValue(KeyValueProp {
         key: PropName::Ident(Ident::new("top".into(), DUMMY_SP)),
-        value: top.to_string().into(),
+        value: fix_rgba(&top).into(),
       }))))
     }
 

@@ -1,3 +1,4 @@
+pub mod border;
 pub mod border_width;
 pub mod border_color;
 pub mod border_style;

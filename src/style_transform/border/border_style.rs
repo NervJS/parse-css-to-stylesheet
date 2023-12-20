@@ -5,21 +5,33 @@ use swc_ecma_ast::{Expr, PropOrSpread, Prop, KeyValueProp, Ident, PropName, Obje
 
 use crate::style_transform::traits::ToExpr;
 
-
-#[derive(Debug, Clone)]
-pub enum EBorderStyle {
-  Dotted,
-  Dashed,
-  Solid
+pub fn parse_border_style_item(value: &LineStyle) -> Option<BorderStyle> {
+  match &value {
+    LineStyle::Dashed => {
+      let mut border_style = BorderStyle::new();
+      border_style.set_all("Dashed");
+      Some(border_style)
+    },
+    LineStyle::Dotted => {
+      let mut border_style = BorderStyle::new();
+      border_style.set_all("Dotted");
+      Some(border_style)
+    },
+    LineStyle::Solid => {
+      let mut border_style = BorderStyle::new();
+      border_style.set_all("Solid");
+      Some(border_style)
+    },
+    _ => None
+  }
 }
-
 
 #[derive(Debug, Clone)]
 pub struct BorderStyle {
-  pub left: Option<EBorderStyle>,
-  pub top: Option<EBorderStyle>,
-  pub bottom: Option<EBorderStyle>,
-  pub right: Option<EBorderStyle>
+  pub left: Option<String>,
+  pub top: Option<String>,
+  pub bottom: Option<String>,
+  pub right: Option<String>
 }
 
 impl BorderStyle {
@@ -36,17 +48,24 @@ impl BorderStyle {
     self.top.is_none() && self.right.is_none() && self.bottom.is_none() && self.left.is_none()
   }
 
+  pub fn set_all(&mut self, style: &str) {
+    self.top = Some(style.to_string());
+    self.left = Some(style.to_string());
+    self.bottom = Some(style.to_string());
+    self.right = Some(style.to_string());
+  }
+
   pub fn set_top(&mut self, top: &str) {
-    self.top = match_str(top);
+    self.top = Some(top.to_string());
   }
   pub fn set_right(&mut self, right: &str) {
-    self.right = match_str(right);
+    self.right = Some(right.to_string());
   }
   pub fn set_bottom(&mut self, bottom: &str) {
-    self.bottom = match_str(bottom);
+    self.bottom = Some(bottom.to_string());
   }
   pub fn set_left(&mut self, left: &str) {
-    self.left = match_str(left);
+    self.left = Some(left.to_string());
   }
 
 }
@@ -102,16 +121,16 @@ impl From<&Property<'_>> for BorderStyle {
       Property::BorderStyle(value) => {
         
         match_key(&value.left).map(|val| {
-          border_style.left = Some(val);
+          border_style.left = Some(val.into());
         });
         match_key(&value.bottom).map(|val| {
-          border_style.bottom = Some(val);
+          border_style.bottom = Some(val.into());
         });
         match_key(&value.right).map(|val| {
-          border_style.right = Some(val);
+          border_style.right = Some(val.into());
         });
         match_key(&value.top).map(|val| {
-          border_style.top = Some(val);
+          border_style.top = Some(val.into());
         });
       }
       _ => {}
@@ -121,48 +140,55 @@ impl From<&Property<'_>> for BorderStyle {
   }
 }
 
-fn match_str (str: &str) -> Option<EBorderStyle>{
-  let mut res: Option<EBorderStyle> = None;
-  match str {
-    "dotted" => res = Some(EBorderStyle::Dotted),
-    "solid" => res = Some(EBorderStyle::Solid),
-    "dashed" => res = Some(EBorderStyle::Dashed),
-    _ => {}
-  }
-  res
-}
 
-fn match_key (line_style: &LineStyle) -> Option<EBorderStyle> {
+fn match_key (line_style: &LineStyle) -> Option<&str> {
   let mut res = None;
   match line_style {
     LineStyle::Solid => {
-      res = Some(EBorderStyle::Solid)
+      res = Some("Solid")
     },
     LineStyle::Dotted => {
-      res = Some(EBorderStyle::Dotted)
+      res = Some("Dotted")
     },
     LineStyle::Dashed => {
-      res = Some(EBorderStyle::Dashed)
+      res = Some("Dashed")
     },
     _ => {}
   }
   res
 }
 
-fn get_expr_by_val(val: &EBorderStyle) -> Expr {
+fn get_expr_by_val(val: &str) -> Expr {
+  let options = ["Solid", "Dotted", "Dashed", "solid", "dotted", "dashed"];
+  let sym: &str;
+  if is_one_of(&val, &options) {
+    sym = val
+  } else {
+    sym = "Solid"
+  }
   Expr::Member(MemberExpr {
     span: DUMMY_SP,
     obj: Box::new(Expr::Ident(Ident::new("BorderStyle".into(), DUMMY_SP))),
     prop: MemberProp::Ident(Ident {
       span: DUMMY_SP,
-      sym: match &val {
-        EBorderStyle::Dashed => "Dashed",
-        EBorderStyle::Dotted => "Dotted",
-        EBorderStyle::Solid => "Solid",
-      }
-      .into(),
+      sym: capitalize_first(sym).into(),
       optional: false,
     }),
   })
   .into()
+}
+
+fn capitalize_first(s: &str) -> String {
+  if let Some(c) = s.chars().next() {
+      let capitalized = c.to_uppercase();
+      let rest = &s[c.len_utf8()..];
+      format!("{}{}", capitalized, rest)
+  } else {
+      // 处理空字符串的情况
+      String::from(s)
+  }
+}
+
+fn is_one_of(input: &str, options: &[&str]) -> bool {
+  options.iter().any(|&option| option == input)
 }

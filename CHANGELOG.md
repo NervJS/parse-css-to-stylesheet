@@ -1,3 +1,13 @@
+## [0.0.28](https://github.com/NervJS/parse-css-to-stylesheet/compare/v0.0.26...v0.0.28) (2023-12-20)
+
+
+### Features
+
+* 支持rgba、支持font-style解析、border解析、补充部分遗漏属性 ([1c74b9f](https://github.com/NervJS/parse-css-to-stylesheet/commit/1c74b9fa7b60fc602b1f9e5f345ed09feeabe11f))
+* 支持vw\vh ([4f56f05](https://github.com/NervJS/parse-css-to-stylesheet/commit/4f56f054de94b1992a797e76dfe90be500b0bfa6))
+
+
+
 ## [0.0.27](https://github.com/NervJS/parse-css-to-stylesheet/compare/v0.0.26...v0.0.27) (2023-12-19)
 
 

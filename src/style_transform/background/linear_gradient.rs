@@ -4,7 +4,7 @@ use swc_ecma_ast::{
   MemberProp, ObjectLit, Prop, PropName, PropOrSpread, Str,
 };
 
-use crate::style_transform::{traits::ToExpr, utils::StringNumber};
+use crate::{style_transform::{traits::ToExpr, utils::StringNumber}, utils::fix_rgba};
 
 #[derive(Debug, Clone)]
 pub enum LinearGradientDirection {
@@ -48,7 +48,7 @@ impl ToExpr for LinearGradientItem {
               expr: Expr::Array(ArrayLit {
                 span: DUMMY_SP,
                 elems: vec![
-                  Some(Expr::Lit(Lit::Str(Str::from(item.0.to_string()))).into()),
+                  Some(Expr::Lit(Lit::Str(Str::from(fix_rgba(&item.0)))).into()),
                   Some(Expr::Lit(Lit::Str(Str::from(item.1.to_string()))).into()),
                 ],
               })

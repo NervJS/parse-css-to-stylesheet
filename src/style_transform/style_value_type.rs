@@ -1,6 +1,6 @@
 use swc_ecma_ast::Expr;
 
-use crate::utils::convert_px_to_units;
+use crate::utils::{convert_px_to_units, fix_rgba};
 
 use super::{
   background::{background::Background, linear_gradient::LinearGradient},
@@ -9,15 +9,15 @@ use super::{
   border::{border_color::BorderColor, border_width::BorderWidth, border_radius::BorderRadius, border_style::BorderStyle},
   margin_padding::MarginPadding,
   constraint_size::ConstraintSize,
-  text_decoration::TextDecoration,
   traits::ToExpr,
   transform::{Matrices, Rotates, Scales, Translates},
-  text::{line_height::LineHeight, letter_spacing::LetterSpacing, text_align::TextAlign, text_overflow::TextOverflow, font_weight::FontWeight},
+  text::{line_height::LineHeight, letter_spacing::LetterSpacing, text_align::TextAlign, text_overflow::TextOverflow, font_weight::FontWeight, font_style::FontStyle, text_decoration::TextDecoration},
 };
 
 #[derive(Debug, Clone)]
 pub enum StyleValueType {
   Normal(String),
+  Color(String),
   // Number(f32),
   Px(String),
   TextDecoration(TextDecoration),
@@ -42,13 +42,15 @@ pub enum StyleValueType {
   LetterSpacing(LetterSpacing),
   TextAlign(TextAlign),
   TextOverflow(TextOverflow),
-  FontWeight(FontWeight)
+  FontWeight(FontWeight),
+  FontStyle(FontStyle)
 }
 
 impl ToExpr for StyleValueType {
   fn to_expr(&self) -> Expr {
     match self {
       StyleValueType::Normal(value) => value.to_string().into(),
+      StyleValueType::Color(value) => fix_rgba(&value).into(),
       // StyleValueType::Number(num) => (*num as f64).into(),
       StyleValueType::Px(value) => convert_px_to_units(value.to_string()).into(),
       StyleValueType::TextDecoration(text_decoration) => text_decoration.to_expr().into(),
@@ -74,6 +76,7 @@ impl ToExpr for StyleValueType {
       StyleValueType::TextAlign(text_align) => text_align.to_expr().into(),
       StyleValueType::TextOverflow(text_overflow) => text_overflow.to_expr().into(),
       StyleValueType::FontWeight(font_weight) => font_weight.to_expr().into(),
+      StyleValueType::FontStyle(font_style) => font_style.to_expr().into(),
     }
   }
 }

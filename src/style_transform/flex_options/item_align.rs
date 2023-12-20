@@ -57,6 +57,7 @@ impl From<&Property<'_>> for ItemAlign {
           SelfPosition::End | SelfPosition::FlexEnd => ItemAlign::End,
           _ => ItemAlign::Ignore,
         },
+        LNAlignSelf::Stretch => ItemAlign::Stretch,
         LNAlignSelf::BaselinePosition(value) => match value {
           BaselinePosition::Last => ItemAlign::Ignore,
           _ => ItemAlign::Baseline,

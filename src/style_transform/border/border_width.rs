@@ -9,6 +9,18 @@ use swc_ecma_ast::{Expr, PropOrSpread, Prop, KeyValueProp, Ident, PropName, Obje
 use crate::{style_transform::traits::ToExpr, utils::convert_px_to_units};
 
 
+pub fn parse_border_width_item(value: &BorderSideWidth) -> Option<BorderWidth> {
+  match &value {
+    BorderSideWidth::Length(value) => {
+      let len = value.to_css_string(PrinterOptions::default()).unwrap();
+      let mut border_width = BorderWidth::new();
+      border_width.set_all(&len);
+      Some(border_width)
+    },
+    _ => None
+  }
+}
+
 #[derive(Debug, Clone)]
 pub struct  BorderWidth {
   pub left: Option<String>,
@@ -33,6 +45,13 @@ impl BorderWidth {
       && self.right == None
       && self.bottom == None
       && self.left == None
+  }
+
+  pub fn set_all (&mut self, width: &str) {
+    self.top = Some(width.to_string());
+    self.right = Some(width.to_string());
+    self.bottom = Some(width.to_string());
+    self.left = Some(width.to_string());
   }
 
   pub fn set_top(&mut self, top: &str) {

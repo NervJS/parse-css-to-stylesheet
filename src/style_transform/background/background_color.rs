@@ -9,7 +9,7 @@ use lightningcss::{
 };
 use swc_ecma_ast::{Expr, Lit, Str};
 
-use crate::style_transform::traits::ToExpr;
+use crate::{style_transform::traits::ToExpr, utils::fix_rgba};
 
 #[derive(Debug, Clone)]
 pub struct BackgroundColor(pub String);
@@ -44,6 +44,7 @@ impl From<&Property<'_>> for BackgroundColor {
               })
               .unwrap(),
           );
+          background_color.0 = fix_rgba(&background_color.0);
         }
       }
       _ => {}
@@ -51,3 +52,5 @@ impl From<&Property<'_>> for BackgroundColor {
     background_color
   }
 }
+
+

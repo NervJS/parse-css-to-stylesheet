@@ -6,16 +6,11 @@ use lightningcss::{
   values::color::CssColor,
 };
 use smallvec::SmallVec;
-use swc_common::DUMMY_SP;
-use swc_ecma_ast::{Expr, Ident, KeyValueProp, ObjectLit, Prop, PropName, PropOrSpread};
-
-use crate::style_transform::traits::ToExpr;
 
 use super::{
-  background_color::BackgroundColor,
   background_image::{parse_background_image_item, BackgroundImage},
-  background_position::{parse_background_position_item, BackgroundImagePosition},
-  background_size::{parse_background_size_item, BackgroundImageSize},
+  background_position::{parse_background_position_item, BackgroundPosition},
+  background_size::{parse_background_size_item, BackgroundSize}, background_color::BackgroundColor, background_repeat::{parse_background_repeat_item, BackgroundRepeat},
 };
 
 fn parse_background(background: &SmallVec<[LNBackground<'_>; 1]>) -> Background {
@@ -23,6 +18,8 @@ fn parse_background(background: &SmallVec<[LNBackground<'_>; 1]>) -> Background 
   let mut background_position = vec![];
   let mut background_size = vec![];
   let mut background_color = None;
+  let mut background_repeat = vec![];
+
   for item in background.iter() {
     if let Some(image) = parse_background_image_item(&item.image, &item.repeat) {
       background_image.push(image);
@@ -31,6 +28,7 @@ fn parse_background(background: &SmallVec<[LNBackground<'_>; 1]>) -> Background 
     if let Some(size) = parse_background_size_item(&item.size) {
       background_size.push(size);
     }
+    background_repeat.push(parse_background_repeat_item(&item.repeat));
     if item.color != CssColor::default() {
       background_color = Some(
         item
@@ -47,75 +45,49 @@ fn parse_background(background: &SmallVec<[LNBackground<'_>; 1]>) -> Background 
       );
     }
   }
-  Background {
-    image: BackgroundImage(background_image),
-    position: BackgroundImagePosition(background_position),
-    size: BackgroundImageSize(background_size),
-    color: BackgroundColor(background_color.unwrap_or("".to_string())),
+  let mut bg = Background::new();
+  if background_image.len() > 0 {
+    bg.image = Some(BackgroundImage(background_image));
   }
+  if background_position.len() > 0 {
+    bg.position = Some(BackgroundPosition(background_position));
+  }
+  if background_size.len() > 0 {
+    bg.size = Some(BackgroundSize(background_size));
+  }
+  if background_repeat.len() > 0 {
+    bg.repeat = Some(BackgroundRepeat(background_repeat));
+  }
+  if let Some(color) = background_color {
+    bg.color = Some(BackgroundColor(color));
+  }
+  bg
 }
 
 #[derive(Debug, Clone)]
 pub struct Background {
-  pub image: BackgroundImage,
-  pub color: BackgroundColor,
-  pub size: BackgroundImageSize,
-  pub position: BackgroundImagePosition,
+  pub image: Option<BackgroundImage>,
+  pub color: Option<BackgroundColor>,
+  pub size: Option<BackgroundSize>,
+  pub position: Option<BackgroundPosition>,
+  pub repeat: Option<BackgroundRepeat>
 }
 
 impl Background {
   pub fn new() -> Self {
     Background {
-      image: BackgroundImage(vec![]),
-      color: BackgroundColor("".to_string()),
-      size: BackgroundImageSize(vec![]),
-      position: BackgroundImagePosition(vec![]),
+      image: None,
+      color: None,
+      size: None,
+      position: None,
+      repeat: None
     }
-  }
-}
-
-impl ToExpr for Background {
-  fn to_expr(&self) -> Expr {
-    let mut arr = vec![];
-    if self.image.0.len() > 0 {
-      arr.push(PropOrSpread::Prop(Box::new(Prop::KeyValue(KeyValueProp {
-        key: PropName::Ident(Ident::new("image".into(), DUMMY_SP)),
-        value: self.image.to_expr().into(),
-      }))))
-    }
-    if self.color.to_string() != "" {
-      arr.push(PropOrSpread::Prop(Box::new(Prop::KeyValue(KeyValueProp {
-        key: PropName::Ident(Ident::new("color".into(), DUMMY_SP)),
-        value: self.color.to_expr().into(),
-      }))))
-    }
-    if self.size.0.len() > 0 {
-      arr.push(PropOrSpread::Prop(Box::new(Prop::KeyValue(KeyValueProp {
-        key: PropName::Ident(Ident::new("size".into(), DUMMY_SP)),
-        value: self.size.to_expr().into(),
-      }))))
-    }
-    if self.position.0.len() > 0 {
-      arr.push(PropOrSpread::Prop(Box::new(Prop::KeyValue(KeyValueProp {
-        key: PropName::Ident(Ident::new("position".into(), DUMMY_SP)),
-        value: self.position.to_expr().into(),
-      }))))
-    }
-    Expr::Object(ObjectLit {
-      span: DUMMY_SP,
-      props: arr.into(),
-    })
   }
 }
 
 impl From<&Property<'_>> for Background {
   fn from(value: &Property<'_>) -> Self {
-    let mut background = Background {
-      image: BackgroundImage(vec![]),
-      color: BackgroundColor("".to_string()),
-      size: BackgroundImageSize(vec![]),
-      position: BackgroundImagePosition(vec![]),
-    };
+    let mut background = Background::new();
     if let Property::Background(value) = value {
       background = parse_background(&value);
     }

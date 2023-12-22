@@ -16,18 +16,6 @@ pub struct FlexOptions {
   pub align_content: Option<FlexAlign>,
 }
 
-impl FlexOptions {
-  pub fn new() -> Self {
-    FlexOptions {
-      direction: None,
-      wrap: None,
-      justify_content: None,
-      align_items: None,
-      align_content: None,
-    }
-  }
-}
-
 impl ToExpr for FlexOptions {
   fn to_expr(&self) -> Expr {
     let mut props = vec![];

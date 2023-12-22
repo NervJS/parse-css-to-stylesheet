@@ -1,33 +1,20 @@
+use std::borrow::Borrow;
+
 use lightningcss::{
   properties::{Property, border::BorderSideWidth},
   stylesheet::PrinterOptions,
   traits::ToCss
 };
-use swc_common::DUMMY_SP;
-use swc_ecma_ast::{Expr, PropOrSpread, Prop, KeyValueProp, Ident, PropName, ObjectLit};
 
-use crate::{style_transform::traits::ToExpr, utils::convert_px_to_units};
+use crate::style_transform::style_value_type::StyleValueType;
 
-
-pub fn parse_border_width_item(value: &BorderSideWidth) -> Option<BorderWidth> {
-  match &value {
-    BorderSideWidth::Length(value) => {
-      let len = value.to_css_string(PrinterOptions::default()).unwrap();
-      let mut border_width = BorderWidth::new();
-      border_width.set_all(&len);
-      Some(border_width)
-    },
-    _ => None
-  }
-}
 
 #[derive(Debug, Clone)]
-pub struct  BorderWidth {
-  pub left: Option<String>,
-  pub top: Option<String>,
-  pub bottom: Option<String>,
-  pub right: Option<String>
-  
+pub struct BorderWidth {
+  pub left: Option<StyleValueType>,
+  pub top: Option<StyleValueType>,
+  pub bottom: Option<StyleValueType>,
+  pub right: Option<StyleValueType>
 }
 
 impl BorderWidth {
@@ -40,108 +27,84 @@ impl BorderWidth {
     }
   }
 
-  pub fn is_zero(&self) -> bool {
-    self.top == None
-      && self.right == None
-      && self.bottom == None
-      && self.left == None
+  pub fn set_all (&mut self, width: &StyleValueType) {
+    self.top = Some(width.clone());
+    self.right = Some(width.clone());
+    self.bottom = Some(width.clone());
+    self.left = Some(width.clone());
   }
 
-  pub fn set_all (&mut self, width: &str) {
-    self.top = Some(width.to_string());
-    self.right = Some(width.to_string());
-    self.bottom = Some(width.to_string());
-    self.left = Some(width.to_string());
+  pub fn set_top(&mut self, top: StyleValueType) {
+    self.top = Some(top);
   }
-
-  pub fn set_top(&mut self, top: &str) {
-    self.top = Some(top.to_string());
+  pub fn set_right(&mut self, right: StyleValueType) {
+    self.right = Some(right);
   }
-  pub fn set_right(&mut self, right: &str) {
-    self.right = Some(right.to_string());
+  pub fn set_bottom(&mut self, bottom: StyleValueType) {
+    self.bottom = Some(bottom);
   }
-  pub fn set_bottom(&mut self, bottom: &str) {
-    self.bottom = Some(bottom.to_string());
+  pub fn set_left(&mut self, left: StyleValueType) {
+    self.left = Some(left);
   }
-  pub fn set_left(&mut self, left: &str) {
-    self.left = Some(left.to_string());
-  }
-
 }
 
-impl ToExpr for BorderWidth {
-  fn to_expr(&self) -> Expr {
 
-    let mut arr = vec![];
-    
-    if let Some(left) = &self.left {
-      arr.push(PropOrSpread::Prop(Box::new(Prop::KeyValue(KeyValueProp {
-        key: PropName::Ident(Ident::new("left".into(), DUMMY_SP)),
-        value: convert_px_to_units(left.to_string()).into(),
-      }))))
-    }
-    if let Some(right) = &self.right {
-      arr.push(PropOrSpread::Prop(Box::new(Prop::KeyValue(KeyValueProp {
-        key: PropName::Ident(Ident::new("right".into(), DUMMY_SP)),
-        value: convert_px_to_units(right.to_string()).into(),
-      }))))
-    }
-    if let Some(bottom) = &self.bottom {
-      arr.push(PropOrSpread::Prop(Box::new(Prop::KeyValue(KeyValueProp {
-        key: PropName::Ident(Ident::new("bottom".into(), DUMMY_SP)),
-        value: convert_px_to_units(bottom.to_string()).into(),
-      }))))
-    }
-    if let Some(top) = &self.top {
-      arr.push(PropOrSpread::Prop(Box::new(Prop::KeyValue(KeyValueProp {
-        key: PropName::Ident(Ident::new("top".into(), DUMMY_SP)),
-        value: convert_px_to_units(top.to_string()).into(),
-      }))))
-    }
+impl Default for BorderWidth {
+  fn default() -> Self {
+    BorderWidth::new()
+  }
+}
 
-    Expr::Object(ObjectLit {
-      span: DUMMY_SP,
-      props: arr.into(),
-    })
+impl From <&BorderSideWidth> for BorderWidth {
+  fn from(value: &BorderSideWidth) -> Self {
+    match &value {
+      BorderSideWidth::Length(value) => {
+        let len = value.to_css_string(PrinterOptions::default()).unwrap();
+        let mut border_width = BorderWidth::new();
+        border_width.set_all(StyleValueType::Length(len).borrow());
+        border_width
+      },
+      _ => BorderWidth::new()
+    }
   }
 }
 
 impl From<&Property<'_>> for BorderWidth {
   fn from(value: &Property<'_>) -> Self {
 
-    let mut border_width = BorderWidth {
-      left: None,
-      top: None,
-      bottom: None,
-      right: None
-    };
+    let mut border_width = BorderWidth::new();
 
     match value {
       Property::BorderWidth(value) => {
         match &value.top {
           BorderSideWidth::Length(value) => {
-            border_width.set_top(value.to_css_string(PrinterOptions::default()).unwrap().as_str());
+            border_width.set_top(StyleValueType::Length(
+              value.to_css_string(PrinterOptions::default()) .unwrap()
+            ));
           },
           _ => {}
         };
-        
         match &value.bottom {
           BorderSideWidth::Length(value) => {
-            border_width.set_bottom(value.to_css_string(PrinterOptions::default()).unwrap().as_str());
+            border_width.set_bottom(StyleValueType::Length(
+              value.to_css_string(PrinterOptions::default()) .unwrap()
+            ));
           },
           _ => {}
         };
-
         match &value.left {
           BorderSideWidth::Length(value) => {
-            border_width.set_left(value.to_css_string(PrinterOptions::default()).unwrap().as_str());
+            border_width.set_left(StyleValueType::Length(
+              value.to_css_string(PrinterOptions::default()) .unwrap()
+            ));
           },
           _ => {}
         };
-
         match &value.right {
           BorderSideWidth::Length(value) => {
-            border_width.set_right(value.to_css_string(PrinterOptions::default()).unwrap().as_str());
+            border_width.set_right(StyleValueType::Length(
+              value.to_css_string(PrinterOptions::default()) .unwrap()
+            ));
           },
           _ => {}
         };

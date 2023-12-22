@@ -1,5 +1,5 @@
 use lightningcss::{
-  properties::{background::BackgroundPosition, Property},
+  properties::{background::BackgroundPosition as LNBackgroundPosition, Property},
   stylesheet::PrinterOptions,
   traits::ToCss,
   values::position::{
@@ -17,7 +17,7 @@ use swc_ecma_ast::{
 
 use crate::{style_transform::traits::ToExpr, utils::convert_px_to_units};
 
-pub fn parse_background_position_item(position: &BackgroundPosition) -> ImagePosition {
+pub fn parse_background_position_item(position: &LNBackgroundPosition) -> ImagePosition {
   match &position.x {
     Center => match &position.y {
       Center => ImagePosition::Center,
@@ -94,13 +94,13 @@ pub fn parse_background_position_item(position: &BackgroundPosition) -> ImagePos
 }
 
 pub fn parse_background_position(
-  position: &SmallVec<[BackgroundPosition; 1]>,
-) -> BackgroundImagePosition {
+  position: &SmallVec<[LNBackgroundPosition; 1]>,
+) -> BackgroundPosition {
   let mut background_position = vec![];
   for item in position {
     background_position.push(parse_background_position_item(item));
   }
-  BackgroundImagePosition(background_position)
+  BackgroundPosition(background_position)
 }
 
 #[derive(Debug, Clone)]
@@ -118,9 +118,9 @@ pub enum ImagePosition {
 }
 
 #[derive(Debug, Clone)]
-pub struct BackgroundImagePosition(pub Vec<ImagePosition>);
+pub struct BackgroundPosition(pub Vec<ImagePosition>);
 
-impl ToExpr for BackgroundImagePosition {
+impl ToExpr for BackgroundPosition {
   fn to_expr(&self) -> Expr {
     Expr::Array(ArrayLit {
       span: DUMMY_SP,
@@ -241,9 +241,9 @@ impl ToExpr for BackgroundImagePosition {
   }
 }
 
-impl From<&Property<'_>> for BackgroundImagePosition {
+impl From<&Property<'_>> for BackgroundPosition {
   fn from(value: &Property<'_>) -> Self {
-    let mut background_image_position = BackgroundImagePosition(vec![]);
+    let mut background_image_position = BackgroundPosition(vec![]);
     match value {
       Property::BackgroundPosition(value) => {
         background_image_position = parse_background_position(&value);

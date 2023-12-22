@@ -1,5 +1,5 @@
 use lightningcss::{
-  properties::{background::BackgroundSize, Property},
+  properties::{background::BackgroundSize as LNBackgroundSize, Property},
   stylesheet::PrinterOptions,
   traits::ToCss,
   values::length::LengthPercentageOrAuto,
@@ -13,32 +13,34 @@ use swc_ecma_ast::{
 
 use crate::{style_transform::traits::ToExpr, utils::convert_px_to_units};
 
-pub fn parse_background_size_item(size_item: &BackgroundSize) -> Option<ImageSize> {
+pub fn parse_background_size_item(size_item: &LNBackgroundSize) -> Option<ImageSize> {
   match size_item {
-    BackgroundSize::Contain => Some(ImageSize::Contain),
-    BackgroundSize::Cover => Some(ImageSize::Cover),
-    BackgroundSize::Explicit { width, height } => match width {
-      LengthPercentageOrAuto::Auto => match height {
-        LengthPercentageOrAuto::Auto => Some(ImageSize::Auto),
-        _ => None,
-      },
-      LengthPercentageOrAuto::LengthPercentage(x) => {
-        let x_str = x.to_css_string(PrinterOptions::default()).unwrap();
-        match height {
-          LengthPercentageOrAuto::LengthPercentage(y) => {
-            let y_str = y.to_css_string(PrinterOptions::default()).unwrap();
-            Some(ImageSize::ImageSizeWH(x_str, Some(y_str)))
-          },
-          LengthPercentageOrAuto::Auto => {
-              Some(ImageSize::ImageSizeWH(x_str, None))
+    LNBackgroundSize::Contain => Some(ImageSize::Contain),
+    LNBackgroundSize::Cover => Some(ImageSize::Cover),
+    LNBackgroundSize::Explicit { width, height } => {
+      match width {
+        LengthPercentageOrAuto::Auto => match height {
+          LengthPercentageOrAuto::Auto => Some(ImageSize::Auto),
+          _ => None,
+        },
+        LengthPercentageOrAuto::LengthPercentage(x) => {
+          let x_str = x.to_css_string(PrinterOptions::default()).unwrap();
+          match height {
+            LengthPercentageOrAuto::LengthPercentage(y) => {
+              let y_str = y.to_css_string(PrinterOptions::default()).unwrap();
+              Some(ImageSize::ImageSizeWH(x_str, Some(y_str)))
+            },
+            LengthPercentageOrAuto::Auto => {
+                Some(ImageSize::ImageSizeWH(x_str, None))
+            }
           }
-        }
-      },
-    },
+        },
+      }
+    }
   }
 }
 
-pub fn parse_background_size(size: &SmallVec<[BackgroundSize; 1]>) -> BackgroundImageSize {
+pub fn parse_background_size(size: &SmallVec<[LNBackgroundSize; 1]>) -> BackgroundSize {
   let mut background_size = vec![];
   for item in size {
     let item_size = parse_background_size_item(item);
@@ -47,7 +49,7 @@ pub fn parse_background_size(size: &SmallVec<[BackgroundSize; 1]>) -> Background
     }
   }
 
-  BackgroundImageSize(background_size)
+  BackgroundSize(background_size)
 }
 
 #[derive(Debug, Clone)]
@@ -59,9 +61,9 @@ pub enum ImageSize {
 }
 
 #[derive(Debug, Clone)]
-pub struct BackgroundImageSize(pub Vec<ImageSize>);
+pub struct BackgroundSize(pub Vec<ImageSize>);
 
-impl ToExpr for BackgroundImageSize {
+impl ToExpr for BackgroundSize {
   fn to_expr(&self) -> Expr {
     Expr::Array(ArrayLit {
       span: DUMMY_SP,
@@ -130,9 +132,9 @@ impl ToExpr for BackgroundImageSize {
   }
 }
 
-impl From<&Property<'_>> for BackgroundImageSize {
+impl From<&Property<'_>> for BackgroundSize {
   fn from(value: &Property<'_>) -> Self {
-    let mut background_image_size = BackgroundImageSize(vec![]);
+    let mut background_image_size = BackgroundSize(vec![]);
     match value {
       Property::BackgroundSize(value) => {
         background_image_size = parse_background_size(&value);

@@ -1,11 +1,23 @@
 use lightningcss::properties::{
-  background::{BackgroundRepeat, BackgroundRepeatKeyword},
+  background::{BackgroundRepeat as LNBackgroundRepeat, BackgroundRepeatKeyword},
   Property,
 };
 use swc_common::DUMMY_SP;
 use swc_ecma_ast::{ArrayLit, Expr, Ident, MemberExpr, MemberProp};
 
 use crate::style_transform::traits::ToExpr;
+
+pub fn parse_background_repeat_item(value: &LNBackgroundRepeat) -> ImageRepeatItem {
+  if value.x == BackgroundRepeatKeyword::Repeat && value.y == BackgroundRepeatKeyword::Repeat {
+    ImageRepeatItem::XY
+  } else if value.x == BackgroundRepeatKeyword::Repeat {
+    ImageRepeatItem::X
+  } else if value.y == BackgroundRepeatKeyword::Repeat {
+    ImageRepeatItem::Y
+  } else {
+    ImageRepeatItem::NoRepeat
+  }
+}
 
 #[derive(Debug, Clone)]
 pub enum ImageRepeatItem {
@@ -15,17 +27,9 @@ pub enum ImageRepeatItem {
   NoRepeat,
 }
 
-impl From<&BackgroundRepeat> for ImageRepeatItem {
-  fn from(value: &BackgroundRepeat) -> Self {
-    if value.x == BackgroundRepeatKeyword::Repeat && value.y == BackgroundRepeatKeyword::Repeat {
-      Self::XY
-    } else if value.x == BackgroundRepeatKeyword::Repeat {
-      Self::X
-    } else if value.y == BackgroundRepeatKeyword::Repeat {
-      Self::Y
-    } else {
-      Self::NoRepeat
-    }
+impl From<&LNBackgroundRepeat> for ImageRepeatItem {
+  fn from(value: &LNBackgroundRepeat) -> Self {
+    parse_background_repeat_item(value)
   }
 }
 
@@ -49,9 +53,9 @@ impl ToExpr for ImageRepeatItem {
 }
 
 #[derive(Debug, Clone)]
-pub struct ImageRepeat(pub Vec<ImageRepeatItem>);
+pub struct BackgroundRepeat(pub Vec<ImageRepeatItem>);
 
-impl From<&Property<'_>> for ImageRepeat {
+impl From<&Property<'_>> for BackgroundRepeat {
   fn from(value: &Property<'_>) -> Self {
     let mut image_repeat = vec![];
     match value {
@@ -62,11 +66,11 @@ impl From<&Property<'_>> for ImageRepeat {
       }
       _ => {}
     }
-    ImageRepeat(image_repeat)
+    BackgroundRepeat(image_repeat)
   }
 }
 
-impl ToExpr for ImageRepeat {
+impl ToExpr for BackgroundRepeat {
   fn to_expr(&self) -> Expr {
     Expr::Array(ArrayLit {
       span: DUMMY_SP,

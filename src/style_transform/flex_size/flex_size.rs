@@ -4,10 +4,6 @@ use lightningcss::{
   traits::ToCss,
   values::{length::LengthPercentageOrAuto, percentage::DimensionPercentage},
 };
-use swc_common::DUMMY_SP;
-use swc_ecma_ast::{Expr, ObjectLit, KeyValueProp, PropOrSpread, PropName, Prop, Ident};
-
-use crate::style_transform::traits::ToExpr;
 
 use super::{flex_basis::FlexBasis, flex_grow::FlexGrow, flex_shrink::FlexShrink};
 
@@ -56,39 +52,6 @@ impl FlexSize {
     }
   }
 }
-
-impl ToExpr for FlexSize {
-  fn to_expr(&self) -> Expr {
-    let mut arr = vec![];
-    
-    if let Some(basis) = &self.basis {
-      arr.push(PropOrSpread::Prop(Box::new(Prop::KeyValue(KeyValueProp {
-        key: PropName::Ident(Ident::new("basis".into(), DUMMY_SP)),
-        value: basis.to_expr().into(),
-      }))))
-    }
-    if let Some(shrink) = &self.shrink {
-      arr.push(PropOrSpread::Prop(Box::new(Prop::KeyValue(KeyValueProp {
-        key: PropName::Ident(Ident::new("shrink".into(), DUMMY_SP)),
-        value: shrink.to_expr().into(),
-      }))))
-    }
-    if let Some(grow) = &self.grow {
-      arr.push(PropOrSpread::Prop(Box::new(Prop::KeyValue(KeyValueProp {
-        key: PropName::Ident(Ident::new("grow".into(), DUMMY_SP)),
-        value: grow.to_expr().into(),
-      }))))
-    }
-
-    Expr::Object(ObjectLit {
-      span: DUMMY_SP,
-      props: arr.into(),
-    })
-
-   
-  }
-}
-
 
 impl From<&Property<'_>> for FlexSize {
   fn from(value: &Property<'_>) -> Self {

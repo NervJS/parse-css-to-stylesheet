@@ -5,22 +5,17 @@ use lightningcss::{
   values::{
     length::{Length, LengthValue},
     percentage::{DimensionPercentage, NumberOrPercentage},
-    position::{
-      HorizontalPositionKeyword, Position,
-      PositionComponent::{self, Center, Side},
-      VerticalPositionKeyword,
-    },
   },
 };
+use swc_ecma_ast::{Expr, ArrayLit, ExprOrSpread};
 
-use crate::style_transform::utils::{StringNumber, WrapCSSNumber};
+use crate::style_transform::{utils::{StringNumber, WrapCSSNumber}, traits::ToExpr};
 
 use super::{
-  matrix::Matrix, rotate::Rotate, scale::Scale, translate::Translate, Matrices, Rotates, Scales,
-  Translates,
+  rotate::Rotate, scale::Scale, translate::Translate, matrix::Matrix,
 };
 
-fn parse_dimension_percentage(value: &DimensionPercentage<LengthValue>) -> Option<StringNumber> {
+pub fn parse_dimension_percentage(value: &DimensionPercentage<LengthValue>) -> Option<StringNumber> {
   value
       .to_css_string(PrinterOptions::default())
       .ok()
@@ -47,145 +42,135 @@ fn parse_length(value: &Length) -> Option<StringNumber> {
 }
 
 #[derive(Debug, Clone)]
-pub struct Transform {
-  pub translate: Translates,
-  pub rotate: Rotates,
-  pub scale: Scales,
-  pub matrix: Matrices,
+pub enum Matrix4 {
+  Translates(Translate),
+  Rotates(Rotate),
+  Scales(Scale),
+  Matrix(Matrix),
 }
 
-impl Transform {
-  pub fn new() -> Self {
-    Self {
-      translate: Translates::new(),
-      rotate: Rotates::new(),
-      scale: Scales::new(),
-      matrix: Matrices::new(),
-    }
+#[derive(Debug, Clone)]
+pub struct Transform(pub Vec<Matrix4>);
+
+impl ToExpr for Transform {
+  fn to_expr(&self) -> Expr {
+    let mut expr = vec![];
+    for item in self.0.iter() {
+      match item {
+        Matrix4::Translates(value) => {
+          expr.push(value.to_expr());
+        }
+        Matrix4::Rotates(value) => {
+          expr.push(value.to_expr());
+        }
+        Matrix4::Scales(value) => {
+          expr.push(value.to_expr());
+        }
+        Matrix4::Matrix(value) => {
+          expr.push(value.to_expr());
+        }
+      }
+    };
+
+    Expr::Array(ArrayLit {
+      span: Default::default(),
+      elems: expr.into_iter().map(Some).map(
+        |item| {
+          Some(ExprOrSpread {
+            spread: None,
+            expr: Box::new(item.unwrap()),
+          })
+        }
+      ).collect::<Vec<_>>(),
+    })
   }
 }
 
-impl From<(&Property<'_>, Option<&Position>)> for Transform {
-  fn from(value: (&Property<'_>, Option<&Position>)) -> Self {
-    let (value, transform_origin) = value;
-    let mut transform = Transform::new();
-    let mut translates = vec![];
-    let mut rotates = vec![];
-    let mut scales = vec![];
-    let mut matrixs = vec![];
+impl From<&Property<'_>> for Transform {
+  fn from(value: &Property<'_>) -> Self {
+    let mut transform = vec![];
     if let Property::Transform(value, _) = value {
       for item in value.0.iter() {
-        let mut center_x = None;
-        let mut center_y = None;
-        match transform_origin {
-          Some(position) => {
-            match &position.x {
-              Center => {
-                center_x = Some(StringNumber::String("50%".to_string()));
-              }
-              PositionComponent::Length(length) => {
-                center_x = parse_dimension_percentage(&length);
-              }
-              Side { side, .. } => match &side {
-                HorizontalPositionKeyword::Left => {
-                  center_x = Some(StringNumber::String("0%".to_string()));
-                }
-                HorizontalPositionKeyword::Right => {
-                  center_x = Some(StringNumber::String("100%".to_string()));
-                }
-              },
-            }
-            match &position.y {
-              Center => {
-                center_y = Some(StringNumber::String("50%".to_string()));
-              }
-              PositionComponent::Length(length) => {
-                center_y = parse_dimension_percentage(&length);
-              }
-              Side { side, .. } => match &side {
-                VerticalPositionKeyword::Top => {
-                  center_y = Some(StringNumber::String("0%".to_string()));
-                }
-                VerticalPositionKeyword::Bottom => {
-                  center_y = Some(StringNumber::String("100%".to_string()));
-                }
-              },
-            }
-          }
-          None => {}
-        }
         match item {
           LNTransform::Translate(x, y) => {
             let mut translate = Translate::new();
             translate.x = parse_dimension_percentage(x);
             translate.y = parse_dimension_percentage(y);
-            translates.push(translate);
+            transform.push(Matrix4::Translates(translate));
           }
           LNTransform::TranslateX(x) => {
             let mut translate = Translate::new();
             translate.x = parse_dimension_percentage(x);
-            translates.push(translate);
+            transform.push(Matrix4::Translates(translate));
           }
           LNTransform::TranslateY(y) => {
             let mut translate = Translate::new();
             translate.y = parse_dimension_percentage(y);
-            translates.push(translate);
+            transform.push(Matrix4::Translates(translate));
           }
           LNTransform::TranslateZ(z) => {
             let mut translate = Translate::new();
             translate.z = parse_length(z);
-            translates.push(translate);
+            transform.push(Matrix4::Translates(translate));
           }
           LNTransform::Translate3d(x, y, z) => {
             let mut translate = Translate::new();
             translate.x = parse_dimension_percentage(x);
             translate.y = parse_dimension_percentage(y);
             translate.z = parse_length(z);
-            translates.push(translate);
+            transform.push(Matrix4::Translates(translate));
           }
           LNTransform::Rotate(angle) | LNTransform::RotateZ(angle) => {
             let mut rotate = Rotate::new();
             rotate.x = Some(WrapCSSNumber(0.0));
             rotate.y = Some(WrapCSSNumber(0.0));
             rotate.z = Some(WrapCSSNumber(1.0));
-            rotate.angle =
-              StringNumber::String(angle.to_css_string(PrinterOptions::default()).unwrap());
-            rotate.center_x = center_x.clone();
-            rotate.center_y = center_y.clone();
-            rotates.push(rotate);
+            match extract_degrees(angle.to_css_string(PrinterOptions::default()).unwrap().as_str()) {
+              Some(angle) => {
+                rotate.angle = StringNumber::Number(angle);
+              }
+              None => {}
+            }
+            transform.push(Matrix4::Rotates(rotate));
           }
           LNTransform::RotateX(angle) => {
             let mut rotate = Rotate::new();
             rotate.x = Some(WrapCSSNumber(1.0));
             rotate.y = Some(WrapCSSNumber(0.0));
             rotate.z = Some(WrapCSSNumber(0.0));
-            rotate.angle =
-              StringNumber::String(angle.to_css_string(PrinterOptions::default()).unwrap());
-            rotate.center_x = center_x.clone();
-            rotate.center_y = center_y.clone();
-            rotates.push(rotate);
+            match extract_degrees(angle.to_css_string(PrinterOptions::default()).unwrap().as_str()) {
+              Some(angle) => {
+                rotate.angle = StringNumber::Number(angle);
+              }
+              None => {}
+            }
+            transform.push(Matrix4::Rotates(rotate));
           }
           LNTransform::RotateY(angle) => {
             let mut rotate = Rotate::new();
             rotate.x = Some(WrapCSSNumber(0.0));
             rotate.y = Some(WrapCSSNumber(1.0));
             rotate.z = Some(WrapCSSNumber(0.0));
-            rotate.angle =
-              StringNumber::String(angle.to_css_string(PrinterOptions::default()).unwrap());
-            rotate.center_x = center_x.clone();
-            rotate.center_y = center_y.clone();
-            rotates.push(rotate);
+            match extract_degrees(angle.to_css_string(PrinterOptions::default()).unwrap().as_str()) {
+              Some(angle) => {
+                rotate.angle = StringNumber::Number(angle);
+              }
+              None => {}
+            }
+            transform.push(Matrix4::Rotates(rotate));
           }
           LNTransform::Rotate3d(x, y, z, angle) => {
             let mut rotate = Rotate::new();
             rotate.x = Some(WrapCSSNumber(*x));
             rotate.y = Some(WrapCSSNumber(*y));
             rotate.z = Some(WrapCSSNumber(*z));
-            rotate.angle =
-              StringNumber::String(angle.to_css_string(PrinterOptions::default()).unwrap());
-            rotate.center_x = center_x.clone();
-            rotate.center_y = center_y.clone();
-            rotates.push(rotate);
+            match extract_degrees(angle.to_css_string(PrinterOptions::default()).unwrap().as_str()) {
+              Some(angle) => {
+                rotate.angle = StringNumber::Number(angle);
+              }
+              None => {}
+            }
+            transform.push(Matrix4::Rotates(rotate));
           }
           LNTransform::Scale(x, y) => {
             let mut scale = Scale::new();
@@ -201,9 +186,7 @@ impl From<(&Property<'_>, Option<&Position>)> for Transform {
               }
               _ => {}
             }
-            scale.center_x = center_x.clone();
-            scale.center_y = center_y.clone();
-            scales.push(scale);
+            transform.push(Matrix4::Scales(scale));
           }
           LNTransform::ScaleX(x) => {
             let mut scale = Scale::new();
@@ -213,9 +196,7 @@ impl From<(&Property<'_>, Option<&Position>)> for Transform {
               }
               _ => {}
             }
-            scale.center_x = center_x.clone();
-            scale.center_y = center_y.clone();
-            scales.push(scale);
+            transform.push(Matrix4::Scales(scale));
           }
           LNTransform::ScaleY(y) => {
             let mut scale = Scale::new();
@@ -225,9 +206,7 @@ impl From<(&Property<'_>, Option<&Position>)> for Transform {
               }
               _ => {}
             }
-            scale.center_x = center_x.clone();
-            scale.center_y = center_y.clone();
-            scales.push(scale);
+            transform.push(Matrix4::Scales(scale));
           }
           LNTransform::ScaleZ(z) => {
             let mut scale = Scale::new();
@@ -237,9 +216,7 @@ impl From<(&Property<'_>, Option<&Position>)> for Transform {
               }
               _ => {}
             }
-            scale.center_x = center_x.clone();
-            scale.center_y = center_y.clone();
-            scales.push(scale);
+            transform.push(Matrix4::Scales(scale));
           }
           LNTransform::Scale3d(x, y, z) => {
             let mut scale = Scale::new();
@@ -261,9 +238,7 @@ impl From<(&Property<'_>, Option<&Position>)> for Transform {
               }
               _ => {}
             }
-            scale.center_x = center_x.clone();
-            scale.center_y = center_y.clone();
-            scales.push(scale);
+            transform.push(Matrix4::Scales(scale));
           }
           LNTransform::Matrix(m) => {
             let mut matrix = Matrix::new();
@@ -284,7 +259,7 @@ impl From<(&Property<'_>, Option<&Position>)> for Transform {
             matrix.m31 = WrapCSSNumber(matrix3d.m42);
             matrix.m32 = WrapCSSNumber(matrix3d.m43);
             matrix.m33 = WrapCSSNumber(matrix3d.m44);
-            matrixs.push(matrix);
+            transform.push(Matrix4::Matrix(matrix));
           }
           LNTransform::Matrix3d(m) => {
             let mut matrix = Matrix::new();
@@ -304,16 +279,23 @@ impl From<(&Property<'_>, Option<&Position>)> for Transform {
             matrix.m31 = WrapCSSNumber(m.m42);
             matrix.m32 = WrapCSSNumber(m.m43);
             matrix.m33 = WrapCSSNumber(m.m44);
-            matrixs.push(matrix);
+            transform.push(Matrix4::Matrix(matrix));
           }
           _ => {}
         }
       }
     }
-    transform.translate = Translates(translates);
-    transform.rotate = Rotates(rotates);
-    transform.scale = Scales(scales);
-    transform.matrix = Matrices(matrixs);
-    transform
+    Transform(transform)
+  }
+}
+
+fn extract_degrees(input: &str) -> Option<f32> {
+  // 去掉字符串中的非数字字符
+  let numeric_part: String = input.chars().filter(|c| c.is_digit(10) || *c == '.').collect();
+
+  // 将提取到的字符串转换成f32
+  match numeric_part.parse::<f32>() {
+      Ok(value) => Some(value),
+      Err(_) => None, // 转换失败时返回None
   }
 }

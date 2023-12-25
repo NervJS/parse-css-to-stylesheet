@@ -200,7 +200,7 @@ impl ToExpr for BackgroundImage {
         .0
         .iter()
         .enumerate()
-        .map(|(index, item)| match &item.image {
+        .map(|(_, item)| match &item.image {
           BackgroundImageKind::String(src) => Some(
             Expr::Object(ObjectLit {
               span: DUMMY_SP,
@@ -208,15 +208,7 @@ impl ToExpr for BackgroundImage {
                 PropOrSpread::Prop(Box::new(Prop::KeyValue(KeyValueProp {
                   key: PropName::Ident(Ident::new("src".into(), DUMMY_SP)),
                   value: Expr::Lit(Lit::Str(Str::from(src.to_string()))).into(),
-                }))),
-                PropOrSpread::Prop(Box::new(Prop::KeyValue(KeyValueProp {
-                  key: PropName::Ident(Ident::new("repeat".into(), DUMMY_SP)),
-                  value: if let Some(repeat) = &self.0[index].repeat {
-                    repeat.to_expr().into()
-                  } else {
-                    Expr::Lit(Lit::Str(Str::from("NoRepeat"))).into()
-                  },
-                }))),
+                })))
               ]
               .into(),
             })

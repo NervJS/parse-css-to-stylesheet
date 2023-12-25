@@ -1,50 +1,53 @@
-use lightningcss::{properties::Property, stylesheet::PrinterOptions, traits::ToCss};
-use swc_common::DUMMY_SP;
-use swc_ecma_ast::{Expr, Ident, KeyValueProp, ObjectLit, Prop, PropName, PropOrSpread};
+use std::borrow::Borrow;
 
-use crate::{style_transform::traits::ToExpr, utils::convert_px_to_units};
+use lightningcss::{
+  properties::{Property, border::BorderSideWidth},
+  stylesheet::PrinterOptions,
+  traits::ToCss
+};
+
+use crate::style_transform::style_value_type::StyleValueType;
 
 
 #[derive(Debug, Clone)]
 pub struct BorderRadius {
-  pub top_left: String,
-  pub top_right: String,
-  pub bottom_left: String,
-  pub bottom_right: String,
+  pub top_left: Option<StyleValueType>,
+  pub top_right: Option<StyleValueType>,
+  pub bottom_left: Option<StyleValueType>,
+  pub bottom_right: Option<StyleValueType>
 }
 
 impl BorderRadius {
   pub fn new() -> Self {
     BorderRadius {
-      top_left: "0".to_string(),
-      top_right: "0".to_string(),
-      bottom_left: "0".to_string(),
-      bottom_right: "0".to_string(),
+      top_left: None,
+      top_right: None,
+      bottom_left: None,
+      bottom_right: None,
     }
   }
-  pub fn is_zero(&self) -> bool {
-    self.top_left == "0"
-      && self.top_right == "0"
-      && self.bottom_left == "0"
-      && self.bottom_right == "0"
+
+  pub fn set_all (&mut self, width: &StyleValueType) {
+    self.top_left = Some(width.clone());
+    self.top_right = Some(width.clone());
+    self.bottom_left = Some(width.clone());
+    self.bottom_right = Some(width.clone());
   }
 
-  pub fn set_top_left(&mut self, top_left: &str) {
-    self.top_left = top_left.to_string();
+  pub fn top_left(&mut self, top: StyleValueType) {
+    self.top_left = Some(top);
   }
-
-  pub fn set_top_right(&mut self, top_right: &str) {
-    self.top_right = top_right.to_string();
+  pub fn top_right(&mut self, right: StyleValueType) {
+    self.top_right = Some(right);
   }
-
-  pub fn set_bottom_left(&mut self, bottom_left: &str) {
-    self.bottom_left = bottom_left.to_string();
+  pub fn bottom_left(&mut self, value: StyleValueType) {
+    self.bottom_left = Some(value);
   }
-
-  pub fn set_bottom_right(&mut self, bottom_right: &str) {
-    self.bottom_right = bottom_right.to_string();
+  pub fn bottom_right(&mut self, left: StyleValueType) {
+    self.bottom_right = Some(left);
   }
 }
+
 
 impl Default for BorderRadius {
   fn default() -> Self {
@@ -52,69 +55,34 @@ impl Default for BorderRadius {
   }
 }
 
-impl ToExpr for BorderRadius {
-  fn to_expr(&self) -> Expr {
-    Expr::Object(ObjectLit {
-      span: DUMMY_SP,
-      props: vec![
-        PropOrSpread::Prop(Box::new(Prop::KeyValue(KeyValueProp {
-          key: PropName::Ident(Ident::new("topLeft".into(), DUMMY_SP)),
-          value: convert_px_to_units(self.top_left.to_string()).into(),
-        }))),
-        PropOrSpread::Prop(Box::new(Prop::KeyValue(KeyValueProp {
-          key: PropName::Ident(Ident::new("topRight".into(), DUMMY_SP)),
-          value: convert_px_to_units(self.top_right.to_string()).into(),
-        }))),
-        PropOrSpread::Prop(Box::new(Prop::KeyValue(KeyValueProp {
-          key: PropName::Ident(Ident::new("bottomLeft".into(), DUMMY_SP)),
-          value: convert_px_to_units(self.bottom_left.to_string()).into(),
-        }))),
-        PropOrSpread::Prop(Box::new(Prop::KeyValue(KeyValueProp {
-          key: PropName::Ident(Ident::new("bottomRight".into(), DUMMY_SP)),
-          value: convert_px_to_units(self.bottom_right.to_string()).into(),
-        }))),
-      ]
-      .into(),
-    })
+impl From <&BorderSideWidth> for BorderRadius {
+  fn from(value: &BorderSideWidth) -> Self {
+    match &value {
+      BorderSideWidth::Length(value) => {
+        let len = value.to_css_string(PrinterOptions::default()).unwrap();
+        let mut border_radius = BorderRadius::new();
+        border_radius.set_all(StyleValueType::Length(len).borrow());
+        border_radius
+      },
+      _ => BorderRadius::new()
+    }
   }
 }
 
 impl From<&Property<'_>> for BorderRadius {
   fn from(value: &Property<'_>) -> Self {
     let mut border_radius = BorderRadius::new();
+
     match value {
       Property::BorderRadius(value, _) => {
-        border_radius.set_top_left(
-          value
-            .top_left
-            .to_css_string(PrinterOptions::default())
-            .unwrap()
-            .as_str(),
-        );
-        border_radius.set_top_right(
-          value
-            .top_right
-            .to_css_string(PrinterOptions::default())
-            .unwrap()
-            .as_str(),
-        );
-        border_radius.set_bottom_left(
-          value
-            .bottom_left
-            .to_css_string(PrinterOptions::default())
-            .unwrap()
-            .as_str(),
-        );
-        border_radius.set_bottom_right(
-          value
-            .bottom_right
-            .to_css_string(PrinterOptions::default())
-            .unwrap()
-            .as_str(),
-        );
-      }
+        border_radius.top_left(StyleValueType::Length(value.top_left.to_css_string(PrinterOptions::default()).unwrap()));
+        border_radius.top_right(StyleValueType::Length(value.top_right.to_css_string(PrinterOptions::default()).unwrap()));
+        border_radius.bottom_left(StyleValueType::Length(value.bottom_left.to_css_string(PrinterOptions::default()).unwrap()));
+        border_radius.bottom_right(StyleValueType::Length(value.bottom_right.to_css_string(PrinterOptions::default()).unwrap()));
+      },
       _ => {}
-    }
+    };
+
     border_radius
   }
 }

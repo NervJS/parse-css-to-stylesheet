@@ -1,6 +1,7 @@
 use std::collections::HashMap;
 
 use html5ever::{namespace_url, ns, LocalName, QualName};
+use lightningcss::{stylesheet::PrinterOptions, targets::{Targets, Features}, properties::Property};
 use regex::Regex;
 use swc_common::DUMMY_SP;
 // use lightningcss::values::number::CSSNumber;
@@ -159,4 +160,16 @@ pub fn fix_rgba(input: &str) -> String {
   });
 
   result.into()
+}
+
+pub fn color_string(value: &Property) -> String {
+  value
+    .value_to_css_string(PrinterOptions {
+      minify: false,
+      targets: Targets {
+        include: Features::HexAlphaColors,
+        ..Targets::default()
+      },
+      ..PrinterOptions::default()
+    }).unwrap()
 }

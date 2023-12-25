@@ -1,5 +1,5 @@
 use swc_common::DUMMY_SP;
-use swc_ecma_ast::{Expr, Ident, KeyValueProp, ObjectLit, Prop, PropName, PropOrSpread};
+use swc_ecma_ast::{Expr, Ident, ObjectLit, PropOrSpread, KeyValueProp, Lit, Prop, PropName};
 
 use crate::{
   impl_to_expr_for_transform_mem,

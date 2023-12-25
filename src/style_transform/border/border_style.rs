@@ -1,37 +1,79 @@
 
+use std::borrow::Borrow;
+
 use lightningcss::properties::{Property, border::LineStyle};
 use swc_common::DUMMY_SP;
-use swc_ecma_ast::{Expr, PropOrSpread, Prop, KeyValueProp, Ident, PropName, ObjectLit, MemberExpr, MemberProp};
+use swc_ecma_ast::{Expr, Ident, MemberExpr, MemberProp};
 
-use crate::style_transform::traits::ToExpr;
+use crate::style_transform::{traits::ToExpr, style_value_type::StyleValueType};
 
-pub fn parse_border_style_item(value: &LineStyle) -> Option<BorderStyle> {
-  match &value {
-    LineStyle::Dashed => {
-      let mut border_style = BorderStyle::new();
-      border_style.set_all("Dashed");
-      Some(border_style)
-    },
-    LineStyle::Dotted => {
-      let mut border_style = BorderStyle::new();
-      border_style.set_all("Dotted");
-      Some(border_style)
-    },
-    LineStyle::Solid => {
-      let mut border_style = BorderStyle::new();
-      border_style.set_all("Solid");
-      Some(border_style)
-    },
-    _ => None
+#[derive(Debug, Clone)]
+pub enum BorderStyleType {
+  Solid,
+  Dotted,
+  Dashed
+}
+
+impl ToExpr for BorderStyleType {
+  fn to_expr(&self) -> Expr {
+    match &self {
+      BorderStyleType::Solid => {
+        return get_expr_by_val("Solid")
+      },
+      BorderStyleType::Dotted => {
+        return get_expr_by_val("Dotted")
+      },
+      BorderStyleType::Dashed => {
+        return get_expr_by_val("Dashed")
+      }
+    }
+  }
+}
+
+impl From<&Property<'_>> for BorderStyleType {
+  fn from(value: &Property<'_>) -> Self {
+    match &value {
+      Property::BorderTopStyle(value) => {
+        match_line_style(&value)
+      }
+      Property::BorderBottomStyle(value) => {
+        match_line_style(&value)
+      }
+      Property::BorderLeftStyle(value) => {
+        match_line_style(&value)
+      }
+      Property::BorderRightStyle(value) => {
+        match_line_style(&value)
+      },
+      _ => BorderStyleType::Solid
+    }
+  }
+}
+
+
+impl From<&str> for BorderStyleType {
+  fn from(value: &str) -> Self {
+    match value {
+      "Solid" => {
+        BorderStyleType::Solid
+      },
+      "Dotted" => {
+        BorderStyleType::Dotted
+      },
+      "Dashed" => {
+        BorderStyleType::Dashed
+      },
+      _ => BorderStyleType::Solid
+    }
   }
 }
 
 #[derive(Debug, Clone)]
 pub struct BorderStyle {
-  pub left: Option<String>,
-  pub top: Option<String>,
-  pub bottom: Option<String>,
-  pub right: Option<String>
+  pub left: Option<StyleValueType>,
+  pub top: Option<StyleValueType>,
+  pub bottom: Option<StyleValueType>,
+  pub right: Option<StyleValueType>
 }
 
 impl BorderStyle {
@@ -44,93 +86,67 @@ impl BorderStyle {
     }
   }
 
-  pub fn is_zero(&self) -> bool {
-    self.top.is_none() && self.right.is_none() && self.bottom.is_none() && self.left.is_none()
+  pub fn set_all(&mut self, style: &StyleValueType) {
+    self.top = Some(style.clone());
+    self.left = Some(style.clone());
+    self.bottom = Some(style.clone());
+    self.right = Some(style.clone());
   }
 
-  pub fn set_all(&mut self, style: &str) {
-    self.top = Some(style.to_string());
-    self.left = Some(style.to_string());
-    self.bottom = Some(style.to_string());
-    self.right = Some(style.to_string());
+  pub fn set_top(&mut self, top: StyleValueType) {
+    self.top = Some(top);
   }
-
-  pub fn set_top(&mut self, top: &str) {
-    self.top = Some(top.to_string());
+  pub fn set_right(&mut self, right: StyleValueType) {
+    self.right = Some(right);
   }
-  pub fn set_right(&mut self, right: &str) {
-    self.right = Some(right.to_string());
+  pub fn set_bottom(&mut self, bottom: StyleValueType) {
+    self.bottom = Some(bottom);
   }
-  pub fn set_bottom(&mut self, bottom: &str) {
-    self.bottom = Some(bottom.to_string());
-  }
-  pub fn set_left(&mut self, left: &str) {
-    self.left = Some(left.to_string());
+  pub fn set_left(&mut self, left: StyleValueType) {
+    self.left = Some(left);
   }
 
 }
 
-impl ToExpr for BorderStyle {
-  fn to_expr(&self) -> Expr {
 
-    let mut arr = vec![];
-    
-    if let Some(left) = &self.left {
-      arr.push(PropOrSpread::Prop(Box::new(Prop::KeyValue(KeyValueProp {
-        key: PropName::Ident(Ident::new("left".into(), DUMMY_SP)),
-        value: get_expr_by_val(left).into(),
-      }))))
+impl From<&LineStyle> for BorderStyle {
+  fn from(value: &LineStyle) -> Self {
+    let mut border_style = BorderStyle::new();
+    match &value {
+      LineStyle::Dashed => {
+        border_style.set_all(StyleValueType::BorderStyleType(BorderStyleType::Dashed).borrow());
+      },
+      LineStyle::Dotted => {
+        border_style.set_all(StyleValueType::BorderStyleType(BorderStyleType::Dotted).borrow());
+      },
+      LineStyle::Solid => {
+        border_style.set_all(StyleValueType::BorderStyleType(BorderStyleType::Solid).borrow());
+      },
+      _ => {}
     }
-    if let Some(right) = &self.right {
-      arr.push(PropOrSpread::Prop(Box::new(Prop::KeyValue(KeyValueProp {
-        key: PropName::Ident(Ident::new("right".into(), DUMMY_SP)),
-        value: get_expr_by_val(right).into(),
-      }))))
-    }
-    if let Some(bottom) = &self.bottom {
-      arr.push(PropOrSpread::Prop(Box::new(Prop::KeyValue(KeyValueProp {
-        key: PropName::Ident(Ident::new("bottom".into(), DUMMY_SP)),
-        value: get_expr_by_val(bottom).into(),
-      }))))
-    }
-    if let Some(top) = &self.top {
-      arr.push(PropOrSpread::Prop(Box::new(Prop::KeyValue(KeyValueProp {
-        key: PropName::Ident(Ident::new("top".into(), DUMMY_SP)),
-        value: get_expr_by_val(top).into(),
-      }))));
-    }
-
-    Expr::Object(ObjectLit {
-      span: DUMMY_SP,
-      props: arr.into(),
-    })
+    border_style
   }
 }
 
 impl From<&Property<'_>> for BorderStyle {
   fn from(value: &Property<'_>) -> Self {
 
-    let mut border_style = BorderStyle {
-      left: None,
-      top: None,
-      bottom: None,
-      right: None
-    };
+    let mut border_style = BorderStyle::new();
 
     match value {
       Property::BorderStyle(value) => {
         
         match_key(&value.left).map(|val| {
-          border_style.left = Some(val.into());
+          border_style.set_left(StyleValueType::BorderStyleType(BorderStyleType::from(val)));
         });
         match_key(&value.bottom).map(|val| {
-          border_style.bottom = Some(val.into());
+          border_style.set_bottom(StyleValueType::BorderStyleType(BorderStyleType::from(val)));
         });
         match_key(&value.right).map(|val| {
-          border_style.right = Some(val.into());
+          border_style.set_right(StyleValueType::BorderStyleType(BorderStyleType::from(val)))
         });
         match_key(&value.top).map(|val| {
-          border_style.top = Some(val.into());
+          border_style.set_top(StyleValueType::BorderStyleType(BorderStyleType::from(val)))
         });
       }
       _ => {}
@@ -159,36 +175,30 @@ fn match_key (line_style: &LineStyle) -> Option<&str> {
 }
 
 fn get_expr_by_val(val: &str) -> Expr {
-  let options = ["Solid", "Dotted", "Dashed", "solid", "dotted", "dashed"];
-  let sym: &str;
-  if is_one_of(&val, &options) {
-    sym = val
-  } else {
-    sym = "Solid"
-  }
   Expr::Member(MemberExpr {
     span: DUMMY_SP,
     obj: Box::new(Expr::Ident(Ident::new("BorderStyle".into(), DUMMY_SP))),
     prop: MemberProp::Ident(Ident {
       span: DUMMY_SP,
-      sym: capitalize_first(sym).into(),
+      sym: val.into(),
       optional: false,
     }),
   })
   .into()
 }
 
-fn capitalize_first(s: &str) -> String {
-  if let Some(c) = s.chars().next() {
-      let capitalized = c.to_uppercase();
-      let rest = &s[c.len_utf8()..];
-      format!("{}{}", capitalized, rest)
-  } else {
-      // 处理空字符串的情况
-      String::from(s)
-  }
-}
 
-fn is_one_of(input: &str, options: &[&str]) -> bool {
-  options.iter().any(|&option| option == input)
+fn match_line_style (value: &LineStyle) -> BorderStyleType {
+  match &value {
+    LineStyle::Solid => {
+      BorderStyleType::Solid
+    },
+    LineStyle::Dotted => {
+      BorderStyleType::Dotted
+    },
+    LineStyle::Dashed => {
+      BorderStyleType::Dashed
+    },
+    _ => BorderStyleType::Solid
+  }
 }

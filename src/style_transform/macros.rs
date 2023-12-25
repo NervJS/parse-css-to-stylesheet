@@ -52,7 +52,24 @@ macro_rules! impl_to_expr_for_transform_mem {
         )*
         Expr::Object(ObjectLit {
           span: DUMMY_SP,
-          props,
+          props: vec![
+            PropOrSpread::Prop(Box::new(Prop::KeyValue(KeyValueProp {
+              key: PropName::Ident(Ident::new("type".into(), DUMMY_SP)),
+              value: Expr::Lit(Lit::Str(swc_ecma_ast::Str {
+                span: DUMMY_SP,
+                value: stringify!($class).into(),
+                raw: None
+              })).into(),
+            }))),
+            PropOrSpread::Prop(Box::new(Prop::KeyValue(KeyValueProp {
+              key: PropName::Ident(Ident::new("value".into(), DUMMY_SP)),
+              value: Expr::Object(ObjectLit {
+                span: DUMMY_SP,
+                props,
+              })
+              .into(),
+            }))),
+          ]
         })
       }
     }

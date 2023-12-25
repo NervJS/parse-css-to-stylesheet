@@ -1,44 +1,23 @@
+use std::borrow::Borrow;
+
 use lightningcss::{
   properties::Property,
   stylesheet::PrinterOptions,
   traits::ToCss, targets::{Features, Targets}, values::color::CssColor
 };
-use swc_common::DUMMY_SP;
-use swc_ecma_ast::{Expr, PropOrSpread, Prop, KeyValueProp, Ident, PropName, ObjectLit};
 
-use crate::{style_transform::traits::ToExpr, utils::fix_rgba};
-
-
-pub fn parse_border_color_item(value: &CssColor) -> Option<BorderColor> {
-  if *value != CssColor::default() {
-    let mut border_color = BorderColor::new();
-    let color = value.to_css_string(PrinterOptions {
-      minify: false,
-      targets: Targets {
-        include: Features::HexAlphaColors,
-        ..Targets::default()
-      },
-      ..PrinterOptions::default()
-    }).unwrap();
-    border_color.set_all(color.as_str());
-    Some(border_color)
-  } else {
-    None
-  }
-}
+use crate::style_transform::style_value_type::StyleValueType;
 
 #[derive(Debug, Clone)]
 
 pub struct BorderColor {
-  pub top: Option<String>,
-  pub right: Option<String>,
-  pub bottom: Option<String>,
-  pub left: Option<String>
+  pub top: Option<StyleValueType>,
+  pub right: Option<StyleValueType>,
+  pub bottom: Option<StyleValueType>,
+  pub left: Option<StyleValueType>
 }
 
-
 impl BorderColor {
-  
   pub fn new() -> Self {
     BorderColor {
       top: None,
@@ -48,68 +27,44 @@ impl BorderColor {
     }
   }
 
-  pub fn is_zero(&self) -> bool {
-    self.top == None
-      && self.right == None
-      && self.bottom == None
-      && self.left == None
+  pub fn set_all (&mut self, color: &StyleValueType) {
+    self.top = Some(color.clone());
+    self.right = Some(color.clone());
+    self.bottom = Some(color.clone());
+    self.left = Some(color.clone());
   }
 
-  pub fn set_all (&mut self, color: &str) {
-    self.top = Some(color.to_string());
-    self.right = Some(color.to_string());
-    self.bottom = Some(color.to_string());
-    self.left = Some(color.to_string());
+  pub fn set_top(&mut self, top: StyleValueType) {
+    self.top = Some(top);
   }
-
-  pub fn set_top(&mut self, top: &str) {
-    self.top = Some(top.to_string());
+  pub fn set_right(&mut self, right: StyleValueType) {
+    self.right = Some(right);
   }
-  pub fn set_right(&mut self, right: &str) {
-    self.right = Some(right.to_string());
+  pub fn set_bottom(&mut self, bottom: StyleValueType) {
+    self.bottom = Some(bottom);
   }
-  pub fn set_bottom(&mut self, bottom: &str) {
-    self.bottom = Some(bottom.to_string());
-  }
-  pub fn set_left(&mut self, left: &str) {
-    self.left = Some(left.to_string());
+  pub fn set_left(&mut self, left: StyleValueType) {
+    self.left = Some(left);
   }
 
 }
 
-impl ToExpr for BorderColor {
-  fn to_expr(&self) -> Expr {
-    let mut arr = vec![];
-    
-    if let Some(left) = &self.left {
-      arr.push(PropOrSpread::Prop(Box::new(Prop::KeyValue(KeyValueProp {
-        key: PropName::Ident(Ident::new("left".into(), DUMMY_SP)),
-        value: fix_rgba(&left).into(),
-      }))))
+impl From<&CssColor> for BorderColor {
+  fn from(value: &CssColor) -> Self {
+    let mut border_color = BorderColor::new();
+    if *value != CssColor::default() {
+      let color = value.to_css_string(PrinterOptions {
+        minify: false,
+        targets: Targets {
+          include: Features::HexAlphaColors,
+          ..Targets::default()
+        },
+        ..PrinterOptions::default()
+      }).unwrap();
+      border_color.set_all(StyleValueType::Color(color).borrow());
     }
-    if let Some(right) = &self.right {
-      arr.push(PropOrSpread::Prop(Box::new(Prop::KeyValue(KeyValueProp {
-        key: PropName::Ident(Ident::new("right".into(), DUMMY_SP)),
-        value: fix_rgba(&right).into(),
-      }))))
-    }
-    if let Some(bottom) = &self.bottom {
-      arr.push(PropOrSpread::Prop(Box::new(Prop::KeyValue(KeyValueProp {
-        key: PropName::Ident(Ident::new("bottom".into(), DUMMY_SP)),
-        value: fix_rgba(&bottom).into(),
-      }))))
-    }
-    if let Some(top) = &self.top {
-      arr.push(PropOrSpread::Prop(Box::new(Prop::KeyValue(KeyValueProp {
-        key: PropName::Ident(Ident::new("top".into(), DUMMY_SP)),
-        value: fix_rgba(&top).into(),
-      }))))
-    }
-
-    Expr::Object(ObjectLit {
-      span: DUMMY_SP,
-      props: arr.into(),
-    })
+    border_color
+  
   }
 }
 
@@ -135,10 +90,10 @@ impl From<&Property<'_>> for BorderColor {
           }) {
             Ok(color) => {
               match i {
-                0 => border_color.set_top(color.as_str()),
-                1 => border_color.set_right(color.as_str()),
-                2 => border_color.set_bottom(color.as_str()),
-                3 => border_color.set_left(color.as_str()),
+                0 => border_color.set_top(StyleValueType::Color(color)),
+                1 => border_color.set_right(StyleValueType::Color(color)),
+                2 => border_color.set_bottom(StyleValueType::Color(color)),
+                3 => border_color.set_left(StyleValueType::Color(color)),
                 _ => {}
               }
             },

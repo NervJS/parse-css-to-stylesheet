@@ -1,5 +1,5 @@
 use swc_common::DUMMY_SP;
-use swc_ecma_ast::{ArrayLit, Expr};
+use swc_ecma_ast::{ArrayLit, Expr, PropOrSpread, ObjectLit, Prop, KeyValueProp, PropName, Ident, Lit};
 
 use crate::style_transform::{traits::ToExpr, utils::WrapCSSNumber};
 
@@ -48,26 +48,43 @@ impl Matrix {
 
 impl ToExpr for Matrix {
   fn to_expr(&self) -> Expr {
-    Expr::Array(ArrayLit {
+    Expr::Object(ObjectLit {
       span: DUMMY_SP,
-      elems: vec![
-        Some(self.m00.to_expr().into()),
-        Some(self.m01.to_expr().into()),
-        Some(self.m02.to_expr().into()),
-        Some(self.m03.to_expr().into()),
-        Some(self.m10.to_expr().into()),
-        Some(self.m11.to_expr().into()),
-        Some(self.m12.to_expr().into()),
-        Some(self.m13.to_expr().into()),
-        Some(self.m20.to_expr().into()),
-        Some(self.m21.to_expr().into()),
-        Some(self.m22.to_expr().into()),
-        Some(self.m23.to_expr().into()),
-        Some(self.m30.to_expr().into()),
-        Some(self.m31.to_expr().into()),
-        Some(self.m32.to_expr().into()),
-        Some(self.m33.to_expr().into()),
-      ],
+      props: vec![
+        PropOrSpread::Prop(Box::new(Prop::KeyValue(KeyValueProp {
+          key: PropName::Ident(Ident::new("type".into(), DUMMY_SP)),
+          value: Expr::Lit(Lit::Str(swc_ecma_ast::Str {
+            span: DUMMY_SP,
+            value: "Matrix".into(),
+            raw: None
+          })).into(),
+        }))),
+        PropOrSpread::Prop(Box::new(Prop::KeyValue(KeyValueProp {
+          key: PropName::Ident(Ident::new("value".into(), DUMMY_SP)),
+          value: Expr::Array(ArrayLit {
+            span: DUMMY_SP,
+            elems: vec![
+              Some(self.m00.to_expr().into()),
+              Some(self.m01.to_expr().into()),
+              Some(self.m02.to_expr().into()),
+              Some(self.m03.to_expr().into()),
+              Some(self.m10.to_expr().into()),
+              Some(self.m11.to_expr().into()),
+              Some(self.m12.to_expr().into()),
+              Some(self.m13.to_expr().into()),
+              Some(self.m20.to_expr().into()),
+              Some(self.m21.to_expr().into()),
+              Some(self.m22.to_expr().into()),
+              Some(self.m23.to_expr().into()),
+              Some(self.m30.to_expr().into()),
+              Some(self.m31.to_expr().into()),
+              Some(self.m32.to_expr().into()),
+              Some(self.m33.to_expr().into()),
+            ],
+          })
+          .into(),
+        }))),
+      ]
     })
   }
 }

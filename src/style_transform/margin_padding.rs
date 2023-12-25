@@ -1,43 +1,38 @@
 use lightningcss::{properties::Property, stylesheet::PrinterOptions, traits::ToCss };
-use swc_common::DUMMY_SP;
-use swc_ecma_ast::{Expr, Ident, KeyValueProp, ObjectLit, Prop, PropName, PropOrSpread};
-
-use crate::utils::convert_px_to_units;
-
-use super::traits::ToExpr;
+use super::style_value_type::StyleValueType;
 
 #[derive(Debug, Clone)]
 pub struct MarginPadding {
-  pub top: String,
-  pub right: String,
-  pub bottom: String,
-  pub left: String,
+  pub top: Option<StyleValueType>,
+  pub right: Option<StyleValueType>,
+  pub bottom: Option<StyleValueType>,
+  pub left: Option<StyleValueType>,
 }
 
 impl MarginPadding {
   pub fn new() -> Self {
     MarginPadding {
-      top: "0".to_string(),
-      right: "0".to_string(),
-      bottom: "0".to_string(),
-      left: "0".to_string()
+      top: None,
+      right: None,
+      bottom: None,
+      left: None
     }
   }
 
-  pub fn set_top(&mut self, top: &str) {
-    self.top = top.to_string();
+  pub fn set_top(&mut self, top: StyleValueType) {
+    self.top = Some(top);
   }
 
-  pub fn set_right(&mut self, right: &str) {
-    self.right = right.to_string();
+  pub fn set_right(&mut self, right: StyleValueType) {
+    self.right = Some(right);
   }
 
-  pub fn set_bottom(&mut self, bottom: &str) {
-    self.bottom = bottom.to_string();
+  pub fn set_bottom(&mut self, bottom: StyleValueType) {
+    self.bottom = Some(bottom);
   }
 
-  pub fn set_left(&mut self, left: &str) {
-    self.left = left.to_string();
+  pub fn set_left(&mut self, left: StyleValueType) {
+    self.left = Some(left)
   }
 }
 
@@ -47,95 +42,76 @@ impl Default for MarginPadding {
   }
 }
 
-impl ToExpr for MarginPadding {
-  fn to_expr(&self) -> Expr {
-    Expr::Object(ObjectLit {
-      span: DUMMY_SP,
-      props: vec![
-        PropOrSpread::Prop(Box::new(Prop::KeyValue(KeyValueProp {
-          key: PropName::Ident(Ident::new("top".into(), DUMMY_SP)),
-          value: convert_px_to_units(self.top.to_string()).into()
-        }))),
-        PropOrSpread::Prop(Box::new(Prop::KeyValue(KeyValueProp {
-          key: PropName::Ident(Ident::new("right".into(), DUMMY_SP)),
-          value: convert_px_to_units(self.right.to_string()).into()
-        }))),
-        PropOrSpread::Prop(Box::new(Prop::KeyValue(KeyValueProp {
-          key: PropName::Ident(Ident::new("bottom".into(), DUMMY_SP)),
-          value: convert_px_to_units(self.bottom.to_string()).into()
-        }))),
-        PropOrSpread::Prop(Box::new(Prop::KeyValue(KeyValueProp {
-          key: PropName::Ident(Ident::new("left".into(), DUMMY_SP)),
-          value: convert_px_to_units(self.left.to_string()).into()
-        }))),
-      ]
-      .into(),
-    })
-  }
-}
-
 impl From<&Property<'_>> for MarginPadding {
   fn from(value: &Property<'_>) -> Self {
     let mut margin_padding = MarginPadding::new();
     match value {
       Property::Margin(value) => {
         margin_padding.set_top(
-          value
-            .top
-            .to_css_string(PrinterOptions::default())
-            .unwrap()
-            .as_str()
+          StyleValueType::Length(
+            value
+              .top
+              .to_css_string(PrinterOptions::default())
+              .unwrap()
+          )
         );
         margin_padding.set_right(
-          value
-            .right
-            .to_css_string(PrinterOptions::default())
-            .unwrap()
-            .as_str(),
+          StyleValueType::Length(
+            value
+              .right
+              .to_css_string(PrinterOptions::default())
+              .unwrap()
+          )
         );
         margin_padding.set_bottom(
-          value
-            .bottom
-            .to_css_string(PrinterOptions::default())
-            .unwrap()
-            .as_str(),
+          StyleValueType::Length(
+            value
+              .bottom
+              .to_css_string(PrinterOptions::default())
+              .unwrap()
+          )
         );
         margin_padding.set_left(
-          value
-            .left
-            .to_css_string(PrinterOptions::default())
-            .unwrap()
-            .as_str(),
+          StyleValueType::Length(
+            value
+              .left
+              .to_css_string(PrinterOptions::default())
+              .unwrap()
+          )
         );
       }
       Property::Padding(value) => {
         margin_padding.set_top(
-          value
-            .top
-            .to_css_string(PrinterOptions::default())
-            .unwrap()
-            .as_str(),
+          StyleValueType::Length(
+            value
+              .top
+              .to_css_string(PrinterOptions::default())
+              .unwrap()
+          )
         );
         margin_padding.set_right(
-          value
-            .right
-            .to_css_string(PrinterOptions::default())
-            .unwrap()
-            .as_str(),
+          StyleValueType::Length(
+            value
+              .right
+              .to_css_string(PrinterOptions::default())
+              .unwrap()
+          )
         );
         margin_padding.set_bottom(
-          value
-            .bottom
-            .to_css_string(PrinterOptions::default())
-            .unwrap()
-            .as_str(),
+          StyleValueType::Length(
+            value
+              .bottom
+              .to_css_string(PrinterOptions::default())
+              .unwrap()
+          )
         );
         margin_padding.set_left(
-          value
-            .left
-            .to_css_string(PrinterOptions::default())
-            .unwrap()
-            .as_str(),
+          StyleValueType::Length(
+            value
+              .left
+              .to_css_string(PrinterOptions::default())
+              .unwrap()
+          )
         );
       }
       _ => {}

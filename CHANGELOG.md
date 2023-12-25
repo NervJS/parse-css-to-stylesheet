@@ -1,3 +1,12 @@
+## [0.0.30](https://github.com/NervJS/parse-css-to-stylesheet/compare/v0.0.28...v0.0.30) (2023-12-25)
+
+
+### Features
+
+* 扁平化样式解析 ([c5b68c9](https://github.com/NervJS/parse-css-to-stylesheet/commit/c5b68c9b1832bf181cc41b7cce5858bbe1fa41e7))
+
+
+
 ## [0.0.29](https://github.com/NervJS/parse-css-to-stylesheet/compare/v0.0.28...v0.0.29) (2023-12-20)
 
 

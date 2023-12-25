@@ -642,7 +642,9 @@ impl<'i> JSXMutVisitor<'i> {
                     }
                     _ => {}
                   },
-                  PropOrSpread::Spread(_) => {}
+                  PropOrSpread::Spread(_) => {
+                    has_dynamic_style = true;
+                  }
                 }
               }
               if !has_property {
@@ -693,7 +695,9 @@ impl<'i> JSXMutVisitor<'i> {
                 }
                 _ => {}
               },
-              PropOrSpread::Spread(_) => {}
+              PropOrSpread::Spread(_) => {
+                has_dynamic_style = true;
+              }
             }
           }
           let mut temp_props = vec![];

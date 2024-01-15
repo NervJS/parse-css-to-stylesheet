@@ -252,6 +252,7 @@ if (!nativeBinding) {
   throw new Error(`Failed to load native binding`)
 }
 
-const { parse } = nativeBinding
+const { parse, parseStyle } = nativeBinding
 
 module.exports.parse = parse
+module.exports.parseStyle = parseStyle

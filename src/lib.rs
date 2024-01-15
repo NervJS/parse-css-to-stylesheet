@@ -7,6 +7,8 @@ use swc_ecma_codegen::{text_writer::JsWriter, Emitter};
 
 use crate::{document::JSXDocument, style_parser::StyleParser, style_write::StyleWrite};
 
+use crate::react_native::rn_style_parser::RNStyleParser;
+
 #[macro_use]
 extern crate napi_derive;
 
@@ -18,6 +20,7 @@ mod style_write;
 mod utils;
 mod visitor;
 mod constants;
+mod react_native;
 
 #[napi]
 pub fn parse(component: String, styles: Vec<String>) -> String {
@@ -57,4 +60,15 @@ pub fn parse(component: String, styles: Vec<String>) -> String {
   }
   let code = String::from_utf8(buf).unwrap().replace("\r\n", "\n");
   code
+}
+
+
+// 单独解析样式
+#[napi]
+pub fn parse_style(styles: Vec<String>) -> String {
+  let css = styles.join("\n");
+  let mut style_parser = RNStyleParser::new();
+  let res = style_parser.parse(&css);
+  style_parser.calc();
+  res
 }

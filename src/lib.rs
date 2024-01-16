@@ -1,10 +1,12 @@
 #![deny(clippy::all)]
 
+use std::fmt::format;
 use std::{cell::RefCell, rc::Rc};
 
 use swc_common::{comments::SingleThreadedComments, sync::Lrc, SourceMap};
 use swc_ecma_codegen::{text_writer::JsWriter, Emitter};
 
+use crate::react_native::create_stylesheet::RNStyleSheet;
 use crate::{document::JSXDocument, style_parser::StyleParser, style_write::StyleWrite};
 
 use crate::react_native::rn_style_parser::RNStyleParser;
@@ -20,6 +22,7 @@ mod style_write;
 mod utils;
 mod visitor;
 mod constants;
+mod style_propetries;
 mod react_native;
 
 #[napi]
@@ -67,8 +70,16 @@ pub fn parse(component: String, styles: Vec<String>) -> String {
 #[napi]
 pub fn parse_style(styles: Vec<String>) -> String {
   let css = styles.join("\n");
+  // css解析
   let mut style_parser = RNStyleParser::new();
-  let res = style_parser.parse(&css);
-  style_parser.calc();
-  res
+  style_parser.parse(&css);
+  let style_data = style_parser.calc();
+
+  // stylesheet生成
+  let cm: Lrc<SourceMap> = Default::default();
+  let comments = SingleThreadedComments::default();
+  let mut rn_stylesheet = RNStyleSheet::new(style_data);
+  rn_stylesheet.create(cm.clone(), &comments);
+  let code = rn_stylesheet.codegen();
+  code
 }

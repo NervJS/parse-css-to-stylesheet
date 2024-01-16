@@ -5,4 +5,10 @@
 
 .c_span {
   color: #f00;
+  align-content: flex-end;
+  aspect-ratio: 1 / 2;
+}
+
+.c-hello {
+  flex-basis: 200px;
 }

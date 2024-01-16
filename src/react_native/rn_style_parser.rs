@@ -2,9 +2,16 @@ use std::{rc::Rc, cell::RefCell, convert::Infallible, collections::HashMap, hash
 
 use lightningcss::{stylesheet::{StyleSheet, ParserOptions, PrinterOptions}, visitor::{Visit, Visitor, VisitTypes}, visit_types, rules::CssRule, properties::Property, declaration::DeclarationBlock, traits::ToCss};
 
-use crate::{style_parser::StyleDeclaration, utils::to_camel_case};
+use crate::{style_parser::StyleDeclaration, utils::to_camel_case, style_propetries::style_value_type::StyleValueType};
 
 use super::parse_style_properties::parse_style_properties;
+
+pub type StyleValue = HashMap<String, StyleValueType>;
+
+pub struct StyleData<'i> {
+  pub style_record: Rc<RefCell<HashMap<String, Vec<(String, Property<'i>)>>>>,
+  pub all_style: Rc<RefCell<HashMap<String, StyleValue>>>,
+}
 
 struct StyleVisitor<'i> {
   all_style: Rc<RefCell<Vec<(String, Vec<StyleDeclaration<'i>>)>>>,
@@ -66,15 +73,13 @@ impl<'i> RNStyleParser<'i> {
     }
   }
 
-  pub fn parse(&mut self, css: &'i str) -> String {
+  pub fn parse(&mut self, css: &'i str) {
     let mut stylesheet = StyleSheet::parse(css, ParserOptions::default()).expect("解析样式失败");
     let mut style_visitor = StyleVisitor::new(Rc::clone(&self.all_style));
     stylesheet.visit(&mut style_visitor).unwrap();
-
-    format!("{}{}", "1,", "2")
   }
 
-  pub fn calc(&self) {
+  pub fn calc(&self) -> HashMap<String, HashMap<String, StyleValueType>>{
     // 遍历 style_record，计算每个节点的最终样式
     let mut all_style = self.all_style.borrow_mut();
     let mut style_record = HashMap::new();
@@ -138,8 +143,8 @@ impl<'i> RNStyleParser<'i> {
       )
     })
     .collect::<HashMap<_, _>>();
-  
-    println!("final_all_style: {:?}", final_all_style)
+
+    final_all_style
   }
 
   // 合并相同类型的 style，比如 .a { color: red } .a { color: blue } => .a { color: blue }，并且 !important 的优先级高于普通的

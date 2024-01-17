@@ -2,7 +2,7 @@
 
 use lightningcss::properties::Property;
 use swc_common::DUMMY_SP;
-use swc_ecma_ast::{Expr, Ident, Lit, Number};
+use swc_ecma_ast::Expr;
 
 use crate::{generate_expr_lit_num, generate_expr_ident};
 

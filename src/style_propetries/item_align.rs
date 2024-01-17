@@ -3,7 +3,7 @@ use lightningcss::properties::{
   align::SelfPosition, Property,
 };
 use swc_common::DUMMY_SP;
-use swc_ecma_ast::{Expr, Ident, MemberExpr, MemberProp, Lit};
+use swc_ecma_ast::{Expr, Ident, MemberExpr, MemberProp};
 
 use crate::generate_expr_lit_str;
 

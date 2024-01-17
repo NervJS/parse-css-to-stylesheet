@@ -1,14 +1,7 @@
 .c_div {
-  height: 100px;
-  width: 200px;
-}
-
-.c_span {
-  color: #f00;
-  align-content: flex-end;
-  aspect-ratio: 1 / 2;
-}
-
-.c-hello {
-  flex-basis: 200px;
+  column-gap: 200px;
+  margin-top: 200px;
+  height: 1rem;
+  z-index: 10;
+  margin: 200px;
 }

@@ -1,7 +1,7 @@
 
 
 use lightningcss::properties::{Property, display::{Display::{Keyword, Pair}, DisplayKeyword, DisplayInside}};
-use swc_ecma_ast::{Expr, Lit};
+use swc_ecma_ast::Expr;
 
 use crate::generate_expr_lit_str;
 

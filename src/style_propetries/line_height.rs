@@ -1,0 +1,77 @@
+use lightningcss::{
+  properties::{Property, font},
+  values::{length::LengthValue, percentage::Percentage},
+  traits::ToCss,
+};
+use swc_ecma_ast::Expr;
+
+use crate::{style_propetries::traits::ToExpr, generate_dimension_percentage, generate_invalid_expr, generate_ident};
+
+use super::unit::{generate_expr_by_length_value, Platform, PropertyTuple};
+
+
+#[derive(Debug, Clone)]
+pub struct LineHeight {
+  pub id: String,
+  pub value: EnumValue
+}
+
+
+#[derive(Debug, Clone)]
+pub enum EnumValue {
+  LengthValue(LengthValue),
+  Percentage(Percentage),
+  String(String),
+  Invalid
+}
+
+impl ToExpr for LineHeight {
+  fn to_expr(&self) -> PropertyTuple {
+    PropertyTuple::One(
+      generate_ident!(&self.id),
+      match &self.value {
+        EnumValue::String(_) => generate_invalid_expr!(),
+        EnumValue::LengthValue(length_value) => generate_expr_by_length_value(&length_value, Platform::ReactNative),
+        EnumValue::Percentage(_) => generate_invalid_expr!(),
+        EnumValue::Invalid => generate_invalid_expr!(),
+      }
+    )
+  }
+
+  fn to_rn_expr(&self) -> PropertyTuple {
+    PropertyTuple::One(
+      generate_ident!(&self.id),
+      match &self.value {
+        EnumValue::String(_) => generate_invalid_expr!(),
+        EnumValue::LengthValue(length_value) => generate_expr_by_length_value(&length_value, Platform::ReactNative),
+        EnumValue::Percentage(_) => generate_invalid_expr!(),
+        EnumValue::Invalid => generate_invalid_expr!(),
+      }
+    )
+  }
+}
+
+impl From<(String, &Property<'_>)> for LineHeight {
+  fn from(prop: (String, &Property<'_>)) -> Self {
+    LineHeight {
+      id: prop.0,
+      value: match prop.1 {
+        Property::LineHeight(value) => {
+          match value {
+            font::LineHeight::Length(val) => {
+              generate_dimension_percentage!(EnumValue, val)
+            },
+            // RN和鸿蒙都不支持数值类型：https://github.com/NervJS/taro/issues/11620
+            font::LineHeight::Number(_) => {
+              EnumValue::Invalid
+            },
+            font::LineHeight::Normal => {
+              EnumValue::Invalid
+            }
+          }
+        }
+        _ => EnumValue::Invalid
+      }
+    }
+  }
+}

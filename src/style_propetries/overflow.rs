@@ -1,54 +1,69 @@
 use lightningcss::properties::{
-  Property, overflow:: OverflowKeyword,
+  Property, overflow::OverflowKeyword
 };
-use swc_ecma_ast::Expr;
 
-use crate::generate_expr_lit_str;
+use crate::{generate_expr_lit_str, generate_ident, generate_invalid_expr};
 
-use super::traits::ToExpr;
+use super::{traits::ToExpr, unit::PropertyTuple};
+
+
+#[derive(Debug, Clone)]
+pub struct Overflow {
+  pub id: String,
+  pub value: EnumValue
+}
 
 #[derive(Debug, Clone, PartialEq)]
-pub enum Overflow {
+pub enum EnumValue {
   Hidden,
   Visible,
   Scroll,
   Invalid,
 }
 
-impl From<&Property<'_>> for Overflow {
-  fn from(value: &Property<'_>) -> Self {
-    match value {
-      Property::Overflow(value) => {
-        match value.x {
-          OverflowKeyword::Hidden => Overflow::Hidden,
-          OverflowKeyword::Visible => Overflow::Visible,
-          OverflowKeyword::Clip => Overflow::Invalid,
-          OverflowKeyword::Scroll => Overflow::Scroll,
-          OverflowKeyword::Auto => Overflow::Invalid
-        }
-      },
-      _ => Overflow::Invalid
+impl From<(String, &Property<'_>)> for Overflow {
+  fn from(value: (String, &Property<'_>)) -> Self {
+    Overflow {
+      id: value.0,
+      value: match value.1 {
+        Property::Overflow(value) => {
+          match value.x {
+            OverflowKeyword::Hidden => EnumValue::Hidden,
+            OverflowKeyword::Visible => EnumValue::Visible,
+            OverflowKeyword::Clip => EnumValue::Invalid,
+            OverflowKeyword::Scroll => EnumValue::Scroll,
+            OverflowKeyword::Auto => EnumValue::Invalid
+          }
+        },
+        _ => EnumValue::Invalid
+      }
     }
   }
 }
 
 impl ToExpr for Overflow {
-  fn to_expr(&self) -> Expr {
-    match self {
-      Overflow::Hidden => generate_expr_lit_str!("hidden"),
-      Overflow::Visible => generate_expr_lit_str!("visible"),
-      Overflow::Scroll => generate_expr_lit_str!("scroll"),
-      Overflow::Invalid => generate_expr_lit_str!("invalid"),
-    }
+  fn to_expr(&self) -> PropertyTuple {
+    PropertyTuple::One(
+      generate_ident!(&self.id),
+      match &self.value {
+        EnumValue::Hidden => generate_expr_lit_str!("hidden"),
+        EnumValue::Visible => generate_expr_lit_str!("visible"),
+        EnumValue::Scroll => generate_expr_lit_str!("scroll"),
+        EnumValue::Invalid => generate_invalid_expr!(),
+      }
+    )
   }
 
-  fn to_rn_expr(&self) -> Expr {
-    match self {
-      Overflow::Hidden => generate_expr_lit_str!("hidden"),
-      Overflow::Visible => generate_expr_lit_str!("visible"),
-      Overflow::Scroll => generate_expr_lit_str!("scroll"),
-      Overflow::Invalid => generate_expr_lit_str!("invalid"),
-    }
+  fn to_rn_expr(&self) -> PropertyTuple {
+    PropertyTuple::One(
+      generate_ident!(&self.id),
+      match &self.value {
+        EnumValue::Hidden => generate_expr_lit_str!("hidden"),
+        EnumValue::Visible => generate_expr_lit_str!("visible"),
+        EnumValue::Scroll => generate_expr_lit_str!("scroll"),
+        EnumValue::Invalid => generate_invalid_expr!(),
+      }
+    )
   }
 
 }

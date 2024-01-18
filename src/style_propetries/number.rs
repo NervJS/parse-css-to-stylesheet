@@ -1,9 +1,8 @@
-use lightningcss::{properties::Property, values::number::CSSNumber};
 use swc_common::DUMMY_SP;
-use swc_ecma_ast::{Expr, Lit, Number};
+use swc_ecma_ast::Number;
 
-use crate::generate_number_property;
+use crate::{style_propetries::traits::ToExpr, generate_number_property, generate_ident};
 
-use crate::style_propetries::traits::ToExpr;
+use super::unit::PropertyTuple;
 
 generate_number_property!(NumberProperty, FlexGrow, FlexShrink);

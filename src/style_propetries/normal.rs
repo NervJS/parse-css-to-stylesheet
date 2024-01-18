@@ -1,29 +1,36 @@
 
 
-use lightningcss::properties::{Property, display::{Display::{Keyword, Pair}, DisplayKeyword, DisplayInside}};
-use swc_ecma_ast::{Expr, Lit};
+use swc_ecma_ast::Expr;
 
-use crate::{generate_expr_lit_str, utils::convert_px_to_units};
+use crate::{utils::convert_px_to_units, generate_ident};
 
-use super::{traits::ToExpr, unit::generate_expr_with_css_input};
+use super::{traits::ToExpr, unit::{generate_expr_with_css_input, PropertyTuple}};
+
+
 
 #[derive(Debug, Clone)]
-pub struct Normal(String);
+pub struct Normal(String, String);
 
 impl Normal {
-  pub fn new(value: String) -> Self {
-    Self(value)
+  pub fn new(id: String, value: String) -> Self {
+    Self(id, value)
   }
 }
 
 
 impl ToExpr for Normal {
-  fn to_expr(&self) -> Expr {
-    convert_px_to_units(self.0.clone())
+  fn to_expr(&self) -> PropertyTuple {
+    PropertyTuple::One(
+      generate_ident!(self.0.clone()),
+      generate_expr_with_css_input(self.1.clone())
+    )
   }
 
-  fn to_rn_expr(&self) -> Expr {
-    generate_expr_with_css_input(self.0.clone())
+  fn to_rn_expr(&self) -> PropertyTuple {
+    PropertyTuple::One(
+      generate_ident!(self.0.clone()),
+      generate_expr_with_css_input(self.1.clone())
+    )
   }
 }
 

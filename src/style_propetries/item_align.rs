@@ -5,12 +5,20 @@ use lightningcss::properties::{
 use swc_common::DUMMY_SP;
 use swc_ecma_ast::{Expr, Ident, MemberExpr, MemberProp};
 
-use crate::generate_expr_lit_str;
+use crate::{generate_expr_lit_str, generate_ident};
 
-use super::traits::ToExpr;
+use super::{traits::ToExpr, unit::PropertyTuple};
+
+
+#[derive(Debug, Clone)]
+pub struct ItemAlign {
+  pub id: String,
+  pub value: EnumValue
+}
+
 
 #[derive(Debug, Clone, PartialEq)]
-pub enum ItemAlign {
+pub enum EnumValue {
   Auto,
   Start,
   Center,
@@ -20,92 +28,88 @@ pub enum ItemAlign {
   Ignore,
 }
 
-impl From<&str> for ItemAlign {
-  fn from(value: &str) -> Self {
-    match value {
-      "auto" => ItemAlign::Auto,
-      "flex-start" | "start" => ItemAlign::Start,
-      "center" => ItemAlign::Center,
-      "flex-end" | "end" => ItemAlign::End,
-      "stretch" => ItemAlign::Stretch,
-      "baseline" => ItemAlign::Baseline,
-      _ => ItemAlign::Auto,
-    }
-  }
-}
-
-impl From<&Property<'_>> for ItemAlign {
-  fn from(value: &Property<'_>) -> Self {
-    match value {
-      Property::AlignItems(value, _) => match value {
-        LNAlignItems::Stretch => ItemAlign::Stretch,
-        LNAlignItems::SelfPosition { value, .. } => match value {
-          SelfPosition::Start | SelfPosition::FlexStart => ItemAlign::Start,
-          SelfPosition::Center => ItemAlign::Center,
-          SelfPosition::End | SelfPosition::FlexEnd => ItemAlign::End,
-          _ => ItemAlign::Ignore,
+impl From<(String, &Property<'_>)> for ItemAlign {
+  fn from(prop: (String, &Property<'_>)) -> Self {
+    ItemAlign {
+      id: prop.0,
+      value: match prop.1 {
+        Property::AlignItems(value, _) => match value {
+          LNAlignItems::Stretch => EnumValue::Stretch,
+          LNAlignItems::SelfPosition { value, .. } => match value {
+            SelfPosition::Start | SelfPosition::FlexStart => EnumValue::Start,
+            SelfPosition::Center => EnumValue::Center,
+            SelfPosition::End | SelfPosition::FlexEnd => EnumValue::End,
+            _ => EnumValue::Ignore,
+          },
+          LNAlignItems::BaselinePosition(value) => match value {
+            BaselinePosition::Last => EnumValue::Ignore,
+            _ => EnumValue::Baseline,
+          },
+          _ => EnumValue::Auto,
         },
-        LNAlignItems::BaselinePosition(value) => match value {
-          BaselinePosition::Last => ItemAlign::Ignore,
-          _ => ItemAlign::Baseline,
+        Property::AlignSelf(value, _) => match value {
+          LNAlignSelf::Auto => EnumValue::Auto,
+          LNAlignSelf::SelfPosition { value, .. } => match value {
+            SelfPosition::Start | SelfPosition::FlexStart => EnumValue::Start,
+            SelfPosition::Center => EnumValue::Center,
+            SelfPosition::End | SelfPosition::FlexEnd => EnumValue::End,
+            _ => EnumValue::Ignore,
+          },
+          LNAlignSelf::Stretch => EnumValue::Stretch,
+          LNAlignSelf::BaselinePosition(value) => match value {
+            BaselinePosition::Last => EnumValue::Ignore,
+            _ => EnumValue::Baseline,
+          },
+          _ => EnumValue::Auto,
         },
-        _ => ItemAlign::Auto,
-      },
-      Property::AlignSelf(value, _) => match value {
-        LNAlignSelf::Auto => ItemAlign::Auto,
-        LNAlignSelf::SelfPosition { value, .. } => match value {
-          SelfPosition::Start | SelfPosition::FlexStart => ItemAlign::Start,
-          SelfPosition::Center => ItemAlign::Center,
-          SelfPosition::End | SelfPosition::FlexEnd => ItemAlign::End,
-          _ => ItemAlign::Ignore,
-        },
-        LNAlignSelf::Stretch => ItemAlign::Stretch,
-        LNAlignSelf::BaselinePosition(value) => match value {
-          BaselinePosition::Last => ItemAlign::Ignore,
-          _ => ItemAlign::Baseline,
-        },
-        _ => ItemAlign::Auto,
-      },
-      _ => ItemAlign::Auto,
+        _ => EnumValue::Auto,
+      }
     }
   }
 }
 
 impl ToExpr for ItemAlign {
-  fn to_expr(&self) -> Expr {
-    Expr::Member(MemberExpr {
-      span: DUMMY_SP,
-      obj: Box::new(Expr::Ident(Ident::new("ItemAlign".into(), DUMMY_SP))),
-      prop: MemberProp::Ident(Ident {
+  fn to_expr(&self) -> PropertyTuple {
+    PropertyTuple::One(
+      generate_ident!(&self.id),
+      Expr::Member(MemberExpr {
         span: DUMMY_SP,
-        sym: match self {
-          ItemAlign::Auto => "Auto",
-          ItemAlign::Start => "Start",
-          ItemAlign::Center => "Center",
-          ItemAlign::End => "End",
-          ItemAlign::Stretch => "Stretch",
-          ItemAlign::Baseline => "Baseline",
-          ItemAlign::Ignore => "",
-        }
-        .into(),
-        optional: false,
-      }),
-    })
-    .into()
+        obj: Box::new(Expr::Ident(Ident::new("ItemAlign".into(), DUMMY_SP))),
+        prop: MemberProp::Ident(Ident {
+          span: DUMMY_SP,
+          sym: match self.value {
+            EnumValue::Auto => "Auto",
+            EnumValue::Start => "Start",
+            EnumValue::Center => "Center",
+            EnumValue::End => "End",
+            EnumValue::Stretch => "Stretch",
+            EnumValue::Baseline => "Baseline",
+            EnumValue::Ignore => "",
+          }
+          .into(),
+          optional: false,
+        }),
+      })
+      .into()
+    )
   }
 
-  fn to_rn_expr(&self) -> Expr {
-    generate_expr_lit_str!(
-      match self {
-        ItemAlign::Auto => "auto",
-        ItemAlign::Start => "flex-start",
-        ItemAlign::Center => "center",
-        ItemAlign::End => "flex-end",
-        ItemAlign::Stretch => "stretch",
-        ItemAlign::Baseline => "baseline",
-        _ => "",
-      }
+  fn to_rn_expr(&self) -> PropertyTuple {
+    PropertyTuple::One(
+      generate_ident!(&self.id),
+      generate_expr_lit_str!(
+        match self.value {
+          EnumValue::Auto => "auto",
+          EnumValue::Start => "flex-start",
+          EnumValue::Center => "center",
+          EnumValue::End => "flex-end",
+          EnumValue::Stretch => "stretch",
+          EnumValue::Baseline => "baseline",
+          _ => "",
+        }
+      )
     )
+    
   }
 
 }

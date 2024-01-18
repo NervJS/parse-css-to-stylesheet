@@ -1,15 +1,15 @@
 use lightningcss::{
-  properties::{Property, align::GapValue},
-  values::{length::LengthValue, percentage::{DimensionPercentage, Percentage}}, traits::ToCss, stylesheet::PrinterOptions,
+  properties::{Property, font},
+  values::{length::LengthValue, percentage::Percentage}, traits::ToCss,
 };
 
-use crate::{generate_expr_lit_str, generate_expr_lit_num, generate_ident};
+use crate::{generate_expr_lit_str, generate_dimension_percentage, generate_invalid_expr, generate_ident};
 
 use super::{traits::ToExpr, unit::{generate_expr_by_length_value, Platform, PropertyTuple}};
 
 
 #[derive(Debug, Clone)]
-pub struct Gap {
+pub struct FontSize {
   pub id: String,
   pub value: EnumValue
 }
@@ -19,10 +19,10 @@ pub enum EnumValue {
   LengthValue(LengthValue),
   Percentage(Percentage),
   String(String),
-  Normal
+  Invalid
 }
 
-impl ToExpr for Gap {
+impl ToExpr for FontSize {
   fn to_expr(&self) -> PropertyTuple {
     PropertyTuple::One(
       generate_ident!(&self.id),
@@ -30,7 +30,7 @@ impl ToExpr for Gap {
         EnumValue::String(value) => generate_expr_lit_str!(value.to_owned()),
         EnumValue::LengthValue(length_value) => generate_expr_by_length_value(length_value, Platform::Harmony),
         EnumValue::Percentage(value) => generate_expr_lit_str!((value.0 * 100.0).to_string() + "%"),
-        EnumValue::Normal => generate_expr_lit_num!(0.0),
+        EnumValue::Invalid => generate_invalid_expr!(),
       }
     )
   }
@@ -42,43 +42,24 @@ impl ToExpr for Gap {
         EnumValue::String(value) => generate_expr_lit_str!(value.to_owned()),
         EnumValue::LengthValue(length_value) => generate_expr_by_length_value(length_value, Platform::ReactNative),
         EnumValue::Percentage(value) => generate_expr_lit_str!((value.0 * 100.0).to_string() + "%"),
-        EnumValue::Normal => generate_expr_lit_str!("normal"),
+        EnumValue::Invalid => generate_invalid_expr!(),
       }
     )
   }
 }
 
-macro_rules! generate_gap {
-  ($value:expr) => {
-    match &$value {
-      GapValue::Normal => EnumValue::Normal,
-      GapValue::LengthPercentage(value) => match value {
-        DimensionPercentage::Dimension(value) => {
-          EnumValue::LengthValue(value.clone())
-        }
-        DimensionPercentage::Percentage(value) => {
-          EnumValue::Percentage(value.clone())
-        }
-        DimensionPercentage::Calc(value) => {
-          EnumValue::String(value.to_css_string(PrinterOptions::default()).unwrap())
-        }
-      },
-    }
-  }
-}
-
-impl From<(String, &Property<'_>)> for Gap {
+impl From<(String, &Property<'_>)> for FontSize {
   fn from(prop: (String, &Property<'_>)) -> Self {
-    Gap {
+    FontSize {
       id: prop.0,
-      value: match &prop.1 {
-        Property::RowGap(value) => {
-          generate_gap!(value)
+      value: match prop.1 {
+        Property::FontSize(value) => {
+          match value {
+            font::FontSize::Length(val) => generate_dimension_percentage!(EnumValue, val),
+            _ => EnumValue::Invalid
+          }
         }
-        Property::ColumnGap(value) => {
-          generate_gap!(value)
-        }
-        _ => EnumValue::Normal
+        _ => EnumValue::Invalid
       }
     }
   }

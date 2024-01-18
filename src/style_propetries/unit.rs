@@ -1,12 +1,19 @@
 use lightningcss::{values::length::LengthValue, traits::ToCss, stylesheet::PrinterOptions};
 use regex::Regex;
 use swc_common::DUMMY_SP;
-use swc_ecma_ast::{ExprOrSpread, Expr,  Callee, Ident, CallExpr, Lit, Number};
+use swc_ecma_ast::{ExprOrSpread, Expr,  Callee, Ident, CallExpr, Lit, Number, PropName};
 use crate::{generate_expr_lit_num, generate_expr_lit_str, constants::{RN_CONVERT_STYLE_PX_FN, CONVERT_STYLE_PX_FN, RN_CONVERT_STYLE_VU_FN}};
 
 pub enum Platform {
   ReactNative,
   Harmony
+}
+
+pub enum PropertyTuple {
+  // 一对一属性：height: 100px 解析 => (height, "100px")
+  One(PropName, Expr),
+  // 一对多属性：flex: 1 解析 => vec![(flexGrow, "1"), (flexShrink, "1"), (flexBasis, "0%")]
+  Array(Vec<(PropName, Expr)>)
 }
 
 // 根据长度单位生成对应的表达式

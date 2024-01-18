@@ -1,15 +1,13 @@
 use swc_ecma_ast::Expr;
 
-use super::unit::Platform;
+use super::unit::{Platform, PropertyTuple};
 
 pub trait ToExpr {
-  fn to_expr(&self) -> Expr;
+  fn to_expr(&self) -> PropertyTuple;
 
-  fn to_rn_expr(&self) -> Expr {
-    self.to_expr()
-  }
+  fn to_rn_expr(&self) -> PropertyTuple;
 }
 
 pub trait ToStyleValue {
-  fn to_expr(&self, platform: Platform) -> Expr;
+  fn to_expr(&self, platform: Platform) -> PropertyTuple;
 }

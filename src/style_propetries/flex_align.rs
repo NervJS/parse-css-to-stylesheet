@@ -8,12 +8,18 @@ use lightningcss::properties::{
 use swc_common::DUMMY_SP;
 use swc_ecma_ast::{Expr, Ident, MemberExpr, MemberProp};
 
-use crate::generate_expr_lit_str;
+use crate::{generate_expr_lit_str, generate_ident};
 
-use super::traits::ToExpr;
+use super::{traits::ToExpr, unit::PropertyTuple};
 
 #[derive(Debug, Clone)]
-pub enum FlexAlign {
+pub struct FlexAlign {
+  pub id: String,
+  pub value: EnumValue
+}
+
+#[derive(Debug, Clone)]
+pub enum EnumValue {
   Start,
   Center,
   End,
@@ -22,52 +28,42 @@ pub enum FlexAlign {
   SpaceEvenly,
 }
 
-impl From<&str> for FlexAlign {
-  fn from(value: &str) -> Self {
-    match value {
-      "flex-start" | "start" => FlexAlign::Start,
-      "center" => FlexAlign::Center,
-      "flex-end" | "end" => FlexAlign::End,
-      "space-between" => FlexAlign::SpaceBetween,
-      "space-around" => FlexAlign::SpaceAround,
-      "space-evenly" => FlexAlign::SpaceEvenly,
-      _ => FlexAlign::Start,
-    }
-  }
-}
 
-impl From<&Property<'_>> for FlexAlign {
-  fn from(value: &Property<'_>) -> Self {
-    match value {
-      Property::JustifyContent(value, _) => match value {
-        LNJustifyContent::ContentPosition { value, .. } => match value {
-          ContentPosition::Start | ContentPosition::FlexStart => FlexAlign::Start,
-          ContentPosition::Center => FlexAlign::Center,
-          ContentPosition::End | ContentPosition::FlexEnd => FlexAlign::End,
+impl From<(String, &Property<'_>)> for FlexAlign {
+  fn from(prop: (String, &Property<'_>)) -> Self {
+    FlexAlign {
+      id: prop.0,
+      value: match prop.1 {
+        Property::JustifyContent(value, _) => match value {
+          LNJustifyContent::ContentPosition { value, .. } => match value {
+            ContentPosition::Start | ContentPosition::FlexStart => EnumValue::Start,
+            ContentPosition::Center => EnumValue::Center,
+            ContentPosition::End | ContentPosition::FlexEnd => EnumValue::End,
+          },
+          LNJustifyContent::ContentDistribution(value) => match value {
+            ContentDistribution::SpaceBetween => EnumValue::SpaceBetween,
+            ContentDistribution::SpaceAround => EnumValue::SpaceAround,
+            ContentDistribution::SpaceEvenly => EnumValue::SpaceEvenly,
+            _ => EnumValue::Start,
+          },
+          _ => EnumValue::Start,
         },
-        LNJustifyContent::ContentDistribution(value) => match value {
-          ContentDistribution::SpaceBetween => FlexAlign::SpaceBetween,
-          ContentDistribution::SpaceAround => FlexAlign::SpaceAround,
-          ContentDistribution::SpaceEvenly => FlexAlign::SpaceEvenly,
-          _ => FlexAlign::Start,
+        Property::AlignContent(value, _) => match value {
+          LNAlignContent::ContentPosition { value, .. } => match value {
+            ContentPosition::Start | ContentPosition::FlexStart => EnumValue::Start,
+            ContentPosition::Center => EnumValue::Center,
+            ContentPosition::End | ContentPosition::FlexEnd => EnumValue::End,
+          },
+          LNAlignContent::ContentDistribution(value) => match value {
+            ContentDistribution::SpaceBetween => EnumValue::SpaceBetween,
+            ContentDistribution::SpaceAround => EnumValue::SpaceAround,
+            ContentDistribution::SpaceEvenly => EnumValue::SpaceEvenly,
+            _ => EnumValue::Start,
+          },
+          _ => EnumValue::Start,
         },
-        _ => FlexAlign::Start,
-      },
-      Property::AlignContent(value, _) => match value {
-        LNAlignContent::ContentPosition { value, .. } => match value {
-          ContentPosition::Start | ContentPosition::FlexStart => FlexAlign::Start,
-          ContentPosition::Center => FlexAlign::Center,
-          ContentPosition::End | ContentPosition::FlexEnd => FlexAlign::End,
-        },
-        LNAlignContent::ContentDistribution(value) => match value {
-          ContentDistribution::SpaceBetween => FlexAlign::SpaceBetween,
-          ContentDistribution::SpaceAround => FlexAlign::SpaceAround,
-          ContentDistribution::SpaceEvenly => FlexAlign::SpaceEvenly,
-          _ => FlexAlign::Start,
-        },
-        _ => FlexAlign::Start,
-      },
-      _ => FlexAlign::Start,
+        _ => EnumValue::Start,
+      }
     }
   }
 }
@@ -76,37 +72,41 @@ impl From<&Property<'_>> for FlexAlign {
 impl ToExpr for FlexAlign {
 
   // 转换成鸿蒙样式
-  fn to_expr(&self) -> Expr {
-    Expr::Member(MemberExpr {
-      span: DUMMY_SP,
-      obj: Box::new(Expr::Ident(Ident::new("FlexAlign".into(), DUMMY_SP))),
-      prop: MemberProp::Ident(Ident {
+  fn to_expr(&self) -> PropertyTuple {
+    PropertyTuple::One (
+      generate_ident!(&self.id),
+      Expr::Member(MemberExpr {
         span: DUMMY_SP,
-        sym: match self {
-          FlexAlign::Start => "Start",
-          FlexAlign::Center => "Center",
-          FlexAlign::End => "End",
-          FlexAlign::SpaceBetween => "SpaceBetween",
-          FlexAlign::SpaceAround => "SpaceAround",
-          FlexAlign::SpaceEvenly => "SpaceEvenly",
-        }
-        .into(),
-        optional: false,
-      }),
-    })
-    .into()
+        obj: Box::new(Expr::Ident(Ident::new("FlexAlign".into(), DUMMY_SP))),
+        prop: MemberProp::Ident(Ident {
+          span: DUMMY_SP,
+          sym: match self.value {
+            EnumValue::Start => "Start",
+            EnumValue::Center => "Center",
+            EnumValue::End => "End",
+            EnumValue::SpaceBetween => "SpaceBetween",
+            EnumValue::SpaceAround => "SpaceAround",
+            EnumValue::SpaceEvenly => "SpaceEvenly",
+          }
+          .into(),
+          optional: false,
+        }),
+      })
+      .into(),
+    )
   }
 
   // 转换成RN样式
-  fn to_rn_expr(&self) -> Expr {
-    generate_expr_lit_str!(
-      match self {
-        FlexAlign::Start => "flex-start",
-        FlexAlign::Center => "center",
-        FlexAlign::End => "flex-end",
-        FlexAlign::SpaceBetween => "space-between",
-        FlexAlign::SpaceAround => "space-around",
-        FlexAlign::SpaceEvenly => "space-evenly",
+  fn to_rn_expr(&self) -> PropertyTuple {
+    PropertyTuple::One (
+      generate_ident!(&self.id),
+      match &self.value {
+        EnumValue::Start => generate_expr_lit_str!("flex-start"),
+        EnumValue::Center => generate_expr_lit_str!("center"),
+        EnumValue::End => generate_expr_lit_str!("flex-end"),
+        EnumValue::SpaceBetween => generate_expr_lit_str!("space-between"),
+        EnumValue::SpaceAround => generate_expr_lit_str!("space-around"),
+        EnumValue::SpaceEvenly => generate_expr_lit_str!("space-evenly"),
       }
     )
   }

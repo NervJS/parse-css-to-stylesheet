@@ -11,7 +11,7 @@ use swc_ecma_visit::FoldWith;
 use swc_ecmascript::transforms::typescript::strip;
 use swc_atoms::Atom;
 
-use crate::{style_propetries::{style_value_type::StyleValueType, traits::ToStyleValue, unit::Platform}, generate_expr_lit_str};
+use crate::{style_propetries::{style_value_type::StyleValueType, traits::ToStyleValue, unit::{Platform, PropertyTuple}}, generate_expr_lit_str};
 
 pub struct RNStyleSheet {
   pub cm: Option<Lrc<SourceMap>>,
@@ -34,15 +34,26 @@ impl RNStyleSheet {
     let mut rules = vec![];
     for (key, value) in self.style_data.iter() {
       let mut prop_or_spread = vec![];
-      for (key, value) in value.iter() {
-        prop_or_spread.push(PropOrSpread::Prop(Box::new(Prop::KeyValue(KeyValueProp {
-          key: PropName::Ident(Ident {
-            span: Span::default(),
-            sym: Atom::new(key),
-            optional: false
-          }),
-          value: Box::new(value.to_expr(Platform::ReactNative)),
-        }))))
+      for (_, value) in value.iter() {
+        let prop = value.to_expr(Platform::ReactNative);
+        match prop {
+          PropertyTuple::One(id, expr) => {
+            if let Expr::Invalid(_) = expr { continue; }
+            prop_or_spread.push(PropOrSpread::Prop(Box::new(Prop::KeyValue(KeyValueProp {
+              key: id,
+              value: Box::new(expr),
+            }))))
+          }
+          PropertyTuple::Array(prop_arr) => {
+            prop_arr.into_iter().for_each(|(id, expr)| {
+              if let Expr::Invalid(_) = expr { return }
+              prop_or_spread.push(PropOrSpread::Prop(Box::new(Prop::KeyValue(KeyValueProp {
+                key: id,
+                value: Box::new(expr),
+              }))))
+            })
+          },
+        }
       }
 
       rules.push(PropOrSpread::Prop(Box::new(Prop::KeyValue(KeyValueProp {

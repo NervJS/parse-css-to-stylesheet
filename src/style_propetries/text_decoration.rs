@@ -2,7 +2,7 @@ use lightningcss::{properties::{Property, text}, traits::ToCss, stylesheet::Prin
 use swc_common::DUMMY_SP;
 use swc_ecma_ast::{Expr, Ident, MemberProp, MemberExpr, PropName};
 
-use crate::{style_propetries::traits::ToExpr, generate_invalid_expr, generate_expr_lit_str, generate_ident};
+use crate::{style_propetries::traits::ToExpr, generate_invalid_expr, generate_expr_lit_str, generate_prop_name};
 
 use super::unit::PropertyTuple;
 
@@ -36,7 +36,7 @@ pub struct TextDecorationColor(String);
 impl ToExpr for TextDecoration {
   fn to_expr(&self) -> PropertyTuple {
     PropertyTuple::One(
-      generate_ident!(&self.id),
+      generate_prop_name!(*self.id),
       Expr::Member(MemberExpr {
         span: DUMMY_SP,
         obj: Box::new(Expr::Ident(Ident::new("TextDecorationType".into(), DUMMY_SP))),
@@ -61,7 +61,7 @@ impl ToExpr for TextDecoration {
 
     if let Some(line) = &self.line {
       props.push(
-        (generate_ident!("textDecorationLine"),
+        (generate_prop_name!("textDecorationLine"),
         match line {
           TextDecorationLine::Underline => generate_expr_lit_str!("underline"),
           TextDecorationLine::LineThrough => generate_expr_lit_str!("line-through"),
@@ -72,7 +72,7 @@ impl ToExpr for TextDecoration {
     };
     if let Some(style) = &self.style {
       props.push(
-        (generate_ident!("textDecorationStyle"),
+        (generate_prop_name!("textDecorationStyle"),
         match &style {
           TextDecorationStyle::Solid => generate_expr_lit_str!("solid"),
           TextDecorationStyle::Double => generate_expr_lit_str!("double"),
@@ -84,7 +84,7 @@ impl ToExpr for TextDecoration {
     };
     if let Some(color) = &self.color {
       props.push(
-        (generate_ident!("textDecorationColor"),
+        (generate_prop_name!("textDecorationColor"),
         generate_expr_lit_str!(color.0.clone()))
       )
     }

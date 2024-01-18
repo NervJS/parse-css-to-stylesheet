@@ -2,7 +2,7 @@
 
 use lightningcss::properties::Property;
 
-use crate::{generate_expr_lit_num, generate_expr_ident, generate_ident};
+use crate::{generate_expr_lit_num, generate_expr_ident, generate_prop_name};
 
 use super::{traits::ToExpr, unit::PropertyTuple};
 
@@ -41,7 +41,7 @@ impl From<(String, &Property<'_>)> for AspactRatio {
 impl ToExpr for AspactRatio {
   fn to_expr(&self) -> PropertyTuple {
     PropertyTuple::One(
-      generate_ident!("aspectRatio"),
+      generate_prop_name!("aspectRatio"),
       match self.value {
         EAspactRatio::Ratio(first, second) => generate_expr_lit_num!(first / second),
         _ => generate_expr_lit_num!(1.0),
@@ -51,7 +51,7 @@ impl ToExpr for AspactRatio {
 
   fn to_rn_expr(&self) -> PropertyTuple {
     PropertyTuple::One(
-      generate_ident!("aspectRatio"),
+      generate_prop_name!("aspectRatio"),
       match self.value {
         EAspactRatio::Ratio(first, second) => generate_expr_lit_num!(first / second),
         _ => generate_expr_ident!("auto"),

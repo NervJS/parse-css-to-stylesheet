@@ -2,7 +2,7 @@ use lightningcss::properties::{flex::FlexDirection as LNFlexDirection, Property}
 use swc_common::DUMMY_SP;
 use swc_ecma_ast::{Expr, Ident, MemberExpr, MemberProp};
 
-use crate::{generate_expr_lit_str, generate_ident};
+use crate::{generate_expr_lit_str, generate_prop_name};
 
 use super::{traits::ToExpr, unit::PropertyTuple};
 
@@ -41,7 +41,7 @@ impl From<(String, &Property<'_>)> for FlexDirection {
 impl ToExpr for FlexDirection {
   fn to_expr(&self) -> PropertyTuple {
     PropertyTuple::One(
-      generate_ident!(&self.id),
+      generate_prop_name!(*self.id),
       Expr::Member(MemberExpr {
         span: DUMMY_SP,
         obj: Box::new(Expr::Ident(Ident::new("FlexDirection".into(), DUMMY_SP))),
@@ -63,7 +63,7 @@ impl ToExpr for FlexDirection {
 
   fn to_rn_expr(&self) -> PropertyTuple {
     PropertyTuple::One(
-      generate_ident!(&self.id),
+      generate_prop_name!(*self.id),
       generate_expr_lit_str!(match self.value {
         EnumValue::Row => "row",
         EnumValue::RowReverse => "row-reverse",

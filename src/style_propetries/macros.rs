@@ -1,12 +1,8 @@
 #[macro_export]
-macro_rules! generate_ident {
-    ($key: expr) => {
-      swc_ecma_ast::PropName::Ident(swc_ecma_ast::Ident {
-        span: swc_common::Span::default(),
-        sym: swc_atoms::Atom::new($key),
-        optional: false
-      })
-    };
+macro_rules! generate_prop_name {
+  ($key: expr) => {
+    swc_ecma_ast::PropName::Ident(swc_ecma_ast::Ident::new($key.into(), swc_common::DUMMY_SP))
+  };
 }
 
 #[macro_export]
@@ -28,6 +24,31 @@ macro_rules! generate_expr_ident {
   ($var:expr) => {
     swc_ecma_ast::Expr::Ident(swc_ecma_ast::Ident::new($var.into(), swc_common::DUMMY_SP))
   };
+}
+
+#[macro_export]
+macro_rules! generate_expr_by_css_color {
+    ($color:expr) => {
+      $color.to_css_string(lightningcss::stylesheet::PrinterOptions {
+        minify: false,
+        targets: lightningcss::targets::Targets {
+          include: lightningcss::targets::Features::HexAlphaColors,
+          ..lightningcss::targets::Targets::default()
+        },
+        ..lightningcss::stylesheet::PrinterOptions::default()
+      }).unwrap().into()
+    };
+}
+
+#[macro_export]
+macro_rules! generate_expr_by_length  {
+    ($var:expr, $platform:expr) => {{
+      use $crate::style_propetries::unit::{Platform, generate_expr_by_length_value};
+      match $var {
+        Length::Value(val) => generate_expr_by_length_value(&val, $platform),
+        Length::Calc(val) => generate_expr_lit_str!(*val.to_css_string(lightningcss::stylesheet::PrinterOptions::default()).unwrap()),
+      }
+    }};
 }
 
 #[macro_export]
@@ -74,13 +95,13 @@ macro_rules! generate_color_property {
     impl ToExpr for $class {
       fn to_expr(&self) -> PropertyTuple {
         PropertyTuple::One(
-          generate_ident!(self.id.clone()),
+          generate_prop_name!(self.id.clone()),
           swc_ecma_ast::Expr::Lit(swc_ecma_ast::Lit::Str(self.value.clone().into())).into()
         )
       }
       fn to_rn_expr(&self) -> PropertyTuple {
         PropertyTuple::One(
-          generate_ident!(self.id.clone()),
+          generate_prop_name!(self.id.clone()),
           swc_ecma_ast::Expr::Lit(swc_ecma_ast::Lit::Str(self.value.clone().into())).into()
         )
       }
@@ -125,7 +146,7 @@ macro_rules! generate_number_property {
     impl ToExpr for $class {
       fn to_expr(&self) -> PropertyTuple {
         PropertyTuple::One(
-          generate_ident!(self.id.clone()),
+          generate_prop_name!(self.id.clone()),
           swc_ecma_ast::Expr::Lit(swc_ecma_ast::Lit::Num(Number {
             span: DUMMY_SP,
             value: self.value as f64,
@@ -136,7 +157,7 @@ macro_rules! generate_number_property {
       }
       fn to_rn_expr(&self) -> PropertyTuple {
         PropertyTuple::One(
-          generate_ident!(self.id.clone()),
+          generate_prop_name!(self.id.clone()),
           swc_ecma_ast::Expr::Lit(swc_ecma_ast::Lit::Num(Number {
             span: DUMMY_SP,
             value: self.value as f64,
@@ -190,7 +211,7 @@ macro_rules! generate_length_value_property {
     impl ToExpr for $class {
       fn to_expr(&self) -> PropertyTuple {
         PropertyTuple::One(
-          generate_ident!(self.id.clone()),
+          generate_prop_name!(self.id.clone()),
           match &self.value {
             EnumValue::String(value) => generate_expr_lit_str!(value.to_owned()),
             EnumValue::LengthValue(length_value) => generate_expr_by_length_value(length_value, Platform::Harmony),
@@ -202,7 +223,7 @@ macro_rules! generate_length_value_property {
 
       fn to_rn_expr(&self) -> PropertyTuple {
         PropertyTuple::One(
-          generate_ident!(self.id.clone()),
+          generate_prop_name!(self.id.clone()),
           match &self.value {
             EnumValue::String(value) => generate_expr_lit_str!(value.to_owned()),
             EnumValue::LengthValue(length_value) => generate_expr_by_length_value(length_value, Platform::ReactNative),
@@ -262,7 +283,7 @@ macro_rules! generate_size_property {
       impl ToExpr for $class {
         fn to_expr(&self) -> PropertyTuple {
           PropertyTuple::One(
-            generate_ident!(self.id.clone()),
+            generate_prop_name!(self.id.clone()),
             match &self.value {
               EnumValue::String(value) => generate_expr_lit_str!(value.to_owned()),
               EnumValue::LengthValue(length_value) => generate_expr_by_length_value(length_value, Platform::Harmony),
@@ -274,7 +295,7 @@ macro_rules! generate_size_property {
 
         fn to_rn_expr(&self) -> PropertyTuple {
           PropertyTuple::One(
-            generate_ident!(self.id.clone()),
+            generate_prop_name!(self.id.clone()),
             match &self.value {
               EnumValue::String(value) => generate_expr_lit_str!(value.to_owned()),
               EnumValue::LengthValue(length_value) => generate_expr_by_length_value(length_value, Platform::ReactNative),

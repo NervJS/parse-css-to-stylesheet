@@ -1,8 +1,8 @@
 use lightningcss::properties::{Property, font};
 use swc_common::DUMMY_SP;
-use swc_ecma_ast::{Expr, Lit, Number, Ident, MemberProp, MemberExpr};
+use swc_ecma_ast::{Expr, Ident, MemberProp, MemberExpr};
 
-use crate::{style_propetries::traits::ToExpr, generate_expr_lit_str, generate_expr_lit_num, generate_ident};
+use crate::{style_propetries::traits::ToExpr, generate_expr_lit_str, generate_expr_lit_num, generate_prop_name};
 
 use super::unit::PropertyTuple;
 
@@ -25,7 +25,7 @@ pub enum EnumValue {
 impl ToExpr for FontWeight {
   fn to_expr(&self) -> PropertyTuple {
     PropertyTuple::One(
-      generate_ident!(&self.id),
+      generate_prop_name!(*self.id),
       match &self.value {
         EnumValue::Number(num) => {
           generate_expr_lit_num!(*num as f64)
@@ -55,7 +55,7 @@ impl ToExpr for FontWeight {
 
   fn to_rn_expr(&self) -> PropertyTuple {
     PropertyTuple::One(
-      generate_ident!(&self.id),
+      generate_prop_name!(*self.id),
       match &self.value {
         EnumValue::Bold => generate_expr_lit_str!("bold"),
         EnumValue::Bolder => generate_expr_lit_num!(900.0),

@@ -1,7 +1,7 @@
 use swc_common::DUMMY_SP;
 use swc_ecma_ast::Number;
 
-use crate::{style_propetries::traits::ToExpr, generate_number_property, generate_ident};
+use crate::{style_propetries::traits::ToExpr, generate_number_property, generate_prop_name};
 
 use super::unit::PropertyTuple;
 

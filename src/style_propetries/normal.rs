@@ -1,8 +1,6 @@
 
 
-use swc_ecma_ast::Expr;
-
-use crate::{utils::convert_px_to_units, generate_ident};
+use crate::generate_prop_name;
 
 use super::{traits::ToExpr, unit::{generate_expr_with_css_input, PropertyTuple}};
 
@@ -21,14 +19,14 @@ impl Normal {
 impl ToExpr for Normal {
   fn to_expr(&self) -> PropertyTuple {
     PropertyTuple::One(
-      generate_ident!(self.0.clone()),
+      generate_prop_name!(self.0.clone()),
       generate_expr_with_css_input(self.1.clone())
     )
   }
 
   fn to_rn_expr(&self) -> PropertyTuple {
     PropertyTuple::One(
-      generate_ident!(self.0.clone()),
+      generate_prop_name!(self.0.clone()),
       generate_expr_with_css_input(self.1.clone())
     )
   }

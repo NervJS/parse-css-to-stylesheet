@@ -2,14 +2,14 @@ use std::collections::HashMap;
 
 use lightningcss::{properties::Property, stylesheet::PrinterOptions};
 
-use crate::style_propetries::{style_value_type::StyleValueType, flex_align::FlexAlign, item_align::ItemAlign, aspect_ratio::AspactRatio, display::Display, flex_basis::FlexBasis, flex_direction::FlexDirection, flex_wrap::FlexWrap, gap::Gap, length_value::LengthValueProperty, size::SizeProperty, max_size::MaxSizeProperty, overflow::Overflow, normal::Normal, number::NumberProperty, color::ColorProperty, font_size::FontSize, font_weight::FontWeight, line_height::LineHeight, text_align::TextAlign, text_decoration::TextDecoration};
+use crate::style_propetries::{style_value_type::StyleValueType, flex_align::FlexAlign, item_align::ItemAlign, aspect_ratio::AspactRatio, display::Display, flex_basis::FlexBasis, flex_direction::FlexDirection, flex_wrap::FlexWrap, gap::Gap, length_value::LengthValueProperty, size::SizeProperty, max_size::MaxSizeProperty, overflow::Overflow, normal::Normal, number::NumberProperty, color::ColorProperty, font_size::FontSize, font_weight::FontWeight, line_height::LineHeight, text_align::TextAlign, text_decoration::TextDecoration, text_shadow::TextShadow, letter_spacing::LetterSpacing, font_style::FontStyle, text_transform::TextTransform, vertical_align::VerticalAlign};
 
 pub fn parse_style_properties(properties: &Vec<(String, Property)>) -> HashMap<String, StyleValueType> {
   let mut final_properties = HashMap::new();
 
   for (id, value)  in properties.iter() {
     let property_name = id.as_str();
-    match (property_name) {
+    match property_name {
       // 基础样式
       "alignContent" => {
         final_properties.insert("alignContent".to_string(), StyleValueType::FlexAlign(FlexAlign::from((id.to_string(), value))));
@@ -69,6 +69,9 @@ pub fn parse_style_properties(properties: &Vec<(String, Property)>) -> HashMap<S
       "fontSize" => {
         final_properties.insert("fontSize".to_string(), StyleValueType::FontSize(FontSize::from((id.to_string(), value))));
       }
+      "fontStyle" => {
+        final_properties.insert("fontStyle".to_string(), StyleValueType::FontStyle(FontStyle::from((id.to_string(), value))));
+      }
       "fontWeight" => {
         final_properties.insert("fontWeight".to_string(), StyleValueType::FontWeight(FontWeight::from((id.to_string(), value))));
       }
@@ -84,6 +87,24 @@ pub fn parse_style_properties(properties: &Vec<(String, Property)>) -> HashMap<S
       }
       "textDecorationLine" => {
         final_properties.insert("textDecorationLine".to_string(), StyleValueType::TextDecoration(TextDecoration::from((id.to_string(), value))));
+      }
+      "textDecorationColor" => {
+        final_properties.insert("textDecorationColor".to_string(), StyleValueType::TextDecoration(TextDecoration::from((id.to_string(), value))));
+      }
+      "textDecorationStyle" => {
+        final_properties.insert("textDecorationStyle".to_string(), StyleValueType::TextDecoration(TextDecoration::from((id.to_string(), value))));
+      }
+      "textShadow" => {
+        final_properties.insert("textShadow".to_string(), StyleValueType::TextShadow(TextShadow::from((id.to_string(), value))));
+      }
+      "textTransform" => {
+        final_properties.insert("textTransform".to_string(), StyleValueType::TextTransform(TextTransform::from((id.to_string(), value))));
+      }
+      "letterSpacing" => {
+        final_properties.insert("letterSpacing".to_string(), StyleValueType::LetterSpacing(LetterSpacing::from((id.to_string(), value))));
+      }
+      "verticalAlign" => {
+        final_properties.insert("verticalAlign".to_string(), StyleValueType::VerticalAlign(VerticalAlign::from((id.to_string(), value))));
       }
       _ => {
         // position、zIndex等... 会自动处理 单位、数字等相关信息

@@ -1,8 +1,6 @@
-use swc_ecma_ast::Expr;
-
 use crate::generate_expr_based_on_platform;
 
-use super::{traits::{ToExpr, ToStyleValue}, flex_align::FlexAlign, item_align::ItemAlign, aspect_ratio::AspactRatio, display::Display, flex_basis::FlexBasis, unit::{Platform, PropertyTuple}, normal::Normal, flex_direction::FlexDirection, flex_wrap::FlexWrap, gap::Gap, length_value::LengthValueProperty, size::SizeProperty, max_size::MaxSizeProperty, overflow::Overflow, number::NumberProperty, color::ColorProperty, font_size::FontSize, font_weight::FontWeight, line_height::LineHeight, text_align::TextAlign, text_decoration::TextDecoration};
+use super::{traits::{ToExpr, ToStyleValue}, flex_align::FlexAlign, item_align::ItemAlign, aspect_ratio::AspactRatio, display::Display, flex_basis::FlexBasis, unit::{Platform, PropertyTuple}, normal::Normal, flex_direction::FlexDirection, flex_wrap::FlexWrap, gap::Gap, length_value::LengthValueProperty, size::SizeProperty, max_size::MaxSizeProperty, overflow::Overflow, number::NumberProperty, color::ColorProperty, font_size::FontSize, font_weight::FontWeight, line_height::LineHeight, text_align::TextAlign, text_decoration::TextDecoration, text_shadow::TextShadow, letter_spacing::LetterSpacing, font_style::FontStyle, text_transform::TextTransform, vertical_align::VerticalAlign};
 
 
 #[derive(Debug, Clone)]
@@ -23,10 +21,15 @@ pub enum StyleValueType {
   Gap(Gap),
   Overflow(Overflow),
   FontSize(FontSize),
+  FontStyle(FontStyle),
   FontWeight(FontWeight),
   LineHeight(LineHeight),
   TextAlign(TextAlign),
   TextDecoration(TextDecoration),
+  TextShadow(TextShadow),
+  TextTransform(TextTransform),
+  LetterSpacing(LetterSpacing),
+  VerticalAlign(VerticalAlign)
 }
 
 impl ToStyleValue for StyleValueType {
@@ -80,6 +83,9 @@ impl ToStyleValue for StyleValueType {
       StyleValueType::FontSize(value) => {
         generate_expr_based_on_platform!(platform, value)
       },
+      StyleValueType::FontStyle(value) => {
+        generate_expr_based_on_platform!(platform, value)
+      },
       StyleValueType::FontWeight(value) => {
         generate_expr_based_on_platform!(platform, value)
       },
@@ -92,6 +98,18 @@ impl ToStyleValue for StyleValueType {
       StyleValueType::TextDecoration(value) => {
         generate_expr_based_on_platform!(platform, value)
       },
+      StyleValueType::TextShadow(value) => {
+        generate_expr_based_on_platform!(platform, value)
+      },
+      StyleValueType::TextTransform(value) => {
+        generate_expr_based_on_platform!(platform, value)
+      },
+      StyleValueType::LetterSpacing(value) => {
+        generate_expr_based_on_platform!(platform, value)
+      },
+      StyleValueType::VerticalAlign(value) => {
+        generate_expr_based_on_platform!(platform, value)
+      }
     }
   }
 }

@@ -8,7 +8,7 @@ use lightningcss::properties::{
 use swc_common::DUMMY_SP;
 use swc_ecma_ast::{Expr, Ident, MemberExpr, MemberProp};
 
-use crate::{generate_expr_lit_str, generate_ident};
+use crate::{generate_expr_lit_str, generate_prop_name};
 
 use super::{traits::ToExpr, unit::PropertyTuple};
 
@@ -74,7 +74,7 @@ impl ToExpr for FlexAlign {
   // 转换成鸿蒙样式
   fn to_expr(&self) -> PropertyTuple {
     PropertyTuple::One (
-      generate_ident!(&self.id),
+      generate_prop_name!(*self.id),
       Expr::Member(MemberExpr {
         span: DUMMY_SP,
         obj: Box::new(Expr::Ident(Ident::new("FlexAlign".into(), DUMMY_SP))),
@@ -99,7 +99,7 @@ impl ToExpr for FlexAlign {
   // 转换成RN样式
   fn to_rn_expr(&self) -> PropertyTuple {
     PropertyTuple::One (
-      generate_ident!(&self.id),
+      generate_prop_name!(*self.id),
       match &self.value {
         EnumValue::Start => generate_expr_lit_str!("flex-start"),
         EnumValue::Center => generate_expr_lit_str!("center"),

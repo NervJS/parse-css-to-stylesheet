@@ -61,7 +61,7 @@ impl RNStyleSheet {
           span: Span::default(),
           expr: Box::new(Expr::Lit(Lit::Str(Str {
             span: DUMMY_SP,
-            value: Atom::new(key),
+            value: Atom::new(key.clone()),
             raw: None
           })))
         }),

@@ -2,7 +2,7 @@ use lightningcss::{properties::Property, values::{length::Length, color::CssColo
 use swc_common::DUMMY_SP;
 use swc_ecma_ast::{Expr, ObjectLit, PropOrSpread, Prop, KeyValueProp};
 
-use crate::{style_propetries::traits::ToExpr, generate_expr_lit_str, generate_prop_name, generate_expr_by_length, generate_expr_by_css_color};
+use crate::{style_propetries::traits::ToExpr, generate_expr_lit_str, generate_prop_name, generate_expr_by_length, generate_string_by_css_color};
 
 use super::unit::PropertyTuple;
 
@@ -60,7 +60,7 @@ impl ToExpr for TextShadow {
             PropOrSpread::Prop(Box::new(Prop::KeyValue(
               KeyValueProp {
                 key: generate_prop_name!("color"),
-                value: Box::new(generate_expr_by_css_color!(self.color.as_ref().unwrap())),
+                value: Box::new(generate_string_by_css_color!(self.color.as_ref().unwrap())),
               }
             ))),
             PropOrSpread::Prop(Box::new(Prop::KeyValue(
@@ -100,7 +100,7 @@ impl ToExpr for TextShadow {
               ))),
             ],
           })),
-          (generate_prop_name!("textShadowColor"), generate_expr_by_css_color!(self.color.as_ref().unwrap())),
+          (generate_prop_name!("textShadowColor"), generate_string_by_css_color!(self.color.as_ref().unwrap())),
           (generate_prop_name!("textShadowRadius"), generate_expr_by_length!(self.blur_radius.as_ref().unwrap(), Platform::ReactNative)),
         ]
       )

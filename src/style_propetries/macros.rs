@@ -27,7 +27,7 @@ macro_rules! generate_expr_ident {
 }
 
 #[macro_export]
-macro_rules! generate_expr_by_css_color {
+macro_rules! generate_string_by_css_color {
     ($color:expr) => {
       $color.to_css_string(lightningcss::stylesheet::PrinterOptions {
         minify: false,
@@ -44,12 +44,14 @@ macro_rules! generate_expr_by_css_color {
 macro_rules! generate_expr_by_length  {
     ($var:expr, $platform:expr) => {{
       use $crate::style_propetries::unit::{Platform, generate_expr_by_length_value};
+      use lightningcss::values::length::Length;
       match $var {
         Length::Value(val) => generate_expr_by_length_value(&val, $platform),
         Length::Calc(val) => generate_expr_lit_str!(*val.to_css_string(lightningcss::stylesheet::PrinterOptions::default()).unwrap()),
       }
     }};
 }
+
 
 #[macro_export]
 macro_rules! generate_invalid_expr {

@@ -1,6 +1,6 @@
 use crate::generate_expr_based_on_platform;
 
-use super::{traits::{ToExpr, ToStyleValue}, flex_align::FlexAlign, item_align::ItemAlign, aspect_ratio::AspactRatio, display::Display, flex_basis::FlexBasis, unit::{Platform, PropertyTuple}, normal::Normal, flex_direction::FlexDirection, flex_wrap::FlexWrap, gap::Gap, length_value::LengthValueProperty, size::SizeProperty, max_size::MaxSizeProperty, overflow::Overflow, number::NumberProperty, color::ColorProperty, font_size::FontSize, font_weight::FontWeight, line_height::LineHeight, text_align::TextAlign, text_decoration::TextDecoration, text_shadow::TextShadow, letter_spacing::LetterSpacing, font_style::FontStyle, text_transform::TextTransform, vertical_align::VerticalAlign};
+use super::{traits::{ToExpr, ToStyleValue}, flex_align::FlexAlign, item_align::ItemAlign, aspect_ratio::AspactRatio, display::Display, flex_basis::FlexBasis, unit::{Platform, PropertyTuple}, normal::Normal, flex_direction::FlexDirection, flex_wrap::FlexWrap, gap::Gap, length_value::LengthValueProperty, size::SizeProperty, max_size::MaxSizeProperty, overflow::Overflow, number::NumberProperty, color::ColorProperty, font_size::FontSize, font_weight::FontWeight, line_height::LineHeight, text_align::TextAlign, text_decoration::TextDecoration, text_shadow::TextShadow, letter_spacing::LetterSpacing, font_style::FontStyle, text_transform::TextTransform, vertical_align::VerticalAlign, border_color::BorderColor, border_width::BorderWidth, border_radius::BorderRadius, border_style::BorderStyle, border::Border};
 
 
 #[derive(Debug, Clone)]
@@ -29,7 +29,12 @@ pub enum StyleValueType {
   TextShadow(TextShadow),
   TextTransform(TextTransform),
   LetterSpacing(LetterSpacing),
-  VerticalAlign(VerticalAlign)
+  VerticalAlign(VerticalAlign),
+  BorderColor(BorderColor),
+  BorderWidth(BorderWidth),
+  BorderRadius(BorderRadius),
+  BorderStyle(BorderStyle),
+  Border(Border)
 }
 
 impl ToStyleValue for StyleValueType {
@@ -109,7 +114,23 @@ impl ToStyleValue for StyleValueType {
       },
       StyleValueType::VerticalAlign(value) => {
         generate_expr_based_on_platform!(platform, value)
+      },
+      StyleValueType::BorderColor(value) => {
+        generate_expr_based_on_platform!(platform, value)
+      },
+      StyleValueType::BorderWidth(value) => {
+        generate_expr_based_on_platform!(platform, value)
+      },
+      StyleValueType::BorderRadius(value) => {
+        generate_expr_based_on_platform!(platform, value)
+      },
+      StyleValueType::BorderStyle(value) => {
+        generate_expr_based_on_platform!(platform, value)
       }
+      StyleValueType::Border(value) => {
+        generate_expr_based_on_platform!(platform, value)
+      }
+
     }
   }
 }

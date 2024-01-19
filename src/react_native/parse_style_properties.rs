@@ -2,7 +2,7 @@ use std::collections::HashMap;
 
 use lightningcss::{properties::Property, stylesheet::PrinterOptions};
 
-use crate::style_propetries::{style_value_type::StyleValueType, flex_align::FlexAlign, item_align::ItemAlign, aspect_ratio::AspactRatio, display::Display, flex_basis::FlexBasis, flex_direction::FlexDirection, flex_wrap::FlexWrap, gap::Gap, length_value::LengthValueProperty, size::SizeProperty, max_size::MaxSizeProperty, overflow::Overflow, normal::Normal, number::NumberProperty, color::ColorProperty, font_size::FontSize, font_weight::FontWeight, line_height::LineHeight, text_align::TextAlign, text_decoration::TextDecoration, text_shadow::TextShadow, letter_spacing::LetterSpacing, font_style::FontStyle, text_transform::TextTransform, vertical_align::VerticalAlign};
+use crate::style_propetries::{style_value_type::StyleValueType, flex_align::FlexAlign, item_align::ItemAlign, aspect_ratio::AspactRatio, display::Display, flex_basis::FlexBasis, flex_direction::FlexDirection, flex_wrap::FlexWrap, gap::Gap, length_value::LengthValueProperty, size::SizeProperty, max_size::MaxSizeProperty, overflow::Overflow, normal::Normal, number::NumberProperty, color::ColorProperty, font_size::FontSize, font_weight::FontWeight, line_height::LineHeight, text_align::TextAlign, text_decoration::TextDecoration, text_shadow::TextShadow, letter_spacing::LetterSpacing, font_style::FontStyle, text_transform::TextTransform, vertical_align::VerticalAlign, border_color::BorderColor, border_width::BorderWidth, border_radius::BorderRadius, border_style::BorderStyle, border::Border};
 
 pub fn parse_style_properties(properties: &Vec<(String, Property)>) -> HashMap<String, StyleValueType> {
   let mut final_properties = HashMap::new();
@@ -105,6 +105,36 @@ pub fn parse_style_properties(properties: &Vec<(String, Property)>) -> HashMap<S
       }
       "verticalAlign" => {
         final_properties.insert("verticalAlign".to_string(), StyleValueType::VerticalAlign(VerticalAlign::from((id.to_string(), value))));
+      }
+      "borderColor" => {
+        final_properties.insert("borderColor".to_string(), StyleValueType::BorderColor(BorderColor::from((id.to_string(), value))));
+      }
+      "borderTopColor" | "borderBottomColor" | "borderLeftColor" | "borderRightColor" => {
+        final_properties.insert(property_name.to_string(), StyleValueType::BorderColor(BorderColor::from((id.to_string(), value))));
+      }
+      "borderWidth" => {
+        final_properties.insert("borderWidth".to_string(), StyleValueType::BorderWidth(BorderWidth::from((id.to_string(), value))));
+      }
+      "borderTopWidth" | "borderBottomWidth" | "borderLeftWidth" | "borderRightWidth" => {
+        final_properties.insert(property_name.to_string(), StyleValueType::BorderWidth(BorderWidth::from((id.to_string(), value))));
+      }
+      "borderRadius" => {
+        final_properties.insert("borderRadius".to_string(), StyleValueType::BorderRadius(BorderRadius::from((id.to_string(), value))));
+      }
+      "borderTopLeftRadius" | "borderTopRightRadius" | "borderBottomLeftRadius" | "borderBottomRightRadius" => {
+        final_properties.insert(property_name.to_string(), StyleValueType::BorderRadius(BorderRadius::from((id.to_string(), value))));
+      }
+      "borderStyle" => {
+        final_properties.insert("borderStyle".to_string(), StyleValueType::BorderStyle(BorderStyle::from((id.to_string(), value))));
+      }
+      "borderTopStyle" | "borderBottomStyle" | "borderLeftStyle" | "borderRightStyle" => {
+        final_properties.insert(property_name.to_string(), StyleValueType::BorderStyle(BorderStyle::from((id.to_string(), value))));
+      }
+      "border" => {
+        final_properties.insert("border".to_string(), StyleValueType::Border(Border::from((id.to_string(), value))));
+      }
+      "borderTop" | "borderBottom" | "borderLeft" | "borderRight" => {
+        final_properties.insert(property_name.to_string(), StyleValueType::Border(Border::from((id.to_string(), value))));
       }
       _ => {
         // position、zIndex等... 会自动处理 单位、数字等相关信息

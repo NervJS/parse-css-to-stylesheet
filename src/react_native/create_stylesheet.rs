@@ -52,7 +52,7 @@ impl RNStyleSheet {
                 value: Box::new(expr),
               }))))
             })
-          },
+          }
         }
       }
 

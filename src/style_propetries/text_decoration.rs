@@ -1,6 +1,6 @@
 use lightningcss::{properties::{Property, text}, traits::ToCss, stylesheet::PrinterOptions, targets::{Targets, Features}};
 use swc_common::DUMMY_SP;
-use swc_ecma_ast::{Expr, Ident, MemberProp, MemberExpr, PropName};
+use swc_ecma_ast::{Expr, Ident, KeyValueProp, MemberExpr, MemberProp, ObjectLit, Prop, PropName, PropOrSpread};
 
 use crate::{style_propetries::traits::ToExpr, generate_invalid_expr, generate_expr_lit_str, generate_prop_name};
 
@@ -35,24 +35,43 @@ pub struct TextDecorationColor(String);
 
 impl ToExpr for TextDecoration {
   fn to_expr(&self) -> PropertyTuple {
+    let mut props = vec![];
+
+    if let Some(line) = &self.line {
+      props.push(PropOrSpread::Prop(Box::new(Prop::KeyValue(KeyValueProp {
+        key: generate_prop_name!("type"),
+        value: Expr::Member(MemberExpr {
+          span: DUMMY_SP,
+          obj: Box::new(Expr::Ident(Ident::new("TextDecorationType".into(), DUMMY_SP))),
+          prop: MemberProp::Ident(Ident {
+            span: DUMMY_SP,
+            sym: match line {
+              TextDecorationLine::Underline => "Underline",
+              TextDecorationLine::LineThrough => "LineThrough",
+              TextDecorationLine::Overline => "Overline",
+              _ => "None",
+            }
+            .into(),
+            optional: false,
+          }),
+        })
+        .into(),
+      }))));
+    }
+
+    if let Some(color) = &self.color {
+      props.push( PropOrSpread::Prop(Box::new(Prop::KeyValue(KeyValueProp {
+        key: generate_prop_name!("color"),
+        value: generate_expr_lit_str!(color.0.clone()).into()
+      }))));
+    }
+
     PropertyTuple::One(
       generate_prop_name!(*self.id),
-      Expr::Member(MemberExpr {
+      Expr::Object(ObjectLit {
         span: DUMMY_SP,
-        obj: Box::new(Expr::Ident(Ident::new("TextDecorationType".into(), DUMMY_SP))),
-        prop: MemberProp::Ident(Ident {
-          span: DUMMY_SP,
-          sym: match self.line {
-            Some(TextDecorationLine::Underline) => "Underline",
-            Some(TextDecorationLine::LineThrough) => "LineThrough",
-            Some(TextDecorationLine::Overline) => "Overline",
-            _ => "None",
-          }
-          .into(),
-          optional: false,
-        }),
+        props: props
       })
-      .into()
     )
   }
 

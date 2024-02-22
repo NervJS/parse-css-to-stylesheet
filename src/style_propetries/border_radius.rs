@@ -87,17 +87,18 @@ impl From<(String, &Property<'_>)> for BorderRadius {
 impl ToExpr for BorderRadius {
     fn to_expr(&self) -> PropertyTuple {
       let mut props: Vec<(PropName, Expr)> = vec![];
+
       if let Some(top) = &self.top_left {
-        props.push((generate_prop_name!(self.id.clone()), generate_expr_by_dimension_percentage!(top)))
+        props.push((generate_prop_name!("borderTopLeftRadius"), generate_expr_by_dimension_percentage!(top)))
       }
       if let Some(bottom) = &self.top_right {
-        props.push((generate_prop_name!(self.id.clone()), generate_expr_by_dimension_percentage!(bottom)))
+        props.push((generate_prop_name!("borderTopRightRadius"), generate_expr_by_dimension_percentage!(bottom)))
       }
       if let Some(left) = &self.bottom_left {
-        props.push((generate_prop_name!(self.id.clone()), generate_expr_by_dimension_percentage!(left)))
+        props.push((generate_prop_name!("borderBottomLeftRadius"), generate_expr_by_dimension_percentage!(left)))
       }
       if let Some(right) = &self.bottom_right {
-        props.push((generate_prop_name!(self.id.clone()), generate_expr_by_dimension_percentage!(right)))
+        props.push((generate_prop_name!("borderBottomRightRadius"), generate_expr_by_dimension_percentage!(right)))
       }
       PropertyTuple::Array(props)
     }

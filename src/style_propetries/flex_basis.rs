@@ -61,3 +61,15 @@ impl From<(String, &Property<'_>)> for FlexBasis {
     }
   }
 }
+
+impl FlexBasis {
+  pub fn from_value(prop: (String, LengthPercentageOrAuto)) -> Self {
+    FlexBasis {
+      id: prop.0,
+      value: match prop.1 {
+        LengthPercentageOrAuto::Auto => EnumValue::String("auto".to_string()),
+        LengthPercentageOrAuto::LengthPercentage(value) => generate_dimension_percentage!(EnumValue, value),
+      }
+    }
+  }
+}

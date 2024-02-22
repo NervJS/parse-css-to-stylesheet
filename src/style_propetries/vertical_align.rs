@@ -57,7 +57,7 @@ impl ToExpr for VerticalAlign {
 
   fn to_rn_expr(&self) -> PropertyTuple {
     PropertyTuple::One(
-      generate_prop_name!(*self.id),
+      generate_prop_name!("textAlignVertical"),
       match self.value {
         EnumValue::Baseline => generate_invalid_expr!(),
         EnumValue::Sub => generate_invalid_expr!(),

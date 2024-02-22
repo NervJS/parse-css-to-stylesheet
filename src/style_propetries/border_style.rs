@@ -109,16 +109,16 @@ impl ToExpr for BorderStyle {
     fn to_expr(&self) -> PropertyTuple {
       let mut props: Vec<(PropName, Expr)> = vec![];
       if let Some(top) = &self.top {
-        props.push((generate_prop_name!(self.id.clone()), generate_expr_by_line_style!(top, Platform::Harmony)))
+        props.push((generate_prop_name!("borderTopStyle"), generate_expr_by_line_style!(top, Platform::Harmony)))
       }
       if let Some(bottom) = &self.bottom {
-        props.push((generate_prop_name!(self.id.clone()), generate_expr_by_line_style!(bottom, Platform::Harmony)))
+        props.push((generate_prop_name!("borderBottomStyle"), generate_expr_by_line_style!(bottom, Platform::Harmony)))
       }
       if let Some(left) = &self.left {
-        props.push((generate_prop_name!(self.id.clone()), generate_expr_by_line_style!(left, Platform::Harmony)))
+        props.push((generate_prop_name!("borderLeftStyle"), generate_expr_by_line_style!(left, Platform::Harmony)))
       }
       if let Some(right) = &self.right {
-        props.push((generate_prop_name!(self.id.clone()), generate_expr_by_line_style!(right, Platform::Harmony)))
+        props.push((generate_prop_name!("borderRightStyle"), generate_expr_by_line_style!(right, Platform::Harmony)))
       }
       PropertyTuple::Array(props)
     }

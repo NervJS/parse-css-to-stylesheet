@@ -16,8 +16,6 @@ pub struct Rotate {
   pub y: Option<WrapCSSNumber>,
   pub z: Option<WrapCSSNumber>,
   pub angle: StringNumber,
-  pub center_x: Option<StringNumber>,
-  pub center_y: Option<StringNumber>,
 }
 
 impl Rotate {
@@ -27,8 +25,6 @@ impl Rotate {
       y: None,
       z: None,
       angle: StringNumber::Number(0.0),
-      center_x: None,
-      center_y: None,
     }
   }
 }

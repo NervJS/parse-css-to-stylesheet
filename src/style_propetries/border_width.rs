@@ -97,16 +97,16 @@ impl ToExpr for BorderWidth {
     fn to_expr(&self) -> PropertyTuple {
       let mut props: Vec<(PropName, Expr)> = vec![];
       if let Some(top) = &self.top {
-        props.push((generate_prop_name!(self.id.clone()), generate_expr_by_border_side_width!(top)))
+        props.push((generate_prop_name!("borderTopWidth"), generate_expr_by_border_side_width!(top)))
       }
       if let Some(bottom) = &self.bottom {
-        props.push((generate_prop_name!(self.id.clone()), generate_expr_by_border_side_width!(bottom)))
+        props.push((generate_prop_name!("borderBottomWidth"), generate_expr_by_border_side_width!(bottom)))
       }
       if let Some(left) = &self.left {
-        props.push((generate_prop_name!(self.id.clone()), generate_expr_by_border_side_width!(left)))
+        props.push((generate_prop_name!("borderLeftWidth"), generate_expr_by_border_side_width!(left)))
       }
       if let Some(right) = &self.right {
-        props.push((generate_prop_name!(self.id.clone()), generate_expr_by_border_side_width!(right)))
+        props.push((generate_prop_name!("borderRightWidth"), generate_expr_by_border_side_width!(right)))
       }
       PropertyTuple::Array(props)
     }

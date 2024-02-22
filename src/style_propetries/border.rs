@@ -145,9 +145,15 @@ impl ToExpr for Border {
       let mut props: Vec<(PropName, Expr)> = vec![];
       match prop_name.as_str() {
         "border" => {
-          props.push((generate_prop_name!("borderWidth"), generate_expr_by_border_side_width!(self.width.clone().unwrap().top.unwrap())));
-          props.push((generate_prop_name!("borderStyle"), generate_expr_by_line_style!(self.style.clone().unwrap().top.unwrap(), Platform::Harmony)));
-          props.push((generate_prop_name!("borderColor"), generate_string_by_css_color!(self.color.clone().unwrap().top.unwrap())));
+          vec!["borderTopWidth", "borderRightWidth", "borderBottomWidth", "borderLeftWidth"].iter().for_each(|item| {
+            props.push((generate_prop_name!(item.to_owned()), generate_expr_by_border_side_width!(self.width.clone().unwrap().top.unwrap())));
+          });
+          vec!["borderTopStyle", "borderRightStyle", "borderBottomStyle", "borderLeftStyle"].iter().for_each(|item| {
+            props.push((generate_prop_name!(item.to_owned()), generate_expr_by_line_style!(self.style.clone().unwrap().top.unwrap(), Platform::Harmony)));
+          });
+          vec!["borderTopColor", "borderRightColor", "borderBottomColor", "borderLeftColor"].iter().for_each(|item| {
+            props.push((generate_prop_name!(item.to_owned()), generate_string_by_css_color!(self.color.clone().unwrap().top.unwrap())));
+          });
           PropertyTuple::Array(props)
         },
         "borderTop"  => {

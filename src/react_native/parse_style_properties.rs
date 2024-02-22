@@ -2,7 +2,7 @@ use std::collections::HashMap;
 
 use lightningcss::{properties::Property, stylesheet::PrinterOptions};
 
-use crate::style_propetries::{style_value_type::StyleValueType, flex_align::FlexAlign, item_align::ItemAlign, aspect_ratio::AspactRatio, display::Display, flex_basis::FlexBasis, flex_direction::FlexDirection, flex_wrap::FlexWrap, gap::Gap, length_value::LengthValueProperty, size::SizeProperty, max_size::MaxSizeProperty, overflow::Overflow, normal::Normal, number::NumberProperty, color::ColorProperty, font_size::FontSize, font_weight::FontWeight, line_height::LineHeight, text_align::TextAlign, text_decoration::TextDecoration, text_shadow::TextShadow, letter_spacing::LetterSpacing, font_style::FontStyle, text_transform::TextTransform, vertical_align::VerticalAlign, border_color::BorderColor, border_width::BorderWidth, border_radius::BorderRadius, border_style::BorderStyle, border::Border};
+use crate::style_propetries::{aspect_ratio::AspactRatio, border::Border, border_color::BorderColor, border_radius::BorderRadius, border_style::BorderStyle, border_width::BorderWidth, color::ColorProperty, display::Display, flex::Flex, flex_align::FlexAlign, flex_basis::FlexBasis, flex_direction::FlexDirection, flex_wrap::FlexWrap, font_size::FontSize, font_style::FontStyle, font_weight::FontWeight, gap::Gap, item_align::ItemAlign, length_value::LengthValueProperty, letter_spacing::LetterSpacing, line_height::LineHeight, marin_padding::MarginPadding, max_size::MaxSizeProperty, normal::Normal, number::NumberProperty, overflow::Overflow, size::SizeProperty, style_value_type::StyleValueType, text_align::TextAlign, text_decoration::TextDecoration, text_shadow::TextShadow, text_transform::TextTransform, transform::Transform, vertical_align::VerticalAlign};
 
 pub fn parse_style_properties(properties: &Vec<(String, Property)>) -> HashMap<String, StyleValueType> {
   let mut final_properties = HashMap::new();
@@ -22,6 +22,9 @@ pub fn parse_style_properties(properties: &Vec<(String, Property)>) -> HashMap<S
       }
       "alignSelf" => {
         final_properties.insert("alignSelf".to_string(), StyleValueType::AlignItems(ItemAlign::from((id.to_string(), value))));
+      }
+      "flex" => {
+        final_properties.insert("flexBasis".to_string(), StyleValueType::Flex(Flex::from((id.to_string(), value))));
       }
       "flexBasis" => {
         final_properties.insert("flexBasis".to_string(), StyleValueType::FlexBasis(FlexBasis::from((id.to_string(), value))));
@@ -44,11 +47,11 @@ pub fn parse_style_properties(properties: &Vec<(String, Property)>) -> HashMap<S
       "display" => {
         final_properties.insert("display".to_string(), StyleValueType::Display(Display::from((id.to_string(), value))));
       }
-      "columnGap" => {
-        final_properties.insert("columnGap".to_string(), StyleValueType::Gap(Gap::from((id.to_string(), value))));
+      "gap" | "columnGap" | "rowGap" => {
+        final_properties.insert(id.to_string(), StyleValueType::Gap(Gap::from((id.to_string(), value))));
       }
-      "rowGap" => {
-        final_properties.insert("rowGap".to_string(), StyleValueType::Gap(Gap::from((id.to_string(), value))));
+      "margin" | "padding"  => {
+        final_properties.insert(id.to_string(), StyleValueType::MarginPadding(MarginPadding::from((id.to_string(), value))));
       }
       "marginTop" | "marginBottom" | "marginLeft" | "marginRight" | "paddingTop" | "paddingBottom" | "paddingLeft" | "paddingRight" | "top" | "bottom" | "left" | "right" => {
         final_properties.insert(id.to_string(), StyleValueType::LengthValueProperty(LengthValueProperty::from((id.to_string(), value))));
@@ -135,6 +138,9 @@ pub fn parse_style_properties(properties: &Vec<(String, Property)>) -> HashMap<S
       }
       "borderTop" | "borderBottom" | "borderLeft" | "borderRight" => {
         final_properties.insert(property_name.to_string(), StyleValueType::Border(Border::from((id.to_string(), value))));
+      }
+      "transform" => {
+        final_properties.insert(property_name.to_string(), StyleValueType::Transform(Transform::from((id.to_string(), value))));
       }
       _ => {
         // position、zIndex等... 会自动处理 单位、数字等相关信息

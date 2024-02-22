@@ -28,16 +28,17 @@ macro_rules! generate_expr_ident {
 
 #[macro_export]
 macro_rules! generate_string_by_css_color {
-    ($color:expr) => {
-      $color.to_css_string(lightningcss::stylesheet::PrinterOptions {
+    ($color:expr) => {{
+      use $crate::style_propetries::unit::convert_color_keywords_to_hex;
+      convert_color_keywords_to_hex($color.to_css_string(lightningcss::stylesheet::PrinterOptions {
         minify: false,
         targets: lightningcss::targets::Targets {
           include: lightningcss::targets::Features::HexAlphaColors,
           ..lightningcss::targets::Targets::default()
         },
         ..lightningcss::stylesheet::PrinterOptions::default()
-      }).unwrap().into()
-    };
+      }).unwrap()).into()
+    }};
 }
 
 #[macro_export]
@@ -52,6 +53,32 @@ macro_rules! generate_expr_by_length  {
     }};
 }
 
+#[macro_export]
+macro_rules! generate_expr_by_length_percentage_or_auto {
+    ($var:expr, $platform:expr) => {{
+      
+      match $var {
+        LengthPercentageOrAuto::LengthPercentage(length_percent) => {
+          generate_expr_by_length_percentage!(length_percent, $platform)
+        },
+        LengthPercentageOrAuto::Auto => generate_invalid_expr!(),
+      }
+    }};
+}
+
+
+#[macro_export]
+macro_rules! generate_expr_by_length_percentage {
+    ($var:expr, $platform:expr) => {{
+      use $crate::style_propetries::unit::{generate_expr_by_length_value};
+      
+      match $var {
+        lightningcss::values::percentage::DimensionPercentage::Dimension(dimension) => generate_expr_by_length_value(&dimension, $platform),
+        lightningcss::values::percentage::DimensionPercentage::Percentage(percentage) => generate_expr_lit_str!((percentage.0 * 100.0).to_string() + "%"),
+        lightningcss::values::percentage::DimensionPercentage::Calc(calc) => generate_expr_lit_str!(calc.to_css_string(lightningcss::stylesheet::PrinterOptions::default()).unwrap()),
+      }
+    }};
+}
 
 #[macro_export]
 macro_rules! generate_invalid_expr {
@@ -116,14 +143,15 @@ macro_rules! generate_color_property {
           value: match prop.1 {
             $(
               lightningcss::properties::Property::$property_name(_) => {
-                prop.1.value_to_css_string(lightningcss::stylesheet::PrinterOptions {
+                use $crate::style_propetries::unit::convert_color_keywords_to_hex;
+                convert_color_keywords_to_hex(prop.1.value_to_css_string(lightningcss::stylesheet::PrinterOptions {
                   minify: false,
                   targets: lightningcss::targets::Targets {
                     include: lightningcss::targets::Features::HexAlphaColors,
                     ..lightningcss::targets::Targets::default()
                   },
                   ..lightningcss::stylesheet::PrinterOptions::default()
-                }).unwrap()
+                }).unwrap())
               }
             )*
             _ => "".to_string()
@@ -188,8 +216,18 @@ macro_rules! generate_number_property {
         }
       }
     }
+    
+    impl $class {
+      pub fn from_value (prop: (String, f32)) -> Self {
+        $class {
+          id: prop.0,
+          value: prop.1
+        }
+      }
+    }
   };
 }
+
 
 // 生成property_name的value类型为 LengthValue的属性
 // 依赖：use swc_ecma_ast; use lightningcss
@@ -337,4 +375,76 @@ macro_rules! generate_size_property {
       }
 
     };
+}
+
+// 生成字符串模版
+#[macro_export]
+macro_rules! generate_tpl_expr {
+    ($items: expr) => {{
+
+      let mut quasis = vec![
+        swc_ecma_ast::TplElement {
+          span: swc_common::DUMMY_SP,
+          tail: false,
+          cooked: None,
+          raw: swc_atoms::Atom::from("").into(),
+        },
+      ];
+      let mut exprs = vec![];
+      $items.iter().for_each(|value| {
+        match value {
+          swc_ecma_ast::Expr::Lit(lit) => {
+            match lit {
+              swc_ecma_ast::Lit::Str(str_lit) => {
+                let mut quasi = quasis.pop().unwrap();
+                quasi.raw = swc_atoms::Atom::from(format!(" {} {} ",quasi.raw.to_string(), str_lit.value.as_ref()));
+                quasis.push(quasi);
+              },
+              swc_ecma_ast::Lit::Num(num_lit) => {
+                let mut quasi = quasis.pop().unwrap();
+                quasi.raw = swc_atoms::Atom::from(format!(" {} {} ",quasi.raw.to_string(), num_lit.value.to_string()));
+                quasis.push(quasi);
+              },
+              _ => {}
+            };
+          },
+          _ => {
+            exprs.push(Box::new(value.to_owned()));
+            quasis.push(
+              swc_ecma_ast::TplElement {
+                span: swc_common::DUMMY_SP,
+                tail: false,
+                cooked: None,
+                raw: swc_atoms::Atom::from("").into(),
+              },
+            )
+          }
+        }
+      });
+
+      // 删除无用空格
+      for (i, quasi) in quasis.clone().into_iter().enumerate() {
+        let cleaned_string: String = quasi.raw
+        .split_whitespace()
+        .collect::<Vec<&str>>()
+        .join(" ");
+        if i == 0 {
+          quasis[i].raw = swc_atoms::Atom::from(format!("{} ", cleaned_string).trim_start()).into();
+        } else if i == quasis.len() - 1 {
+          quasis[i].raw = swc_atoms::Atom::from(format!(" {}", cleaned_string).trim_end()).into();
+          quasis[i].tail = true;
+        } else {
+          quasis[i].raw = swc_atoms::Atom::from(format!(" {} ", cleaned_string)).into();
+        }
+      }
+      if quasis.len() == 1 {
+        quasis[0].raw = swc_atoms::Atom::from(format!("{} ", quasis[0].raw).trim()).into();
+      }
+
+      swc_ecma_ast::Expr::Tpl(swc_ecma_ast::Tpl {
+        span: swc_common::DUMMY_SP,
+        exprs,
+        quasis: quasis,
+      })
+    }};
 }

@@ -83,16 +83,16 @@ impl ToExpr for BorderColor {
     fn to_expr(&self) -> PropertyTuple {
       let mut props: Vec<(PropName, Expr)> = vec![];
       if let Some(top) = &self.top {
-        props.push((generate_prop_name!(self.id.clone()), generate_string_by_css_color!(top)))
+        props.push((generate_prop_name!("borderTopColor"), generate_string_by_css_color!(top)))
       }
       if let Some(bottom) = &self.bottom {
-        props.push((generate_prop_name!(self.id.clone()), generate_string_by_css_color!(bottom)))
+        props.push((generate_prop_name!("borderBottomColor"), generate_string_by_css_color!(bottom)))
       }
       if let Some(left) = &self.left {
-        props.push((generate_prop_name!(self.id.clone()), generate_string_by_css_color!(left)))
+        props.push((generate_prop_name!("borderLeftColor"), generate_string_by_css_color!(left)))
       }
       if let Some(right) = &self.right {
-        props.push((generate_prop_name!(self.id.clone()), generate_string_by_css_color!(right)))
+        props.push((generate_prop_name!("borderRightColor"), generate_string_by_css_color!(right)))
       }
       PropertyTuple::Array(props)
     }

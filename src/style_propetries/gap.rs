@@ -1,85 +1,130 @@
+use std::borrow::Borrow;
+
 use lightningcss::{
-  properties::{Property, align::GapValue},
-  values::{length::LengthValue, percentage::{DimensionPercentage, Percentage}}, traits::ToCss, stylesheet::PrinterOptions,
+  properties::{Property, align::GapValue}, traits::ToCss, 
 };
+use swc_ecma_ast::Expr;
 
-use crate::{generate_expr_lit_str, generate_expr_lit_num, generate_prop_name};
+use crate::{generate_expr_by_length_percentage, generate_expr_lit_num, generate_expr_lit_str, generate_prop_name, generate_tpl_expr};
 
-use super::{traits::ToExpr, unit::{generate_expr_by_length_value, Platform, PropertyTuple}};
+use super::{traits::ToExpr, unit::{Platform, PropertyTuple}};
 
+
+macro_rules! generate_expr_gap {
+  ($value:expr) => {
+    match $value {
+      GapValue::Normal => generate_expr_lit_num!(0.0),
+      GapValue::LengthPercentage(val) => generate_expr_by_length_percentage!(val, Platform::ReactNative),
+    }
+  }
+}
 
 #[derive(Debug, Clone)]
 pub struct Gap {
   pub id: String,
-  pub value: EnumValue
-}
-
-#[derive(Debug, Clone)]
-pub enum EnumValue {
-  LengthValue(LengthValue),
-  Percentage(Percentage),
-  String(String),
-  Normal
+  pub row: Option<GapValue>,
+  pub column: Option<GapValue>,
+  pub gap: Option<(GapValue, GapValue)>,
 }
 
 impl ToExpr for Gap {
   fn to_expr(&self) -> PropertyTuple {
-    PropertyTuple::One(
-      generate_prop_name!(*self.id),
-      match &self.value {
-        EnumValue::String(value) => generate_expr_lit_str!(value.to_owned()),
-        EnumValue::LengthValue(length_value) => generate_expr_by_length_value(length_value, Platform::Harmony),
-        EnumValue::Percentage(value) => generate_expr_lit_str!((value.0 * 100.0).to_string() + "%"),
-        EnumValue::Normal => generate_expr_lit_num!(0.0),
-      }
-    )
+    let mut expr = vec![];
+    if let Some(row) = &self.row {
+      expr.push((
+        generate_prop_name!("rowGap"),
+        match &row {
+            GapValue::Normal => generate_expr_lit_num!(0.0),
+            GapValue::LengthPercentage(val) => generate_expr_by_length_percentage!(val, Platform::Harmony),
+        }
+      ));
+    }
+    if let Some(column) = &self.column {
+      expr.push((
+        generate_prop_name!("columnGap"),
+        match &column {
+          GapValue::Normal => generate_expr_lit_num!(0.0),
+          GapValue::LengthPercentage(val) => generate_expr_by_length_percentage!(val, Platform::Harmony),
+        }
+      ));
+    }
+    if let Some(gap) = &self.gap {
+      expr.push((
+        generate_prop_name!("rowGap"),
+        match &gap.0 {
+          GapValue::Normal => generate_expr_lit_num!(0.0),
+          GapValue::LengthPercentage(val) => generate_expr_by_length_percentage!(val, Platform::Harmony),
+        }
+      ));
+      expr.push((
+        generate_prop_name!("columnGap"),
+        match &gap.1 {
+          GapValue::Normal => generate_expr_lit_num!(0.0),
+          GapValue::LengthPercentage(val) => generate_expr_by_length_percentage!(val, Platform::Harmony),
+        }
+      ));
+    }
+    PropertyTuple::Array(expr)
   }
 
   fn to_rn_expr(&self) -> PropertyTuple {
-    PropertyTuple::One(
-      generate_prop_name!(*self.id),
-      match &self.value {
-        EnumValue::String(value) => generate_expr_lit_str!(value.to_owned()),
-        EnumValue::LengthValue(length_value) => generate_expr_by_length_value(length_value, Platform::ReactNative),
-        EnumValue::Percentage(value) => generate_expr_lit_str!((value.0 * 100.0).to_string() + "%"),
-        EnumValue::Normal => generate_expr_lit_str!("normal"),
-      }
+    let mut expr = vec![];
+    if let Some(row) = &self.row {
+      expr.push((
+        generate_prop_name!("rowGap"),
+        match &row {
+            GapValue::Normal => generate_expr_lit_num!(0.0),
+            GapValue::LengthPercentage(val) => generate_expr_by_length_percentage!(val, Platform::ReactNative),
+        }
+      ))
+    }
+    if let Some(column) = &self.column {
+      expr.push((
+        generate_prop_name!("columnGap"),
+        match &column {
+          GapValue::Normal => generate_expr_lit_num!(0.0),
+          GapValue::LengthPercentage(val) => generate_expr_by_length_percentage!(val, Platform::ReactNative),
+        }
+      ))
+    }
+    if let Some(gap) = &self.gap {
+      let items: Vec<swc_ecma_ast::Expr> = vec![
+        generate_expr_gap!(gap.0.borrow()), 
+        generate_expr_gap!(gap.1.borrow())
+      ];
+
+      expr.push((
+        generate_prop_name!("gap"),
+        generate_tpl_expr!(items)
+      ))
+    }
+    PropertyTuple::Array(
+      expr
     )
   }
 }
 
-macro_rules! generate_gap {
-  ($value:expr) => {
-    match &$value {
-      GapValue::Normal => EnumValue::Normal,
-      GapValue::LengthPercentage(value) => match value {
-        DimensionPercentage::Dimension(value) => {
-          EnumValue::LengthValue(value.clone())
-        }
-        DimensionPercentage::Percentage(value) => {
-          EnumValue::Percentage(value.clone())
-        }
-        DimensionPercentage::Calc(value) => {
-          EnumValue::String(value.to_css_string(PrinterOptions::default()).unwrap())
-        }
-      },
-    }
-  }
-}
 
 impl From<(String, &Property<'_>)> for Gap {
   fn from(prop: (String, &Property<'_>)) -> Self {
-    Gap {
+    let mut gap = Gap {
       id: prop.0,
-      value: match &prop.1 {
-        Property::RowGap(value) => {
-          generate_gap!(value)
-        }
-        Property::ColumnGap(value) => {
-          generate_gap!(value)
-        }
-        _ => EnumValue::Normal
+      row: None,
+      column: None,
+      gap: None
+    };
+    match prop.1 {
+      Property::Gap(value) => {
+        gap.gap = Some((value.row.clone(), value.column.clone()));
       }
-    }
+      Property::RowGap(value) => {
+        gap.row = Some(value.clone())
+      }
+      Property::ColumnGap(value) => {
+        gap.column = Some(value.clone())
+      }
+      _ => {}
+    };
+    gap
   }
 }

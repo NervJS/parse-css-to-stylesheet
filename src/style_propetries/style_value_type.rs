@@ -1,6 +1,6 @@
 use crate::generate_expr_based_on_platform;
 
-use super::{traits::{ToExpr, ToStyleValue}, flex_align::FlexAlign, item_align::ItemAlign, aspect_ratio::AspactRatio, display::Display, flex_basis::FlexBasis, unit::{Platform, PropertyTuple}, normal::Normal, flex_direction::FlexDirection, flex_wrap::FlexWrap, gap::Gap, length_value::LengthValueProperty, size::SizeProperty, max_size::MaxSizeProperty, overflow::Overflow, number::NumberProperty, color::ColorProperty, font_size::FontSize, font_weight::FontWeight, line_height::LineHeight, text_align::TextAlign, text_decoration::TextDecoration, text_shadow::TextShadow, letter_spacing::LetterSpacing, font_style::FontStyle, text_transform::TextTransform, vertical_align::VerticalAlign, border_color::BorderColor, border_width::BorderWidth, border_radius::BorderRadius, border_style::BorderStyle, border::Border};
+use super::{aspect_ratio::AspactRatio, border::Border, border_color::BorderColor, border_radius::BorderRadius, border_style::BorderStyle, border_width::BorderWidth, color::ColorProperty, display::Display, flex::Flex, flex_align::FlexAlign, flex_basis::FlexBasis, flex_direction::FlexDirection, flex_wrap::FlexWrap, font_size::FontSize, font_style::FontStyle, font_weight::FontWeight, gap::Gap, item_align::ItemAlign, length_value::LengthValueProperty, letter_spacing::LetterSpacing, line_height::LineHeight, marin_padding::MarginPadding, max_size::MaxSizeProperty, normal::Normal, number::NumberProperty, overflow::Overflow, size::SizeProperty, text_align::TextAlign, text_decoration::TextDecoration, text_shadow::TextShadow, text_transform::TextTransform, traits::{ToExpr, ToStyleValue}, transform::Transform, unit::{Platform, PropertyTuple}, vertical_align::VerticalAlign};
 
 
 #[derive(Debug, Clone)]
@@ -11,8 +11,10 @@ pub enum StyleValueType {
   LengthValueProperty(LengthValueProperty),
   SizeProperty(SizeProperty),
   MaxSizeProperty(MaxSizeProperty),
+  MarginPadding(MarginPadding),
   FlexAlign(FlexAlign),
   AlignItems(ItemAlign),
+  Flex(Flex),
   FlexBasis(FlexBasis),
   FlexDirection(FlexDirection),
   FlexWrap(FlexWrap),
@@ -34,7 +36,8 @@ pub enum StyleValueType {
   BorderWidth(BorderWidth),
   BorderRadius(BorderRadius),
   BorderStyle(BorderStyle),
-  Border(Border)
+  Border(Border),
+  Transform(Transform)
 }
 
 impl ToStyleValue for StyleValueType {
@@ -56,6 +59,12 @@ impl ToStyleValue for StyleValueType {
         generate_expr_based_on_platform!(platform, value)
       },
       StyleValueType::MaxSizeProperty(value) => {
+        generate_expr_based_on_platform!(platform, value)
+      },
+      StyleValueType::MarginPadding(value) => {
+        generate_expr_based_on_platform!(platform, value)
+      },
+      StyleValueType::Flex(value) => {
         generate_expr_based_on_platform!(platform, value)
       },
       StyleValueType::FlexAlign(value) => {
@@ -128,6 +137,9 @@ impl ToStyleValue for StyleValueType {
         generate_expr_based_on_platform!(platform, value)
       }
       StyleValueType::Border(value) => {
+        generate_expr_based_on_platform!(platform, value)
+      }
+      StyleValueType::Transform(value) => {
         generate_expr_based_on_platform!(platform, value)
       }
 

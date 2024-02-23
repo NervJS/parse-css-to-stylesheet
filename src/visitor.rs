@@ -229,13 +229,13 @@ impl<'a> VisitAll for AstVisitor<'a> {
     let element = self.create_element(JSXElementOrJSXCallee::JSXElement(jsx));
     if let JSXElementName::Ident(ident) = &jsx.opening.name {
       let name = ident.sym.to_string();
-      if is_starts_with_uppercase(name.as_str()) {
-        if self.taro_components.contains(&name) {
-          self.jsx_record.insert(SpanKey(jsx.span), element);
-        }
-      } else {
+      // if is_starts_with_uppercase(name.as_str()) {
+      //   if self.taro_components.contains(&name) {
+      //     self.jsx_record.insert(SpanKey(jsx.span), element);
+      //   }
+      // } else {
         self.jsx_record.insert(SpanKey(jsx.span), element);
-      }
+      // }
     }
     jsx.visit_all_children_with(self);
   }
@@ -263,15 +263,15 @@ impl<'a> VisitAll for AstVisitor<'a> {
                   _ => "".to_string()
                 };
 
-                if is_starts_with_uppercase(name.as_str()) {
-                  if self.taro_components.contains(&name) {
-                    self.jsx_record.insert(SpanKey(call_expr.span), element);
-                  }
-                } else {
+                // if is_starts_with_uppercase(name.as_str()) {
+                //   if self.taro_components.contains(&name) {
+                //     self.jsx_record.insert(SpanKey(call_expr.span), element);
+                //   }
+                // } else {
                   if !name.is_empty() {
                     self.jsx_record.insert(SpanKey(call_expr.span), element);
                   }
-                }
+                // }
               }
             }
           }

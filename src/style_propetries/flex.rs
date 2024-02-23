@@ -1,6 +1,6 @@
 use lightningcss::properties::Property;
 
-use crate::{generate_invalid_expr, generate_prop_name, generate_tpl_expr};
+use crate::{generate_invalid_expr, generate_tpl_expr};
 
 use super::{flex_basis::FlexBasis, number::NumberProperty, traits::ToExpr, unit::PropertyTuple};
 

@@ -1,6 +1,6 @@
 use lightningcss::{properties::{Property, text}, traits::ToCss, stylesheet::PrinterOptions, targets::{Targets, Features}};
 use swc_common::DUMMY_SP;
-use swc_ecma_ast::{Expr, Ident, KeyValueProp, MemberExpr, MemberProp, ObjectLit, Prop, PropName, PropOrSpread};
+use swc_ecma_ast::{Expr, Ident, KeyValueProp, MemberExpr, MemberProp, ObjectLit, Prop, PropOrSpread};
 
 use crate::{style_propetries::traits::ToExpr, generate_invalid_expr, generate_expr_lit_str, generate_prop_name};
 

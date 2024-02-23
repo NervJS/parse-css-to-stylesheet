@@ -3,7 +3,7 @@ use lightningcss::{
   values::{self, length::LengthValue}, stylesheet::PrinterOptions, traits::ToCss
 };
 
-use crate::{generate_prop_name, generate_invalid_expr};
+use crate::generate_invalid_expr;
 
 use super::{unit::{PropertyTuple, generate_expr_by_length_value, Platform}, traits::ToExpr};
 

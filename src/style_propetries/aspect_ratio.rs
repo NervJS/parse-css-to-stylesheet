@@ -2,7 +2,7 @@
 
 use lightningcss::properties::Property;
 
-use crate::{generate_expr_lit_num, generate_expr_ident, generate_prop_name};
+use crate::{generate_expr_lit_num, generate_expr_ident};
 
 use super::{traits::ToExpr, unit::PropertyTuple};
 

@@ -2,7 +2,7 @@ use lightningcss::properties::{Property, font};
 use swc_common::DUMMY_SP;
 use swc_ecma_ast::{Expr, Ident, MemberProp, MemberExpr};
 
-use crate::{style_propetries::traits::ToExpr, generate_expr_lit_str, generate_expr_lit_num, generate_prop_name};
+use crate::{style_propetries::traits::ToExpr, generate_expr_lit_str, generate_expr_lit_num};
 
 use super::unit::PropertyTuple;
 

@@ -1,7 +1,7 @@
 use lightningcss::{values::length::LengthValue, traits::ToCss, stylesheet::PrinterOptions};
 use regex::Regex;
 use swc_common::DUMMY_SP;
-use swc_ecma_ast::{ExprOrSpread, Expr,  Callee, Ident, CallExpr, Lit, Number, PropName};
+use swc_ecma_ast::{ExprOrSpread, Expr,  Callee, Ident, CallExpr, Lit, Number};
 use crate::{generate_expr_lit_num, generate_expr_lit_str, constants::{RN_CONVERT_STYLE_PX_FN, CONVERT_STYLE_PX_FN, RN_CONVERT_STYLE_VU_FN}};
 
 pub enum Platform {

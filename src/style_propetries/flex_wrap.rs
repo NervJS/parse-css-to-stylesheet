@@ -2,7 +2,7 @@ use lightningcss::properties::{flex::FlexWrap as LNFlexWrap, Property};
 use swc_common::DUMMY_SP;
 use swc_ecma_ast::{Expr, Ident, MemberExpr, MemberProp};
 
-use crate::{style_propetries::traits::ToExpr, generate_expr_lit_str, generate_prop_name};
+use crate::{style_propetries::traits::ToExpr, generate_expr_lit_str};
 
 use super::unit::PropertyTuple;
 

@@ -1,11 +1,6 @@
-use std::borrow::Borrow;
+use lightningcss::properties::{Property, align::GapValue};
 
-use lightningcss::{
-  properties::{Property, align::GapValue}, traits::ToCss, 
-};
-use swc_ecma_ast::Expr;
-
-use crate::{generate_expr_by_length_percentage, generate_expr_lit_num, generate_expr_lit_str, generate_prop_name, generate_tpl_expr};
+use crate::{generate_expr_by_length_percentage, generate_expr_lit_num, generate_expr_lit_str};
 
 use super::{traits::ToExpr, unit::{Platform, PropertyTuple}};
 

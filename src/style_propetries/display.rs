@@ -2,7 +2,7 @@
 
 use lightningcss::properties::{Property, display::{Display::{Keyword, Pair}, DisplayKeyword, DisplayInside}};
 
-use crate::{generate_expr_lit_str, generate_prop_name};
+use crate::generate_expr_lit_str;
 
 use super::{traits::ToExpr, unit::PropertyTuple};
 

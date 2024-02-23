@@ -1,9 +1,8 @@
 use lightningcss::properties::{Property, font};
 use swc_common::DUMMY_SP;
 use swc_ecma_ast::{Expr, Ident, MemberProp, MemberExpr};
-use swc_ecma_utils::member_expr;
 
-use crate::{generate_prop_name, generate_expr_lit_str, generate_invalid_expr};
+use crate::{generate_expr_lit_str, generate_invalid_expr};
 
 use super::{traits::ToExpr, unit::PropertyTuple};
 

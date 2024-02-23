@@ -5,7 +5,7 @@ use lightningcss::properties::{
 use swc_common::DUMMY_SP;
 use swc_ecma_ast::{Expr, Ident, MemberExpr, MemberProp};
 
-use crate::{generate_expr_lit_str, generate_prop_name};
+use crate::generate_expr_lit_str;
 
 use super::{traits::ToExpr, unit::PropertyTuple};
 

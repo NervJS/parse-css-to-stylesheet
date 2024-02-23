@@ -3,7 +3,7 @@ use std::vec;
 use lightningcss::properties::{transform::Transform as LNTransform, Property};
 use swc_ecma_ast::{ArrayLit, Expr, ExprOrSpread};
 
-use crate::{generate_prop_name, style_propetries::traits::ToExpr};
+use crate::style_propetries::traits::ToExpr;
 
 use super::{transform_properties::{matrix::Matrix, rotate::Rotate, scale::Scale, skew::Skew, translate::Translate}, unit::PropertyTuple};
 

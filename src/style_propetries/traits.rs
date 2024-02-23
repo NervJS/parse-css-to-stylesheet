@@ -1,5 +1,3 @@
-use swc_ecma_ast::Expr;
-
 use super::unit::{Platform, PropertyTuple};
 
 pub trait ToExpr {

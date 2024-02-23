@@ -1,11 +1,10 @@
 use std::vec;
 
 use lightningcss::{
-  properties::Property, traits::ToCss, values::length::LengthPercentageOrAuto
+  properties::Property, values::length::LengthPercentageOrAuto
 };
-use swc_ecma_ast::Expr;
 
-use crate::{generate_expr_by_length_percentage, generate_expr_by_length_percentage_or_auto, generate_expr_lit_str, generate_invalid_expr, generate_prop_name, generate_tpl_expr, style_propetries::traits::ToExpr};
+use crate::{generate_expr_by_length_percentage, generate_expr_by_length_percentage_or_auto, generate_expr_lit_str, generate_invalid_expr, generate_tpl_expr, style_propetries::traits::ToExpr};
 
 use super::unit::{Platform, PropertyTuple};
 

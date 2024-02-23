@@ -2,9 +2,9 @@ use lightningcss::{
   properties::Property,
   traits::ToCss, values::color::CssColor
 };
-use swc_ecma_ast::{PropName, Expr};
+use swc_ecma_ast::Expr;
 
-use crate::{generate_prop_name, generate_string_by_css_color, generate_expr_lit_str};
+use crate::generate_string_by_css_color;
 
 use super::{traits::ToExpr, unit::PropertyTuple};
 

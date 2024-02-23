@@ -2,9 +2,8 @@ use lightningcss::{
   properties::Property,
   values::{length::LengthValue, percentage::DimensionPercentage}
 };
-use swc_atoms::Atom;
-use swc_ecma_ast::{PropName, Expr, Tpl};
-use crate::{generate_expr_lit_str, generate_invalid_expr, generate_prop_name, generate_tpl_expr };
+use swc_ecma_ast::Expr;
+use crate::{generate_expr_lit_str, generate_invalid_expr };
 
 use super::{traits::ToExpr, unit::{PropertyTuple, generate_expr_by_length_value, Platform}};
 

@@ -4,7 +4,7 @@ use lightningcss::{
   traits::ToCss,
 };
 
-use crate::{style_propetries::traits::ToExpr, generate_dimension_percentage, generate_invalid_expr, generate_prop_name};
+use crate::{style_propetries::traits::ToExpr, generate_dimension_percentage, generate_invalid_expr};
 
 use super::unit::{generate_expr_by_length_value, Platform, PropertyTuple};
 

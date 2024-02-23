@@ -2,7 +2,7 @@ use lightningcss::properties::{
   Property, overflow::OverflowKeyword
 };
 
-use crate::{generate_expr_lit_str, generate_prop_name, generate_invalid_expr};
+use crate::{generate_expr_lit_str, generate_invalid_expr};
 
 use super::{traits::ToExpr, unit::PropertyTuple};
 

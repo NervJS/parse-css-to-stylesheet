@@ -34,5 +34,6 @@ pub mod border_radius;
 pub mod border_style;
 pub mod border;
 pub mod transform;
+pub mod transform_origin;
 pub mod transform_properties;
 pub mod marin_padding;

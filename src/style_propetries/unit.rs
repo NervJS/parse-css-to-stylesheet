@@ -11,9 +11,9 @@ pub enum Platform {
 
 pub enum PropertyTuple {
   // 一对一属性：height: 100px 解析 => (height, "100px")
-  One(PropName, Expr),
+  One(String, Expr),
   // 一对多属性：flex: 1 解析 => vec![(flexGrow, "1"), (flexShrink, "1"), (flexBasis, "0%")]
-  Array(Vec<(PropName, Expr)>)
+  Array(Vec<(String, Expr)>)
 }
 
 // 根据长度单位生成对应的表达式
@@ -100,8 +100,7 @@ pub fn generate_expr_by_length_value(length_value: &LengthValue, platform: Platf
         }
       }
     },
-   _ => {}
-
+    _ => {}
   }
 
   if let Some(handler_name) = handler {

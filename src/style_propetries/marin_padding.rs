@@ -35,10 +35,10 @@ impl MarginPadding {
 impl ToExpr for MarginPadding {
   fn to_expr(&self) -> PropertyTuple {
     PropertyTuple::Array(vec![
-      (generate_prop_name!("marginTop"), generate_expr_by_length_percentage_or_auto!(self.top.as_ref().unwrap(), Platform::Harmony)),
-      (generate_prop_name!("marginRight"), generate_expr_by_length_percentage_or_auto!(self.right.as_ref().unwrap(), Platform::Harmony)),
-      (generate_prop_name!("marginBottom"), generate_expr_by_length_percentage_or_auto!(self.bottom.as_ref().unwrap(), Platform::Harmony)),
-      (generate_prop_name!("marginLeft"), generate_expr_by_length_percentage_or_auto!(self.left.as_ref().unwrap(), Platform::Harmony)),
+      ("marginTop".to_string(), generate_expr_by_length_percentage_or_auto!(self.top.as_ref().unwrap(), Platform::Harmony)),
+      ("marginRight".to_string(), generate_expr_by_length_percentage_or_auto!(self.right.as_ref().unwrap(), Platform::Harmony)),
+      ("marginBottom".to_string(), generate_expr_by_length_percentage_or_auto!(self.bottom.as_ref().unwrap(), Platform::Harmony)),
+      ("marginLeft".to_string(), generate_expr_by_length_percentage_or_auto!(self.left.as_ref().unwrap(), Platform::Harmony)),
     
     ])
   }
@@ -53,7 +53,7 @@ impl ToExpr for MarginPadding {
     ];
 
     PropertyTuple::One(
-      generate_prop_name!(self.id.clone()),
+      self.id.clone(),
       // 生成`${top} ${right} ${bottom} ${left}`
       generate_tpl_expr!(margin_padding)
     )    

@@ -41,7 +41,7 @@ impl From<(String, &Property<'_>)> for FlexDirection {
 impl ToExpr for FlexDirection {
   fn to_expr(&self) -> PropertyTuple {
     PropertyTuple::One(
-      generate_prop_name!(*self.id),
+      self.id.to_string(),
       Expr::Member(MemberExpr {
         span: DUMMY_SP,
         obj: Box::new(Expr::Ident(Ident::new("FlexDirection".into(), DUMMY_SP))),
@@ -63,7 +63,7 @@ impl ToExpr for FlexDirection {
 
   fn to_rn_expr(&self) -> PropertyTuple {
     PropertyTuple::One(
-      generate_prop_name!(*self.id),
+      self.id.to_string(),
       generate_expr_lit_str!(match self.value {
         EnumValue::Row => "row",
         EnumValue::RowReverse => "row-reverse",

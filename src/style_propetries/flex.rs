@@ -24,21 +24,21 @@ impl ToExpr for Flex {
     let mut props = vec![];
     if let Some(value) = &self.value {
       match value.basis.to_rn_expr() {
-        PropertyTuple::One(_, val) => props.push((generate_prop_name!("flexBasis"), val)),
+        PropertyTuple::One(_, val) => props.push(("flexBasis".to_string(), val)),
         _ => {}
       };
       match value.grow.to_rn_expr() {
-        PropertyTuple::One(_, val) => props.push((generate_prop_name!("flexGrow"), val)),
+        PropertyTuple::One(_, val) => props.push(("flexGrow".to_string(), val)),
         _ => {}
       };
       match value.shrink.to_rn_expr() {
-        PropertyTuple::One(_, val) => props.push((generate_prop_name!("flexShrink"), val)),
+        PropertyTuple::One(_, val) => props.push(("flexShrink".to_string(), val)),
         _ => {}
       };
       PropertyTuple::Array(props)
     } else {
       PropertyTuple::One(
-        generate_prop_name!("flex"),
+        "flex".to_string(),
         generate_invalid_expr!()
       )
     }
@@ -61,12 +61,12 @@ impl ToExpr for Flex {
         _ => {}
       };
       PropertyTuple::One(
-        generate_prop_name!("flex"),
+        "flex".to_string(),
         generate_tpl_expr!(props)
       )
     } else {
       PropertyTuple::One(
-        generate_prop_name!("flex"),
+        "flex".to_string(),
         generate_invalid_expr!()
       )
     }

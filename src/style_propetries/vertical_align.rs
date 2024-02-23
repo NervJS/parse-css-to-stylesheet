@@ -29,7 +29,7 @@ pub enum EnumValue {
 impl ToExpr for VerticalAlign {
   fn to_expr(&self) -> PropertyTuple {
     PropertyTuple::One(
-      generate_prop_name!("align"),
+      "align".to_string(),
       {
         match self.value {
           EnumValue::Baseline | EnumValue::Sub | EnumValue::Super | EnumValue::TextTop | EnumValue::TextBottom | EnumValue::Invalid => generate_invalid_expr!(),
@@ -57,7 +57,7 @@ impl ToExpr for VerticalAlign {
 
   fn to_rn_expr(&self) -> PropertyTuple {
     PropertyTuple::One(
-      generate_prop_name!("textAlignVertical"),
+      "textAlignVertical".to_string(),
       match self.value {
         EnumValue::Baseline => generate_invalid_expr!(),
         EnumValue::Sub => generate_invalid_expr!(),

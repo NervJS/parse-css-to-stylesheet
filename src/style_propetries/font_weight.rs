@@ -25,7 +25,7 @@ pub enum EnumValue {
 impl ToExpr for FontWeight {
   fn to_expr(&self) -> PropertyTuple {
     PropertyTuple::One(
-      generate_prop_name!(*self.id),
+      self.id.to_string(),
       match &self.value {
         EnumValue::Number(num) => {
           generate_expr_lit_num!(*num as f64)
@@ -55,7 +55,7 @@ impl ToExpr for FontWeight {
 
   fn to_rn_expr(&self) -> PropertyTuple {
     PropertyTuple::One(
-      generate_prop_name!(*self.id),
+      self.id.to_string(),
       match &self.value {
         EnumValue::Bold => generate_expr_lit_str!("bold"),
         EnumValue::Bolder => generate_expr_lit_num!(900.0),

@@ -71,6 +71,7 @@ macro_rules! generate_expr_by_length_percentage_or_auto {
 macro_rules! generate_expr_by_length_percentage {
     ($var:expr, $platform:expr) => {{
       use $crate::style_propetries::unit::{generate_expr_by_length_value};
+      use lightningcss::traits::ToCss;
       
       match $var {
         lightningcss::values::percentage::DimensionPercentage::Dimension(dimension) => generate_expr_by_length_value(&dimension, $platform),
@@ -124,13 +125,13 @@ macro_rules! generate_color_property {
     impl ToExpr for $class {
       fn to_expr(&self) -> PropertyTuple {
         PropertyTuple::One(
-          generate_prop_name!(self.id.clone()),
+          self.id.clone(),
           swc_ecma_ast::Expr::Lit(swc_ecma_ast::Lit::Str(self.value.clone().into())).into()
         )
       }
       fn to_rn_expr(&self) -> PropertyTuple {
         PropertyTuple::One(
-          generate_prop_name!(self.id.clone()),
+          self.id.clone(),
           swc_ecma_ast::Expr::Lit(swc_ecma_ast::Lit::Str(self.value.clone().into())).into()
         )
       }
@@ -176,7 +177,7 @@ macro_rules! generate_number_property {
     impl ToExpr for $class {
       fn to_expr(&self) -> PropertyTuple {
         PropertyTuple::One(
-          generate_prop_name!(self.id.clone()),
+          self.id.clone(),
           swc_ecma_ast::Expr::Lit(swc_ecma_ast::Lit::Num(Number {
             span: DUMMY_SP,
             value: self.value as f64,
@@ -187,7 +188,7 @@ macro_rules! generate_number_property {
       }
       fn to_rn_expr(&self) -> PropertyTuple {
         PropertyTuple::One(
-          generate_prop_name!(self.id.clone()),
+          self.id.clone(),
           swc_ecma_ast::Expr::Lit(swc_ecma_ast::Lit::Num(Number {
             span: DUMMY_SP,
             value: self.value as f64,
@@ -251,7 +252,7 @@ macro_rules! generate_length_value_property {
     impl ToExpr for $class {
       fn to_expr(&self) -> PropertyTuple {
         PropertyTuple::One(
-          generate_prop_name!(self.id.clone()),
+          self.id.clone(),
           match &self.value {
             EnumValue::String(value) => generate_expr_lit_str!(value.to_owned()),
             EnumValue::LengthValue(length_value) => generate_expr_by_length_value(length_value, Platform::Harmony),
@@ -263,7 +264,7 @@ macro_rules! generate_length_value_property {
 
       fn to_rn_expr(&self) -> PropertyTuple {
         PropertyTuple::One(
-          generate_prop_name!(self.id.clone()),
+          self.id.clone(),
           match &self.value {
             EnumValue::String(value) => generate_expr_lit_str!(value.to_owned()),
             EnumValue::LengthValue(length_value) => generate_expr_by_length_value(length_value, Platform::ReactNative),
@@ -323,7 +324,7 @@ macro_rules! generate_size_property {
       impl ToExpr for $class {
         fn to_expr(&self) -> PropertyTuple {
           PropertyTuple::One(
-            generate_prop_name!(self.id.clone()),
+            self.id.clone(),
             match &self.value {
               EnumValue::String(value) => generate_expr_lit_str!(value.to_owned()),
               EnumValue::LengthValue(length_value) => generate_expr_by_length_value(length_value, Platform::Harmony),
@@ -335,7 +336,7 @@ macro_rules! generate_size_property {
 
         fn to_rn_expr(&self) -> PropertyTuple {
           PropertyTuple::One(
-            generate_prop_name!(self.id.clone()),
+            self.id.clone(),
             match &self.value {
               EnumValue::String(value) => generate_expr_lit_str!(value.to_owned()),
               EnumValue::LengthValue(length_value) => generate_expr_by_length_value(length_value, Platform::ReactNative),
@@ -434,7 +435,7 @@ macro_rules! generate_tpl_expr {
           quasis[i].raw = swc_atoms::Atom::from(format!(" {}", cleaned_string).trim_end()).into();
           quasis[i].tail = true;
         } else {
-          quasis[i].raw = swc_atoms::Atom::from(format!(" {} ", cleaned_string)).into();
+          quasis[i].raw = swc_atoms::Atom::from(format!(" {} ", cleaned_string.trim())).into();
         }
       }
       if quasis.len() == 1 {

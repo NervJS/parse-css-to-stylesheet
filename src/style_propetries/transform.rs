@@ -44,7 +44,7 @@ impl ToExpr for Transform {
         }
       });
       PropertyTuple::One(
-          generate_prop_name!("transform"),
+          "transform".to_string(),
           Expr::Array(ArrayLit {
             span: Default::default(),
             elems: props.into_iter().map(Some).map(
@@ -81,7 +81,7 @@ impl ToExpr for Transform {
           }
         });
         PropertyTuple::One(
-          generate_prop_name!("transform"),
+          "transform".to_string(),
           Expr::Array(ArrayLit {
             span: Default::default(),
             elems: props.into_iter().map(Some).map(

@@ -81,52 +81,51 @@ impl From<(String, &Property<'_>)> for BorderColor {
 
 impl ToExpr for BorderColor {
     fn to_expr(&self) -> PropertyTuple {
-      let mut props: Vec<(PropName, Expr)> = vec![];
+      let mut props: Vec<(String, Expr)> = vec![];
       if let Some(top) = &self.top {
-        props.push((generate_prop_name!("borderTopColor"), generate_string_by_css_color!(top)))
+        props.push(("borderTopColor".to_string(), generate_string_by_css_color!(top)))
       }
       if let Some(bottom) = &self.bottom {
-        props.push((generate_prop_name!("borderBottomColor"), generate_string_by_css_color!(bottom)))
+        props.push(("borderBottomColor".to_string(), generate_string_by_css_color!(bottom)))
       }
       if let Some(left) = &self.left {
-        props.push((generate_prop_name!("borderLeftColor"), generate_string_by_css_color!(left)))
+        props.push(("borderLeftColor".to_string(), generate_string_by_css_color!(left)))
       }
       if let Some(right) = &self.right {
-        props.push((generate_prop_name!("borderRightColor"), generate_string_by_css_color!(right)))
+        props.push(("borderRightColor".to_string(), generate_string_by_css_color!(right)))
       }
       PropertyTuple::Array(props)
     }
 
     fn to_rn_expr(&self) -> PropertyTuple {
       let prop_name = &self.id;
-      if prop_name == "borderColor" {
+
+      let mut is_same = false;
+      // 判断self.top、self.right、self.bottom、self.left是否一致
+      if self.top == self.right && self.right == self.bottom && self.bottom == self.left {
+        is_same = true;
+      }
+
+      if prop_name == "borderColor" && is_same {
         // border-color
-        let border_color: Vec<String> = vec![
-          generate_string_by_css_color!(self.top.as_ref().unwrap()),
-          generate_string_by_css_color!(self.right.as_ref().unwrap()),
-          generate_string_by_css_color!(self.bottom.as_ref().unwrap()),
-          generate_string_by_css_color!(self.left.as_ref().unwrap()),
-        ];
-        // vec 转 string: ["#000", "#f00"] => "#000 #f00"
-        let border_color_string = border_color.join(" ");
         PropertyTuple::One(
-          generate_prop_name!(prop_name.clone()), 
-          generate_expr_lit_str!(border_color_string)
+          prop_name.to_string(), 
+          generate_string_by_css_color!(self.top.as_ref().unwrap())
         )
       } else {
-        let mut props: Vec<(PropName, Expr)> = vec![];
+        let mut props: Vec<(String, Expr)> = vec![];
         // 单个边框颜色
         if let Some(top) = &self.top {
-          props.push((generate_prop_name!(prop_name.clone()), generate_string_by_css_color!(top)))
+          props.push(("borderTopColor".to_string(), generate_string_by_css_color!(top)))
         }
         if let Some(bottom) = &self.bottom {
-          props.push((generate_prop_name!(prop_name.clone()), generate_string_by_css_color!(bottom)))
+          props.push(("borderBottomColor".to_string(), generate_string_by_css_color!(bottom)))
         }
         if let Some(left) = &self.left {
-          props.push((generate_prop_name!(prop_name.clone()), generate_string_by_css_color!(left)))
+          props.push(("borderLeftColor".to_string(), generate_string_by_css_color!(left)))
         }
         if let Some(right) = &self.right {
-          props.push((generate_prop_name!(prop_name.clone()), generate_string_by_css_color!(right)))
+          props.push(("borderRightColor".to_string(), generate_string_by_css_color!(right)))
         }
         PropertyTuple::Array(props)
       }

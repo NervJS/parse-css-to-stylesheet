@@ -79,7 +79,7 @@ impl<'i> RNStyleParser<'i> {
     stylesheet.visit(&mut style_visitor).unwrap();
   }
 
-  pub fn calc(&self) -> HashMap<String, HashMap<String, StyleValueType>>{
+  pub fn calc(&self) -> HashMap<String, Vec<StyleValueType>> {
     // 遍历 style_record，计算每个节点的最终样式
     let mut all_style = self.all_style.borrow_mut();
     let mut style_record = HashMap::new();

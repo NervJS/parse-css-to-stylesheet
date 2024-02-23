@@ -24,7 +24,7 @@ pub enum EnumValue {
 impl ToExpr for TextAlign {
   fn to_expr(&self) -> PropertyTuple {
     PropertyTuple::One(
-      generate_prop_name!(*self.id),
+      self.id.to_string(),
       Expr::Member(MemberExpr {
         span: DUMMY_SP,
         obj: Box::new(Expr::Ident(Ident::new("TextAlign".into(), DUMMY_SP))),
@@ -46,7 +46,7 @@ impl ToExpr for TextAlign {
 
   fn to_rn_expr(&self) -> PropertyTuple {
     PropertyTuple::One(
-      generate_prop_name!(*self.id),
+      self.id.to_string(),
       match &self.value {
         EnumValue::Start => generate_expr_lit_str!("left"),
         EnumValue::Center => generate_expr_lit_str!("center"),

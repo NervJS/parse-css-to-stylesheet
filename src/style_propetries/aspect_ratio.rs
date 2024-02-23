@@ -41,7 +41,7 @@ impl From<(String, &Property<'_>)> for AspactRatio {
 impl ToExpr for AspactRatio {
   fn to_expr(&self) -> PropertyTuple {
     PropertyTuple::One(
-      generate_prop_name!("aspectRatio"),
+      "aspectRatio".to_string(),
       match self.value {
         EAspactRatio::Ratio(first, second) => generate_expr_lit_num!(first / second),
         _ => generate_expr_lit_num!(1.0),
@@ -51,7 +51,7 @@ impl ToExpr for AspactRatio {
 
   fn to_rn_expr(&self) -> PropertyTuple {
     PropertyTuple::One(
-      generate_prop_name!("aspectRatio"),
+      "aspectRatio".to_string(),
       match self.value {
         EAspactRatio::Ratio(first, second) => generate_expr_lit_num!(first / second),
         _ => generate_expr_ident!("auto"),

@@ -60,14 +60,14 @@ impl ToExpr for TextDecoration {
     }
 
     if let Some(color) = &self.color {
-      props.push( PropOrSpread::Prop(Box::new(Prop::KeyValue(KeyValueProp {
+      props.push(PropOrSpread::Prop(Box::new(Prop::KeyValue(KeyValueProp {
         key: generate_prop_name!("color"),
         value: generate_expr_lit_str!(color.0.clone()).into()
       }))));
     }
 
     PropertyTuple::One(
-      generate_prop_name!(*self.id),
+      self.id.to_string(),
       Expr::Object(ObjectLit {
         span: DUMMY_SP,
         props: props
@@ -76,11 +76,11 @@ impl ToExpr for TextDecoration {
   }
 
   fn to_rn_expr(&self) -> PropertyTuple {
-    let mut props: Vec<(PropName, Expr)> = vec![];
+    let mut props: Vec<(String, Expr)> = vec![];
 
     if let Some(line) = &self.line {
       props.push(
-        (generate_prop_name!("textDecorationLine"),
+        ("textDecorationLine".to_string(),
         match line {
           TextDecorationLine::Underline => generate_expr_lit_str!("underline"),
           TextDecorationLine::LineThrough => generate_expr_lit_str!("line-through"),
@@ -91,7 +91,7 @@ impl ToExpr for TextDecoration {
     };
     if let Some(style) = &self.style {
       props.push(
-        (generate_prop_name!("textDecorationStyle"),
+        ("textDecorationStyle".to_string(),
         match &style {
           TextDecorationStyle::Solid => generate_expr_lit_str!("solid"),
           TextDecorationStyle::Double => generate_expr_lit_str!("double"),
@@ -103,7 +103,7 @@ impl ToExpr for TextDecoration {
     };
     if let Some(color) = &self.color {
       props.push(
-        (generate_prop_name!("textDecorationColor"),
+        ("textDecorationColor".to_string(),
         generate_expr_lit_str!(color.0.clone()))
       )
     }

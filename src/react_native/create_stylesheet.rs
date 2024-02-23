@@ -1,6 +1,6 @@
 
 
-use std::{collections::HashMap, fmt::format};
+use std::{collections::{BTreeMap, HashMap}, fmt::format};
 
 use swc_common::{errors::{Handler, ColorConfig}, comments::SingleThreadedComments, SourceMap, sync::Lrc, Globals, Mark, GLOBALS, Span, DUMMY_SP};
 use swc_ecma_ast::{EsVersion, Program, Module, Expr, ObjectLit, PropOrSpread, Prop, KeyValueProp, PropName, Ident, ExportDefaultExpr, CallExpr, ModuleItem, BlockStmt, Stmt, ExprStmt, ExprOrSpread, MemberExpr, Callee, MemberProp, ModuleDecl, ComputedPropName, Lit, Str};
@@ -10,17 +10,18 @@ use swc_ecma_transforms_base::{resolver, fixer::fixer, hygiene::hygiene};
 use swc_ecma_visit::FoldWith;
 use swc_ecmascript::transforms::typescript::strip;
 use swc_atoms::Atom;
+use indexmap::IndexMap;
 
 use crate::{style_propetries::{style_value_type::StyleValueType, traits::ToStyleValue, unit::{Platform, PropertyTuple}}, generate_expr_lit_str};
 
 pub struct RNStyleSheet {
   pub cm: Option<Lrc<SourceMap>>,
   pub program: Option<Program>,
-  pub style_data: HashMap<String, HashMap<String, StyleValueType>>
+  pub style_data: HashMap<String, Vec<StyleValueType>>
 }
 
 impl RNStyleSheet {
-  pub fn new(style_data: HashMap<String, HashMap<String, StyleValueType>>) -> Self {
+  pub fn new(style_data: HashMap<String, Vec<StyleValueType>>) -> Self {
     Self {
       program: None,
       cm: None,
@@ -34,27 +35,32 @@ impl RNStyleSheet {
     let mut rules = vec![];
     for (key, value) in self.style_data.iter() {
       let mut prop_or_spread = vec![];
-      for (_, value) in value.iter() {
-        let prop = value.to_expr(Platform::ReactNative);
+
+      // 使用有序表
+      let mut index_map = IndexMap::new();
+      
+      value.into_iter().for_each(|style_value| {
+        let prop = style_value.to_expr(Platform::ReactNative);
         match prop {
           PropertyTuple::One(id, expr) => {
-            if let Expr::Invalid(_) = expr { continue; }
-            prop_or_spread.push(PropOrSpread::Prop(Box::new(Prop::KeyValue(KeyValueProp {
-              key: id,
-              value: Box::new(expr),
-            }))))
+            if let Expr::Invalid(_) = expr { return }
+            index_map.insert(id, Box::new(expr));
           }
           PropertyTuple::Array(prop_arr) => {
             prop_arr.into_iter().for_each(|(id, expr)| {
               if let Expr::Invalid(_) = expr { return }
-              prop_or_spread.push(PropOrSpread::Prop(Box::new(Prop::KeyValue(KeyValueProp {
-                key: id,
-                value: Box::new(expr),
-              }))))
+              index_map.insert(id, Box::new(expr));
             })
           }
         }
-      }
+      });
+
+      index_map.into_iter().for_each(|(id, expr)| {
+        prop_or_spread.push(PropOrSpread::Prop(Box::new(Prop::KeyValue(KeyValueProp {
+          key: PropName::Ident(Ident::new(id.into(), swc_common::DUMMY_SP)),
+          value: expr,
+        }))))
+      });
 
       rules.push(PropOrSpread::Prop(Box::new(Prop::KeyValue(KeyValueProp {
         key: PropName::Computed(ComputedPropName {

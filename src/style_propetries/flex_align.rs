@@ -74,7 +74,7 @@ impl ToExpr for FlexAlign {
   // 转换成鸿蒙样式
   fn to_expr(&self) -> PropertyTuple {
     PropertyTuple::One (
-      generate_prop_name!(*self.id),
+      self.id.to_string(),
       Expr::Member(MemberExpr {
         span: DUMMY_SP,
         obj: Box::new(Expr::Ident(Ident::new("FlexAlign".into(), DUMMY_SP))),
@@ -99,7 +99,7 @@ impl ToExpr for FlexAlign {
   // 转换成RN样式
   fn to_rn_expr(&self) -> PropertyTuple {
     PropertyTuple::One (
-      generate_prop_name!(*self.id),
+      self.id.to_string(),
       match &self.value {
         EnumValue::Start => generate_expr_lit_str!("flex-start"),
         EnumValue::Center => generate_expr_lit_str!("center"),

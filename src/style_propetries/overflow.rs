@@ -44,7 +44,7 @@ impl From<(String, &Property<'_>)> for Overflow {
 impl ToExpr for Overflow {
   fn to_expr(&self) -> PropertyTuple {
     PropertyTuple::One(
-      generate_prop_name!(*self.id),
+      self.id.to_string(),
       match &self.value {
         EnumValue::Hidden => generate_expr_lit_str!("hidden"),
         EnumValue::Visible => generate_expr_lit_str!("visible"),
@@ -56,7 +56,7 @@ impl ToExpr for Overflow {
 
   fn to_rn_expr(&self) -> PropertyTuple {
     PropertyTuple::One(
-      generate_prop_name!(*self.id),
+      self.id.to_string(),
       match &self.value {
         EnumValue::Hidden => generate_expr_lit_str!("hidden"),
         EnumValue::Visible => generate_expr_lit_str!("visible"),

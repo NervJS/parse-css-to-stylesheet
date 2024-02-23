@@ -25,7 +25,7 @@ pub enum EnumValue {
 impl ToExpr for FontSize {
   fn to_expr(&self) -> PropertyTuple {
     PropertyTuple::One(
-      generate_prop_name!(*self.id),
+      self.id.to_string(),
       match &self.value {
         EnumValue::String(value) => generate_expr_lit_str!(value.to_owned()),
         EnumValue::LengthValue(length_value) => generate_expr_by_length_value(length_value, Platform::Harmony),
@@ -37,7 +37,7 @@ impl ToExpr for FontSize {
 
   fn to_rn_expr(&self) -> PropertyTuple {
     PropertyTuple::One(
-      generate_prop_name!(*self.id),
+      self.id.to_string(),
       match &self.value {
         EnumValue::String(value) => generate_expr_lit_str!(value.to_owned()),
         EnumValue::LengthValue(length_value) => generate_expr_by_length_value(length_value, Platform::ReactNative),

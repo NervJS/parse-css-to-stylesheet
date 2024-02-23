@@ -2,9 +2,8 @@ use lightningcss::{
   properties::{Property, border::BorderSideWidth},
   traits::ToCss
 };
-use swc_atoms::Atom;
-use swc_ecma_ast::{PropName, Expr, Tpl};
-use crate::{generate_prop_name, generate_expr_lit_str, generate_expr_by_length, generate_invalid_expr };
+use swc_ecma_ast::{PropName, Expr};
+use crate::{generate_expr_by_length, generate_expr_lit_str, generate_invalid_expr, generate_prop_name };
 
 use super::{traits::ToExpr, unit::PropertyTuple};
 
@@ -95,97 +94,51 @@ impl From<(String, &Property<'_>)> for BorderWidth {
 
 impl ToExpr for BorderWidth {
     fn to_expr(&self) -> PropertyTuple {
-      let mut props: Vec<(PropName, Expr)> = vec![];
+      let mut props: Vec<(String, Expr)> = vec![];
       if let Some(top) = &self.top {
-        props.push((generate_prop_name!("borderTopWidth"), generate_expr_by_border_side_width!(top)))
+        props.push(("borderTopWidth".to_string(), generate_expr_by_border_side_width!(top)))
       }
       if let Some(bottom) = &self.bottom {
-        props.push((generate_prop_name!("borderBottomWidth"), generate_expr_by_border_side_width!(bottom)))
+        props.push(("borderBottomWidth".to_string(), generate_expr_by_border_side_width!(bottom)))
       }
       if let Some(left) = &self.left {
-        props.push((generate_prop_name!("borderLeftWidth"), generate_expr_by_border_side_width!(left)))
+        props.push(("borderLeftWidth".to_string(), generate_expr_by_border_side_width!(left)))
       }
       if let Some(right) = &self.right {
-        props.push((generate_prop_name!("borderRightWidth"), generate_expr_by_border_side_width!(right)))
+        props.push(("borderRightWidth".to_string(), generate_expr_by_border_side_width!(right)))
       }
       PropertyTuple::Array(props)
     }
 
     fn to_rn_expr(&self) -> PropertyTuple {
       let prop_name = &self.id;
-      if prop_name == "borderWidth" {
+
+      let mut is_same = false;
+      // 判断self.top、self.right、self.bottom、self.left是否一致
+      if self.top == self.right && self.right == self.bottom && self.bottom == self.left {
+        is_same = true;
+      }
+
+      if prop_name == "borderWidth" && is_same {
         // border-width
-        let top = generate_expr_by_border_side_width!(self.top.as_ref().unwrap());
-        let right = generate_expr_by_border_side_width!(self.right.as_ref().unwrap());
-        let bottom = generate_expr_by_border_side_width!(self.bottom.as_ref().unwrap());
-        let left = generate_expr_by_border_side_width!(self.left.as_ref().unwrap());
-        // 判断top\left\bottom\right是否存在Invalid
-        for (_, k) in [&top, &right, &bottom, &left].iter().enumerate() {
-          if let Expr::Invalid(_) = k {
-            return PropertyTuple::One(
-              generate_prop_name!(prop_name.clone()), 
-              generate_invalid_expr!()
-            )
-          }
-        }
-        let border_width = vec![Box::new(top), Box::new(right), Box::new(bottom), Box::new(left)];
-
-        let tpl_expr = Expr::Tpl(Tpl {
-          span: swc_common::DUMMY_SP,
-          exprs: border_width,
-          quasis: vec![
-            swc_ecma_ast::TplElement {
-              span: swc_common::DUMMY_SP,
-              tail: false,
-              cooked: None,
-              raw: Atom::from("").into(),
-            },
-            swc_ecma_ast::TplElement {
-              span: swc_common::DUMMY_SP,
-              tail: false,
-              cooked: Some(" ".into()),
-              raw: Atom::from(" ").into(),
-            },
-            swc_ecma_ast::TplElement {
-              span: swc_common::DUMMY_SP,
-              tail: false,
-              cooked: Some(" ".into()),
-              raw: Atom::from(" ").into(),
-            },
-            swc_ecma_ast::TplElement {
-              span: swc_common::DUMMY_SP,
-              tail: false,
-              cooked: Some(" ".into()),
-              raw: Atom::from(" ").into(),
-            },
-            swc_ecma_ast::TplElement {
-              span: swc_common::DUMMY_SP,
-              tail: true,
-              cooked: None,
-              raw: Atom::from("").into(),
-            }
-          ]
-        });
-
         PropertyTuple::One(
-          generate_prop_name!(prop_name.clone()), 
-          tpl_expr
+          prop_name.clone(), 
+          generate_expr_by_border_side_width!(self.top.as_ref().unwrap())
         )
-        
       } else {
-        let mut props: Vec<(PropName, Expr)> = vec![];
+        let mut props: Vec<(String, Expr)> = vec![];
         // 单个边框颜色
         if let Some(top) = &self.top {
-          props.push((generate_prop_name!(prop_name.clone()), generate_expr_by_border_side_width!(top)))
+          props.push(("borderTopWidth".to_string(), generate_expr_by_border_side_width!(top)))
         }
         if let Some(bottom) = &self.bottom {
-          props.push((generate_prop_name!(prop_name.clone()), generate_expr_by_border_side_width!(bottom)))
+          props.push(("borderBottomWidth".to_string(), generate_expr_by_border_side_width!(bottom)))
         }
         if let Some(left) = &self.left {
-          props.push((generate_prop_name!(prop_name.clone()), generate_expr_by_border_side_width!(left)))
+          props.push(("borderLeftWidth".to_string(), generate_expr_by_border_side_width!(left)))
         }
         if let Some(right) = &self.right {
-          props.push((generate_prop_name!(prop_name.clone()), generate_expr_by_border_side_width!(right)))
+          props.push(("borderRightWidth".to_string(), generate_expr_by_border_side_width!(right)))
         }
         PropertyTuple::Array(props)
       }

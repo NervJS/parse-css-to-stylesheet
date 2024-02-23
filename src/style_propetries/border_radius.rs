@@ -4,7 +4,7 @@ use lightningcss::{
 };
 use swc_atoms::Atom;
 use swc_ecma_ast::{PropName, Expr, Tpl};
-use crate::{generate_prop_name, generate_expr_lit_str, generate_invalid_expr };
+use crate::{generate_expr_lit_str, generate_invalid_expr, generate_prop_name, generate_tpl_expr };
 
 use super::{traits::ToExpr, unit::{PropertyTuple, generate_expr_by_length_value, Platform}};
 
@@ -86,98 +86,52 @@ impl From<(String, &Property<'_>)> for BorderRadius {
 
 impl ToExpr for BorderRadius {
     fn to_expr(&self) -> PropertyTuple {
-      let mut props: Vec<(PropName, Expr)> = vec![];
+      let mut props: Vec<(String, Expr)> = vec![];
 
       if let Some(top) = &self.top_left {
-        props.push((generate_prop_name!("borderTopLeftRadius"), generate_expr_by_dimension_percentage!(top)))
+        props.push(("borderTopLeftRadius".to_string(), generate_expr_by_dimension_percentage!(top)))
       }
       if let Some(bottom) = &self.top_right {
-        props.push((generate_prop_name!("borderTopRightRadius"), generate_expr_by_dimension_percentage!(bottom)))
+        props.push(("borderTopRightRadius".to_string(), generate_expr_by_dimension_percentage!(bottom)))
       }
       if let Some(left) = &self.bottom_left {
-        props.push((generate_prop_name!("borderBottomLeftRadius"), generate_expr_by_dimension_percentage!(left)))
+        props.push(("borderBottomLeftRadius".to_string(), generate_expr_by_dimension_percentage!(left)))
       }
       if let Some(right) = &self.bottom_right {
-        props.push((generate_prop_name!("borderBottomRightRadius"), generate_expr_by_dimension_percentage!(right)))
+        props.push(("borderBottomRightRadius".to_string(), generate_expr_by_dimension_percentage!(right)))
       }
       PropertyTuple::Array(props)
     }
 
     fn to_rn_expr(&self) -> PropertyTuple {
       let prop_name = &self.id;
-      if prop_name == "borderRadius" {
+
+      let mut is_same = false;
+      // 判断self.top、self.right、self.bottom、self.left是否一致
+      if self.top_left == self.top_right && self.top_right == self.bottom_left && self.bottom_left == self.bottom_right {
+        is_same = true;
+      }
+
+      if prop_name == "borderRadius" && is_same {
         // border-radius
-        let top_left: Expr = generate_expr_by_dimension_percentage!(self.top_left.as_ref().unwrap());
-        let top_right = generate_expr_by_dimension_percentage!(self.top_right.as_ref().unwrap());
-        let bottom_right = generate_expr_by_dimension_percentage!(self.bottom_right.as_ref().unwrap());
-        let bottom_left = generate_expr_by_dimension_percentage!(self.bottom_left.as_ref().unwrap());
-        // 判断top\left\bottom\right是否存在Invalid
-        for (_, k) in [&top_left, &top_right, &bottom_right, &bottom_left].iter().enumerate() {
-          if let Expr::Invalid(_) = k {
-            return PropertyTuple::One(
-              generate_prop_name!(prop_name.clone()), 
-              generate_invalid_expr!()
-            )
-          }
-        }
-        let border_radius = vec![Box::new(top_left), Box::new(top_right), Box::new(bottom_right), Box::new(bottom_left)];
-
-        let tpl_expr = Expr::Tpl(Tpl {
-          span: swc_common::DUMMY_SP,
-          exprs: border_radius,
-          quasis: vec![
-            swc_ecma_ast::TplElement {
-              span: swc_common::DUMMY_SP,
-              tail: false,
-              cooked: None,
-              raw: Atom::from("").into(),
-            },
-            swc_ecma_ast::TplElement {
-              span: swc_common::DUMMY_SP,
-              tail: false,
-              cooked: Some(" ".into()),
-              raw: Atom::from(" ").into(),
-            },
-            swc_ecma_ast::TplElement {
-              span: swc_common::DUMMY_SP,
-              tail: false,
-              cooked: Some(" ".into()),
-              raw: Atom::from(" ").into(),
-            },
-            swc_ecma_ast::TplElement {
-              span: swc_common::DUMMY_SP,
-              tail: false,
-              cooked: Some(" ".into()),
-              raw: Atom::from(" ").into(),
-            },
-            swc_ecma_ast::TplElement {
-              span: swc_common::DUMMY_SP,
-              tail: true,
-              cooked: None,
-              raw: Atom::from("").into(),
-            }
-          ]
-        });
-
         PropertyTuple::One(
-          generate_prop_name!(prop_name.clone()), 
-          tpl_expr
+          prop_name.clone(), 
+          generate_expr_by_dimension_percentage!(self.top_left.as_ref().unwrap())
         )
-        
       } else {
-        let mut props: Vec<(PropName, Expr)> = vec![];
+        let mut props: Vec<(String, Expr)> = vec![];
         // 单个边框颜色
         if let Some(top) = &self.top_left {
-          props.push((generate_prop_name!(prop_name.clone()), generate_expr_by_dimension_percentage!(top)))
+          props.push(("borderTopLeftRadius".to_string(), generate_expr_by_dimension_percentage!(top)))
         }
         if let Some(bottom) = &self.top_right {
-          props.push((generate_prop_name!(prop_name.clone()), generate_expr_by_dimension_percentage!(bottom)))
+          props.push(("borderTopRightRadius".to_string(), generate_expr_by_dimension_percentage!(bottom)))
         }
         if let Some(left) = &self.bottom_left {
-          props.push((generate_prop_name!(prop_name.clone()), generate_expr_by_dimension_percentage!(left)))
+          props.push(("borderBottomLeftRadius".to_string(), generate_expr_by_dimension_percentage!(left)))
         }
         if let Some(right) = &self.bottom_right {
-          props.push((generate_prop_name!(prop_name.clone()), generate_expr_by_dimension_percentage!(right)))
+          props.push(("borderBottomRightRadius".to_string(), generate_expr_by_dimension_percentage!(right)))
         }
         PropertyTuple::Array(props)
       }

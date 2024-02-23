@@ -2,7 +2,7 @@ use lightningcss::properties::{Property, text};
 use swc_common::DUMMY_SP;
 use swc_ecma_ast::{Expr, Ident, MemberProp, MemberExpr};
 
-use crate::{generate_prop_name, generate_expr_lit_str};
+use crate::generate_expr_lit_str;
 
 use super::{traits::ToExpr, unit::PropertyTuple};
 
@@ -23,7 +23,7 @@ pub enum EnumValue {
 impl ToExpr for TextTransform {
   fn to_expr(&self) -> PropertyTuple {
     PropertyTuple::One(
-      generate_prop_name!("textCase"),
+      "textCase".to_string(),
       Expr::Member(MemberExpr {
         span: DUMMY_SP,
         obj: Box::new(Expr::Ident(Ident::new("TextCase".into(), DUMMY_SP))),
@@ -45,7 +45,7 @@ impl ToExpr for TextTransform {
 
   fn to_rn_expr(&self) -> PropertyTuple {
     PropertyTuple::One(
-      generate_prop_name!(*self.id),
+      self.id.to_string(),
       generate_expr_lit_str!(match self.value {
         EnumValue::None => "none",
         EnumValue::Uppercase => "uppercase",

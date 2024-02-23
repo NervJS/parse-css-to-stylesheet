@@ -47,7 +47,7 @@ impl TextShadow {
 impl ToExpr for TextShadow {
     fn to_expr(&self) -> PropertyTuple {
       PropertyTuple::One(
-        generate_prop_name!("textShadow"),
+        "textShadow".to_string(),
         Expr::Object(ObjectLit {
           span: DUMMY_SP,
           props: vec![
@@ -83,7 +83,7 @@ impl ToExpr for TextShadow {
     fn to_rn_expr(&self) -> PropertyTuple {
       PropertyTuple::Array(
         vec![
-          (generate_prop_name!("textShadowOffset"), Expr::Object(ObjectLit {
+          ("textShadowOffset".to_string(), Expr::Object(ObjectLit {
             span: DUMMY_SP,
             props: vec![
               PropOrSpread::Prop(Box::new(Prop::KeyValue(
@@ -100,8 +100,8 @@ impl ToExpr for TextShadow {
               ))),
             ],
           })),
-          (generate_prop_name!("textShadowColor"), generate_string_by_css_color!(self.color.as_ref().unwrap())),
-          (generate_prop_name!("textShadowRadius"), generate_expr_by_length!(self.blur_radius.as_ref().unwrap(), Platform::ReactNative)),
+          ("textShadowColor".to_string(), generate_string_by_css_color!(self.color.as_ref().unwrap())),
+          ("textShadowRadius".to_string(), generate_expr_by_length!(self.blur_radius.as_ref().unwrap(), Platform::ReactNative)),
         ]
       )
     }

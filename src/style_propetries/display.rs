@@ -50,7 +50,7 @@ impl From<(String, &Property<'_>)> for Display {
 impl ToExpr for Display {
   fn to_expr(&self) -> PropertyTuple {
     PropertyTuple::One(
-      generate_prop_name!(*self.id),
+      self.id.to_string(),
       match &self.value {
         EnumValue::None => generate_expr_lit_str!("none"),
         EnumValue::Flex => generate_expr_lit_str!("flex"),
@@ -61,7 +61,7 @@ impl ToExpr for Display {
 
   fn to_rn_expr(&self) -> PropertyTuple {
     PropertyTuple::One(
-      generate_prop_name!(*self.id),
+      self.id.to_string(),
       match &self.value {
         EnumValue::None => generate_expr_lit_str!("none"),
         EnumValue::Flex => generate_expr_lit_str!("flex"),

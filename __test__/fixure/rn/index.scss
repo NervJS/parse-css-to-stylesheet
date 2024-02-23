@@ -1,6 +1,10 @@
 .c_div {
-  text-shadow: 1px 1px 1px #000;
-  text-transform: uppercase;
-  margin: 10% 20px;
-  flex: 1 1 auto;
+  background-color: orange;
+  flex: 2;
+  border-radius: 30px 2px;
+  border-bottom-right-radius: 2000px;
+  margin: 30px 10%;
+  padding: 10% 30px;
+  gap: 30px;
+  transform-origin: right 30px;
 }

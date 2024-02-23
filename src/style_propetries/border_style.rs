@@ -2,7 +2,7 @@ use lightningcss::properties::{Property, border::LineStyle};
 use swc_atoms::Atom;
 use swc_common::DUMMY_SP;
 use swc_ecma_ast::{PropName, Expr, Tpl, MemberExpr, Ident, MemberProp};
-use crate::{generate_prop_name, generate_invalid_expr };
+use crate::{generate_invalid_expr, generate_prop_name, generate_tpl_expr };
 
 use super::{traits::ToExpr, unit::{PropertyTuple, Platform}};
 
@@ -107,97 +107,46 @@ impl From<(String, &Property<'_>)> for BorderStyle {
 
 impl ToExpr for BorderStyle {
     fn to_expr(&self) -> PropertyTuple {
-      let mut props: Vec<(PropName, Expr)> = vec![];
+      let mut props: Vec<(String, Expr)> = vec![];
       if let Some(top) = &self.top {
-        props.push((generate_prop_name!("borderTopStyle"), generate_expr_by_line_style!(top, Platform::Harmony)))
+        props.push(("borderTopStyle".to_string(), generate_expr_by_line_style!(top, Platform::Harmony)))
       }
       if let Some(bottom) = &self.bottom {
-        props.push((generate_prop_name!("borderBottomStyle"), generate_expr_by_line_style!(bottom, Platform::Harmony)))
+        props.push(("borderBottomStyle".to_string(), generate_expr_by_line_style!(bottom, Platform::Harmony)))
       }
       if let Some(left) = &self.left {
-        props.push((generate_prop_name!("borderLeftStyle"), generate_expr_by_line_style!(left, Platform::Harmony)))
+        props.push(("borderLeftStyle".to_string(), generate_expr_by_line_style!(left, Platform::Harmony)))
       }
       if let Some(right) = &self.right {
-        props.push((generate_prop_name!("borderRightStyle"), generate_expr_by_line_style!(right, Platform::Harmony)))
+        props.push(("borderRightStyle".to_string(), generate_expr_by_line_style!(right, Platform::Harmony)))
       }
       PropertyTuple::Array(props)
     }
 
     fn to_rn_expr(&self) -> PropertyTuple {
       let prop_name = &self.id;
+
+
       if prop_name == "borderStyle" {
         // border-width
-        let top: Expr = generate_expr_by_line_style!(self.top.as_ref().unwrap(), Platform::ReactNative);
-        let right = generate_expr_by_line_style!(self.right.as_ref().unwrap(), Platform::ReactNative);
-        let bottom = generate_expr_by_line_style!(self.bottom.as_ref().unwrap(), Platform::ReactNative);
-        let left = generate_expr_by_line_style!(self.left.as_ref().unwrap(), Platform::ReactNative);
-        // 判断top\left\bottom\right是否存在Invalid
-        for (_, k) in [&top, &right, &bottom, &left].iter().enumerate() {
-          if let Expr::Invalid(_) = k {
-            return PropertyTuple::One(
-              generate_prop_name!(prop_name.clone()), 
-              generate_invalid_expr!()
-            )
-          }
-        }
-        let border_style = vec![Box::new(top), Box::new(right), Box::new(bottom), Box::new(left)];
-
-        let tpl_expr = Expr::Tpl(Tpl {
-          span: swc_common::DUMMY_SP,
-          exprs: border_style,
-          quasis: vec![
-            swc_ecma_ast::TplElement {
-              span: swc_common::DUMMY_SP,
-              tail: false,
-              cooked: None,
-              raw: Atom::from("").into(),
-            },
-            swc_ecma_ast::TplElement {
-              span: swc_common::DUMMY_SP,
-              tail: false,
-              cooked: Some(" ".into()),
-              raw: Atom::from(" ").into(),
-            },
-            swc_ecma_ast::TplElement {
-              span: swc_common::DUMMY_SP,
-              tail: false,
-              cooked: Some(" ".into()),
-              raw: Atom::from(" ").into(),
-            },
-            swc_ecma_ast::TplElement {
-              span: swc_common::DUMMY_SP,
-              tail: false,
-              cooked: Some(" ".into()),
-              raw: Atom::from(" ").into(),
-            },
-            swc_ecma_ast::TplElement {
-              span: swc_common::DUMMY_SP,
-              tail: true,
-              cooked: None,
-              raw: Atom::from("").into(),
-            }
-          ]
-        });
-
         PropertyTuple::One(
-          generate_prop_name!(prop_name.clone()), 
-          tpl_expr
+          prop_name.clone(), 
+          generate_expr_by_line_style!(self.top.as_ref().unwrap(), Platform::ReactNative)
         )
-        
       } else {
-        let mut props: Vec<(PropName, Expr)> = vec![];
+        let mut props: Vec<(String, Expr)> = vec![];
         // 单个边框颜色
         if let Some(top) = &self.top {
-          props.push((generate_prop_name!(prop_name.clone()), generate_expr_by_line_style!(top, Platform::ReactNative)))
+          props.push(("borderStyle".to_string(), generate_expr_by_line_style!(top, Platform::ReactNative)))
         }
         if let Some(bottom) = &self.bottom {
-          props.push((generate_prop_name!(prop_name.clone()), generate_expr_by_line_style!(bottom, Platform::ReactNative)))
+          props.push(("borderStyle".to_string(), generate_expr_by_line_style!(bottom, Platform::ReactNative)))
         }
         if let Some(left) = &self.left {
-          props.push((generate_prop_name!(prop_name.clone()), generate_expr_by_line_style!(left, Platform::ReactNative)))
+          props.push(("borderStyle".to_string(), generate_expr_by_line_style!(left, Platform::ReactNative)))
         }
         if let Some(right) = &self.right {
-          props.push((generate_prop_name!(prop_name.clone()), generate_expr_by_line_style!(right, Platform::ReactNative)))
+          props.push(("borderStyle".to_string(), generate_expr_by_line_style!(right, Platform::ReactNative)))
         }
         PropertyTuple::Array(props)
       }

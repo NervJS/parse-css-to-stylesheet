@@ -1,6 +1,6 @@
 use lightningcss::{properties::Property, stylesheet::PrinterOptions};
 
-use crate::style_propetries::{aspect_ratio::AspactRatio, border::Border, border_color::BorderColor, border_radius::BorderRadius, border_style::BorderStyle, border_width::BorderWidth, color::ColorProperty, display::Display, flex::Flex, flex_align::FlexAlign, flex_basis::FlexBasis, flex_direction::FlexDirection, flex_wrap::FlexWrap, font_size::FontSize, font_style::FontStyle, font_weight::FontWeight, gap::Gap, item_align::ItemAlign, length_value::LengthValueProperty, letter_spacing::LetterSpacing, line_height::LineHeight, marin_padding::MarginPadding, max_size::MaxSizeProperty, normal::Normal, number::NumberProperty, overflow::Overflow, size::SizeProperty, style_value_type::StyleValueType, text_align::TextAlign, text_decoration::TextDecoration, text_shadow::TextShadow, text_transform::TextTransform, transform::Transform, transform_origin::TransformOrigin, vertical_align::VerticalAlign};
+use crate::style_propetries::{aspect_ratio::AspactRatio, background::Background, background_image::BackgroundImage, background_position::BackgroundPosition, background_repeat::BackgroundRepeat, background_size::BackgroundSize, border::Border, border_color::BorderColor, border_radius::BorderRadius, border_style::BorderStyle, border_width::BorderWidth, color::ColorProperty, display::Display, flex::Flex, flex_align::FlexAlign, flex_basis::FlexBasis, flex_direction::FlexDirection, flex_wrap::FlexWrap, font_size::FontSize, font_style::FontStyle, font_weight::FontWeight, gap::Gap, item_align::ItemAlign, length_value::LengthValueProperty, letter_spacing::LetterSpacing, line_height::LineHeight, marin_padding::MarginPadding, max_size::MaxSizeProperty, normal::Normal, number::NumberProperty, overflow::Overflow, size::SizeProperty, style_value_type::StyleValueType, text_align::TextAlign, text_decoration::TextDecoration, text_shadow::TextShadow, text_transform::TextTransform, transform::Transform, transform_origin::TransformOrigin, vertical_align::VerticalAlign};
 
 pub fn parse_style_properties(properties: &Vec<(String, Property)>) -> Vec<StyleValueType> {
   let mut final_properties = vec![];
@@ -144,6 +144,22 @@ pub fn parse_style_properties(properties: &Vec<(String, Property)>) -> Vec<Style
       }
       "transformOrigin" => {
         final_properties.push(StyleValueType::TransformOrigin(TransformOrigin::from((id.to_string(), value))));
+      }
+      // 背景
+      "backgroundRepeat" => {
+        final_properties.push(StyleValueType::BackgroundRepeat(BackgroundRepeat::from((id.to_string(), value))));
+      }
+      "backgroundPosition" => {
+        final_properties.push(StyleValueType::BackgroundPosition(BackgroundPosition::from((id.to_string(), value))));
+      }
+      "backgroundSize" => {
+        final_properties.push(StyleValueType::BackgroundSize(BackgroundSize::from((id.to_string(), value))));
+      }
+      "backgroundImage" => {
+        final_properties.push(StyleValueType::BackgroundImage(BackgroundImage::from((id.to_string(), value))));
+      }
+      "background" => {
+        final_properties.push(StyleValueType::Background(Background::from((id.to_string(), value))));
       }
       _ => {
         // position、zIndex等... 会自动处理 单位、数字等相关信息

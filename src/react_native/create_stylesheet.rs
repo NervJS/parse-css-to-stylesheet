@@ -40,7 +40,7 @@ impl RNStyleSheet {
       let mut index_map = IndexMap::new();
       
       value.into_iter().for_each(|style_value| {
-        let prop = style_value.to_expr(Platform::ReactNative);
+        let prop = style_value.to_expr(Platform::Harmony);
         match prop {
           PropertyTuple::One(id, expr) => {
             if let Expr::Invalid(_) = expr { return }

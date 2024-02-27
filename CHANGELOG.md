@@ -1,3 +1,12 @@
+## [0.0.31](https://github.com/NervJS/parse-css-to-stylesheet/compare/v0.0.30...v0.0.31) (2024-02-23)
+
+
+### Features
+
+* 移除对taro-component的标签判断识别 ([36c8a3f](https://github.com/NervJS/parse-css-to-stylesheet/commit/36c8a3f194f3517fbe5df2cee5c68d970e055031))
+
+
+
 ## [0.0.30](https://github.com/NervJS/parse-css-to-stylesheet/compare/v0.0.28...v0.0.30) (2023-12-25)
 
 

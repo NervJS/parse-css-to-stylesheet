@@ -1,6 +1,6 @@
 use swc_common::DUMMY_SP;
 use swc_ecma_ast::{
-  ArrayLit, Bool, ComputedPropName, Expr, ExprOrSpread, Ident, KeyValueProp, Lit, MemberExpr,
+  ArrayLit, ComputedPropName, Expr, ExprOrSpread, Ident, KeyValueProp, Lit, MemberExpr,
   MemberProp, ObjectLit, Prop, PropName, PropOrSpread, Str,
 };
 

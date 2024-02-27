@@ -33,11 +33,14 @@ impl MarginPadding {
 
 impl ToExpr for MarginPadding {
   fn to_expr(&self) -> PropertyTuple {
+    // 判断self.id是否padding开头
+    let is_padding = self.id.starts_with("padding");
+    let key_name = if is_padding { "padding" } else { "margin" };
     PropertyTuple::Array(vec![
-      ("marginTop".to_string(), generate_expr_by_length_percentage_or_auto!(self.top.as_ref().unwrap(), Platform::Harmony)),
-      ("marginRight".to_string(), generate_expr_by_length_percentage_or_auto!(self.right.as_ref().unwrap(), Platform::Harmony)),
-      ("marginBottom".to_string(), generate_expr_by_length_percentage_or_auto!(self.bottom.as_ref().unwrap(), Platform::Harmony)),
-      ("marginLeft".to_string(), generate_expr_by_length_percentage_or_auto!(self.left.as_ref().unwrap(), Platform::Harmony)),
+      (format!("{}Top", key_name), generate_expr_by_length_percentage_or_auto!(self.top.as_ref().unwrap(), Platform::Harmony)),
+      (format!("{}Right", key_name), generate_expr_by_length_percentage_or_auto!(self.right.as_ref().unwrap(), Platform::Harmony)),
+      (format!("{}Bottom", key_name), generate_expr_by_length_percentage_or_auto!(self.bottom.as_ref().unwrap(), Platform::Harmony)),
+      (format!("{}Left", key_name), generate_expr_by_length_percentage_or_auto!(self.left.as_ref().unwrap(), Platform::Harmony)),
     
     ])
   }

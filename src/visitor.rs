@@ -8,6 +8,7 @@ use std::{
 };
 
 use html5ever::{tendril::StrTendril, Attribute};
+use indexmap::IndexMap;
 use lightningcss::{
   properties::{Property, PropertyId},
   stylesheet::ParserOptions,
@@ -26,12 +27,9 @@ use swc_ecma_visit::{
 };
 
 use crate::{
-  scraper::Element,
-  style_parser::{parse_style_properties, StyleValue},
-  style_transform::{style_value_type::StyleValueType, traits::ToExpr},
-  utils::{
-    create_qualname, is_starts_with_uppercase, recursion_jsx_member, to_camel_case, to_kebab_case, get_callee_attributes
-  }, constants::{CONVERT_STYLE_PX_FN, INNER_STYLE, INNER_STYLE_DATA, CALC_DYMAMIC_STYLE},
+  constants::{CALC_DYMAMIC_STYLE, CONVERT_STYLE_PX_FN, INNER_STYLE, INNER_STYLE_DATA, RN_CONVERT_STYLE_PX_FN, RN_CONVERT_STYLE_VU_FN}, react_native::{parse_style_properties::parse_style_properties, rn_style_parser::StyleValue}, scraper::Element, style_propetries::{style_value_type::StyleValueType, traits::ToStyleValue, unit::{Platform, PropertyTuple}}, utils::{
+    create_qualname, get_callee_attributes, recursion_jsx_member, to_camel_case, to_kebab_case
+  }
 };
 
 #[derive(Debug, Clone)]
@@ -282,29 +280,159 @@ impl<'a> VisitAll for AstVisitor<'a> {
   }
 }
 
-fn properties_to_object_lit_props(
-  properties: &BTreeMap<&String, &StyleValueType>,
-) -> Vec<PropOrSpread> {
-  properties
-    .iter()
-    .map(|(key, value)| PropOrSpread::Prop(Box::new(Prop::KeyValue(parse_style_kv(key, value)))))
-    .collect::<Vec<PropOrSpread>>()
+
+pub fn parse_style_values(value: Vec<StyleValueType>, platform: Platform) -> Vec<PropOrSpread> {
+  
+  let mut prop_or_spread = vec![];
+
+  // 使用有序表
+  let mut index_map = IndexMap::new();
+  
+  value.into_iter().for_each(|style_value| {
+    let prop = style_value.to_expr(platform.clone());
+    match prop {
+      PropertyTuple::One(id, expr) => {
+        if let Expr::Invalid(_) = expr { return }
+        index_map.insert(id, Box::new(expr));
+      }
+      PropertyTuple::Array(prop_arr) => {
+        prop_arr.into_iter().for_each(|(id, expr)| {
+          if let Expr::Invalid(_) = expr { return }
+          index_map.insert(id, Box::new(expr));
+        })
+      }
+    }
+  });
+
+  index_map.into_iter().for_each(|(id, expr)| {
+    prop_or_spread.push(PropOrSpread::Prop(Box::new(Prop::KeyValue(KeyValueProp {
+      key: PropName::Ident(Ident::new(id.into(), swc_common::DUMMY_SP)),
+      value: expr,
+    }))))
+  });
+
+  prop_or_spread
 }
 
-pub fn parse_style_kv(key: &str, value: &StyleValueType) -> KeyValueProp {
-  KeyValueProp {
-    key: PropName::Ident(Ident::new(key.to_string().into(), DUMMY_SP)),
-    value: value.to_expr().into(),
+
+// 插入运行时所需的引入
+pub fn insert_import_module_decl(module: &mut Module, last_import_index: usize, platform: Platform) -> usize {
+  let mut last_index = last_import_index;
+  match platform {
+    Platform::ReactNative => {
+      //   import { StyleSheet } from 'react-native'
+      //   import { scalePx2dp, scaleVu2dp } from '@tarojs/runtime-rn'
+      //   // 用来标识 rn-runner transformer 是否读写缓存
+      //   function ignoreStyleFileCache() {}
+      module.body.insert(
+        last_index,
+        ModuleItem::ModuleDecl(ModuleDecl::Import(ImportDecl {
+          span: DUMMY_SP,
+          specifiers: vec![
+            ImportSpecifier::Named(ImportNamedSpecifier {
+              span: DUMMY_SP,
+              local: Ident::new("StyleSheet".into(), DUMMY_SP),
+              imported: None,
+              is_type_only: false,
+            })
+          ],
+          src: Box::new(Str::from("react-native")),
+          type_only: false,
+          with: None,
+        })),
+      );
+      last_index += 1;
+      module.body.insert(
+        last_index,
+        ModuleItem::ModuleDecl(ModuleDecl::Import(ImportDecl {
+          span: DUMMY_SP,
+          specifiers: vec![
+            ImportSpecifier::Named(ImportNamedSpecifier {
+              span: DUMMY_SP,
+              local: Ident::new(RN_CONVERT_STYLE_PX_FN.into(), DUMMY_SP),
+              imported: None,
+              is_type_only: false,
+            }),
+            ImportSpecifier::Named(ImportNamedSpecifier {
+              span: DUMMY_SP,
+              local: Ident::new(RN_CONVERT_STYLE_VU_FN.into(), DUMMY_SP),
+              imported: None,
+              is_type_only: false,
+            })
+          ],
+          src: Box::new(Str::from("@tarojs/runtime-rn")),
+          type_only: false,
+          with: None,
+        }))
+      );
+      last_index += 1;
+      module.body.insert(
+        last_index,
+        ModuleItem::Stmt(Stmt::Decl(Decl::Fn(FnDecl {
+          ident: Ident::new("ignoreStyleFileCache".into(), DUMMY_SP),
+          function: Box::new(Function {
+            params: vec![],
+            decorators: vec![],
+            span: DUMMY_SP,
+            body: Some(BlockStmt {
+              span: DUMMY_SP,
+              stmts: vec![],
+            }),
+            is_generator: false,
+            is_async: false,
+            type_params: None,
+            return_type: None,
+          }),
+          declare: false,
+        }))
+      ));
+      last_index += 1;
+    },
+    Platform::Harmony => {
+      module.body.insert(
+        last_index,
+        ModuleItem::ModuleDecl(ModuleDecl::Import(ImportDecl {
+          span: DUMMY_SP,
+          specifiers: vec![
+            ImportSpecifier::Named(ImportNamedSpecifier {
+              span: DUMMY_SP,
+              local: Ident::new(CALC_DYMAMIC_STYLE.into(), DUMMY_SP),
+              // imported: Some(ModuleExportName::Ident(Ident::new(
+              //   "calcDynamicStyle".into(),
+              //   DUMMY_SP,
+              // ))),
+              imported: None,
+              is_type_only: false,
+            }),
+            ImportSpecifier::Named(ImportNamedSpecifier {
+              span: DUMMY_SP,
+              local: Ident::new(CONVERT_STYLE_PX_FN.into(), DUMMY_SP),
+              // imported: Some(ModuleExportName::Ident(Ident::new(
+              //   CONVERT_STYLE_PX_FN.into(),
+              //   DUMMY_SP,
+              // ))),
+              imported: None,
+              is_type_only: false,
+            })
+          ],
+          src: Box::new(Str::from("@tarojs/runtime")),
+          type_only: false,
+          with: None,
+        }))
+      )
+    },
   }
+  last_index
 }
 
 pub struct ModuleMutVisitor {
   pub all_style: Rc<RefCell<HashMap<String, StyleValue>>>,
+  pub platform: Platform
 }
 
 impl ModuleMutVisitor {
-  pub fn new(all_style: Rc<RefCell<HashMap<String, StyleValue>>>) -> Self {
-    ModuleMutVisitor { all_style }
+  pub fn new(all_style: Rc<RefCell<HashMap<String, StyleValue>>>, platform: Platform) -> Self {
+    ModuleMutVisitor { all_style, platform }
   }
 }
 
@@ -339,18 +467,14 @@ impl VisitMut for ModuleMutVisitor {
         props: style_entries
           .iter()
           .map(|(key, value)| {
-            let ordered_value: BTreeMap<_, _> = value.iter().collect();
             PropOrSpread::Prop(Box::new(Prop::KeyValue(KeyValueProp {
               key: PropName::Str(Str::from(key.as_str())),
               value: Box::new(Expr::Object(ObjectLit {
                 span: DUMMY_SP,
-                props: ordered_value
-                  .iter()
-                  .map(|(key, value)| {
-                    PropOrSpread::Prop(Box::new(Prop::KeyValue(parse_style_kv(key, value))))
-                  })
-                  .collect::<Vec<PropOrSpread>>()
-                  .into(),
+                props: parse_style_values(
+                  value.to_vec(),
+                  self.platform.clone()
+                )
               })),
             })))
           })
@@ -425,39 +549,9 @@ impl VisitMut for ModuleMutVisitor {
     if last_import_index != 0 {
       last_import_index += 1;
     }
-    // 插入代码 import { calcDynamicStyle } from '@tarojs/runtime'
-    module.body.insert(
-      last_import_index,
-      ModuleItem::ModuleDecl(ModuleDecl::Import(ImportDecl {
-        span: DUMMY_SP,
-        specifiers: vec![
-          ImportSpecifier::Named(ImportNamedSpecifier {
-            span: DUMMY_SP,
-            local: Ident::new(CALC_DYMAMIC_STYLE.into(), DUMMY_SP),
-            // imported: Some(ModuleExportName::Ident(Ident::new(
-            //   "calcDynamicStyle".into(),
-            //   DUMMY_SP,
-            // ))),
-            imported: None,
-            is_type_only: false,
-          }),
-          ImportSpecifier::Named(ImportNamedSpecifier {
-            span: DUMMY_SP,
-            local: Ident::new(CONVERT_STYLE_PX_FN.into(), DUMMY_SP),
-            // imported: Some(ModuleExportName::Ident(Ident::new(
-            //   CONVERT_STYLE_PX_FN.into(),
-            //   DUMMY_SP,
-            // ))),
-            imported: None,
-            is_type_only: false,
-          })
-        ],
-        src: Box::new(Str::from("@tarojs/runtime")),
-        type_only: false,
-        with: None,
-      })),
-    );
-    last_import_index += 1;
+    // 插入平台所需的运行时代码， 如： import { calcDynamicStyle } from '@tarojs/runtime'
+    last_import_index = insert_import_module_decl(module, last_import_index, self.platform.clone());
+  
     let mut var_checker = VarChecker { found: false };
     module.visit_with(&mut var_checker);
     if var_checker.found {
@@ -475,16 +569,19 @@ impl VisitMut for ModuleMutVisitor {
 pub struct JSXMutVisitor<'i> {
   pub jsx_record: Rc<RefCell<JSXRecord>>,
   pub style_record: Rc<RefCell<HashMap<SpanKey, Vec<(String, Property<'i>)>>>>,
+  pub platform: Platform
 }
 
 impl<'i> JSXMutVisitor<'i> {
   pub fn new(
     jsx_record: Rc<RefCell<JSXRecord>>,
     style_record: Rc<RefCell<HashMap<SpanKey, Vec<(String, Property<'i>)>>>>,
+    platform: Platform
   ) -> Self {
     JSXMutVisitor {
       jsx_record,
       style_record,
+      platform
     }
   }
 
@@ -559,7 +656,7 @@ impl<'i> JSXMutVisitor<'i> {
     (class_attr_value, has_dynamic_class)
   }
 
-  fn process_attribute_lit_value (&self, lit: &Lit, has_dynamic_class: bool, element: &Element, style_record: &HashMap<SpanKey, Vec<(String, Property<'i>)>>) -> Option<HashMap<String, StyleValueType>> {
+  fn process_attribute_lit_value (&self, lit: &Lit, has_dynamic_class: bool, element: &Element, style_record: &HashMap<SpanKey, Vec<(String, Property<'i>)>>) -> Option<Vec<StyleValueType>> {
     match lit {
       Lit::Str(str) => {
         if !has_dynamic_class {
@@ -617,6 +714,8 @@ impl<'i> JSXMutVisitor<'i> {
       Expr::Object(lit) => {
         if !has_dynamic_class {
           let mut properties = Vec::new();
+          // 动态的style属性
+          let mut dynamic_properties = Vec::new();
           if let Some(style_declaration) = style_record.get(&element.span) {
             for declaration in style_declaration.iter() {
               let mut has_property = false;
@@ -662,10 +761,11 @@ impl<'i> JSXMutVisitor<'i> {
                     Expr::Lit(lit) => match lit {
                       Lit::Str(str) => str.value.to_string(),
                       Lit::Num(num) => num.to_string(),
-                      _ => "".to_string(),
+                      _ => "".to_string()
                     },
                     _ => {
                       has_dynamic_style = true;
+                      dynamic_properties.push(p.clone());
                       "".to_string()
                     }
                   };
@@ -679,17 +779,19 @@ impl<'i> JSXMutVisitor<'i> {
                     _ => None,
                   };
                   if let Some(name) = name {
-                    let property_id = PropertyId::from(name.as_str());
-                    let property = Property::parse_string(
-                      property_id,
-                      value.as_str(),
-                      ParserOptions::default(),
-                    );
-                    if property.is_ok() {
-                      temp_properties.insert(
-                        to_camel_case(name.as_str(), false),
-                        property.unwrap().into_owned(),
+                    if value.ne("") {
+                      let property_id = PropertyId::from(name.as_str());
+                      let property = Property::parse_string(
+                        property_id,
+                        value.as_str(),
+                        ParserOptions::default(),
                       );
+                      if property.is_ok() {
+                        temp_properties.insert(
+                          to_camel_case(name.as_str(), false),
+                          property.unwrap().into_owned(),
+                        );
+                      }
                     }
                   }
                 }
@@ -702,8 +804,10 @@ impl<'i> JSXMutVisitor<'i> {
           }
           let mut temp_props = vec![];
 
-          for property in properties.iter() {
-            temp_props.push((property.0.to_string(), property.1.clone()));
+          if !has_dynamic_style {
+            for property in properties.iter() {
+              temp_props.push((property.0.to_string(), property.1.clone()));
+            }
           }
           temp_props.extend(
             temp_properties
@@ -712,14 +816,7 @@ impl<'i> JSXMutVisitor<'i> {
           );
           let mut temp_props = parse_style_properties(&temp_props);
 
-          let mut props = temp_props
-            .iter_mut()
-            .map(|p| {
-              PropOrSpread::Prop(
-                Prop::KeyValue(parse_style_kv(p.0, p.1)).into(),
-              )
-            })
-            .collect::<Vec<_>>();
+          let mut props = parse_style_values(temp_props, self.platform.clone());
           props.sort_by(|a, b| {
             let a = match a {
               PropOrSpread::Prop(prop) => match &**prop {
@@ -747,7 +844,8 @@ impl<'i> JSXMutVisitor<'i> {
             if let PropOrSpread::Spread(_) = prop {
               props.push(prop.clone())
             }
-          });
+           });
+          props.extend(dynamic_properties);
           lit.props = props;
         }
       }
@@ -790,16 +888,17 @@ impl<'i> VisitMut for JSXMutVisitor<'i> {
                           let value = self.process_attribute_lit_value(lit, has_dynamic_class, element, &self.style_record.borrow());
 
                           if let Some(value) = value {
-                            let properties_entries: BTreeMap<_, _> = value.iter().collect();
                             key_value_prop.value = Expr::Object(ObjectLit {
                               span: DUMMY_SP,
-                              props: properties_to_object_lit_props(&properties_entries).into(),
+                              props: parse_style_values(value, self.platform.clone()),
                             }).into();
                           }
                         }
                         _ => {
+                          let mut expr = &mut key_value_prop.value;
+                          has_dynamic_style = self.process_attribute_expr_value(expr, has_dynamic_class, element, &self.style_record.borrow());
                           style_attr_value = Some((*expr).clone());
-                          has_dynamic_style = self.process_attribute_expr_value(&mut key_value_prop.value, has_dynamic_class, element, &self.style_record.borrow());
+                          
                         }
                       };
                     }
@@ -814,16 +913,14 @@ impl<'i> VisitMut for JSXMutVisitor<'i> {
           if !has_style {
             if let Some(style_declaration) = style_record.get(&element.span) {
               let parsed_properties = parse_style_properties(&style_declaration);
-              let properties_entries: BTreeMap<_, _> = parsed_properties.iter().collect();
               let attrs = n.args.get_mut(1);
-              
               if let Some(attr) = attrs {
                 if let Expr::Object(object) = &mut *attr.expr {
                   object.props.push(PropOrSpread::Prop(Box::new(Prop::KeyValue(KeyValueProp {
                     key: PropName::Ident(Ident::new("style".into(), DUMMY_SP)),
                     value: Box::new(Expr::Object(ObjectLit {
                       span: DUMMY_SP,
-                      props: properties_to_object_lit_props(&properties_entries).into(),
+                      props: parse_style_values(parsed_properties, self.platform.clone())
                     })),
                   }))));
                 }
@@ -852,7 +949,7 @@ impl<'i> VisitMut for JSXMutVisitor<'i> {
                 None => ExprOrSpread::from(Box::new(Expr::Lit(Lit::Null(Null { span: DUMMY_SP })))),
               },
               match style_attr_value {
-                Some(value) => ExprOrSpread::from(Box::new(value)),
+                Some(value) => ExprOrSpread::from(value),
                 None => ExprOrSpread::from(Box::new(Expr::Lit(Lit::Null(Null { span: DUMMY_SP })))),
               },
             ],
@@ -919,12 +1016,11 @@ impl<'i> VisitMut for JSXMutVisitor<'i> {
                       let value = self.process_attribute_lit_value(lit, has_dynamic_class, element, &style_record);
 
                       if let Some(value) = value {
-                        let properties_entries: BTreeMap<_, _> = value.iter().collect();
                         attr.value = Some(JSXAttrValue::JSXExprContainer(JSXExprContainer {
                           span: DUMMY_SP,
                           expr: JSXExpr::Expr(Box::new(Expr::Object(ObjectLit {
                             span: DUMMY_SP,
-                            props: properties_to_object_lit_props(&properties_entries).into(),
+                            props: parse_style_values(value, self.platform.clone())
                           }))),
                         }));
                       }
@@ -932,8 +1028,8 @@ impl<'i> VisitMut for JSXMutVisitor<'i> {
                     JSXAttrValue::JSXExprContainer(expr_container) => {
                       match &mut expr_container.expr {
                         JSXExpr::Expr(expr) => {
-                          style_attr_value = Some((**expr).clone());
                           has_dynamic_style = self.process_attribute_expr_value(expr, has_dynamic_class, element, &style_record);
+                          style_attr_value = Some((**expr).clone());
                         }
                         _ => {
                           has_style = false;
@@ -961,7 +1057,6 @@ impl<'i> VisitMut for JSXMutVisitor<'i> {
         if !has_style {
           if let Some(style_declaration) = style_record.get(&element.span) {
             let parsed_properties = parse_style_properties(&style_declaration);
-            let properties_entries: BTreeMap<_, _> = parsed_properties.iter().collect();
 
             n.opening.attrs.push(JSXAttrOrSpread::JSXAttr(JSXAttr {
               span: DUMMY_SP,
@@ -970,7 +1065,7 @@ impl<'i> VisitMut for JSXMutVisitor<'i> {
                 span: DUMMY_SP,
                 expr: JSXExpr::Expr(Box::new(Expr::Object(ObjectLit {
                   span: DUMMY_SP,
-                  props: properties_to_object_lit_props(&properties_entries).into(),
+                  props: parse_style_values(parsed_properties, self.platform.clone())
                 }))),
               })),
             }));

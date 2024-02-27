@@ -2,14 +2,14 @@ use std::{rc::Rc, cell::RefCell, convert::Infallible, collections::HashMap, hash
 
 use lightningcss::{stylesheet::{StyleSheet, ParserOptions, PrinterOptions}, visitor::{Visit, Visitor, VisitTypes}, visit_types, rules::CssRule, properties::Property, declaration::DeclarationBlock, traits::ToCss};
 
-use crate::{style_parser::StyleDeclaration, utils::to_camel_case, style_propetries::style_value_type::StyleValueType};
+use crate::{document::JSXDocument, style_parser::StyleDeclaration, style_propetries::style_value_type::StyleValueType, utils::to_camel_case, visitor::SpanKey};
 
 use super::parse_style_properties::parse_style_properties;
 
-pub type StyleValue = HashMap<String, StyleValueType>;
+pub type StyleValue = Vec<StyleValueType>;
 
 pub struct StyleData<'i> {
-  pub style_record: Rc<RefCell<HashMap<String, Vec<(String, Property<'i>)>>>>,
+  pub style_record: Rc<RefCell<HashMap<SpanKey, Vec<(String, Property<'i>)>>>>,
   pub all_style: Rc<RefCell<HashMap<String, StyleValue>>>,
 }
 
@@ -63,13 +63,15 @@ impl<'i> Visitor<'i> for StyleVisitor<'i> {
 }
 
 pub struct RNStyleParser<'i> {
-  pub all_style: Rc<RefCell<Vec<(String, Vec<StyleDeclaration<'i>>)>>>
+  pub all_style: Rc<RefCell<Vec<(String, Vec<StyleDeclaration<'i>>)>>>,
+  pub document: &'i JSXDocument,
 }
 
 impl<'i> RNStyleParser<'i> {
-  pub fn new() -> Self {
+  pub fn new(document: &'i JSXDocument) -> Self {
     RNStyleParser {
-      all_style: Rc::new(RefCell::new(vec![]))
+      all_style: Rc::new(RefCell::new(vec![])),
+      document
     }
   }
 
@@ -79,7 +81,7 @@ impl<'i> RNStyleParser<'i> {
     stylesheet.visit(&mut style_visitor).unwrap();
   }
 
-  pub fn calc(&self) -> HashMap<String, Vec<StyleValueType>> {
+  pub fn calc(&self) -> StyleData<'i> {
     // 遍历 style_record，计算每个节点的最终样式
     let mut all_style = self.all_style.borrow_mut();
     let mut style_record = HashMap::new();
@@ -90,18 +92,28 @@ impl<'i> RNStyleParser<'i> {
       // calc_style_record 已经处理掉了所有important_declarations，所以这里不需要再处理
       let properties = style_value.declaration.declarations.iter().map(|property| {
         (
-          to_camel_case(property.property_id().to_css_string(PrinterOptions::default()).unwrap().as_str(), false),
-          property.clone()
+          to_camel_case(
+            property
+              .property_id()
+              .to_css_string(PrinterOptions::default())
+              .unwrap()
+              .as_str(),
+            false,
+          ),
+          property.clone(),
         )
       })
-      .collect::<Vec<(_, _)>>();
+      .collect::<Vec<(_, _)>>(); // Specify the lifetime of the tuple elements to match the input data
       (selector.to_owned(), properties)
     })
     .collect::<Vec<(_, _)>>();
 
     for (selector, style_value) in final_all_style.iter_mut() {
-      let declarations = style_record.entry(selector.to_owned()).or_insert(vec![]);
-      declarations.push(style_value.clone());
+      let elements = self.document.select(selector);
+      for element in elements {
+        let declarations = style_record.entry(element.span).or_insert(vec![]);
+        declarations.push(style_value.clone());
+      }
     }
 
     let final_style_record = style_record
@@ -144,7 +156,10 @@ impl<'i> RNStyleParser<'i> {
     })
     .collect::<HashMap<_, _>>();
 
-    final_all_style
+    StyleData {
+      style_record: Rc::new(RefCell::new(final_style_record)),
+      all_style: Rc::new(RefCell::new(final_all_style)),
+    }
   }
 
   // 合并相同类型的 style，比如 .a { color: red } .a { color: blue } => .a { color: blue }，并且 !important 的优先级高于普通的

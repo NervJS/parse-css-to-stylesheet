@@ -5,8 +5,7 @@ use swc_ecma_ast::Program;
 use swc_ecma_visit::VisitMutWith;
 
 use crate::{
-  style_parser::StyleValue,
-  visitor::{JSXMutVisitor, JSXRecord, ModuleMutVisitor, SpanKey},
+  react_native::rn_style_parser::StyleValue, style_propetries::unit::Platform, visitor::{JSXMutVisitor, JSXRecord, ModuleMutVisitor, SpanKey}
 };
 
 pub struct StyleWrite<'i> {
@@ -31,17 +30,19 @@ impl<'i> StyleWrite<'i> {
     }
   }
 
-  pub fn write(&mut self) {
+  pub fn write(&mut self, platform: Platform) {
+    // 插入到jsx的style里
     {
       let mut jsx_mut_visitor =
-        JSXMutVisitor::new(self.jsx_record.clone(), self.style_record.clone());
+        JSXMutVisitor::new(self.jsx_record.clone(), self.style_record.clone(), platform.clone());
       self
         .module
         .borrow_mut()
         .visit_mut_with(&mut jsx_mut_visitor);
     }
+    // 插入样式表
     {
-      let mut insert_mut_visitor = ModuleMutVisitor::new(self.all_style.clone());
+      let mut insert_mut_visitor = ModuleMutVisitor::new(self.all_style.clone(), platform.clone());
       self
         .module
         .borrow_mut()

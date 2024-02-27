@@ -1,6 +1,6 @@
 
 
-use std::{collections::{BTreeMap, HashMap}, fmt::format};
+use std::{collections::HashMap, fmt::format};
 
 use swc_common::{errors::{Handler, ColorConfig}, comments::SingleThreadedComments, SourceMap, sync::Lrc, Globals, Mark, GLOBALS, Span, DUMMY_SP};
 use swc_ecma_ast::{EsVersion, Program, Module, Expr, ObjectLit, PropOrSpread, Prop, KeyValueProp, PropName, Ident, ExportDefaultExpr, CallExpr, ModuleItem, BlockStmt, Stmt, ExprStmt, ExprOrSpread, MemberExpr, Callee, MemberProp, ModuleDecl, ComputedPropName, Lit, Str};
@@ -12,7 +12,7 @@ use swc_ecmascript::transforms::typescript::strip;
 use swc_atoms::Atom;
 use indexmap::IndexMap;
 
-use crate::{style_propetries::{style_value_type::StyleValueType, traits::ToStyleValue, unit::{Platform, PropertyTuple}}, generate_expr_lit_str};
+use crate::{style_propetries::{style_value_type::StyleValueType, traits::ToStyleValue, unit::{Platform, PropertyTuple}}, visitor::SpanKey};
 
 pub struct RNStyleSheet {
   pub cm: Option<Lrc<SourceMap>>,
@@ -40,7 +40,7 @@ impl RNStyleSheet {
       let mut index_map = IndexMap::new();
       
       value.into_iter().for_each(|style_value| {
-        let prop = style_value.to_expr(Platform::Harmony);
+        let prop = style_value.to_expr(Platform::ReactNative);
         match prop {
           PropertyTuple::One(id, expr) => {
             if let Expr::Invalid(_) = expr { return }

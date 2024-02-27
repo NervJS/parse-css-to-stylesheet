@@ -1,3 +1,13 @@
 .c_div {
-  background: #f00;
+  background-color: orange;
+  flex: 2;
+  border-radius: 30px 2px;
+  border-bottom-right-radius: 2000px;
+  margin: 30px 10%;
+  gap: 30px;
+  transform-origin: right 30px;
+}
+
+.c_div {
+  flex: 3;
 }

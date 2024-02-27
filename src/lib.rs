@@ -3,6 +3,7 @@
 use std::fmt::format;
 use std::{cell::RefCell, rc::Rc};
 
+use style_propetries::unit::Platform;
 use swc_common::{comments::SingleThreadedComments, sync::Lrc, SourceMap};
 use swc_ecma_codegen::{text_writer::JsWriter, Emitter};
 
@@ -35,7 +36,7 @@ pub fn parse(component: String, styles: Vec<String>) -> String {
 
   // 解析样式文件
   let css = styles.join("\n");
-  let mut style_parser = StyleParser::new(&document);
+  let mut style_parser = RNStyleParser::new(&document);
   style_parser.parse(&css);
   let style_data = style_parser.calc();
 
@@ -47,7 +48,7 @@ pub fn parse(component: String, styles: Vec<String>) -> String {
     style_data.style_record.clone(),
     style_data.all_style.clone(),
   );
-  style_write.write();
+  style_write.write(Platform::Harmony);
 
   // ast 转代码
   let mut buf = Vec::new();
@@ -70,16 +71,17 @@ pub fn parse(component: String, styles: Vec<String>) -> String {
 #[napi]
 pub fn parse_style(styles: Vec<String>) -> String {
   let css = styles.join("\n");
-  // css解析
-  let mut style_parser = RNStyleParser::new();
-  style_parser.parse(&css);
-  let style_data = style_parser.calc();
+  css
+  // // css解析
+  // let mut style_parser = RNStyleParser::new(&document);
+  // style_parser.parse(&css);
+  // let style_data = style_parser.calc();
 
-  // stylesheet生成
-  let cm: Lrc<SourceMap> = Default::default();
-  let comments = SingleThreadedComments::default();
-  let mut rn_stylesheet = RNStyleSheet::new(style_data);
-  rn_stylesheet.create(cm.clone(), &comments);
-  let code = rn_stylesheet.codegen();
-  code
+  // // stylesheet生成
+  // let cm: Lrc<SourceMap> = Default::default();
+  // let comments = SingleThreadedComments::default();
+  // let mut rn_stylesheet = RNStyleSheet::new(style_data);
+  // rn_stylesheet.create(cm.clone(), &comments);
+  // let code = rn_stylesheet.codegen();
+  // code
 }

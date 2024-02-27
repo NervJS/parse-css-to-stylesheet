@@ -5,7 +5,7 @@ use swc_ecma_ast::Program;
 use swc_ecma_visit::VisitMutWith;
 
 use crate::{
-  react_native::rn_style_parser::StyleValue, style_propetries::unit::Platform, visitor::{JSXMutVisitor, JSXRecord, ModuleMutVisitor, SpanKey}
+  style_parser::StyleValue, style_propetries::unit::Platform, visitor::{JSXMutVisitor, JSXRecord, ModuleMutVisitor, SpanKey}
 };
 
 pub struct StyleWrite<'i> {

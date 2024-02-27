@@ -1,33 +1,32 @@
 #![deny(clippy::all)]
 
-use std::fmt::format;
 use std::{cell::RefCell, rc::Rc};
 
+use style_parser::StyleParser;
 use style_propetries::unit::Platform;
 use swc_common::{comments::SingleThreadedComments, sync::Lrc, SourceMap};
 use swc_ecma_codegen::{text_writer::JsWriter, Emitter};
 
-use crate::react_native::create_stylesheet::RNStyleSheet;
-use crate::{document::JSXDocument, style_parser::StyleParser, style_write::StyleWrite};
-
-use crate::react_native::rn_style_parser::RNStyleParser;
+use crate::{document::JSXDocument, style_write::StyleWrite};
 
 #[macro_use]
 extern crate napi_derive;
 
 mod document;
 mod scraper;
-mod style_parser;
-mod style_transform;
 mod style_write;
 mod utils;
 mod visitor;
 mod constants;
 mod style_propetries;
-mod react_native;
+mod style_parser;
+mod parse_style_properties;
 
+// component: jsx的code string
+// styles: css的code string
+// platform_string: "ReactNative" | "Harmony"
 #[napi]
-pub fn parse(component: String, styles: Vec<String>) -> String {
+pub fn parse(component: String, styles: Vec<String>, platform_string: String) -> String {
   // 解析组件文件
   let cm: Lrc<SourceMap> = Default::default();
   let comments = SingleThreadedComments::default();
@@ -36,7 +35,7 @@ pub fn parse(component: String, styles: Vec<String>) -> String {
 
   // 解析样式文件
   let css = styles.join("\n");
-  let mut style_parser = RNStyleParser::new(&document);
+  let mut style_parser = StyleParser::new(&document);
   style_parser.parse(&css);
   let style_data = style_parser.calc();
 
@@ -48,7 +47,11 @@ pub fn parse(component: String, styles: Vec<String>) -> String {
     style_data.style_record.clone(),
     style_data.all_style.clone(),
   );
-  style_write.write(Platform::Harmony);
+  match platform_string.as_str() {
+    "ReactNative" => style_write.write(Platform::ReactNative),
+    "Harmony" => style_write.write(Platform::Harmony),
+    _ => {},
+  }
 
   // ast 转代码
   let mut buf = Vec::new();
@@ -66,22 +69,3 @@ pub fn parse(component: String, styles: Vec<String>) -> String {
   code
 }
 
-
-// 单独解析样式
-#[napi]
-pub fn parse_style(styles: Vec<String>) -> String {
-  let css = styles.join("\n");
-  css
-  // // css解析
-  // let mut style_parser = RNStyleParser::new(&document);
-  // style_parser.parse(&css);
-  // let style_data = style_parser.calc();
-
-  // // stylesheet生成
-  // let cm: Lrc<SourceMap> = Default::default();
-  // let comments = SingleThreadedComments::default();
-  // let mut rn_stylesheet = RNStyleSheet::new(style_data);
-  // rn_stylesheet.create(cm.clone(), &comments);
-  // let code = rn_stylesheet.codegen();
-  // code
-}

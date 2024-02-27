@@ -9,6 +9,9 @@
 ```typescript
 import { parse } from '@tarojs/parse-css-to-stylesheet'
 
-const code = parse(jsxCode, [cssCode1, cssCode2, ...])
+// Harmony
+const code = parse(jsxCode, [cssCode1, cssCode2, ...], "Harmony")
+// ReactNative
+// const code = parse(jsxCode, [cssCode1, cssCode2, ...], "ReactNative")
 
 ```

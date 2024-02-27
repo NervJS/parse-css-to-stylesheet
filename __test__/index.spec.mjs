@@ -9,11 +9,20 @@ import test from 'ava'
 
 import { parse } from '../index.js'
 
-test('test parse', (t) => {
+test('test parse Harmony', (t) => {
   const jsx = fs.readFileSync(path.resolve(__dirname, 'fixure/mod.jsx'), 'utf8')
   const css1 = fs.readFileSync(path.resolve(__dirname, 'fixure/Mod.scss'), 'utf8')
   const css2 = fs.readFileSync(path.resolve(__dirname, 'fixure/test.scss'), 'utf8')
   
-  const code = parse(jsx, [css1, css2])
+  const code = parse(jsx, [css1, css2], "Harmony")
+  t.snapshot(code)
+})
+
+test('test parse ReactNative', (t) => {
+  const jsx = fs.readFileSync(path.resolve(__dirname, 'fixure/mod.jsx'), 'utf8')
+  const css1 = fs.readFileSync(path.resolve(__dirname, 'fixure/Mod.scss'), 'utf8')
+  const css2 = fs.readFileSync(path.resolve(__dirname, 'fixure/test.scss'), 'utf8')
+  
+  const code = parse(jsx, [css1, css2], "ReactNative")
   t.snapshot(code)
 })

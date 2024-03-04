@@ -13,6 +13,7 @@ use lightningcss::{
   properties::{Property, PropertyId},
   stylesheet::ParserOptions,
 };
+use swc_atoms::Atom;
 use swc_common::{Span, DUMMY_SP};
 use swc_ecma_ast::{
   CallExpr, Callee, Decl, Expr, ExprOrSpread, Ident, ImportDecl,
@@ -569,6 +570,7 @@ impl VisitMut for ModuleMutVisitor {
 pub struct JSXMutVisitor<'i> {
   pub jsx_record: Rc<RefCell<JSXRecord>>,
   pub style_record: Rc<RefCell<HashMap<SpanKey, Vec<(String, Property<'i>)>>>>,
+  pub pesudo_style_record: Rc<RefCell<HashMap<SpanKey, Vec<(String, Vec<(String, Property<'i>)>)>>>>,
   pub platform: Platform
 }
 
@@ -576,11 +578,13 @@ impl<'i> JSXMutVisitor<'i> {
   pub fn new(
     jsx_record: Rc<RefCell<JSXRecord>>,
     style_record: Rc<RefCell<HashMap<SpanKey, Vec<(String, Property<'i>)>>>>,
+    pesudo_style_record: Rc<RefCell<HashMap<SpanKey, Vec<(String, Vec<(String, Property<'i>)>)>>>>,
     platform: Platform
   ) -> Self {
     JSXMutVisitor {
       jsx_record,
       style_record,
+      pesudo_style_record,
       platform
     }
   }
@@ -999,6 +1003,7 @@ impl<'i> VisitMut for JSXMutVisitor<'i> {
     if let Some(element) = self.jsx_record.borrow().get(&span_key) {
       // 将 style_record 中的样式添加到 JSXElement 的 style 属性中
       let style_record = self.style_record.borrow();
+      let pesudo_style_record = self.pesudo_style_record.borrow();
       let jsx_element_or_callee = JSXElementOrJSXCallee::JSXElement(&n);
       let (class_attr_value, has_dynamic_class) = self.get_jsx_element_or_callee_calss_value_and_dynamic_class_bool(&jsx_element_or_callee);
 
@@ -1069,6 +1074,22 @@ impl<'i> VisitMut for JSXMutVisitor<'i> {
                 }))),
               })),
             }));
+          }
+          if let Some(style_declarations) = pesudo_style_record.get(&element.span) {
+            style_declarations.iter().for_each(|(selector, style_declaration)| {
+              let parsed_properties = parse_style_properties(&style_declaration);
+              n.opening.attrs.push(JSXAttrOrSpread::JSXAttr(JSXAttr {
+                span: DUMMY_SP,
+                name: JSXAttrName::Ident(Ident::new(Atom::from(selector.to_string()), DUMMY_SP)),
+                value: Some(JSXAttrValue::JSXExprContainer(JSXExprContainer {
+                  span: DUMMY_SP,
+                  expr: JSXExpr::Expr(Box::new(Expr::Object(ObjectLit {
+                    span: DUMMY_SP,
+                    props: parse_style_values(parsed_properties, self.platform.clone())
+                  }))),
+                })),
+              }));
+            })
           }
         }
       } else {

@@ -45,6 +45,7 @@ pub fn parse(component: String, styles: Vec<String>, platform_string: String) ->
     program.clone(),
     jsx_record.clone(),
     style_data.style_record.clone(),
+    style_data.pesudo_style_record.clone(),
     style_data.all_style.clone(),
   );
   match platform_string.as_str() {

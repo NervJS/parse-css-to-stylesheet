@@ -73,7 +73,7 @@ fn parse_background(background: &SmallVec<[LNBackground<'_>; 1]>) -> Background 
       value: background_repeat,
     });
   }
-  if (background_color.is_some()) {
+  if background_color.is_some() {
     bg.color = background_color;
   }
   bg

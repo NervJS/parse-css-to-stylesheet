@@ -12,6 +12,7 @@ pub struct StyleWrite<'i> {
   pub module: Rc<RefCell<Program>>,
   pub jsx_record: Rc<RefCell<JSXRecord>>,
   pub style_record: Rc<RefCell<HashMap<SpanKey, Vec<(String, Property<'i>)>>>>,
+  pub pesudo_style_record: Rc<RefCell<HashMap<SpanKey, Vec<(String, Vec<(String, Property<'i>)>)>>>>,
   pub all_style: Rc<RefCell<HashMap<String, StyleValue>>>,
 }
 
@@ -20,12 +21,14 @@ impl<'i> StyleWrite<'i> {
     module: Rc<RefCell<Program>>,
     jsx_record: Rc<RefCell<JSXRecord>>,
     style_record: Rc<RefCell<HashMap<SpanKey, Vec<(String, Property<'i>)>>>>,
+    pesudo_style_record: Rc<RefCell<HashMap<SpanKey, Vec<(String, Vec<(String, Property<'i>)>)>>>>,
     all_style: Rc<RefCell<HashMap<String, StyleValue>>>,
   ) -> Self {
     StyleWrite {
       module,
       jsx_record,
       style_record,
+      pesudo_style_record,
       all_style,
     }
   }
@@ -34,7 +37,12 @@ impl<'i> StyleWrite<'i> {
     // 插入到jsx的style里
     {
       let mut jsx_mut_visitor =
-        JSXMutVisitor::new(self.jsx_record.clone(), self.style_record.clone(), platform.clone());
+        JSXMutVisitor::new(
+          self.jsx_record.clone(), 
+          self.style_record.clone(), 
+          self.pesudo_style_record.clone(),
+          platform.clone()
+        );
       self
         .module
         .borrow_mut()

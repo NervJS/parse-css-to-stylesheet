@@ -1,0 +1,16 @@
+
+
+.pesudo {
+	height: 200px;
+	width: 200px;
+}
+
+.pesudo::before {
+	content: '';
+	color: #00f;
+}
+.pesudo::after {
+	content: '';
+	color: #f00;
+	height: 20px;
+}

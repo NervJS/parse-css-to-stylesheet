@@ -1,3 +1,12 @@
+## [0.0.33](https://github.com/NervJS/parse-css-to-stylesheet/compare/v0.0.32...v0.0.33) (2024-03-05)
+
+
+### Bug Fixes
+
+* 修复border报错 ([6f107df](https://github.com/NervJS/parse-css-to-stylesheet/commit/6f107df252cacde364e549ee20c50cde2e1a208f))
+
+
+
 ## [0.0.32](https://github.com/NervJS/parse-css-to-stylesheet/compare/v0.0.31...v0.0.32) (2024-03-05)
 
 

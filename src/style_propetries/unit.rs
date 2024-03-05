@@ -4,7 +4,7 @@ use swc_common::DUMMY_SP;
 use swc_ecma_ast::{ExprOrSpread, Expr,  Callee, Ident, CallExpr, Lit, Number};
 use crate::{generate_expr_lit_num, generate_expr_lit_str, constants::{RN_CONVERT_STYLE_PX_FN, CONVERT_STYLE_PX_FN, RN_CONVERT_STYLE_VU_FN}};
 
-#[derive(Debug, Clone)]
+#[derive(Debug, Clone, PartialEq)]
 pub enum Platform {
   ReactNative,
   Harmony
@@ -123,7 +123,7 @@ pub fn generate_expr_by_length_value(length_value: &LengthValue, platform: Platf
 }
 
 
-pub fn generate_expr_with_css_input(input: String) -> Expr {
+pub fn generate_expr_with_css_input(input: String, platform: Platform) -> Expr {
   // 定义匹配 '16px' 的正则表达式
   let re: Regex = Regex::new(r"(-?(\d+(\.\d*)?|\.\d+))((px)|(vw)|(vh))").unwrap();
   // 使用正则表达式进行匹配
@@ -142,16 +142,25 @@ pub fn generate_expr_with_css_input(input: String) -> Expr {
 
       match unit {
         "vw" | "vh" | "vmin" | "vmax" => {
-          handler = Some(RN_CONVERT_STYLE_VU_FN.to_string());
+          handler = match platform {
+            Platform::ReactNative => Some(RN_CONVERT_STYLE_VU_FN.to_string()),
+            Platform::Harmony => Some(CONVERT_STYLE_PX_FN.to_string())
+          };
           args.push(generate_expr_lit_num!(number));
           args.push(generate_expr_lit_str!(unit));
         },
         "px" => {
-          handler = Some(RN_CONVERT_STYLE_PX_FN.to_string());
+          handler = match platform {
+            Platform::ReactNative => Some(RN_CONVERT_STYLE_PX_FN.to_string()),
+            Platform::Harmony => Some(CONVERT_STYLE_PX_FN.to_string())
+          };
           args.push(generate_expr_lit_num!(number));
         },
         "rem" => {
-          handler = Some(RN_CONVERT_STYLE_PX_FN.to_string());
+          handler = match platform {
+            Platform::ReactNative => Some(RN_CONVERT_STYLE_PX_FN.to_string()),
+            Platform::Harmony => Some(CONVERT_STYLE_PX_FN.to_string())
+          };
           args.push(generate_expr_lit_num!(number * 16.0));
         },
         _ => {}
@@ -336,6 +345,7 @@ pub fn convert_color_keywords_to_hex(color: String) -> String {
     "whitesmoke" => "#F5F5F5".to_string(),
     "yellow" => "#FFFF00".to_string(),
     "yellowgreen" => "#9ACD32".to_string(),
+    "currentColor" => "".to_string(),
     _ => color
   }
 }

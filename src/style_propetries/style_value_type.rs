@@ -1,6 +1,6 @@
 use crate::generate_expr_based_on_platform;
 
-use super::{aspect_ratio::AspactRatio, background::Background, background_image::BackgroundImage, background_position::BackgroundPosition, background_repeat::BackgroundRepeat, background_size::BackgroundSize, border::Border, border_color::BorderColor, border_radius::BorderRadius, border_style::BorderStyle, border_width::BorderWidth, color::ColorProperty, display::Display, flex::Flex, flex_align::FlexAlign, flex_basis::FlexBasis, flex_direction::FlexDirection, flex_wrap::FlexWrap, font_size::FontSize, font_style::FontStyle, font_weight::FontWeight, gap::Gap, item_align::ItemAlign, length_value::LengthValueProperty, letter_spacing::LetterSpacing, line_height::LineHeight, marin_padding::MarginPadding, max_size::MaxSizeProperty, normal::Normal, number::NumberProperty, overflow::Overflow, size::SizeProperty, text_align::TextAlign, text_decoration::TextDecoration, text_shadow::TextShadow, text_transform::TextTransform, traits::{ToExpr, ToStyleValue}, transform::Transform, transform_origin::TransformOrigin, unit::{Platform, PropertyTuple}, vertical_align::VerticalAlign};
+use super::{aspect_ratio::AspactRatio, background::Background, background_image::BackgroundImage, background_position::BackgroundPosition, background_repeat::BackgroundRepeat, background_size::BackgroundSize, border::Border, border_color::BorderColor, border_radius::BorderRadius, border_style::BorderStyle, border_width::BorderWidth, color::ColorProperty, display::Display, flex::Flex, flex_align::FlexAlign, flex_basis::FlexBasis, flex_direction::FlexDirection, flex_wrap::FlexWrap, font_size::FontSize, font_style::FontStyle, font_weight::FontWeight, gap::Gap, item_align::ItemAlign, length_value::LengthValueProperty, letter_spacing::LetterSpacing, line_height::LineHeight, marin_padding::MarginPadding, max_size::MaxSizeProperty, normal::Normal, number::NumberProperty, overflow::Overflow, size::SizeProperty, text_align::TextAlign, text_decoration::TextDecoration, text_overflow::TextOverflow, text_shadow::TextShadow, text_transform::TextTransform, traits::{ToExpr, ToStyleValue}, transform::Transform, transform_origin::TransformOrigin, unit::{Platform, PropertyTuple}, vertical_align::VerticalAlign};
 
 
 #[derive(Debug, Clone)]
@@ -30,6 +30,7 @@ pub enum StyleValueType {
   TextDecoration(TextDecoration),
   TextShadow(TextShadow),
   TextTransform(TextTransform),
+  TextOverflow(TextOverflow),
   LetterSpacing(LetterSpacing),
   VerticalAlign(VerticalAlign),
   BorderColor(BorderColor),
@@ -121,6 +122,9 @@ impl ToStyleValue for StyleValueType {
       StyleValueType::TextShadow(value) => {
         generate_expr_based_on_platform!(platform, value)
       },
+      StyleValueType::TextOverflow(value) => {
+        generate_expr_based_on_platform!(platform, value)
+      }
       StyleValueType::TextTransform(value) => {
         generate_expr_based_on_platform!(platform, value)
       },

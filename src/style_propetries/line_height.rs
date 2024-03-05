@@ -30,7 +30,7 @@ impl ToExpr for LineHeight {
       self.id.to_string(),
       match &self.value {
         EnumValue::String(_) => generate_invalid_expr!(),
-        EnumValue::LengthValue(length_value) => generate_expr_by_length_value(&length_value, Platform::ReactNative),
+        EnumValue::LengthValue(length_value) => generate_expr_by_length_value(&length_value, Platform::Harmony),
         EnumValue::Percentage(_) => generate_invalid_expr!(),
         EnumValue::Invalid => generate_invalid_expr!(),
       }

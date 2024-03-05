@@ -27,6 +27,13 @@ mod parse_style_properties;
 // platform_string: "ReactNative" | "Harmony"
 #[napi]
 pub fn parse(component: String, styles: Vec<String>, platform_string: String) -> String {
+
+  let platform = match platform_string.as_str() {
+    "ReactNative" => Platform::ReactNative,
+    "Harmony" => Platform::Harmony,
+    _ => Platform::Harmony
+  };
+
   // 解析组件文件
   let cm: Lrc<SourceMap> = Default::default();
   let comments = SingleThreadedComments::default();
@@ -35,7 +42,7 @@ pub fn parse(component: String, styles: Vec<String>, platform_string: String) ->
 
   // 解析样式文件
   let css = styles.join("\n");
-  let mut style_parser = StyleParser::new(&document);
+  let mut style_parser = StyleParser::new(&document, platform.clone());
   style_parser.parse(&css);
   let style_data = style_parser.calc();
 
@@ -48,11 +55,7 @@ pub fn parse(component: String, styles: Vec<String>, platform_string: String) ->
     style_data.pesudo_style_record.clone(),
     style_data.all_style.clone(),
   );
-  match platform_string.as_str() {
-    "ReactNative" => style_write.write(Platform::ReactNative),
-    "Harmony" => style_write.write(Platform::Harmony),
-    _ => {},
-  }
+  style_write.write(platform);
 
   // ast 转代码
   let mut buf = Vec::new();

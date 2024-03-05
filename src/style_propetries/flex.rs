@@ -23,15 +23,15 @@ impl ToExpr for Flex {
   fn to_expr(&self) -> PropertyTuple {
     let mut props = vec![];
     if let Some(value) = &self.value {
-      match value.basis.to_rn_expr() {
+      match value.basis.to_expr() {
         PropertyTuple::One(_, val) => props.push(("flexBasis".to_string(), val)),
         _ => {}
       };
-      match value.grow.to_rn_expr() {
+      match value.grow.to_expr() {
         PropertyTuple::One(_, val) => props.push(("flexGrow".to_string(), val)),
         _ => {}
       };
-      match value.shrink.to_rn_expr() {
+      match value.shrink.to_expr() {
         PropertyTuple::One(_, val) => props.push(("flexShrink".to_string(), val)),
         _ => {}
       };

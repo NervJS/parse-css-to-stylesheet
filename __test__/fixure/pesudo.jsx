@@ -1,7 +1,9 @@
-import { View } from '@tarojs/components'
+import { View, Text } from '@tarojs/components'
 import './pesudo.scss'
 
 function Pesudo() {
 
-  return <View className='pesudo'></View>
+  return <View className='pesudo'>
+    <Text className='text'>asdasdasdasdasd</Text>
+  </View>
 }

@@ -146,7 +146,7 @@ impl ToExpr for Border {
       match prop_name.as_str() {
         "border" => {
           vec!["borderTopWidth", "borderRightWidth", "borderBottomWidth", "borderLeftWidth"].iter().for_each(|item| {
-            props.push((item.to_string(), generate_expr_by_border_side_width!(self.width.clone().unwrap().top.unwrap())));
+            props.push((item.to_string(), generate_expr_by_border_side_width!(self.width.clone().unwrap().top.unwrap(), Platform::Harmony)));
           });
           vec!["borderTopStyle", "borderRightStyle", "borderBottomStyle", "borderLeftStyle"].iter().for_each(|item| {
             props.push((item.to_string(), generate_expr_by_line_style!(self.style.clone().unwrap().top.unwrap(), Platform::Harmony)));
@@ -157,25 +157,25 @@ impl ToExpr for Border {
           PropertyTuple::Array(props)
         },
         "borderTop"  => {
-          props.push(("borderTopWidth".to_string(), generate_expr_by_border_side_width!(self.width.clone().unwrap().top.unwrap())));
+          props.push(("borderTopWidth".to_string(), generate_expr_by_border_side_width!(self.width.clone().unwrap().top.unwrap(), Platform::Harmony)));
           props.push(("borderTopStyle".to_string(), generate_expr_by_line_style!(self.style.clone().unwrap().top.unwrap(), Platform::Harmony)));
           props.push(("borderTopColor".to_string(), generate_string_by_css_color!(self.color.clone().unwrap().top.unwrap())));
           PropertyTuple::Array(props)
         },
         "borderRight" => {
-          props.push(("borderRightWidth".to_string(), generate_expr_by_border_side_width!(self.width.clone().unwrap().right.unwrap())));
+          props.push(("borderRightWidth".to_string(), generate_expr_by_border_side_width!(self.width.clone().unwrap().right.unwrap(), Platform::Harmony)));
           props.push(("borderRightStyle".to_string(), generate_expr_by_line_style!(self.style.clone().unwrap().right.unwrap(), Platform::Harmony)));
           props.push(("borderRightColor".to_string(), generate_string_by_css_color!(self.color.clone().unwrap().right.unwrap())));
           PropertyTuple::Array(props)
         },
         "borderBottom" => {
-          props.push(("borderBottomWidth".to_string(), generate_expr_by_border_side_width!(self.width.clone().unwrap().bottom.unwrap())));
+          props.push(("borderBottomWidth".to_string(), generate_expr_by_border_side_width!(self.width.clone().unwrap().bottom.unwrap(), Platform::Harmony)));
           props.push(("borderBottomStyle".to_string(), generate_expr_by_line_style!(self.style.clone().unwrap().bottom.unwrap(), Platform::Harmony)));
           props.push(("borderBottomColor".to_string(), generate_string_by_css_color!(self.color.clone().unwrap().bottom.unwrap())));
           PropertyTuple::Array(props)
         },
         "borderLeft" => {
-          props.push(("borderLeftWidth".to_string(), generate_expr_by_border_side_width!(self.width.clone().unwrap().left.unwrap())));
+          props.push(("borderLeftWidth".to_string(), generate_expr_by_border_side_width!(self.width.clone().unwrap().left.unwrap(), Platform::Harmony)));
           props.push(("borderLeftStyle".to_string(), generate_expr_by_line_style!(self.style.clone().unwrap().left.unwrap(), Platform::Harmony)));
           props.push(("borderLeftColor".to_string(), generate_string_by_css_color!(self.color.clone().unwrap().left.unwrap())));
           PropertyTuple::Array(props)
@@ -189,7 +189,7 @@ impl ToExpr for Border {
       let mut props: Vec<Box<Expr>> = vec![];
       match prop_name.as_str() {
         "border" | "borderTop"  => {
-          props.push(Box::new(generate_expr_by_border_side_width!(self.width.clone().unwrap().top.unwrap())));
+          props.push(Box::new(generate_expr_by_border_side_width!(self.width.clone().unwrap().top.unwrap(), Platform::ReactNative)));
           props.push(Box::new(generate_expr_by_line_style!(self.style.clone().unwrap().top.unwrap(), Platform::ReactNative)));
           props.push(Box::new(generate_string_by_css_color!(self.color.clone().unwrap().top.unwrap())));
           let tpl = generate_tpl_expr!(props);
@@ -199,7 +199,7 @@ impl ToExpr for Border {
           )
         },
         "borderRight" => {
-          props.push(Box::new(generate_expr_by_border_side_width!(self.width.clone().unwrap().right.unwrap())));
+          props.push(Box::new(generate_expr_by_border_side_width!(self.width.clone().unwrap().right.unwrap(), Platform::ReactNative)));
           props.push(Box::new(generate_expr_by_line_style!(self.style.clone().unwrap().right.unwrap(), Platform::ReactNative)));
           props.push(Box::new(generate_string_by_css_color!(self.color.clone().unwrap().right.unwrap())));
           let tpl = generate_tpl_expr!(props);
@@ -209,7 +209,7 @@ impl ToExpr for Border {
           )
         },
         "borderBottom" => {
-          props.push(Box::new(generate_expr_by_border_side_width!(self.width.clone().unwrap().bottom.unwrap())));
+          props.push(Box::new(generate_expr_by_border_side_width!(self.width.clone().unwrap().bottom.unwrap(), Platform::ReactNative)));
           props.push(Box::new(generate_expr_by_line_style!(self.style.clone().unwrap().bottom.unwrap(), Platform::ReactNative)));
           props.push(Box::new(generate_string_by_css_color!(self.color.clone().unwrap().bottom.unwrap())));
           let tpl = generate_tpl_expr!(props);
@@ -219,7 +219,7 @@ impl ToExpr for Border {
           )
         },
         "borderLeft" => {
-          props.push(Box::new(generate_expr_by_border_side_width!(self.width.clone().unwrap().left.unwrap())));
+          props.push(Box::new(generate_expr_by_border_side_width!(self.width.clone().unwrap().left.unwrap(), Platform::ReactNative)));
           props.push(Box::new(generate_expr_by_line_style!(self.style.clone().unwrap().left.unwrap(), Platform::ReactNative)));
           props.push(Box::new(generate_string_by_css_color!(self.color.clone().unwrap().left.unwrap())));
           let tpl = generate_tpl_expr!(props);

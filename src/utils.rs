@@ -7,7 +7,7 @@ use swc_common::DUMMY_SP;
 // use lightningcss::values::number::CSSNumber;
 use swc_ecma_ast::{JSXMemberExpr, JSXObject, Callee, Expr, CallExpr, Ident, Lit, Number, PropOrSpread, Prop, PropName, ExprOrSpread};
 
-use crate::constants::{CONVERT_STYLE_PREFIX, CONVERT_STYLE_PX_FN};
+use crate::{constants::{CONVERT_STYLE_PREFIX, CONVERT_STYLE_PX_FN}, style_propetries::unit::Platform};
 
 pub fn recursion_jsx_member(expr: &JSXMemberExpr) -> String {
   match &expr.obj {
@@ -64,11 +64,13 @@ pub fn to_kebab_case(s: &str) -> String {
   result
 }
 
-pub fn prefix_style_key(s: &str) -> String {
-  let mut result = String::with_capacity(CONVERT_STYLE_PREFIX.len() + s.len());
-  result.push_str(CONVERT_STYLE_PREFIX);
-  result.push_str(s);
-  result
+pub fn prefix_style_key(s: String, platform: Platform) -> String {
+  match platform {
+    Platform::Harmony => {
+      format!("{}{}", CONVERT_STYLE_PREFIX, s)
+    },
+    _ => s.to_string()
+  }
 }
 
 pub fn convert_px_to_units(input: String) -> Expr {

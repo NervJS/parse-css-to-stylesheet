@@ -1,16 +1,13 @@
-
-
 .pesudo {
-	height: 200px;
-	width: 200px;
+  height: 400px;
+  width: 400px;
 }
 
-.pesudo::before {
-	content: '';
-	color: #00f;
+.pesudo:last-child {
+	color: red;
 }
-.pesudo::after {
-	content: '';
-	color: #f00;
-	height: 20px;
+
+.text {
+	font-size: 20px;
+	text-overflow: ellipsis;
 }

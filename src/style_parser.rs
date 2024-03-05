@@ -2,7 +2,7 @@ use std::{rc::Rc, cell::RefCell, convert::Infallible, collections::HashMap, hash
 
 use lightningcss::{stylesheet::{StyleSheet, ParserOptions, PrinterOptions}, visitor::{Visit, Visitor, VisitTypes}, visit_types, rules::CssRule, properties::Property, declaration::DeclarationBlock, traits::ToCss};
 
-use crate::{document::JSXDocument, style_propetries::style_value_type::StyleValueType, utils::to_camel_case, visitor::SpanKey};
+use crate::{document::JSXDocument, style_propetries::{style_value_type::StyleValueType, unit::Platform}, utils::to_camel_case, visitor::SpanKey};
 
 use super::parse_style_properties::parse_style_properties;
 
@@ -73,13 +73,15 @@ impl<'i> Visitor<'i> for StyleVisitor<'i> {
 pub struct StyleParser<'i> {
   pub all_style: Rc<RefCell<Vec<(String, Vec<StyleDeclaration<'i>>)>>>,
   pub document: &'i JSXDocument,
+  pub platform: Platform
 }
 
 impl<'i> StyleParser<'i> {
-  pub fn new(document: &'i JSXDocument) -> Self {
+  pub fn new(document: &'i JSXDocument, platform:Platform) -> Self {
     StyleParser {
       all_style: Rc::new(RefCell::new(vec![])),
-      document
+      document,
+      platform
     }
   }
 
@@ -118,16 +120,17 @@ impl<'i> StyleParser<'i> {
 
     let mut pesudo_selector = None;
     for (selector, style_value) in final_all_style.iter_mut() {
-      // 判断是否伪类
-     
-      if selector.contains(":") {
-        let selectors = selector.split(":").collect::<Vec<&str>>();
-        let new_selector = selectors[0].to_string();
-        pesudo_selector = selectors[1].parse::<String>().ok();
-        *selector = new_selector;
+      // 用于查询的选择器
+      let mut element_selector = selector.clone();
+      // 判断是否伪类(暂时支持鸿蒙)
+      if selector.contains(":") && self.platform == Platform::Harmony {
+        let _selectors = selector.split(":").collect::<Vec<&str>>();
+        pesudo_selector = _selectors[1].parse::<String>().ok();
+        // 伪类需要把 : 之后的选择器去掉，只保留 : 之前的选择器，用于查询所属的element
+        element_selector = _selectors[0].to_string();
       }
 
-      let elements = self.document.select(selector);
+      let elements = self.document.select(element_selector.as_str());
       for element in elements {
         match pesudo_selector {
           Some(ref selector) => {
@@ -184,7 +187,6 @@ impl<'i> StyleParser<'i> {
       .collect::<HashMap<_, _>>();
 
       let final_pesudo_style_record = pesudo_style_record;
-      
 
     StyleData {
       style_record: Rc::new(RefCell::new(final_style_record)),
@@ -203,7 +205,7 @@ impl<'i> StyleParser<'i> {
     // 对输入的 style_record 中的每个元素进行迭代
     for (id, declarations) in style_record.iter_mut() {
        // 对每个 declarations 中的 StyleDeclaration 进行按 specificity 排序
-      declarations.sort_by(|a, b| a.specificity.cmp(&b.specificity));
+      declarations.sort_by(|a: &StyleDeclaration<'_>, b| a.specificity.cmp(&b.specificity));
       let mut final_properties: Vec<Property<'i>> = Vec::new();
       for declaration in declarations.iter() {
         let declaration = &declaration.declaration;

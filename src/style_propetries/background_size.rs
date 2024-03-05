@@ -13,7 +13,7 @@ use swc_ecma_ast::{
 
 use crate::generate_invalid_expr;
 
-use super::{traits::ToExpr, unit::{generate_expr_with_css_input, PropertyTuple}};
+use super::{traits::ToExpr, unit::{generate_expr_with_css_input, Platform, PropertyTuple}};
 
 pub fn parse_background_size_item(size_item: &LNBackgroundSize) -> Option<ImageSize> {
   match size_item {
@@ -108,14 +108,14 @@ impl ToExpr for BackgroundSize {
         let mut props = vec![
           PropOrSpread::Prop(Box::new(Prop::KeyValue(KeyValueProp {
             key: PropName::Ident(Ident::new("width".into(), DUMMY_SP)),
-            value: generate_expr_with_css_input(width_str).into(),
+            value: generate_expr_with_css_input(width_str, Platform::Harmony).into(),
           })))
         ];
       
         if let Some(height_str) = height_str {
           props.push(PropOrSpread::Prop(Box::new(Prop::KeyValue(KeyValueProp {
             key: PropName::Ident(Ident::new("height".into(), DUMMY_SP)),
-            value: generate_expr_with_css_input(height_str).into(),
+            value: generate_expr_with_css_input(height_str, Platform::Harmony).into(),
           }))))
         }
       

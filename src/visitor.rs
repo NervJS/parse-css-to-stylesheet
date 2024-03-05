@@ -1,6 +1,6 @@
 
 use std::{
-  cell::RefCell,
+  cell::{Ref, RefCell},
   collections::{BTreeMap, HashMap, VecDeque},
   hash::{Hash, Hasher},
   rc::Rc,
@@ -16,11 +16,7 @@ use lightningcss::{
 use swc_atoms::Atom;
 use swc_common::{Span, DUMMY_SP};
 use swc_ecma_ast::{
-  CallExpr, Callee, Decl, Expr, ExprOrSpread, Ident, ImportDecl,
-  ImportNamedSpecifier, ImportSpecifier, JSXAttr, JSXAttrName, JSXAttrOrSpread, JSXAttrValue,
-  JSXElement, JSXElementName, JSXExpr, JSXExprContainer, JSXFragment, KeyValueProp, Lit, Module,
-  ModuleDecl, ModuleItem, Null, ObjectLit, Prop, PropName, PropOrSpread,
-  Stmt, Str, ReturnStmt, FnExpr, Function, BlockStmt, FnDecl, IfStmt, VarDecl, BindingIdent, AssignExpr, AssignOp, ExprStmt, MemberProp
+  AssignExpr, AssignOp, BindingIdent, BlockStmt, CallExpr, Callee, ComputedPropName, Decl, Expr, ExprOrSpread, ExprStmt, FnDecl, FnExpr, Function, Ident, IfStmt, ImportDecl, ImportNamedSpecifier, ImportSpecifier, JSXAttr, JSXAttrName, JSXAttrOrSpread, JSXAttrValue, JSXElement, JSXElementName, JSXExpr, JSXExprContainer, JSXFragment, KeyValueProp, Lit, MemberProp, Module, ModuleDecl, ModuleItem, Null, ObjectLit, Prop, PropName, PropOrSpread, ReturnStmt, Stmt, Str, VarDecl
 };
 use swc_ecma_visit::{
   noop_visit_mut_type, noop_visit_type, Visit, VisitAll, VisitAllWith, VisitMut, VisitMutWith,
@@ -28,8 +24,8 @@ use swc_ecma_visit::{
 };
 
 use crate::{
-  constants::{CALC_DYMAMIC_STYLE, CONVERT_STYLE_PX_FN, INNER_STYLE, INNER_STYLE_DATA, RN_CONVERT_STYLE_PX_FN, RN_CONVERT_STYLE_VU_FN}, parse_style_properties::parse_style_properties, style_parser::StyleValue, scraper::Element, style_propetries::{style_value_type::StyleValueType, traits::ToStyleValue, unit::{Platform, PropertyTuple}}, utils::{
-    create_qualname, get_callee_attributes, recursion_jsx_member, to_camel_case, to_kebab_case
+  constants::{CALC_DYMAMIC_STYLE, CONVERT_STYLE_PX_FN, INNER_STYLE, INNER_STYLE_DATA, RN_CONVERT_STYLE_PX_FN, RN_CONVERT_STYLE_VU_FN}, parse_style_properties::parse_style_properties, scraper::Element, style_parser::StyleValue, style_propetries::{style_value_type::StyleValueType, traits::ToStyleValue, unit::{Platform, PropertyTuple}}, utils::{
+    create_qualname, get_callee_attributes, prefix_style_key, recursion_jsx_member, to_camel_case, to_kebab_case
   }
 };
 
@@ -294,12 +290,12 @@ pub fn parse_style_values(value: Vec<StyleValueType>, platform: Platform) -> Vec
     match prop {
       PropertyTuple::One(id, expr) => {
         if let Expr::Invalid(_) = expr { return }
-        index_map.insert(id, Box::new(expr));
+        index_map.insert(prefix_style_key(id, platform.clone()), Box::new(expr));
       }
       PropertyTuple::Array(prop_arr) => {
         prop_arr.into_iter().for_each(|(id, expr)| {
           if let Expr::Invalid(_) = expr { return }
-          index_map.insert(id, Box::new(expr));
+          index_map.insert(prefix_style_key(id, platform.clone()), Box::new(expr));
         })
       }
     }
@@ -461,21 +457,67 @@ impl VisitMut for ModuleMutVisitor {
       }]
     })));
 
+    let mut final_style_entries: BTreeMap<String, Vec<PropOrSpread>> = BTreeMap::new();
+    // 合并伪类样式, .pesudo {}、.pesudo:after {}  => .pesudo: { xxx, ["::after"]: {xxx}}
+    style_entries.iter().for_each(|(key, value)| {
+      // 判断key是否伪类
+      if key.contains(":") && self.platform == Platform::Harmony {
+        let mut element_key = String::new();
+        let mut pesudo_key = String::new();
+        let key_arr = key.split(":").collect::<Vec<&str>>();
+        if key_arr.len() == 2 {
+          element_key = key_arr[0].to_string();
+          pesudo_key = key_arr[1].to_string();
+        }
+        let prop = PropOrSpread::Prop(Box::new(Prop::KeyValue(KeyValueProp {
+          key: PropName::Computed(ComputedPropName {
+            span: DUMMY_SP,
+            expr: Box::new(Expr::Lit(Lit::Str(Str {
+              span: DUMMY_SP,
+              value: Atom::from(format!("::{}", pesudo_key)),
+              raw: None,
+            }))),
+          }),
+          value: Box::new(Expr::Object(ObjectLit {
+            span: DUMMY_SP,
+            props: parse_style_values(value.to_vec(),self.platform.clone())
+          })),
+        })));
+
+        // 先有普通样式，再插入了伪类
+        if let Some(props) = final_style_entries.get(element_key.as_str()) {
+          let mut new_props = props.clone();
+          new_props.push(prop);
+          final_style_entries.insert(element_key.to_string(), new_props);
+        } else {
+          final_style_entries.insert(key.to_string(), vec![prop]);
+        }
+
+      } else {
+        // 先插入了伪类，再插入普通样式
+        if let Some(pseudo_props) = final_style_entries.get(*key) {
+          let mut new_pseudo_props = pseudo_props.clone();
+          new_pseudo_props.extend(parse_style_values(value.to_vec(),self.platform.clone()));
+          final_style_entries.insert(key.to_string(), new_pseudo_props);
+        } else {
+          final_style_entries.insert(key.to_string(), parse_style_values(value.to_vec(),self.platform.clone()));
+        }
+      }
+    });
+    
+
     let inner_style_func = {
 
       let style_object = Box::new(Expr::Object(ObjectLit {
         span: DUMMY_SP,
-        props: style_entries
+        props: final_style_entries
           .iter()
           .map(|(key, value)| {
             PropOrSpread::Prop(Box::new(Prop::KeyValue(KeyValueProp {
               key: PropName::Str(Str::from(key.as_str())),
               value: Box::new(Expr::Object(ObjectLit {
                 span: DUMMY_SP,
-                props: parse_style_values(
-                  value.to_vec(),
-                  self.platform.clone()
-                )
+                props: value.to_vec()
               })),
             })))
           })
@@ -1058,10 +1100,36 @@ impl<'i> VisitMut for JSXMutVisitor<'i> {
         }
       }
     
+      // 如果没有 style 属性，且没有动态的 class 属性，将 style_record 中的样式添加到 JSXElement 的 style 属性中
       if !has_dynamic_class && !has_dynamic_style {
         if !has_style {
           if let Some(style_declaration) = style_record.get(&element.span) {
             let parsed_properties = parse_style_properties(&style_declaration);
+
+            let mut props = parse_style_values(parsed_properties, self.platform.clone());
+
+            // 插入伪类样式: style={{ height: 100px, width: 100px, ["::before"]: { height: 10px; }, ["::after"]: {...} }}
+            if let Some(style_declarations) = pesudo_style_record.get(&element.span) {
+              style_declarations.iter().for_each(|(selector, style_declaration)| {
+                let parsed_properties = parse_style_properties(&style_declaration);
+                props.push(PropOrSpread::Prop(Box::new(
+                  Prop::KeyValue(KeyValueProp {
+                    key: PropName::Computed(ComputedPropName {
+                      span: DUMMY_SP,
+                      expr: Box::new(Expr::Lit(Lit::Str(Str {
+                        span: DUMMY_SP,
+                        value: Atom::from(format!("::{}", selector)),
+                        raw: None,
+                      }))),
+                    }),
+                    value: Box::new(Expr::Object(ObjectLit {
+                      span: DUMMY_SP,
+                      props: parse_style_values(parsed_properties, self.platform.clone())
+                    })),
+                  })
+                )));
+              })
+            }
 
             n.opening.attrs.push(JSXAttrOrSpread::JSXAttr(JSXAttr {
               span: DUMMY_SP,
@@ -1070,26 +1138,10 @@ impl<'i> VisitMut for JSXMutVisitor<'i> {
                 span: DUMMY_SP,
                 expr: JSXExpr::Expr(Box::new(Expr::Object(ObjectLit {
                   span: DUMMY_SP,
-                  props: parse_style_values(parsed_properties, self.platform.clone())
+                  props: props
                 }))),
               })),
             }));
-          }
-          if let Some(style_declarations) = pesudo_style_record.get(&element.span) {
-            style_declarations.iter().for_each(|(selector, style_declaration)| {
-              let parsed_properties = parse_style_properties(&style_declaration);
-              n.opening.attrs.push(JSXAttrOrSpread::JSXAttr(JSXAttr {
-                span: DUMMY_SP,
-                name: JSXAttrName::Ident(Ident::new(Atom::from(selector.to_string()), DUMMY_SP)),
-                value: Some(JSXAttrValue::JSXExprContainer(JSXExprContainer {
-                  span: DUMMY_SP,
-                  expr: JSXExpr::Expr(Box::new(Expr::Object(ObjectLit {
-                    span: DUMMY_SP,
-                    props: parse_style_values(parsed_properties, self.platform.clone())
-                  }))),
-                })),
-              }));
-            })
           }
         }
       } else {

@@ -152,8 +152,8 @@ pub struct BackgroundImage {
 
 impl ToExpr for BackgroundImage {
   fn to_expr(&self) -> PropertyTuple {
-    let expr = match self.value.get(0).unwrap() {
-      BackgroundImageKind::String(src) => {
+    let expr = match self.value.get(0) {
+      Some(BackgroundImageKind::String(src)) => {
         Expr::Object(ObjectLit {
           span: DUMMY_SP,
           props: vec![
@@ -165,9 +165,10 @@ impl ToExpr for BackgroundImage {
           .into(),
         })
       },
-      BackgroundImageKind::LinearGradient(linear_gradient) => {
+      Some(BackgroundImageKind::LinearGradient(linear_gradient)) => {
         linear_gradient.to_expr()
-      }
+      },
+      _ => generate_invalid_expr!()
     };
     PropertyTuple::One(
       "backgroundImage".to_string(),

@@ -27,6 +27,7 @@ pub mod text_align;
 pub mod text_decoration;
 pub mod text_shadow;
 pub mod text_transform;
+pub mod text_overflow;
 pub mod letter_spacing;
 pub mod vertical_align;
 pub mod border_color;

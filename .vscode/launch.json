@@ -5,7 +5,7 @@
           "name": "Debug Rust",
           "type": "lldb",
           "request": "launch",
-          // "program": "/Users/zhuminghui2/.nvm/versions/node/v16.20.2/bin/node",
+          "program": "/Users/zhuminghui2/.nvm/versions/node/v16.20.2/bin/node",
           "cwd": "${workspaceFolder}",
             "args": [
                 "${workspaceFolder}/__test__/index.js"

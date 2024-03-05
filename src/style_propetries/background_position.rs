@@ -17,7 +17,7 @@ use swc_ecma_ast::{
 
 use crate::{generate_invalid_expr, style_propetries::traits::ToExpr};
 
-use super::unit::{generate_expr_with_css_input, PropertyTuple};
+use super::unit::{generate_expr_with_css_input, Platform, PropertyTuple};
 
 pub fn parse_background_position_item(position: &LNBackgroundPosition) -> ImagePosition {
   match &position.x {
@@ -133,11 +133,11 @@ impl ToExpr for BackgroundPosition {
         props: vec![
           PropOrSpread::Prop(Box::new(Prop::KeyValue(KeyValueProp {
             key: PropName::Ident(Ident::new("x".into(), DUMMY_SP)),
-            value: generate_expr_with_css_input(x.to_string()).into(),
+            value: generate_expr_with_css_input(x.to_string(), Platform::Harmony).into(),
           }))),
           PropOrSpread::Prop(Box::new(Prop::KeyValue(KeyValueProp {
             key: PropName::Ident(Ident::new("y".into(), DUMMY_SP)),
-            value: generate_expr_with_css_input(y.to_string()).into(),
+            value: generate_expr_with_css_input(y.to_string(), Platform::Harmony).into(),
           }))),
         ]
         .into(),

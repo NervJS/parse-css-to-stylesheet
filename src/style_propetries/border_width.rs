@@ -10,13 +10,13 @@ use super::{traits::ToExpr, unit::PropertyTuple};
 
 #[macro_export]
 macro_rules! generate_expr_by_border_side_width {
-  ($val:expr) => {{
+  ($val:expr, $platform:expr) => {{
     use $crate::{generate_invalid_expr, generate_expr_by_length};
     use lightningcss::properties::border::BorderSideWidth;
     match $val {
       BorderSideWidth::Thin | BorderSideWidth::Medium | BorderSideWidth::Thick => generate_invalid_expr!(),
       BorderSideWidth::Length(length) => {
-        generate_expr_by_length!(length, Platform::ReactNative)
+        generate_expr_by_length!(length, $platform)
       },
     }
   }};
@@ -96,16 +96,16 @@ impl ToExpr for BorderWidth {
     fn to_expr(&self) -> PropertyTuple {
       let mut props: Vec<(String, Expr)> = vec![];
       if let Some(top) = &self.top {
-        props.push(("borderTopWidth".to_string(), generate_expr_by_border_side_width!(top)))
+        props.push(("borderTopWidth".to_string(), generate_expr_by_border_side_width!(top, Platform::Harmony)))
       }
       if let Some(bottom) = &self.bottom {
-        props.push(("borderBottomWidth".to_string(), generate_expr_by_border_side_width!(bottom)))
+        props.push(("borderBottomWidth".to_string(), generate_expr_by_border_side_width!(bottom, Platform::Harmony)))
       }
       if let Some(left) = &self.left {
-        props.push(("borderLeftWidth".to_string(), generate_expr_by_border_side_width!(left)))
+        props.push(("borderLeftWidth".to_string(), generate_expr_by_border_side_width!(left, Platform::Harmony)))
       }
       if let Some(right) = &self.right {
-        props.push(("borderRightWidth".to_string(), generate_expr_by_border_side_width!(right)))
+        props.push(("borderRightWidth".to_string(), generate_expr_by_border_side_width!(right, Platform::Harmony)))
       }
       PropertyTuple::Array(props)
     }
@@ -123,22 +123,22 @@ impl ToExpr for BorderWidth {
         // border-width
         PropertyTuple::One(
           prop_name.clone(), 
-          generate_expr_by_border_side_width!(self.top.as_ref().unwrap())
+          generate_expr_by_border_side_width!(self.top.as_ref().unwrap(), Platform::ReactNative)
         )
       } else {
         let mut props: Vec<(String, Expr)> = vec![];
         // 单个边框颜色
         if let Some(top) = &self.top {
-          props.push(("borderTopWidth".to_string(), generate_expr_by_border_side_width!(top)))
+          props.push(("borderTopWidth".to_string(), generate_expr_by_border_side_width!(top, Platform::ReactNative)))
         }
         if let Some(bottom) = &self.bottom {
-          props.push(("borderBottomWidth".to_string(), generate_expr_by_border_side_width!(bottom)))
+          props.push(("borderBottomWidth".to_string(), generate_expr_by_border_side_width!(bottom, Platform::ReactNative)))
         }
         if let Some(left) = &self.left {
-          props.push(("borderLeftWidth".to_string(), generate_expr_by_border_side_width!(left)))
+          props.push(("borderLeftWidth".to_string(), generate_expr_by_border_side_width!(left, Platform::ReactNative)))
         }
         if let Some(right) = &self.right {
-          props.push(("borderRightWidth".to_string(), generate_expr_by_border_side_width!(right)))
+          props.push(("borderRightWidth".to_string(), generate_expr_by_border_side_width!(right, Platform::ReactNative)))
         }
         PropertyTuple::Array(props)
       }

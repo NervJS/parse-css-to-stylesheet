@@ -10,10 +10,10 @@ use super::{traits::ToExpr, unit::{PropertyTuple, generate_expr_by_length_value,
 
 
 macro_rules! generate_expr_by_dimension_percentage {
-  ($val:expr) => {{
+  ($val:expr, $platform:expr) => {{
     use $crate::{generate_invalid_expr, generate_expr_lit_str};
     match $val {
-      DimensionPercentage::Dimension(val) => generate_expr_by_length_value(val, Platform::ReactNative),
+      DimensionPercentage::Dimension(val) => generate_expr_by_length_value(val, $platform),
       DimensionPercentage::Percentage(value) => generate_expr_lit_str!((value.0 * 100.0).to_string() + "%"),
       DimensionPercentage::Calc(_) => generate_invalid_expr!()
   }
@@ -88,16 +88,16 @@ impl ToExpr for BorderRadius {
       let mut props: Vec<(String, Expr)> = vec![];
 
       if let Some(top) = &self.top_left {
-        props.push(("borderTopLeftRadius".to_string(), generate_expr_by_dimension_percentage!(top)))
+        props.push(("borderTopLeftRadius".to_string(), generate_expr_by_dimension_percentage!(top, Platform::Harmony)))
       }
       if let Some(bottom) = &self.top_right {
-        props.push(("borderTopRightRadius".to_string(), generate_expr_by_dimension_percentage!(bottom)))
+        props.push(("borderTopRightRadius".to_string(), generate_expr_by_dimension_percentage!(bottom, Platform::Harmony)))
       }
       if let Some(left) = &self.bottom_left {
-        props.push(("borderBottomLeftRadius".to_string(), generate_expr_by_dimension_percentage!(left)))
+        props.push(("borderBottomLeftRadius".to_string(), generate_expr_by_dimension_percentage!(left, Platform::Harmony)))
       }
       if let Some(right) = &self.bottom_right {
-        props.push(("borderBottomRightRadius".to_string(), generate_expr_by_dimension_percentage!(right)))
+        props.push(("borderBottomRightRadius".to_string(), generate_expr_by_dimension_percentage!(right, Platform::Harmony)))
       }
       PropertyTuple::Array(props)
     }
@@ -115,22 +115,22 @@ impl ToExpr for BorderRadius {
         // border-radius
         PropertyTuple::One(
           prop_name.clone(), 
-          generate_expr_by_dimension_percentage!(self.top_left.as_ref().unwrap())
+          generate_expr_by_dimension_percentage!(self.top_left.as_ref().unwrap(), Platform::ReactNative)
         )
       } else {
         let mut props: Vec<(String, Expr)> = vec![];
         // 单个边框颜色
         if let Some(top) = &self.top_left {
-          props.push(("borderTopLeftRadius".to_string(), generate_expr_by_dimension_percentage!(top)))
+          props.push(("borderTopLeftRadius".to_string(), generate_expr_by_dimension_percentage!(top, Platform::ReactNative)))
         }
         if let Some(bottom) = &self.top_right {
-          props.push(("borderTopRightRadius".to_string(), generate_expr_by_dimension_percentage!(bottom)))
+          props.push(("borderTopRightRadius".to_string(), generate_expr_by_dimension_percentage!(bottom, Platform::ReactNative)))
         }
         if let Some(left) = &self.bottom_left {
-          props.push(("borderBottomLeftRadius".to_string(), generate_expr_by_dimension_percentage!(left)))
+          props.push(("borderBottomLeftRadius".to_string(), generate_expr_by_dimension_percentage!(left, Platform::ReactNative)))
         }
         if let Some(right) = &self.bottom_right {
-          props.push(("borderBottomRightRadius".to_string(), generate_expr_by_dimension_percentage!(right)))
+          props.push(("borderBottomRightRadius".to_string(), generate_expr_by_dimension_percentage!(right, Platform::ReactNative)))
         }
         PropertyTuple::Array(props)
       }

@@ -1,6 +1,6 @@
 use lightningcss::{properties::Property, stylesheet::PrinterOptions};
 
-use crate::style_propetries::{aspect_ratio::AspactRatio, background::Background, background_image::BackgroundImage, background_position::BackgroundPosition, background_repeat::BackgroundRepeat, background_size::BackgroundSize, border::Border, border_color::BorderColor, border_radius::BorderRadius, border_style::BorderStyle, border_width::BorderWidth, color::ColorProperty, display::Display, flex::Flex, flex_align::FlexAlign, flex_basis::FlexBasis, flex_direction::FlexDirection, flex_wrap::FlexWrap, font_size::FontSize, font_style::FontStyle, font_weight::FontWeight, gap::Gap, item_align::ItemAlign, length_value::LengthValueProperty, letter_spacing::LetterSpacing, line_height::LineHeight, marin_padding::MarginPadding, max_size::MaxSizeProperty, normal::Normal, number::NumberProperty, overflow::Overflow, size::SizeProperty, style_value_type::StyleValueType, text_align::TextAlign, text_decoration::TextDecoration, text_shadow::TextShadow, text_transform::TextTransform, transform::Transform, transform_origin::TransformOrigin, vertical_align::VerticalAlign};
+use crate::style_propetries::{aspect_ratio::AspactRatio, background::Background, background_image::BackgroundImage, background_position::BackgroundPosition, background_repeat::BackgroundRepeat, background_size::BackgroundSize, border::Border, border_color::BorderColor, border_radius::BorderRadius, border_style::BorderStyle, border_width::BorderWidth, color::ColorProperty, display::Display, flex::Flex, flex_align::FlexAlign, flex_basis::FlexBasis, flex_direction::FlexDirection, flex_wrap::FlexWrap, font_size::FontSize, font_style::FontStyle, font_weight::FontWeight, gap::Gap, item_align::ItemAlign, length_value::LengthValueProperty, letter_spacing::LetterSpacing, line_height::LineHeight, marin_padding::MarginPadding, max_size::MaxSizeProperty, normal::Normal, number::NumberProperty, overflow::Overflow, size::SizeProperty, style_value_type::StyleValueType, text_align::TextAlign, text_decoration::TextDecoration, text_overflow::TextOverflow, text_shadow::TextShadow, text_transform::TextTransform, transform::Transform, transform_origin::TransformOrigin, vertical_align::VerticalAlign};
 
 pub fn parse_style_properties(properties: &Vec<(String, Property)>) -> Vec<StyleValueType> {
   let mut final_properties = vec![];
@@ -100,6 +100,9 @@ pub fn parse_style_properties(properties: &Vec<(String, Property)>) -> Vec<Style
       }
       "textTransform" => {
         final_properties.push(StyleValueType::TextTransform(TextTransform::from((id.to_string(), value))));
+      }
+      "textOverflow" => {
+        final_properties.push(StyleValueType::TextOverflow(TextOverflow::from((id.to_string(), value))));
       }
       "letterSpacing" => {
         final_properties.push(StyleValueType::LetterSpacing(LetterSpacing::from((id.to_string(), value))));

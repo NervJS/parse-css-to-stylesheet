@@ -1,3 +1,25 @@
+## [0.0.32](https://github.com/NervJS/parse-css-to-stylesheet/compare/v0.0.31...v0.0.32) (2024-03-05)
+
+
+### Features
+
+* 补充background相关属性 ([66d8225](https://github.com/NervJS/parse-css-to-stylesheet/commit/66d8225d9d17e1dc492c74a8544b55765b0841e8))
+* 打通rn的module接入流程及补充部分样式的解析 ([43ab51e](https://github.com/NervJS/parse-css-to-stylesheet/commit/43ab51ee13dd4a4d00de8f4c1885afe93dc99b1f))
+* 添加单独编译rn的css的入口、增加rn测试案例场景 ([5a0c11f](https://github.com/NervJS/parse-css-to-stylesheet/commit/5a0c11fe0047430bb745dc1f14a2c61682040824))
+* 完成布局属性的处理 ([a276442](https://github.com/NervJS/parse-css-to-stylesheet/commit/a276442ed458504f80b8516cd9093fd50cd51311))
+* 完成所有文本样式的解析 ([a7a9e18](https://github.com/NervJS/parse-css-to-stylesheet/commit/a7a9e18a80bf2a9d2a0ded402bd7b2c7750f9dcd))
+* 完成完整的重构 ([42a42a8](https://github.com/NervJS/parse-css-to-stylesheet/commit/42a42a8c0acf51cadd76d07fec452b5ce5a24694))
+* 完成转换工作 ([12a65e0](https://github.com/NervJS/parse-css-to-stylesheet/commit/12a65e0c49c1f520a4d255758939862f24a2c495))
+* 完成jsx和css的融合对接 ([5021e29](https://github.com/NervJS/parse-css-to-stylesheet/commit/5021e29714cbdb5df241473f9609c53706da2f2f))
+* 完善transform、margin、padding、flex ([2226548](https://github.com/NervJS/parse-css-to-stylesheet/commit/222654854af0dac7c7007b9c1dfa92752eac6d41))
+* 增加对border的支持 ([71f8f1f](https://github.com/NervJS/parse-css-to-stylesheet/commit/71f8f1f3ef679ff45fc65713ef69efdfbc42cdad))
+* 增加属性一对多的输出逻辑、增加部分文本类样式解析 ([78f53f5](https://github.com/NervJS/parse-css-to-stylesheet/commit/78f53f5731a385d5f8f21123077ccf089ec66f86))
+* 增加伪类 ([0ed8cb3](https://github.com/NervJS/parse-css-to-stylesheet/commit/0ed8cb3cb64952f1ca9270d4dfdf41868a459241))
+* 增加transformOrigin ([35369db](https://github.com/NervJS/parse-css-to-stylesheet/commit/35369db8839d68702066dd6b0ee845cfd5854fda))
+* 增加transformOrigin ([5aa0b05](https://github.com/NervJS/parse-css-to-stylesheet/commit/5aa0b058c492a7437a3d7e83fa85a9cfbb7ea040))
+
+
+
 ## [0.0.31](https://github.com/NervJS/parse-css-to-stylesheet/compare/v0.0.30...v0.0.31) (2024-02-23)
 
 

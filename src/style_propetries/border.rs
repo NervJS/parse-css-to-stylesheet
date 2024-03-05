@@ -143,6 +143,9 @@ impl ToExpr for Border {
     fn to_expr(&self) -> PropertyTuple {
       let prop_name = &self.id;
       let mut props: Vec<(String, Expr)> = vec![];
+      if (self.width.is_none() || self.style.is_none() || self.color.is_none()) {
+        return PropertyTuple::One(prop_name.to_owned(), generate_invalid_expr!());
+      }
       match prop_name.as_str() {
         "border" => {
           vec!["borderTopWidth", "borderRightWidth", "borderBottomWidth", "borderLeftWidth"].iter().for_each(|item| {
@@ -187,6 +190,9 @@ impl ToExpr for Border {
     fn to_rn_expr(&self) -> PropertyTuple {
       let prop_name = &self.id;
       let mut props: Vec<Box<Expr>> = vec![];
+      if (self.width.is_none() || self.style.is_none() || self.color.is_none()) {
+        return PropertyTuple::One(prop_name.to_owned(), generate_invalid_expr!());
+      }
       match prop_name.as_str() {
         "border" | "borderTop"  => {
           props.push(Box::new(generate_expr_by_border_side_width!(self.width.clone().unwrap().top.unwrap(), Platform::ReactNative)));

@@ -33,6 +33,12 @@ impl MarginPadding {
 
 impl ToExpr for MarginPadding {
   fn to_expr(&self) -> PropertyTuple {
+    if (self.top.is_none() || self.right.is_none() || self.bottom.is_none() || self.left.is_none()) {
+      return PropertyTuple::One(
+        self.id.clone(),
+        generate_invalid_expr!()
+      )
+    }
     // 判断self.id是否padding开头
     let is_padding = self.id.starts_with("padding");
     let key_name = if is_padding { "padding" } else { "margin" };
@@ -46,7 +52,12 @@ impl ToExpr for MarginPadding {
   }
 
   fn to_rn_expr(&self) -> PropertyTuple {
-
+    if (self.top.is_none() || self.right.is_none() || self.bottom.is_none() || self.left.is_none()) {
+      return PropertyTuple::One(
+        self.id.clone(),
+        generate_invalid_expr!()
+      )
+    }
     let margin_padding = vec![
       generate_expr_by_length_percentage_or_auto!(self.top.as_ref().unwrap(), Platform::ReactNative), 
       generate_expr_by_length_percentage_or_auto!(self.right.as_ref().unwrap(), Platform::ReactNative), 

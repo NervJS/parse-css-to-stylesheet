@@ -23,7 +23,7 @@ use swc_ecma_visit::{
 };
 
 use crate::{
-  constants::{CALC_DYMAMIC_STYLE, CONVERT_STYLE_PX_FN, INNER_STYLE, INNER_STYLE_DATA, NESTING_STYLE, NESTINT_STYLE_DATA, RN_CONVERT_STYLE_PX_FN, RN_CONVERT_STYLE_VU_FN}, parse_style_properties::parse_style_properties, scraper::Element, style_parser::StyleValue, style_propetries::{style_value_type::StyleValueType, traits::ToStyleValue, unit::{Platform, PropertyTuple}}, utils::{
+  constants::{CALC_DYMAMIC_STYLE, COMBINE_NESTING_STYLE, CONVERT_STYLE_PX_FN, INNER_STYLE, INNER_STYLE_DATA, NESTING_STYLE, NESTINT_STYLE_DATA, RN_CONVERT_STYLE_PX_FN, RN_CONVERT_STYLE_VU_FN}, parse_style_properties::parse_style_properties, scraper::Element, style_parser::StyleValue, style_propetries::{style_value_type::StyleValueType, traits::ToStyleValue, unit::{Platform, PropertyTuple}}, utils::{
     create_qualname, get_callee_attributes, prefix_style_key, recursion_jsx_member, split_selector, to_camel_case, to_kebab_case
   }
 };
@@ -409,6 +409,12 @@ pub fn insert_import_module_decl(module: &mut Module, last_import_index: usize, 
               // ))),
               imported: None,
               is_type_only: false,
+            }),
+            ImportSpecifier::Named(ImportNamedSpecifier {
+              span: DUMMY_SP,
+              local: Ident::new(COMBINE_NESTING_STYLE.into(), DUMMY_SP),
+              imported: None,
+              is_type_only: false,
             })
           ],
           src: Box::new(Str::from("@tarojs/runtime")),
@@ -445,8 +451,16 @@ impl ModuleMutVisitor {
           let expr = arg.take().unwrap();
           *arg = Some(Box::new(Expr::Call(CallExpr {
             span: DUMMY_SP,
-            callee: Callee::Expr(Box::new(Expr::Ident(quote_ident!("MyMethod")))),
-            args: vec![ExprOrSpread { expr, spread: None }],
+            callee: Callee::Expr(Box::new(Expr::Ident(quote_ident!(COMBINE_NESTING_STYLE)))),
+            args: vec![
+              ExprOrSpread { expr, spread: None },
+              ExprOrSpread { expr: Box::new(Expr::Call(CallExpr {
+                span: DUMMY_SP,
+                callee: Callee::Expr(Box::new(Expr::Ident(quote_ident!(NESTING_STYLE)))),
+                args: vec![],
+                type_args: None
+              })), spread: None }
+            ],
             type_args: None,
           })))
         }

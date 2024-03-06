@@ -15,9 +15,8 @@ use lightningcss::{
 };
 use swc_atoms::Atom;
 use swc_common::{Span, DUMMY_SP};
-use swc_ecma_ast::{
-  AssignExpr, AssignOp, BindingIdent, BlockStmt, CallExpr, Callee, ComputedPropName, Decl, Expr, ExprOrSpread, ExprStmt, FnDecl, FnExpr, Function, Ident, IfStmt, ImportDecl, ImportNamedSpecifier, ImportSpecifier, JSXAttr, JSXAttrName, JSXAttrOrSpread, JSXAttrValue, JSXElement, JSXElementName, JSXExpr, JSXExprContainer, JSXFragment, KeyValueProp, Lit, MemberProp, Module, ModuleDecl, ModuleItem, Null, ObjectLit, Prop, PropName, PropOrSpread, ReturnStmt, Stmt, Str, VarDecl
-};
+use swc_ecma_ast::*;
+use swc_ecma_utils::quote_ident;
 use swc_ecma_visit::{
   noop_visit_mut_type, noop_visit_type, Visit, VisitAll, VisitAllWith, VisitMut, VisitMutWith,
   VisitWith,
@@ -424,12 +423,52 @@ pub fn insert_import_module_decl(module: &mut Module, last_import_index: usize, 
 
 pub struct ModuleMutVisitor {
   pub all_style: Rc<RefCell<HashMap<String, StyleValue>>>,
-  pub platform: Platform
+  pub platform: Platform,
+  pub enable_cascading: bool,
 }
 
 impl ModuleMutVisitor {
   pub fn new(all_style: Rc<RefCell<HashMap<String, StyleValue>>>, platform: Platform) -> Self {
-    ModuleMutVisitor { all_style, platform }
+    ModuleMutVisitor { all_style, platform, enable_cascading: true }
+  }
+}
+
+impl ModuleMutVisitor {
+  fn get_cascading_visitor (&self) -> impl VisitMut {
+    struct MyVisitor;
+    impl VisitMut for MyVisitor {
+      fn visit_mut_function(&mut self, _: &mut Function) {}
+      fn visit_mut_arrow_expr(&mut self, _: &mut ArrowExpr) {}
+      fn visit_mut_return_stmt(&mut self, stmt: &mut ReturnStmt) {
+        let arg = &mut stmt.arg;
+        if arg.is_some() {
+          let expr = arg.take().unwrap();
+          *arg = Some(Box::new(Expr::Call(CallExpr {
+            span: DUMMY_SP,
+            callee: Callee::Expr(Box::new(Expr::Ident(quote_ident!("MyMethod")))),
+            args: vec![ExprOrSpread { expr, spread: None }],
+            type_args: None,
+          })))
+        }
+      }
+    }
+    MyVisitor {}
+  }
+  fn enable_cascading_for_class (&self, class: &mut Box<Class>) {
+    let render_function = class.body.iter_mut().find(|item| {
+      // Todo: support ClassProperty
+      if let ClassMember::Method(ClassMethod { key, .. }) = item {
+        return key.is_ident() && key.as_ident().unwrap().sym == "render";
+      }
+      return false;
+    });
+    if render_function.is_some() {
+      let body = &mut render_function.unwrap().as_mut_method().unwrap().function;
+      body.visit_mut_children_with(&mut self.get_cascading_visitor());
+    };
+  }
+  fn enable_cascading_for_function (&self, body: &mut Box<Function>) {
+    body.visit_mut_children_with(&mut &mut self.get_cascading_visitor());
   }
 }
 
@@ -584,9 +623,35 @@ impl VisitMut for ModuleMutVisitor {
 
     // 将 inner_style_stmt 插入到 module 的最后一条 import 语句之后
     let mut last_import_index = 0;
-    for (index, stmt) in module.body.iter().enumerate() {
-      if let ModuleItem::ModuleDecl(ModuleDecl::Import(_)) = stmt {
-        last_import_index = index;
+    for (index, stmt) in module.body.iter_mut().enumerate() {
+      if stmt.is_module_decl() {
+        let module_decl = stmt.as_mut_module_decl().unwrap();
+        if let ModuleDecl::Import(_) = module_decl {
+          last_import_index = index;
+        }
+        // 开启层叠功能
+        if self.enable_cascading {
+          match module_decl {
+            ModuleDecl::ExportDefaultDecl(ExportDefaultDecl { decl, .. }) => {
+              match decl {
+                // export defualt class {}
+                DefaultDecl::Class(ClassExpr { class, .. }) => {
+                  self.enable_cascading_for_class(class);
+                },
+                // export defualt function () {}
+                DefaultDecl::Fn(FnExpr { function, ..}) => {
+                  self.enable_cascading_for_function(function);
+                }
+                _ => ()
+              }
+            },
+            // export default Index
+            ModuleDecl::ExportDefaultExpr(ExportDefaultExpr { expr, .. }) => {
+              // Todo: suport ExportDefaultExpr
+            },
+            _ => ()
+          }
+        }
       }
     }
     if last_import_index != 0 {

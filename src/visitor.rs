@@ -493,8 +493,6 @@ impl VisitMut for ModuleMutVisitor {
     let binding = self.all_style.borrow();
     let style_entries: BTreeMap<_, _> = binding.iter().collect();
 
-    
-
     // __inner_style__普通样式对象
     let mut final_style_entries: BTreeMap<String, Vec<PropOrSpread>> = BTreeMap::new();
     // __nesting_style__嵌套样式对象
@@ -597,6 +595,7 @@ impl VisitMut for ModuleMutVisitor {
     }
     // 插入平台所需的运行时代码， 如： import { calcDynamicStyle } from '@tarojs/runtime'
     last_import_index = insert_import_module_decl(module, last_import_index, self.platform.clone());
+    last_import_index += 1;
   
     let mut var_checker = VarChecker { found: false };
     module.visit_with(&mut var_checker);
@@ -628,11 +627,18 @@ impl VisitMut for ModuleMutVisitor {
         .insert(last_import_index, ModuleItem::Stmt(style_func));
     }
 
-    // 插入嵌套样式
-    let nesting_style_object = Box::new(Expr::Array(ArrayLit {
+    if self.is_enable_nesting {
+      // 插入嵌套样式
+
+      let mut nestings = nesting_style_entries.into_iter().collect::<Vec<(Vec<String>, Vec<PropOrSpread>)>>();
+      // 根据类的数量进行权重排序
+      nestings.sort_by(|a, b| {
+        a.0.len().cmp(&b.0.len())
+      });
+
+      let nesting_style_object = Box::new(Expr::Array(ArrayLit {
         span: DUMMY_SP,
-        elems: nesting_style_entries
-          .iter()
+        elems: nestings.into_iter()
           .map(|(key, value)| {
             Some(ExprOrSpread {
               spread: None,
@@ -675,6 +681,7 @@ impl VisitMut for ModuleMutVisitor {
     module
       .body
       .insert(last_import_index, ModuleItem::Stmt(style_func))
+    }
   }
 }
 

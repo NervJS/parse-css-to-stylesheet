@@ -8,7 +8,10 @@
 	color: red;
 }
 
-.a, .a .b  {
-	font-size: 20px;
-	text-overflow: ellipsis;
+
+.aaa {
+  font-size: 20px;
+  -webkit-line-clamp: 2;
+  text-overflow: ellipsis;
+  color: #00f;
 }

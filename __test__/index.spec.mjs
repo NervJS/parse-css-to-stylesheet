@@ -14,7 +14,10 @@ test('test parse Harmony', (t) => {
   const css1 = fs.readFileSync(path.resolve(__dirname, 'fixure/Mod.scss'), 'utf8')
   const css2 = fs.readFileSync(path.resolve(__dirname, 'fixure/test.scss'), 'utf8')
   
-  const code = parse(jsx, [css1, css2], "Harmony")
+  const code = parse(jsx, [css1, css2], {
+    platformString: 'Harmony',
+    isEnableNesting: true
+  })
   t.snapshot(code)
 })
 
@@ -23,6 +26,9 @@ test('test parse ReactNative', (t) => {
   const css1 = fs.readFileSync(path.resolve(__dirname, 'fixure/Mod.scss'), 'utf8')
   const css2 = fs.readFileSync(path.resolve(__dirname, 'fixure/test.scss'), 'utf8')
   
-  const code = parse(jsx, [css1, css2], "ReactNative")
+  const code = parse(jsx, [css1, css2], {
+    platformString: 'ReactNative',
+    isEnableNesting: true
+  })
   t.snapshot(code)
 })

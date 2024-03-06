@@ -1,13 +1,14 @@
 .pesudo {
   height: 400px;
   width: 400px;
+  margin-top: calc(100% - 30px);
 }
 
 .pesudo:last-child {
 	color: red;
 }
 
-.text {
+.a, .a .b  {
 	font-size: 20px;
 	text-overflow: ellipsis;
 }

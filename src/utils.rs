@@ -175,3 +175,41 @@ pub fn color_string(value: &Property) -> String {
       ..PrinterOptions::default()
     }).unwrap()
 }
+
+// 分割选择器
+pub fn split_selector(selector: &str) -> Vec<String> {
+  let mut result = Vec::new();
+    let mut current_word = String::new();
+    let mut buffer = String::new();
+
+    for c in selector.chars() {
+        if c == ' ' || c == '>' || c == '+' || c == '~' {
+            if !current_word.is_empty() {
+                result.push(current_word.clone());
+                current_word.clear();
+            }
+            
+            buffer.push(c);
+            if buffer == " > " || buffer == " + " || buffer == " ~ " {
+                result.push(buffer.clone());
+                buffer.clear();
+            }
+        } else {
+            current_word.push(c);
+            if buffer == ' '.to_string() {
+              result.push(buffer.clone());
+              buffer.clear();
+            }
+        }
+    }
+
+    if !current_word.is_empty() {
+        result.push(current_word.clone());
+    }
+
+    if !buffer.is_empty() {
+        result.push(buffer.clone());
+    }
+
+    result
+}

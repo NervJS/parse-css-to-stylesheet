@@ -23,8 +23,8 @@ use swc_ecma_visit::{
 };
 
 use crate::{
-  constants::{CALC_DYMAMIC_STYLE, CONVERT_STYLE_PX_FN, INNER_STYLE, INNER_STYLE_DATA, RN_CONVERT_STYLE_PX_FN, RN_CONVERT_STYLE_VU_FN}, parse_style_properties::parse_style_properties, scraper::Element, style_parser::StyleValue, style_propetries::{style_value_type::StyleValueType, traits::ToStyleValue, unit::{Platform, PropertyTuple}}, utils::{
-    create_qualname, get_callee_attributes, prefix_style_key, recursion_jsx_member, to_camel_case, to_kebab_case
+  constants::{CALC_DYMAMIC_STYLE, CONVERT_STYLE_PX_FN, INNER_STYLE, INNER_STYLE_DATA, NESTING_STYLE, NESTINT_STYLE_DATA, RN_CONVERT_STYLE_PX_FN, RN_CONVERT_STYLE_VU_FN}, parse_style_properties::parse_style_properties, scraper::Element, style_parser::StyleValue, style_propetries::{style_value_type::StyleValueType, traits::ToStyleValue, unit::{Platform, PropertyTuple}}, utils::{
+    create_qualname, get_callee_attributes, prefix_style_key, recursion_jsx_member, split_selector, to_camel_case, to_kebab_case
   }
 };
 
@@ -479,26 +479,27 @@ impl VisitMut for ModuleMutVisitor {
     let binding = self.all_style.borrow();
     let style_entries: BTreeMap<_, _> = binding.iter().collect();
 
-    let ident  = Ident::new(INNER_STYLE_DATA.into(), DUMMY_SP);
+    
 
-    let identifier = Stmt::Decl(Decl::Var(Box::new(VarDecl {
-      span: DUMMY_SP,
-      kind: swc_ecma_ast::VarDeclKind::Let,
-      declare: false,
-      decls: vec![swc_ecma_ast::VarDeclarator {
-        span: DUMMY_SP,
-        name: swc_ecma_ast::Pat::Ident(BindingIdent {
-          id: ident.clone(),
-          type_ann: None,
-        }),
-        init: None,
-        definite: false,
-      }]
-    })));
-
+    // __inner_style__普通样式对象
     let mut final_style_entries: BTreeMap<String, Vec<PropOrSpread>> = BTreeMap::new();
+    // __nesting_style__嵌套样式对象
+    let mut nesting_style_entries: BTreeMap<Vec<String>, Vec<PropOrSpread>> = BTreeMap::new();
+    
     // 合并伪类样式, .pesudo {}、.pesudo:after {}  => .pesudo: { xxx, ["::after"]: {xxx}}
     style_entries.iter().for_each(|(key, value)| {
+      // 判断是否嵌套样式
+      if self.platform == Platform::Harmony {
+        if key.contains(" ") {
+          // 拆分选择器字符串，安装' ' 或 '>' 拆分，如：container > wrapper item => ['container', '>', 'wrapper', ' ', 'item']
+          let selectors = split_selector(key);
+          println!("{:?}", key);
+          println!("{:?}", selectors);
+          nesting_style_entries.insert(selectors, parse_style_values(value.to_vec(), self.platform.clone()));
+          return;
+        }
+      }
+
       // 判断key是否伪类
       if key.contains(":") && self.platform == Platform::Harmony {
         let mut element_key = String::new();
@@ -543,83 +544,6 @@ impl VisitMut for ModuleMutVisitor {
         }
       }
     });
-    
-
-    let inner_style_func = {
-
-      let style_object = Box::new(Expr::Object(ObjectLit {
-        span: DUMMY_SP,
-        props: final_style_entries
-          .iter()
-          .map(|(key, value)| {
-            PropOrSpread::Prop(Box::new(Prop::KeyValue(KeyValueProp {
-              key: PropName::Str(Str::from(key.as_str())),
-              value: Box::new(Expr::Object(ObjectLit {
-                span: DUMMY_SP,
-                props: value.to_vec()
-              })),
-            })))
-          })
-          .collect::<Vec<PropOrSpread>>()
-          .into(),
-      }));
-
-      let body = vec![
-          // if (__inner_style_data__) return __inner_style_data__
-          Stmt::If(IfStmt { 
-            span: DUMMY_SP,
-            test: Box::new(Expr::Ident(ident.clone())),
-            cons: Box::new(
-              Stmt::Return(ReturnStmt { 
-                span: DUMMY_SP,
-                arg: Some(Box::new(Expr::Ident(ident.clone())))
-              })
-            ),
-            alt: None
-          }),
-          // __inner_style_data__ = { ... }
-          Stmt::Expr(
-            ExprStmt {
-              span: DUMMY_SP,
-              expr: Box::new(
-                Expr::Assign(AssignExpr { span: DUMMY_SP, op: AssignOp::Assign, 
-                  left: swc_ecma_ast::PatOrExpr::Expr(Box::new(Expr::Ident(ident.clone()))), 
-                  right: style_object
-                })
-              )
-            }
-          ),
-          // return __inner_style_data__
-          Stmt::Return(ReturnStmt {
-            span: DUMMY_SP,
-            arg: Some(Box::new(Expr::Ident(ident)))
-          })
-        ];
-
-
-      let func = FnExpr {
-        ident: Some(Ident::new(INNER_STYLE.into(), DUMMY_SP)) ,
-        function: Box::new(Function {
-          params: vec![],
-          decorators: vec![],
-          span: DUMMY_SP,
-          body: Some(BlockStmt {
-              span: DUMMY_SP,
-              stmts: body,
-          }),
-          is_generator: false,
-          is_async: false,
-          type_params: None,
-          return_type: None,
-        })
-      };
-
-      Stmt::Decl(Decl::Fn(FnDecl {
-        ident: func.ident.clone().unwrap(),
-        function: func.function,
-        declare: false
-      }))
-    };
 
     // 将 inner_style_stmt 插入到 module 的最后一条 import 语句之后
     let mut last_import_index = 0;
@@ -663,15 +587,164 @@ impl VisitMut for ModuleMutVisitor {
     let mut var_checker = VarChecker { found: false };
     module.visit_with(&mut var_checker);
     if var_checker.found {
+      let style_object = Box::new(Expr::Object(ObjectLit {
+        span: DUMMY_SP,
+        props: final_style_entries
+          .iter()
+          .map(|(key, value)| {
+            PropOrSpread::Prop(Box::new(Prop::KeyValue(KeyValueProp {
+              key: PropName::Str(Str::from(key.as_str())),
+              value: Box::new(Expr::Object(ObjectLit {
+                span: DUMMY_SP,
+                props: value.to_vec()
+              })),
+            })))
+          })
+          .collect::<Vec<PropOrSpread>>()
+          .into(),
+      }));
+
+      let (identifier, style_func) = generate_stylesheet(INNER_STYLE.to_string(), INNER_STYLE_DATA.to_string(), style_object);
       // 插入代码 let __inner_style_data__;
       module.body.insert(last_import_index, ModuleItem::Stmt(identifier));
       last_import_index += 1;
       // 插入代码 function __inner_style__() { ... }
       module
         .body
-        .insert(last_import_index, ModuleItem::Stmt(inner_style_func));
+        .insert(last_import_index, ModuleItem::Stmt(style_func));
     }
+
+    // 插入嵌套样式
+    let nesting_style_object = Box::new(Expr::Array(ArrayLit {
+        span: DUMMY_SP,
+        elems: nesting_style_entries
+          .iter()
+          .map(|(key, value)| {
+            Some(ExprOrSpread {
+              spread: None,
+              expr: Box::new(Expr::Object(ObjectLit {
+                span: DUMMY_SP,
+                props: vec![
+                  PropOrSpread::Prop(Box::new(Prop::KeyValue(KeyValueProp {
+                    key: PropName::Str(Str::from("selectors")),
+                    value: Box::new(Expr::Array(ArrayLit {
+                      span: DUMMY_SP,
+                      elems: key.iter().map(|prop| {
+                        Some(ExprOrSpread { 
+                          spread: None, 
+                          expr: Box::new(Expr::Lit(Lit::Str(Str::from(prop.as_str()))))
+                        })
+                      }).collect::<Vec<Option<ExprOrSpread>>>()
+                    })),
+                  }))),
+                  PropOrSpread::Prop(Box::new(Prop::KeyValue(KeyValueProp {
+                    key: PropName::Str(Str::from("declaration")),
+                    value: Box::new(Expr::Object(ObjectLit {
+                      span: DUMMY_SP,
+                      props: value.to_vec()
+                    })),
+                  })))
+
+                ]
+              }))
+            })
+          })
+          .collect::<Vec<Option<ExprOrSpread>>>()
+          .into(),
+    }));
+
+    let (identifier, style_func) = generate_stylesheet(NESTING_STYLE.to_string(), NESTINT_STYLE_DATA.to_string(), nesting_style_object);
+    // 插入代码 let __inner_style_data__;
+    module.body.insert(last_import_index, ModuleItem::Stmt(identifier));
+    last_import_index += 1;
+    // 插入代码 function __inner_style__() { ... }
+    module
+      .body
+      .insert(last_import_index, ModuleItem::Stmt(style_func))
   }
+}
+
+fn generate_stylesheet(fn_name: String, fn_data_name: String, style_object: Box<Expr>) -> (Stmt, Stmt) {
+
+  let ident  = Ident::new(fn_data_name.into(), DUMMY_SP);
+
+  let identifier = Stmt::Decl(Decl::Var(Box::new(VarDecl {
+    span: DUMMY_SP,
+    kind: swc_ecma_ast::VarDeclKind::Let,
+    declare: false,
+    decls: vec![swc_ecma_ast::VarDeclarator {
+      span: DUMMY_SP,
+      name: swc_ecma_ast::Pat::Ident(BindingIdent {
+        id: ident.clone(),
+        type_ann: None,
+      }),
+      init: None,
+      definite: false,
+    }]
+  })));
+
+  let inner_style_func = {
+
+    let body = vec![
+        // if (__inner_style_data__) return __inner_style_data__
+        Stmt::If(IfStmt { 
+          span: DUMMY_SP,
+          test: Box::new(Expr::Ident(ident.clone())),
+          cons: Box::new(
+            Stmt::Return(ReturnStmt { 
+              span: DUMMY_SP,
+              arg: Some(Box::new(Expr::Ident(ident.clone())))
+            })
+          ),
+          alt: None
+        }),
+        // __inner_style_data__ = { ... }
+        Stmt::Expr(
+          ExprStmt {
+            span: DUMMY_SP,
+            expr: Box::new(
+              Expr::Assign(AssignExpr { span: DUMMY_SP, op: AssignOp::Assign, 
+                left: swc_ecma_ast::PatOrExpr::Expr(Box::new(Expr::Ident(ident.clone()))), 
+                right: style_object
+              })
+            )
+          }
+        ),
+        // return __inner_style_data__
+        Stmt::Return(ReturnStmt {
+          span: DUMMY_SP,
+          arg: Some(Box::new(Expr::Ident(ident)))
+        })
+      ];
+
+
+    let func = FnExpr {
+      ident: Some(Ident::new(fn_name.into(), DUMMY_SP)) ,
+      function: Box::new(Function {
+        params: vec![],
+        decorators: vec![],
+        span: DUMMY_SP,
+        body: Some(BlockStmt {
+            span: DUMMY_SP,
+            stmts: body,
+        }),
+        is_generator: false,
+        is_async: false,
+        type_params: None,
+        return_type: None,
+      })
+    };
+
+    Stmt::Decl(Decl::Fn(FnDecl {
+      ident: func.ident.clone().unwrap(),
+      function: func.function,
+      declare: false
+    }))
+  };
+  (
+    identifier,
+    inner_style_func
+  )
 }
 
 pub struct JSXMutVisitor<'i> {

@@ -430,12 +430,12 @@ pub fn insert_import_module_decl(module: &mut Module, last_import_index: usize, 
 pub struct ModuleMutVisitor {
   pub all_style: Rc<RefCell<HashMap<String, StyleValue>>>,
   pub platform: Platform,
-  pub enable_cascading: bool,
+  pub is_enable_nesting: bool,
 }
 
 impl ModuleMutVisitor {
-  pub fn new(all_style: Rc<RefCell<HashMap<String, StyleValue>>>, platform: Platform) -> Self {
-    ModuleMutVisitor { all_style, platform, enable_cascading: true }
+  pub fn new(all_style: Rc<RefCell<HashMap<String, StyleValue>>>, platform: Platform, is_enable_nesting: bool) -> Self {
+    ModuleMutVisitor { all_style, platform, is_enable_nesting }
   }
 }
 
@@ -568,7 +568,7 @@ impl VisitMut for ModuleMutVisitor {
           last_import_index = index;
         }
         // 开启层叠功能
-        if self.enable_cascading {
+        if self.is_enable_nesting {
           match module_decl {
             ModuleDecl::ExportDefaultDecl(ExportDefaultDecl { decl, .. }) => {
               match decl {

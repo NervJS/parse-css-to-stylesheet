@@ -14,6 +14,7 @@ pub struct StyleWrite<'i> {
   pub style_record: Rc<RefCell<HashMap<SpanKey, Vec<(String, Property<'i>)>>>>,
   pub pesudo_style_record: Rc<RefCell<HashMap<SpanKey, Vec<(String, Vec<(String, Property<'i>)>)>>>>,
   pub all_style: Rc<RefCell<HashMap<String, StyleValue>>>,
+  pub is_enable_nesting: bool,
 }
 
 impl<'i> StyleWrite<'i> {
@@ -23,6 +24,7 @@ impl<'i> StyleWrite<'i> {
     style_record: Rc<RefCell<HashMap<SpanKey, Vec<(String, Property<'i>)>>>>,
     pesudo_style_record: Rc<RefCell<HashMap<SpanKey, Vec<(String, Vec<(String, Property<'i>)>)>>>>,
     all_style: Rc<RefCell<HashMap<String, StyleValue>>>,
+    is_enable_nesting: bool
   ) -> Self {
     StyleWrite {
       module,
@@ -30,6 +32,7 @@ impl<'i> StyleWrite<'i> {
       style_record,
       pesudo_style_record,
       all_style,
+      is_enable_nesting,
     }
   }
 
@@ -50,7 +53,7 @@ impl<'i> StyleWrite<'i> {
     }
     // 插入样式表
     {
-      let mut insert_mut_visitor = ModuleMutVisitor::new(self.all_style.clone(), platform.clone());
+      let mut insert_mut_visitor = ModuleMutVisitor::new(self.all_style.clone(), platform.clone(), self.is_enable_nesting);
       self
         .module
         .borrow_mut()

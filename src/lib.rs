@@ -25,14 +25,23 @@ mod parse_style_properties;
 // component: jsx的code string
 // styles: css的code string
 // platform_string: "ReactNative" | "Harmony"
-#[napi]
-pub fn parse(component: String, styles: Vec<String>, platform_string: String) -> String {
 
-  let platform = match platform_string.as_str() {
+#[napi(object)]
+pub struct ParseOptions {
+  pub platform_string: String,
+  pub is_enable_nesting: Option<bool>,
+}
+
+#[napi]
+pub fn parse(component: String, styles: Vec<String>, options: ParseOptions) -> String {
+
+  let platform = match options.platform_string.as_str() {
     "ReactNative" => Platform::ReactNative,
     "Harmony" => Platform::Harmony,
     _ => Platform::Harmony
   };
+
+  let is_enable_nesting = options.is_enable_nesting.map_or(false, |item| item);
 
   // 解析组件文件
   let cm: Lrc<SourceMap> = Default::default();
@@ -54,6 +63,7 @@ pub fn parse(component: String, styles: Vec<String>, platform_string: String) ->
     style_data.style_record.clone(),
     style_data.pesudo_style_record.clone(),
     style_data.all_style.clone(),
+    is_enable_nesting,
   );
   style_write.write(platform);
 
@@ -72,4 +82,3 @@ pub fn parse(component: String, styles: Vec<String>, platform_string: String) ->
   let code = String::from_utf8(buf).unwrap().replace("\r\n", "\n");
   code
 }
-

@@ -56,12 +56,12 @@ macro_rules! generate_expr_by_length  {
 #[macro_export]
 macro_rules! generate_expr_by_length_percentage_or_auto {
   ($var:expr, $platform:expr) => {{
-    
+    use $crate::{generate_expr_by_length_percentage, generate_expr_lit_str};
     match $var {
       LengthPercentageOrAuto::LengthPercentage(length_percent) => {
         generate_expr_by_length_percentage!(length_percent, $platform)
       },
-      LengthPercentageOrAuto::Auto => generate_invalid_expr!(),
+      LengthPercentageOrAuto::Auto => generate_expr_lit_str!("auto")
     }
   }};
 }
@@ -70,7 +70,7 @@ macro_rules! generate_expr_by_length_percentage_or_auto {
 #[macro_export]
 macro_rules! generate_expr_by_length_percentage {
   ($var:expr, $platform:expr) => {{
-    use $crate::style_propetries::unit::{generate_expr_by_length_value};
+    use $crate::{generate_expr_lit_str, style_propetries::unit::{generate_expr_by_length_value} };
     use lightningcss::traits::ToCss;
     
     match $var {

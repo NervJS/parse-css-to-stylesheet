@@ -11,7 +11,7 @@ use swc_ecma_ast::{
   PropOrSpread,
 };
 
-use crate::generate_invalid_expr;
+use crate::{generate_expr_by_length_percentage_or_auto, generate_invalid_expr};
 
 use super::{traits::ToExpr, unit::{generate_expr_with_css_input, Platform, PropertyTuple}};
 
@@ -20,24 +20,28 @@ pub fn parse_background_size_item(size_item: &LNBackgroundSize) -> Option<ImageS
     LNBackgroundSize::Contain => Some(ImageSize::Contain),
     LNBackgroundSize::Cover => Some(ImageSize::Cover),
     LNBackgroundSize::Explicit { width, height } => {
-      match width {
-        LengthPercentageOrAuto::Auto => match height {
-          LengthPercentageOrAuto::Auto => Some(ImageSize::Auto),
-          _ => None,
-        },
-        LengthPercentageOrAuto::LengthPercentage(x) => {
-          let x_str = x.to_css_string(PrinterOptions::default()).unwrap();
-          match height {
-            LengthPercentageOrAuto::LengthPercentage(y) => {
-              let y_str = y.to_css_string(PrinterOptions::default()).unwrap();
-              Some(ImageSize::ImageSizeWH(x_str, Some(y_str)))
-            },
-            LengthPercentageOrAuto::Auto => {
-                Some(ImageSize::ImageSizeWH(x_str, None))
-            }
-          }
-        },
-      }
+      Some(ImageSize::ImageSizeWH(
+        width.clone(),
+        height.clone()
+      ))
+      // match width {
+      //   LengthPercentageOrAuto::Auto => match height {
+      //     LengthPercentageOrAuto::Auto => Some(ImageSize::Auto),
+      //     _ => None,
+      //   },
+      //   LengthPercentageOrAuto::LengthPercentage(x) => {
+      //     let x_str = x.to_css_string(PrinterOptions::default()).unwrap();
+      //     match height {
+      //       LengthPercentageOrAuto::LengthPercentage(y) => {
+      //         let y_str = y.to_css_string(PrinterOptions::default()).unwrap();
+      //         Some(ImageSize::ImageSizeWH(x_str, Some(y_str)))
+      //       },
+      //       LengthPercentageOrAuto::Auto => {
+      //           Some(ImageSize::ImageSizeWH(x_str, None))
+      //       }
+      //     }
+      //   },
+      // }
     }
   }
 }
@@ -59,7 +63,7 @@ pub enum ImageSize {
   Cover,
   Contain,
   Auto,
-  ImageSizeWH(String, Option<String>),
+  ImageSizeWH(LengthPercentageOrAuto, LengthPercentageOrAuto),
 }
 
 #[derive(Debug, Clone)]
@@ -102,22 +106,17 @@ impl ToExpr for BackgroundSize {
       })
       .into(),
       ImageSize::ImageSizeWH(width, height) => {
-        let width_str = width.to_string();
-        let height_str = height.as_ref().map(|h| h.to_string());
-      
-        let mut props = vec![
+        
+        let props = vec![
           PropOrSpread::Prop(Box::new(Prop::KeyValue(KeyValueProp {
             key: PropName::Ident(Ident::new("width".into(), DUMMY_SP)),
-            value: generate_expr_with_css_input(width_str, Platform::Harmony).into(),
-          })))
-        ];
-      
-        if let Some(height_str) = height_str {
-          props.push(PropOrSpread::Prop(Box::new(Prop::KeyValue(KeyValueProp {
+            value: Box::new(generate_expr_by_length_percentage_or_auto!(width, Platform::Harmony))
+          }))),
+          PropOrSpread::Prop(Box::new(Prop::KeyValue(KeyValueProp {
             key: PropName::Ident(Ident::new("height".into(), DUMMY_SP)),
-            value: generate_expr_with_css_input(height_str, Platform::Harmony).into(),
-          }))))
-        }
+            value: Box::new(generate_expr_by_length_percentage_or_auto!(height, Platform::Harmony))
+          }))),
+        ];
       
         Expr::Object(ObjectLit {
           span: DUMMY_SP,

@@ -164,6 +164,15 @@ pub fn parse_style_properties(properties: &Vec<(String, Property)>) -> Vec<Style
       "background" => {
         final_properties.push(StyleValueType::Background(Background::from((id.to_string(), value))));
       }
+      "content" => {
+        // 判断content内容是否是空字符串
+        let content_value = value.value_to_css_string(PrinterOptions::default()).unwrap().trim().to_string();
+        if content_value != "\"\"" {
+          // 替换字符串，将左右两边的"干掉
+          let content_value = content_value.trim_matches('"');
+          final_properties.push(StyleValueType::Normal(Normal::new(id.to_string(), content_value.to_string())));
+        }
+      }
       _ => {
         // position、zIndex等... 会自动处理 单位、数字等相关信息
         final_properties.push(StyleValueType::Normal(Normal::new(id.to_string(), value.value_to_css_string(PrinterOptions::default()).unwrap())));

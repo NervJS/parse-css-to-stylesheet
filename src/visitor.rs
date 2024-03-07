@@ -510,27 +510,19 @@ impl VisitMut for ModuleMutVisitor {
     
     // 合并伪类样式, .pesudo {}、.pesudo:after {}  => .pesudo: { xxx, ["::after"]: {xxx}}
     style_entries.iter().for_each(|(key, value)| {
-      // 判断是否嵌套样式
-      if self.platform == Platform::Harmony {
-        if key.contains(" ") {
-          // 拆分选择器字符串，安装' ' 或 '>' 拆分，如：container > wrapper item => ['container', '>', 'wrapper', ' ', 'item']
-          let selectors = split_selector(key);
-          println!("{:?}", key);
-          println!("{:?}", selectors);
-          nesting_style_entries.insert(selectors, parse_style_values(value.to_vec(), self.platform.clone()));
-          return;
-        }
-      }
+  
+      let mut insert_key = key.to_string();
+      let mut insert_value = vec![];
 
-      // 判断key是否伪类
       if key.contains(":") && self.platform == Platform::Harmony {
-        let mut element_key = String::new();
         let mut pesudo_key = String::new();
         let key_arr = key.split(":").collect::<Vec<&str>>();
         if key_arr.len() == 2 {
-          element_key = key_arr[0].to_string();
+          insert_key = key_arr[0].to_string();
           pesudo_key = key_arr[1].to_string();
         }
+
+        // 插入伪类样式
         let prop = PropOrSpread::Prop(Box::new(Prop::KeyValue(KeyValueProp {
           key: PropName::Computed(ComputedPropName {
             span: DUMMY_SP,
@@ -545,26 +537,36 @@ impl VisitMut for ModuleMutVisitor {
             props: parse_style_values(value.to_vec(),self.platform.clone())
           })),
         })));
-
-        // 先有普通样式，再插入了伪类
-        if let Some(props) = final_style_entries.get(element_key.as_str()) {
-          let mut new_props = props.clone();
-          new_props.push(prop);
-          final_style_entries.insert(element_key.to_string(), new_props);
-        } else {
-          final_style_entries.insert(key.to_string(), vec![prop]);
-        }
-
+        insert_value.push(prop)
       } else {
-        // 先插入了伪类，再插入普通样式
-        if let Some(pseudo_props) = final_style_entries.get(*key) {
-          let mut new_pseudo_props = pseudo_props.clone();
-          new_pseudo_props.extend(parse_style_values(value.to_vec(),self.platform.clone()));
-          final_style_entries.insert(key.to_string(), new_pseudo_props);
-        } else {
-          final_style_entries.insert(key.to_string(), parse_style_values(value.to_vec(),self.platform.clone()));
+        insert_value = parse_style_values(value.to_vec(),self.platform.clone())
+      }
+
+      // 判断是否嵌套样式
+      if self.platform == Platform::Harmony {
+        if insert_key.contains(" ") {
+          // 拆分选择器字符串，安装' ' 或 '>' 拆分，如：container > wrapper item => ['container', '>', 'wrapper', ' ', 'item']
+          let selectors = split_selector(insert_key.as_str());
+
+          if let Some(props) = nesting_style_entries.get(&selectors) {
+            let mut new_insert_value = props.clone();
+            new_insert_value.extend(insert_value);
+            nesting_style_entries.insert(selectors, new_insert_value);
+          } else {
+            nesting_style_entries.insert(selectors, insert_value);
+          }
+          return;
         }
       }
+
+      if let Some(props) = final_style_entries.get(insert_key.as_str()) {
+        let mut new_insert_value = props.clone();
+        new_insert_value.extend(insert_value);
+        final_style_entries.insert(insert_key.to_string(), new_insert_value);
+      } else {
+        final_style_entries.insert(insert_key.to_string(), insert_value);
+      }
+
     });
 
     // 将 inner_style_stmt 插入到 module 的最后一条 import 语句之后
@@ -573,64 +575,64 @@ impl VisitMut for ModuleMutVisitor {
       if let ModuleItem::ModuleDecl(ModuleDecl::Import(_)) = stmt {
         last_import_index = index;
       }
-        // 开启层叠功能
-        if self.is_enable_nesting {
-          match stmt {
-            ModuleItem::ModuleDecl(ModuleDecl::ExportDefaultDecl(ExportDefaultDecl { decl, .. })) => {
-              match decl {
-                // export defualt class Index {}
-                DefaultDecl::Class(ClassExpr { class, .. }) => {
-                  self.enable_nesting_for_class(class);
-                },
-                // export defualt function Index () {}
-                DefaultDecl::Fn(FnExpr { function, ..}) => {
-                  self.enable_nesting_for_function(function);
-                }
-                _ => ()
+      // 开启层叠功能
+      if self.is_enable_nesting {
+        match stmt {
+          ModuleItem::ModuleDecl(ModuleDecl::ExportDefaultDecl(ExportDefaultDecl { decl, .. })) => {
+            match decl {
+              // export defualt class Index {}
+              DefaultDecl::Class(ClassExpr { class, .. }) => {
+                self.enable_nesting_for_class(class);
+              },
+              // export defualt function Index () {}
+              DefaultDecl::Fn(FnExpr { function, ..}) => {
+                self.enable_nesting_for_function(function);
               }
-            },
-            ModuleItem::ModuleDecl(ModuleDecl::ExportDecl(ExportDecl { decl, .. })) => {
-              match decl {
-                // export class Index {}
-                Decl::Class(ClassDecl { class, .. }) => {
-                  self.enable_nesting_for_class(class);
-                },
-                // export function Index () {}
-                Decl::Fn(FnDecl { function, ..}) => {
-                  self.enable_nesting_for_function(function);
-                }
-                _ => ()
-              }
-            },
-            ModuleItem::Stmt(Stmt::Decl(Decl::Class(ClassDecl { class, .. }))) => {
-              // class Index {}
-              self.enable_nesting_for_class(class);
-            },
-            ModuleItem::Stmt(Stmt::Decl(Decl::Fn(FnDecl { function, .. }))) => {
-              // function Index () {}
-              self.enable_nesting_for_function(function);
-            },
-            ModuleItem::Stmt(Stmt::Decl(Decl::Var(var_decl))) => {
-              var_decl.decls.iter_mut().for_each(|decl| {
-                match &mut decl.init {
-                  Some(init) => {
-                    match &mut **init {
-                      Expr::Fn(FnExpr { function, .. }) => {
-                        self.enable_nesting_for_function(function);
-                      },
-                      Expr::Arrow(ArrowExpr { body, .. }) => {
-                        // Todo: support arrow funciton
-                      },
-                      _ => ()
-                    }
-                  },
-                  None => (),
-                }
-              })
+              _ => ()
             }
-            _ => ()
+          },
+          ModuleItem::ModuleDecl(ModuleDecl::ExportDecl(ExportDecl { decl, .. })) => {
+            match decl {
+              // export class Index {}
+              Decl::Class(ClassDecl { class, .. }) => {
+                self.enable_nesting_for_class(class);
+              },
+              // export function Index () {}
+              Decl::Fn(FnDecl { function, ..}) => {
+                self.enable_nesting_for_function(function);
+              }
+              _ => ()
+            }
+          },
+          ModuleItem::Stmt(Stmt::Decl(Decl::Class(ClassDecl { class, .. }))) => {
+            // class Index {}
+            self.enable_nesting_for_class(class);
+          },
+          ModuleItem::Stmt(Stmt::Decl(Decl::Fn(FnDecl { function, .. }))) => {
+            // function Index () {}
+            self.enable_nesting_for_function(function);
+          },
+          ModuleItem::Stmt(Stmt::Decl(Decl::Var(var_decl))) => {
+            var_decl.decls.iter_mut().for_each(|decl| {
+              match &mut decl.init {
+                Some(init) => {
+                  match &mut **init {
+                    Expr::Fn(FnExpr { function, .. }) => {
+                      self.enable_nesting_for_function(function);
+                    },
+                    Expr::Arrow(ArrowExpr { body, .. }) => {
+                      // Todo: support arrow funciton
+                    },
+                    _ => ()
+                  }
+                },
+                None => (),
+              }
+            })
           }
+          _ => ()
         }
+      }
     }
     if last_import_index != 0 {
       last_import_index += 1;

@@ -9,7 +9,7 @@ use swc_atoms::Atom;
 use swc_common::DUMMY_SP;
 use swc_ecma_ast::{Expr, Ident, KeyValueProp, Lit, ObjectLit, Prop, PropName, PropOrSpread};
 
-use crate::{style_propetries::unit::{generate_expr_by_length_value, Platform}, utils::to_camel_case};
+use crate::{generate_expr_by_length_percentage, style_propetries::unit::{generate_expr_by_length_value, Platform}, utils::to_camel_case};
 
 
 #[derive(Debug, Clone)]
@@ -35,17 +35,12 @@ impl Translate {
 
     [("x", &self.x), ("y", &self.y)].into_iter().for_each(|item| {
       if let (name, Some(side)) = item.borrow() {
-        match &side {
-          DimensionPercentage::Dimension(value) => {
-            props.push(
-              PropOrSpread::Prop(Box::new(Prop::KeyValue(KeyValueProp {
-                key: PropName::Ident(Ident::new(Atom::new(*name), DUMMY_SP)),
-                value: Box::new(generate_expr_by_length_value(value, Platform::Harmony))
-              })))
-            );
-          },
-          _ => {}
-        }
+        props.push(
+          PropOrSpread::Prop(Box::new(Prop::KeyValue(KeyValueProp {
+            key: PropName::Ident(Ident::new(Atom::new(*name), DUMMY_SP)),
+            value: Box::new(generate_expr_by_length_percentage!(side, Platform::Harmony))
+          })))
+        );
       }
     });
 

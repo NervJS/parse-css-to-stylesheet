@@ -2,7 +2,7 @@
 
 use lightningcss::properties::{Property, display::{Display::{Keyword, Pair}, DisplayKeyword, DisplayInside}};
 
-use crate::generate_expr_lit_str;
+use crate::{generate_expr_lit_str, generate_invalid_expr};
 
 use super::{traits::ToExpr, unit::PropertyTuple};
 
@@ -54,7 +54,7 @@ impl ToExpr for Display {
       match &self.value {
         EnumValue::None => generate_expr_lit_str!("none"),
         EnumValue::Flex => generate_expr_lit_str!("flex"),
-        EnumValue::Invalid => generate_expr_lit_str!("flex"),
+        EnumValue::Invalid => generate_invalid_expr!(),
       }
     )
   }
@@ -65,7 +65,7 @@ impl ToExpr for Display {
       match &self.value {
         EnumValue::None => generate_expr_lit_str!("none"),
         EnumValue::Flex => generate_expr_lit_str!("flex"),
-        EnumValue::Invalid => generate_expr_lit_str!("flex"),
+        EnumValue::Invalid => generate_invalid_expr!(),
       }
     )
   }

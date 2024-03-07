@@ -12,6 +12,7 @@ pub struct StyleData<'i> {
   pub style_record: Rc<RefCell<HashMap<SpanKey, Vec<(String, Property<'i>)>>>>,
   pub pesudo_style_record: Rc<RefCell<HashMap<SpanKey, Vec<(String, Vec<(String, Property<'i>)>)>>>>,
   pub all_style: Rc<RefCell<HashMap<String, StyleValue>>>,
+  pub has_nesting: bool
 }
 
 
@@ -97,7 +98,9 @@ impl<'i> StyleParser<'i> {
     let mut style_record = HashMap::new();
     let mut pesudo_style_record = HashMap::new();
     let mut final_all_style = self.calc_style_record(&mut all_style);
-    
+    // 是否含有嵌套选择器
+    let mut has_nesting = false;
+
     // final_all_style 转换为驼峰命名
     let mut final_all_style = final_all_style.iter_mut().map(|(selector, style_value)| {
       let properties = style_value.declaration.declarations.iter().map(|property| {
@@ -114,6 +117,10 @@ impl<'i> StyleParser<'i> {
         )
       })
       .collect::<Vec<(_, _)>>(); // Specify the lifetime of the tuple elements to match the input data
+      // 判断是否含有嵌套选择器
+      if selector.contains(" ") {
+        has_nesting = true
+      }
       (selector.to_owned(), properties)
     })
     .collect::<Vec<(_, _)>>();
@@ -192,6 +199,7 @@ impl<'i> StyleParser<'i> {
       style_record: Rc::new(RefCell::new(final_style_record)),
       pesudo_style_record: Rc::new(RefCell::new(final_pesudo_style_record)),
       all_style: Rc::new(RefCell::new(final_all_style)),
+      has_nesting
     }
   }
 

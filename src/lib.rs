@@ -41,7 +41,7 @@ pub fn parse(component: String, styles: Vec<String>, options: ParseOptions) -> S
     _ => Platform::Harmony
   };
 
-  let is_enable_nesting = options.is_enable_nesting.map_or(false, |item| item);
+  let mut is_enable_nesting = options.is_enable_nesting.map_or(false, |item| item);
 
   // 解析组件文件
   let cm: Lrc<SourceMap> = Default::default();
@@ -54,6 +54,11 @@ pub fn parse(component: String, styles: Vec<String>, options: ParseOptions) -> S
   let mut style_parser = StyleParser::new(&document, platform.clone());
   style_parser.parse(&css);
   let style_data = style_parser.calc();
+
+  // 判断计算的结果是否会含有嵌套选择器
+  if is_enable_nesting {
+    is_enable_nesting = style_data.has_nesting;
+  }
 
   let program = Rc::new(RefCell::new(document.program.as_ref().unwrap().clone()));
   let jsx_record = Rc::new(RefCell::new(document.jsx_record.as_ref().unwrap().clone()));

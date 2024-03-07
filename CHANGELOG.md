@@ -1,3 +1,16 @@
+## [0.0.34](https://github.com/NervJS/parse-css-to-stylesheet/compare/v0.0.33...v0.0.34) (2024-03-06)
+
+
+### Features
+
+* 给组件返回值包裹用于层叠的函数 ([aa0c128](https://github.com/NervJS/parse-css-to-stylesheet/commit/aa0c128d1b21d1ceff084ee471cd91dfa4dc7939))
+* 完善组件返回值包裹用于层叠的函数 ([4c15e38](https://github.com/NervJS/parse-css-to-stylesheet/commit/4c15e380fe2ef805c485a7313c84fbbc031e16e0))
+* 新增paser配置 ([fca94e6](https://github.com/NervJS/parse-css-to-stylesheet/commit/fca94e65f6e92e1bcf54f37f84fd2a709590d25a))
+* 增加嵌套拆分逻辑 ([4af4b9a](https://github.com/NervJS/parse-css-to-stylesheet/commit/4af4b9ad0509b815041141cdb943b61eca217d18))
+* 增加权重逻辑 ([a5bb785](https://github.com/NervJS/parse-css-to-stylesheet/commit/a5bb7859dcd15b1fd2dd0bc5df4005adb5fbaaea))
+
+
+
 ## [0.0.33](https://github.com/NervJS/parse-css-to-stylesheet/compare/v0.0.32...v0.0.33) (2024-03-05)
 
 

@@ -440,35 +440,45 @@ impl ModuleMutVisitor {
 }
 
 impl ModuleMutVisitor {
-  fn get_cascading_visitor (&self) -> impl VisitMut {
+  fn get_nesting_visitor (&self) -> impl VisitMut {
     struct MyVisitor;
     impl VisitMut for MyVisitor {
       fn visit_mut_function(&mut self, _: &mut Function) {}
       fn visit_mut_arrow_expr(&mut self, _: &mut ArrowExpr) {}
       fn visit_mut_return_stmt(&mut self, stmt: &mut ReturnStmt) {
         let arg = &mut stmt.arg;
-        if arg.is_some() {
-          let expr = arg.take().unwrap();
-          *arg = Some(Box::new(Expr::Call(CallExpr {
-            span: DUMMY_SP,
-            callee: Callee::Expr(Box::new(Expr::Ident(quote_ident!(COMBINE_NESTING_STYLE)))),
-            args: vec![
-              ExprOrSpread { expr, spread: None },
-              ExprOrSpread { expr: Box::new(Expr::Call(CallExpr {
-                span: DUMMY_SP,
-                callee: Callee::Expr(Box::new(Expr::Ident(quote_ident!(NESTING_STYLE)))),
-                args: vec![],
-                type_args: None
-              })), spread: None }
-            ],
-            type_args: None,
-          })))
+        if let Some(expr_in_box) = arg {
+          let is_return_jsx_like = match &mut **expr_in_box {
+            Expr::JSXElement(_) |
+            Expr::JSXFragment(_) |
+            Expr::JSXMember(_) => {
+              true
+            },
+            _ => false
+          };
+          if is_return_jsx_like {
+            let expr = arg.take().unwrap();
+            *arg = Some(Box::new(Expr::Call(CallExpr {
+              span: DUMMY_SP,
+              callee: Callee::Expr(Box::new(Expr::Ident(quote_ident!(COMBINE_NESTING_STYLE)))),
+              args: vec![
+                ExprOrSpread { expr, spread: None },
+                ExprOrSpread { expr: Box::new(Expr::Call(CallExpr {
+                  span: DUMMY_SP,
+                  callee: Callee::Expr(Box::new(Expr::Ident(quote_ident!(NESTING_STYLE)))),
+                  args: vec![],
+                  type_args: None
+                })), spread: None }
+              ],
+              type_args: None,
+            })))
+          }
         }
       }
     }
     MyVisitor {}
   }
-  fn enable_cascading_for_class (&self, class: &mut Box<Class>) {
+  fn enable_nesting_for_class (&self, class: &mut Box<Class>) {
     let render_function = class.body.iter_mut().find(|item| {
       // Todo: support ClassProperty
       if let ClassMember::Method(ClassMethod { key, .. }) = item {
@@ -478,11 +488,11 @@ impl ModuleMutVisitor {
     });
     if render_function.is_some() {
       let body = &mut render_function.unwrap().as_mut_method().unwrap().function;
-      body.visit_mut_children_with(&mut self.get_cascading_visitor());
+      body.visit_mut_children_with(&mut self.get_nesting_visitor());
     };
   }
-  fn enable_cascading_for_function (&self, body: &mut Box<Function>) {
-    body.visit_mut_children_with(&mut &mut self.get_cascading_visitor());
+  fn enable_nesting_for_function (&self, body: &mut Box<Function>) {
+    body.visit_mut_children_with(&mut &mut self.get_nesting_visitor());
   }
 }
 
@@ -562,35 +572,67 @@ impl VisitMut for ModuleMutVisitor {
     // 将 inner_style_stmt 插入到 module 的最后一条 import 语句之后
     let mut last_import_index = 0;
     for (index, stmt) in module.body.iter_mut().enumerate() {
-      if stmt.is_module_decl() {
-        let module_decl = stmt.as_mut_module_decl().unwrap();
-        if let ModuleDecl::Import(_) = module_decl {
-          last_import_index = index;
-        }
+      if let ModuleItem::ModuleDecl(ModuleDecl::Import(_)) = stmt {
+        last_import_index = index;
+      }
         // 开启层叠功能
         if self.is_enable_nesting {
-          match module_decl {
-            ModuleDecl::ExportDefaultDecl(ExportDefaultDecl { decl, .. }) => {
+          match stmt {
+            ModuleItem::ModuleDecl(ModuleDecl::ExportDefaultDecl(ExportDefaultDecl { decl, .. })) => {
               match decl {
-                // export defualt class {}
+                // export defualt class Index {}
                 DefaultDecl::Class(ClassExpr { class, .. }) => {
-                  self.enable_cascading_for_class(class);
+                  self.enable_nesting_for_class(class);
                 },
-                // export defualt function () {}
+                // export defualt function Index () {}
                 DefaultDecl::Fn(FnExpr { function, ..}) => {
-                  self.enable_cascading_for_function(function);
+                  self.enable_nesting_for_function(function);
                 }
                 _ => ()
               }
             },
-            // export default Index
-            ModuleDecl::ExportDefaultExpr(ExportDefaultExpr { expr, .. }) => {
-              // Todo: suport ExportDefaultExpr
+            ModuleItem::ModuleDecl(ModuleDecl::ExportDecl(ExportDecl { decl, .. })) => {
+              match decl {
+                // export class Index {}
+                Decl::Class(ClassDecl { class, .. }) => {
+                  self.enable_nesting_for_class(class);
+                },
+                // export function Index () {}
+                Decl::Fn(FnDecl { function, ..}) => {
+                  self.enable_nesting_for_function(function);
+                }
+                _ => ()
+              }
             },
+            ModuleItem::Stmt(Stmt::Decl(Decl::Class(ClassDecl { class, .. }))) => {
+              // class Index {}
+              self.enable_nesting_for_class(class);
+            },
+            ModuleItem::Stmt(Stmt::Decl(Decl::Fn(FnDecl { function, .. }))) => {
+              // function Index () {}
+              self.enable_nesting_for_function(function);
+            },
+            ModuleItem::Stmt(Stmt::Decl(Decl::Var(var_decl))) => {
+              var_decl.decls.iter_mut().for_each(|decl| {
+                match &mut decl.init {
+                  Some(init) => {
+                    match &mut **init {
+                      Expr::Fn(FnExpr { function, .. }) => {
+                        self.enable_nesting_for_function(function);
+                      },
+                      Expr::Arrow(ArrowExpr { body, .. }) => {
+                        // Todo: support arrow funciton
+                      },
+                      _ => ()
+                    }
+                  },
+                  None => (),
+                }
+              })
+            }
             _ => ()
           }
         }
-      }
     }
     if last_import_index != 0 {
       last_import_index += 1;

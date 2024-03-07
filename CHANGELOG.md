@@ -1,3 +1,13 @@
+## [0.0.35](https://github.com/NervJS/parse-css-to-stylesheet/compare/v0.0.34...v0.0.35) (2024-03-07)
+
+
+### Bug Fixes
+
+* 当返回值为 JSX 时才处理层叠 ([d2bbcc8](https://github.com/NervJS/parse-css-to-stylesheet/commit/d2bbcc84b6a07a1feabc3720f9e4d8cb8255710f))
+* 修复嵌套和伪类的bug ([feba800](https://github.com/NervJS/parse-css-to-stylesheet/commit/feba800e7cab86c3b99241b8a844c67c59503905))
+
+
+
 ## [0.0.34](https://github.com/NervJS/parse-css-to-stylesheet/compare/v0.0.33...v0.0.34) (2024-03-06)
 
 

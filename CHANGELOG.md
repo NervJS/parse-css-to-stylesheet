@@ -1,3 +1,13 @@
+## [0.0.36](https://github.com/NervJS/parse-css-to-stylesheet/compare/v0.0.35...v0.0.36) (2024-03-12)
+
+
+### Features
+
+* 修改文档 ([6987591](https://github.com/NervJS/parse-css-to-stylesheet/commit/6987591858e0e9b847b109fb37b4e0065afc7564))
+* 支持多类选择器、修复rgba等小问题 ([0f3648b](https://github.com/NervJS/parse-css-to-stylesheet/commit/0f3648b81cb1e895681c9131c104b2cd1cd95382))
+
+
+
 ## [0.0.35](https://github.com/NervJS/parse-css-to-stylesheet/compare/v0.0.34...v0.0.35) (2024-03-07)
 
 

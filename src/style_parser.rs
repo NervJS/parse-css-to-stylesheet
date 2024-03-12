@@ -9,7 +9,6 @@ use super::parse_style_properties::parse_style_properties;
 pub type StyleValue = Vec<StyleValueType>;
 
 pub struct StyleData<'i> {
-  pub style_record: Rc<RefCell<HashMap<SpanKey, Vec<(String, Property<'i>)>>>>,
   pub pesudo_style_record: Rc<RefCell<HashMap<SpanKey, Vec<(String, Vec<(String, Property<'i>)>)>>>>,
   pub all_style: Rc<RefCell<HashMap<String, StyleValue>>>,
   pub has_nesting: bool
@@ -46,7 +45,7 @@ impl<'i> Visitor<'i> for StyleVisitor<'i> {
         let selectors_str = style.selectors.to_string();
         let selectors: Vec<&str> = selectors_str.split(",").collect::<Vec<&str>>();
         for index in 0..selectors.len() {
-          let selector = selectors[index].trim().replace(".", "");
+          let selector = selectors[index].trim().to_string();
           let mut all_style = self.all_style.borrow_mut();
           let decorations = all_style.iter_mut().find(|(id, _)| id == &selector);
           if let Some((_, declarations)) = decorations {
@@ -118,7 +117,7 @@ impl<'i> StyleParser<'i> {
       })
       .collect::<Vec<(_, _)>>(); // Specify the lifetime of the tuple elements to match the input data
       // 判断是否含有嵌套选择器
-      if selector.contains(" ") {
+      if selector.contains(" ") || selector.chars().filter(|&c| c == '.').count() > 1 {
         has_nesting = true
       }
       (selector.to_owned(), properties)
@@ -168,35 +167,9 @@ impl<'i> StyleParser<'i> {
     })
     .collect::<HashMap<_, _>>();
 
-
-    let final_style_record = style_record
-      .iter_mut()
-      .map(|(selector, style_value)| {
-        (
-          selector.to_owned(),
-          style_value
-            .iter_mut()
-            .reduce(|a, b| {
-              for (key, value) in b.iter() {
-                let has_property_index = a.iter().position(|property| property.0 == key.to_owned());
-                if let Some(index) = has_property_index {
-                  a[index] = (key.to_owned(), value.clone());
-                } else {
-                  a.push((key.to_owned(), value.clone()));
-                }
-              }
-              a
-            })
-            .unwrap()
-            .to_owned()
-        )
-      })
-      .collect::<HashMap<_, _>>();
-
-      let final_pesudo_style_record = pesudo_style_record;
+    let final_pesudo_style_record = pesudo_style_record;
 
     StyleData {
-      style_record: Rc::new(RefCell::new(final_style_record)),
       pesudo_style_record: Rc::new(RefCell::new(final_pesudo_style_record)),
       all_style: Rc::new(RefCell::new(final_all_style)),
       has_nesting

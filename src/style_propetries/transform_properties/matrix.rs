@@ -48,48 +48,49 @@ impl Matrix {
       m33: 1.0,
     }
   }
-  pub fn to_expr(&self) -> Vec<Expr> {
+  
+  // pub fn to_expr(&self) -> Vec<Expr> {
     
-    let expr = Expr::Object(ObjectLit {
-      span: DUMMY_SP,
-      props: vec![
-        PropOrSpread::Prop(Box::new(Prop::KeyValue(KeyValueProp {
-          key: PropName::Ident(Ident::new("type".into(), DUMMY_SP)),
-          value: Expr::Lit(Lit::Str(swc_ecma_ast::Str {
-            span: DUMMY_SP,
-            value: "Matrix".into(),
-            raw: None
-          })).into(),
-        }))),
-        PropOrSpread::Prop(Box::new(Prop::KeyValue(KeyValueProp {
-          key: PropName::Ident(Ident::new("value".into(), DUMMY_SP)),
-          value: Expr::Array(ArrayLit {
-            span: DUMMY_SP,
-            elems: vec![
-              Some(generate_expr_lit_num!(self.m00 as f64).into()),
-              Some(generate_expr_lit_num!(self.m01 as f64).into()),
-              Some(generate_expr_lit_num!(self.m02 as f64).into()),
-              Some(generate_expr_lit_num!(self.m03 as f64).into()),
-              Some(generate_expr_lit_num!(self.m10 as f64).into()),
-              Some(generate_expr_lit_num!(self.m11 as f64).into()),
-              Some(generate_expr_lit_num!(self.m12 as f64).into()),
-              Some(generate_expr_lit_num!(self.m13 as f64).into()),
-              Some(generate_expr_lit_num!(self.m20 as f64).into()),
-              Some(generate_expr_lit_num!(self.m21 as f64).into()),
-              Some(generate_expr_lit_num!(self.m22 as f64).into()),
-              Some(generate_expr_lit_num!(self.m23 as f64).into()),
-              Some(generate_expr_lit_num!(self.m30 as f64).into()),
-              Some(generate_expr_lit_num!(self.m31 as f64).into()),
-              Some(generate_expr_lit_num!(self.m32 as f64).into()),
-              Some(generate_expr_lit_num!(self.m33 as f64).into()),
-            ],
-          })
-          .into(),
-        }))),
-      ]
-    });
-    vec![expr]
-  }
+  //   let expr = Expr::Object(ObjectLit {
+  //     span: DUMMY_SP,
+  //     props: vec![
+  //       PropOrSpread::Prop(Box::new(Prop::KeyValue(KeyValueProp {
+  //         key: PropName::Ident(Ident::new("type".into(), DUMMY_SP)),
+  //         value: Expr::Lit(Lit::Str(swc_ecma_ast::Str {
+  //           span: DUMMY_SP,
+  //           value: "Matrix".into(),
+  //           raw: None
+  //         })).into(),
+  //       }))),
+  //       PropOrSpread::Prop(Box::new(Prop::KeyValue(KeyValueProp {
+  //         key: PropName::Ident(Ident::new("value".into(), DUMMY_SP)),
+  //         value: Expr::Array(ArrayLit {
+  //           span: DUMMY_SP,
+  //           elems: vec![
+  //             Some(generate_expr_lit_num!(self.m00 as f64).into()),
+  //             Some(generate_expr_lit_num!(self.m01 as f64).into()),
+  //             Some(generate_expr_lit_num!(self.m02 as f64).into()),
+  //             Some(generate_expr_lit_num!(self.m03 as f64).into()),
+  //             Some(generate_expr_lit_num!(self.m10 as f64).into()),
+  //             Some(generate_expr_lit_num!(self.m11 as f64).into()),
+  //             Some(generate_expr_lit_num!(self.m12 as f64).into()),
+  //             Some(generate_expr_lit_num!(self.m13 as f64).into()),
+  //             Some(generate_expr_lit_num!(self.m20 as f64).into()),
+  //             Some(generate_expr_lit_num!(self.m21 as f64).into()),
+  //             Some(generate_expr_lit_num!(self.m22 as f64).into()),
+  //             Some(generate_expr_lit_num!(self.m23 as f64).into()),
+  //             Some(generate_expr_lit_num!(self.m30 as f64).into()),
+  //             Some(generate_expr_lit_num!(self.m31 as f64).into()),
+  //             Some(generate_expr_lit_num!(self.m32 as f64).into()),
+  //             Some(generate_expr_lit_num!(self.m33 as f64).into()),
+  //           ],
+  //         })
+  //         .into(),
+  //       }))),
+  //     ]
+  //   });
+  //   vec![expr]
+  // }
 
   pub fn to_rn_expr(&self) -> Vec<Expr> {
     vec![

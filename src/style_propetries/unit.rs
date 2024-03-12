@@ -2,7 +2,7 @@ use lightningcss::{values::length::LengthValue, traits::ToCss, stylesheet::Print
 use regex::Regex;
 use swc_common::DUMMY_SP;
 use swc_ecma_ast::{ExprOrSpread, Expr,  Callee, Ident, CallExpr, Lit, Number};
-use crate::{generate_expr_lit_num, generate_expr_lit_str, constants::{RN_CONVERT_STYLE_PX_FN, CONVERT_STYLE_PX_FN, RN_CONVERT_STYLE_VU_FN}};
+use crate::{constants::{CONVERT_STYLE_PX_FN, RN_CONVERT_STYLE_PX_FN, RN_CONVERT_STYLE_VU_FN}, generate_expr_lit_num, generate_expr_lit_str, utils::fix_rgba};
 
 #[derive(Debug, Clone, PartialEq)]
 pub enum Platform {
@@ -197,7 +197,7 @@ pub fn generate_expr_with_css_input(input: String, platform: Platform) -> Expr {
 // 处理将color关键字转换为hex
 // 参考颜色关键字：https://www.w3.org/TR/css-color-3/#svg-color
 pub fn convert_color_keywords_to_hex(color: String) -> String {
-  match color.as_str() {
+  let c = match color.as_str() {
     "aliceblue" => "#F0F8FF".to_string(),
     "antiquewhite" => "#FAEBD7".to_string(),
     "aqua" => "#00FFFF".to_string(),
@@ -347,5 +347,7 @@ pub fn convert_color_keywords_to_hex(color: String) -> String {
     "yellowgreen" => "#9ACD32".to_string(),
     "currentColor" => "".to_string(),
     _ => color
-  }
+  };
+
+  fix_rgba(c)
 }

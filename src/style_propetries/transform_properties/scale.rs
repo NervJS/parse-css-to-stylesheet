@@ -29,7 +29,7 @@ impl Scale {
     }
   }
 
-  pub fn to_expr(&self) -> Vec<Expr> {
+  pub fn to_expr(&self) -> PropOrSpread {
 
     let mut props = vec![];
 
@@ -49,30 +49,14 @@ impl Scale {
       }
     });
 
-    let expr = Expr::Object(ObjectLit {
-      span: DUMMY_SP,
-      props: vec![
-        PropOrSpread::Prop(Box::new(Prop::KeyValue(KeyValueProp {
-          key: PropName::Ident(Ident::new("type".into(), DUMMY_SP)),
-          value: Expr::Lit(Lit::Str(swc_ecma_ast::Str {
-            span: DUMMY_SP,
-            value: "Scale".into(),
-            raw: None
-          })).into(),
-        }))),
-        PropOrSpread::Prop(Box::new(Prop::KeyValue(KeyValueProp {
-          key: PropName::Ident(Ident::new("value".into(), DUMMY_SP)),
-          value: Expr::Object(ObjectLit {
-            span: DUMMY_SP,
-            props,
-          })
-          .into(),
-        }))),
-      ]
-    });
-
-    vec![expr]
-    
+    PropOrSpread::Prop(Box::new(Prop::KeyValue(KeyValueProp {
+      key: PropName::Ident(Ident::new("Scale".into(), DUMMY_SP)),
+      value: Expr::Object(ObjectLit {
+        span: DUMMY_SP,
+        props,
+      })
+      .into(),
+    })))
   }
 
   pub fn to_rn_expr(&self) -> Vec<Expr> {

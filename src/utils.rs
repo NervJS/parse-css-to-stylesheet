@@ -66,9 +66,9 @@ pub fn to_kebab_case(s: &str) -> String {
 
 pub fn prefix_style_key(s: String, platform: Platform) -> String {
   match platform {
-    Platform::Harmony => {
-      format!("{}{}", CONVERT_STYLE_PREFIX, s)
-    },
+    // Platform::Harmony => {
+    //   format!("{}{}", CONVERT_STYLE_PREFIX, s)
+    // },
     _ => s.to_string()
   }
 }
@@ -145,11 +145,11 @@ pub fn get_callee_attributes (callee: &CallExpr) -> HashMap<String, Box<Expr>> {
   attributes
 }
 
-pub fn fix_rgba(input: &str) -> String {
+pub fn fix_rgba(input: String) -> String {
   // 定义匹配 rgba 格式的正则表达式
   let re = Regex::new(r"rgba\((\d+), (\d+), (\d+), (\.\d+)\)").unwrap();
   // 使用正则表达式进行替换
-  let result = re.replace_all(input, |caps: &regex::Captures| {
+  let result = re.replace_all(input.as_str(), |caps: &regex::Captures| {
       // 从捕获组获取每个数字部分
       let r = &caps[1];
       let g = &caps[2];
@@ -164,20 +164,14 @@ pub fn fix_rgba(input: &str) -> String {
   result.into()
 }
 
-pub fn color_string(value: &Property) -> String {
-  value
-    .value_to_css_string(PrinterOptions {
-      minify: false,
-      targets: Targets {
-        include: Features::HexAlphaColors,
-        ..Targets::default()
-      },
-      ..PrinterOptions::default()
-    }).unwrap()
+#[derive(Debug, Clone)]
+pub enum TSelector {
+  String(String),
+  Array(Vec<String>),
 }
 
 // 分割选择器
-pub fn split_selector(selector: &str) -> Vec<String> {
+pub fn split_selector(selector: &str) -> Vec<TSelector> {
   let mut result = Vec::new();
     let mut current_word = String::new();
     let mut buffer = String::new();
@@ -185,31 +179,48 @@ pub fn split_selector(selector: &str) -> Vec<String> {
     for c in selector.chars() {
         if c == ' ' || c == '>' || c == '+' || c == '~' {
             if !current_word.is_empty() {
-                result.push(current_word.clone());
+                result.push(split_classes(current_word.clone()));
                 current_word.clear();
             }
             
             buffer.push(c);
             if buffer == " > " || buffer == " + " || buffer == " ~ " {
-                result.push(buffer.clone());
+                result.push(TSelector::String(buffer.clone()));
                 buffer.clear();
             }
         } else {
             current_word.push(c);
             if buffer == ' '.to_string() {
-              result.push(buffer.clone());
+              result.push(TSelector::String(buffer.clone()));
               buffer.clear();
             }
         }
     }
 
     if !current_word.is_empty() {
-        result.push(current_word.clone());
+        result.push(split_classes(current_word.clone()));
     }
 
     if !buffer.is_empty() {
-        result.push(buffer.clone());
+        result.push(TSelector::String(buffer.clone()));
     }
 
     result
+}
+
+fn split_classes(input: String) -> TSelector {
+    // 定义一个多类选择器的正则表达式
+    let selector_regex = Regex::new(r"\.(\w+)").unwrap();
+
+    // 进行匹配
+    let mut matchs = vec![];
+    for class_capture in selector_regex.find_iter(input.as_str()) {
+        // 提取每个类
+        matchs.push(class_capture.as_str().to_string().replace(".", ""));
+    }
+    if matchs.len() > 1 {
+      TSelector::Array(matchs)
+    } else {
+      TSelector::String(input.replace(".", ""))
+    }
 }

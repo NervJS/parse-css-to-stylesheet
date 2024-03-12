@@ -29,7 +29,7 @@ impl Translate {
     }
   }
 
-  pub fn to_expr(&self) -> Vec<Expr> {
+  pub fn to_expr(&self) -> PropOrSpread {
 
     let mut props = vec![];
 
@@ -54,29 +54,14 @@ impl Translate {
       };
     }
 
-    let expr = Expr::Object(ObjectLit {
-      span: DUMMY_SP,
-      props: vec![
-        PropOrSpread::Prop(Box::new(Prop::KeyValue(KeyValueProp {
-          key: PropName::Ident(Ident::new("type".into(), DUMMY_SP)),
-          value: Expr::Lit(Lit::Str(swc_ecma_ast::Str {
-            span: DUMMY_SP,
-            value: "Translate".into(),
-            raw: None
-          })).into(),
-        }))),
-        PropOrSpread::Prop(Box::new(Prop::KeyValue(KeyValueProp {
-          key: PropName::Ident(Ident::new("value".into(), DUMMY_SP)),
-          value: Expr::Object(ObjectLit {
-            span: DUMMY_SP,
-            props,
-          })
-          .into(),
-        }))),
-      ]
-    });
-
-    vec![expr]
+    PropOrSpread::Prop(Box::new(Prop::KeyValue(KeyValueProp {
+      key: PropName::Ident(Ident::new("Translate".into(), DUMMY_SP)),
+      value: Expr::Object(ObjectLit {
+        span: DUMMY_SP,
+        props,
+      })
+      .into(),
+    })))
     
   }
 

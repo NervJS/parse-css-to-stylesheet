@@ -1,7 +1,7 @@
 use std::vec;
 
 use lightningcss::properties::{transform::Transform as LNTransform, Property};
-use swc_ecma_ast::{ArrayLit, Expr, ExprOrSpread};
+use swc_ecma_ast::{ArrayLit, Expr, ExprOrSpread, ObjectLit};
 
 use crate::style_propetries::traits::ToExpr;
 
@@ -29,32 +29,25 @@ impl ToExpr for Transform {
       self.value.iter().for_each(|item| {
         match item {
           Matrix4::Translates(value) => {
-            props.extend(value.to_expr());
+            props.push(value.to_expr());
           },
           Matrix4::Rotates(value) => {
-            props.extend(value.to_expr());
+            props.push(value.to_expr());
           }
           Matrix4::Scales(value) => {
-            props.extend(value.to_expr());
+            props.push(value.to_expr());
           }
-          Matrix4::Matrix(value) => {
-            props.extend(value.to_expr());
-          },
+          // Matrix4::Matrix(value) => {
+          //   props.extend(value.to_expr());
+          // },
           _ => {}
         }
       });
       PropertyTuple::One(
           "transform".to_string(),
-          Expr::Array(ArrayLit {
+          Expr::Object(ObjectLit {
             span: Default::default(),
-            elems: props.into_iter().map(Some).map(
-              |item| {
-                Some(ExprOrSpread {
-                  spread: None,
-                  expr: Box::new(item.unwrap()),
-                })
-              }
-            ).collect::<Vec<_>>(),
+            props:props,
           })
         )
     }

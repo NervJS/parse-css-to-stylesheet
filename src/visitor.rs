@@ -1,10 +1,6 @@
 
 use std::{
-  cell::{Ref, RefCell},
-  collections::{BTreeMap, HashMap, VecDeque},
-  hash::{Hash, Hasher},
-  rc::Rc,
-  vec,
+  borrow::Borrow, cell::{Ref, RefCell}, collections::{BTreeMap, HashMap, VecDeque}, hash::{Hash, Hasher}, rc::Rc, vec
 };
 
 use html5ever::{tendril::StrTendril, Attribute};
@@ -23,8 +19,8 @@ use swc_ecma_visit::{
 };
 
 use crate::{
-  constants::{CALC_DYMAMIC_STYLE, COMBINE_NESTING_STYLE, CONVERT_STYLE_PX_FN, INNER_STYLE, INNER_STYLE_DATA, NESTING_STYLE, NESTINT_STYLE_DATA, RN_CONVERT_STYLE_PX_FN, RN_CONVERT_STYLE_VU_FN}, parse_style_properties::parse_style_properties, scraper::Element, style_parser::StyleValue, style_propetries::{style_value_type::StyleValueType, traits::ToStyleValue, unit::{Platform, PropertyTuple}}, utils::{
-    create_qualname, get_callee_attributes, prefix_style_key, recursion_jsx_member, split_selector, to_camel_case, to_kebab_case
+  constants::{CALC_DYMAMIC_STYLE, CALC_STATIC_STYLE, COMBINE_NESTING_STYLE, CONVERT_STYLE_PX_FN, HM_STYLE, INNER_STYLE, INNER_STYLE_DATA, NESTING_STYLE, NESTINT_STYLE_DATA, RN_CONVERT_STYLE_PX_FN, RN_CONVERT_STYLE_VU_FN}, parse_style_properties::parse_style_properties, scraper::Element, style_parser::StyleValue, style_propetries::{style_value_type::StyleValueType, traits::ToStyleValue, unit::{Platform, PropertyTuple}}, utils::{
+    create_qualname, get_callee_attributes, prefix_style_key, recursion_jsx_member, split_selector, to_camel_case, to_kebab_case, TSelector
   }
 };
 
@@ -390,23 +386,21 @@ pub fn insert_import_module_decl(module: &mut Module, last_import_index: usize, 
         ModuleItem::ModuleDecl(ModuleDecl::Import(ImportDecl {
           span: DUMMY_SP,
           specifiers: vec![
+            // ImportSpecifier::Named(ImportNamedSpecifier {
+            //   span: DUMMY_SP,
+            //   local: Ident::new(CALC_DYMAMIC_STYLE.into(), DUMMY_SP),
+            //   imported: None,
+            //   is_type_only: false,
+            // }),
             ImportSpecifier::Named(ImportNamedSpecifier {
               span: DUMMY_SP,
-              local: Ident::new(CALC_DYMAMIC_STYLE.into(), DUMMY_SP),
-              // imported: Some(ModuleExportName::Ident(Ident::new(
-              //   "calcDynamicStyle".into(),
-              //   DUMMY_SP,
-              // ))),
+              local: Ident::new(CALC_STATIC_STYLE.into(), DUMMY_SP),
               imported: None,
               is_type_only: false,
             }),
             ImportSpecifier::Named(ImportNamedSpecifier {
               span: DUMMY_SP,
               local: Ident::new(CONVERT_STYLE_PX_FN.into(), DUMMY_SP),
-              // imported: Some(ModuleExportName::Ident(Ident::new(
-              //   CONVERT_STYLE_PX_FN.into(),
-              //   DUMMY_SP,
-              // ))),
               imported: None,
               is_type_only: false,
             }),
@@ -500,13 +494,13 @@ impl VisitMut for ModuleMutVisitor {
   noop_visit_mut_type!();
 
   fn visit_mut_module(&mut self, module: &mut Module) {
-    let binding = self.all_style.borrow();
+    let binding = self.all_style.borrow_mut();
     let style_entries: BTreeMap<_, _> = binding.iter().collect();
 
     // __inner_style__普通样式对象
     let mut final_style_entries: BTreeMap<String, Vec<PropOrSpread>> = BTreeMap::new();
     // __nesting_style__嵌套样式对象
-    let mut nesting_style_entries: BTreeMap<Vec<String>, Vec<PropOrSpread>> = BTreeMap::new();
+    let mut nesting_style_entries: BTreeMap<String, (Vec<TSelector>, Vec<PropOrSpread>)> = BTreeMap::new();
     
     // 合并伪类样式, .pesudo {}、.pesudo:after {}  => .pesudo: { xxx, ["::after"]: {xxx}}
     style_entries.iter().for_each(|(key, value)| {
@@ -544,27 +538,29 @@ impl VisitMut for ModuleMutVisitor {
 
       // 判断是否嵌套样式
       if self.platform == Platform::Harmony {
-        if insert_key.contains(" ") {
+        if insert_key.contains(" ") || insert_key.chars().filter(|&c| c == '.').count() > 1 {
           // 拆分选择器字符串，安装' ' 或 '>' 拆分，如：container > wrapper item => ['container', '>', 'wrapper', ' ', 'item']
           let selectors = split_selector(insert_key.as_str());
 
-          if let Some(props) = nesting_style_entries.get(&selectors) {
-            let mut new_insert_value = props.clone();
+          if let Some(props) = nesting_style_entries.get(&insert_key.clone()) {
+            let key = props.0.clone();
+            let mut new_insert_value = props.1.clone();
             new_insert_value.extend(insert_value);
-            nesting_style_entries.insert(selectors, new_insert_value);
+            nesting_style_entries.insert(insert_key, (key, new_insert_value));
           } else {
-            nesting_style_entries.insert(selectors, insert_value);
+            nesting_style_entries.insert(insert_key, (selectors, insert_value));
           }
           return;
         }
       }
 
-      if let Some(props) = final_style_entries.get(insert_key.as_str()) {
+      let _key = insert_key.replace(".", "");
+      if let Some(props) = final_style_entries.get(_key.as_str()) {
         let mut new_insert_value = props.clone();
         new_insert_value.extend(insert_value);
-        final_style_entries.insert(insert_key.to_string(), new_insert_value);
+        final_style_entries.insert(_key, new_insert_value);
       } else {
-        final_style_entries.insert(insert_key.to_string(), insert_value);
+        final_style_entries.insert(_key, insert_value);
       }
 
     });
@@ -674,10 +670,10 @@ impl VisitMut for ModuleMutVisitor {
     if self.is_enable_nesting {
       // 插入嵌套样式
 
-      let mut nestings = nesting_style_entries.into_iter().collect::<Vec<(Vec<String>, Vec<PropOrSpread>)>>();
+      let mut nestings = nesting_style_entries.into_iter().collect::<Vec<(String, (Vec<TSelector>, Vec<PropOrSpread>))>>();
       // 根据类的数量进行权重排序
       nestings.sort_by(|a, b| {
-        a.0.len().cmp(&b.0.len())
+        a.1.0.len().cmp(&b.1.0.len())
       });
 
       let nesting_style_object = Box::new(Expr::Array(ArrayLit {
@@ -693,10 +689,23 @@ impl VisitMut for ModuleMutVisitor {
                     key: PropName::Str(Str::from("selectors")),
                     value: Box::new(Expr::Array(ArrayLit {
                       span: DUMMY_SP,
-                      elems: key.iter().map(|prop| {
+                      elems: value.0.iter().map(|prop| {
                         Some(ExprOrSpread { 
                           spread: None, 
-                          expr: Box::new(Expr::Lit(Lit::Str(Str::from(prop.as_str()))))
+                          expr: Box::new(
+                            match prop {
+                                TSelector::String(str) => Expr::Lit(Lit::Str(Str::from(str.as_str()))),
+                                TSelector::Array(arr) => Expr::Array(ArrayLit {
+                                  span: DUMMY_SP,
+                                  elems: arr.iter().map(|prop| {
+                                    Some(ExprOrSpread { 
+                                      spread: None, 
+                                      expr: Box::new(Expr::Lit(Lit::Str(Str::from(prop.as_str()))))
+                                    })
+                                  }).collect::<Vec<Option<ExprOrSpread>>>()
+                                }),
+                            }
+                          )
                         })
                       }).collect::<Vec<Option<ExprOrSpread>>>()
                     })),
@@ -705,7 +714,7 @@ impl VisitMut for ModuleMutVisitor {
                     key: PropName::Str(Str::from("declaration")),
                     value: Box::new(Expr::Object(ObjectLit {
                       span: DUMMY_SP,
-                      props: value.to_vec()
+                      props: value.1.to_vec()
                     })),
                   })))
 
@@ -814,7 +823,6 @@ fn generate_stylesheet(fn_name: String, fn_data_name: String, style_object: Box<
 
 pub struct JSXMutVisitor<'i> {
   pub jsx_record: Rc<RefCell<JSXRecord>>,
-  pub style_record: Rc<RefCell<HashMap<SpanKey, Vec<(String, Property<'i>)>>>>,
   pub pesudo_style_record: Rc<RefCell<HashMap<SpanKey, Vec<(String, Vec<(String, Property<'i>)>)>>>>,
   pub platform: Platform
 }
@@ -822,13 +830,11 @@ pub struct JSXMutVisitor<'i> {
 impl<'i> JSXMutVisitor<'i> {
   pub fn new(
     jsx_record: Rc<RefCell<JSXRecord>>,
-    style_record: Rc<RefCell<HashMap<SpanKey, Vec<(String, Property<'i>)>>>>,
     pesudo_style_record: Rc<RefCell<HashMap<SpanKey, Vec<(String, Vec<(String, Property<'i>)>)>>>>,
     platform: Platform
   ) -> Self {
     JSXMutVisitor {
       jsx_record,
-      style_record,
       pesudo_style_record,
       platform
     }
@@ -852,7 +858,7 @@ impl<'i> JSXMutVisitor<'i> {
     return false
   }
 
-  fn get_jsx_element_or_callee_calss_value_and_dynamic_class_bool (&self, jsx_element_or_callee: &JSXElementOrJSXCallee) -> (Option<Expr>, bool) {
+  fn get_jsx_element_or_callee_calss_value_and_dynamic_class_styles (&self, jsx_element_or_callee: &JSXElementOrJSXCallee) -> (Option<Expr>, bool) {
     let mut has_dynamic_class = false;
     let mut class_attr_value = None;
     
@@ -905,7 +911,7 @@ impl<'i> JSXMutVisitor<'i> {
     (class_attr_value, has_dynamic_class)
   }
 
-  fn process_attribute_lit_value (&self, lit: &Lit, has_dynamic_class: bool, element: &Element, style_record: &HashMap<SpanKey, Vec<(String, Property<'i>)>>) -> Option<Vec<StyleValueType>> {
+  fn process_attribute_lit_value (&self, lit: &Lit, has_dynamic_class: bool) -> Option<Vec<StyleValueType>> {
     match lit {
       Lit::Str(str) => {
         if !has_dynamic_class {
@@ -916,11 +922,6 @@ impl<'i> JSXMutVisitor<'i> {
             .split(";")
             .map(|s| s.to_owned())
             .collect::<Vec<String>>();
-          if let Some(style_declaration) = style_record.get(&element.span) {
-            for (key, value) in style_declaration.iter() {
-              properties.insert(to_camel_case(key, false), value.clone());
-            }
-          }
           for property in style.iter() {
             let property = property
               .split(":")
@@ -956,50 +957,14 @@ impl<'i> JSXMutVisitor<'i> {
     return None;
   }
 
-  fn process_attribute_expr_value (&self, expr: &mut Expr, has_dynamic_class: bool, element: &Element, style_record: &HashMap<SpanKey, Vec<(String, Property<'i>)>>) -> bool {
-    let mut has_dynamic_style = false;
-    
+  fn process_attribute_expr_value (&self, expr: &mut Expr, has_dynamic_class: bool) -> (Vec<PropOrSpread>, Vec<PropOrSpread>) {
+    // 静态的style属性
+    let mut static_props = vec![];
+    // 动态的style属性
+    let mut dynamic_properties = vec![];
     match expr {
       Expr::Object(lit) => {
         if !has_dynamic_class {
-          let mut properties = Vec::new();
-          // 动态的style属性
-          let mut dynamic_properties = Vec::new();
-          if let Some(style_declaration) = style_record.get(&element.span) {
-            for declaration in style_declaration.iter() {
-              let mut has_property = false;
-              for prop in lit.props.iter_mut() {
-                match prop {
-                  PropOrSpread::Prop(prop) => match &mut **prop {
-                    Prop::KeyValue(key_value_prop) => {
-                      match &mut key_value_prop.key {
-                        PropName::Ident(ident) => {
-                          ident.sym = to_camel_case(
-                            ident.sym.to_string().as_str(),
-                            false,
-                          )
-                          .into();
-                          let property_id = ident.sym.to_string();
-                          if property_id == declaration.0.to_string() {
-                            has_property = true;
-                            break;
-                          }
-                        }
-                        _ => {}
-                      }
-                    }
-                    _ => {}
-                  },
-                  PropOrSpread::Spread(_) => {
-                    has_dynamic_style = true;
-                  }
-                }
-              }
-              if !has_property {
-                properties.push(declaration.clone());
-              }
-            }
-          }
           let deque = VecDeque::from(lit.props.clone());
           let mut temp_properties = HashMap::new();
           for p in deque.iter() {
@@ -1013,7 +978,6 @@ impl<'i> JSXMutVisitor<'i> {
                       _ => "".to_string()
                     },
                     _ => {
-                      has_dynamic_style = true;
                       dynamic_properties.push(p.clone());
                       "".to_string()
                     }
@@ -1047,26 +1011,20 @@ impl<'i> JSXMutVisitor<'i> {
                 _ => {}
               },
               PropOrSpread::Spread(_) => {
-                has_dynamic_style = true;
               }
             }
           }
           let mut temp_props = vec![];
 
-          if !has_dynamic_style {
-            for property in properties.iter() {
-              temp_props.push((property.0.to_string(), property.1.clone()));
-            }
-          }
           temp_props.extend(
             temp_properties
               .iter()
               .map(|(key, value)| (key.to_string(), value.clone())),
           );
-          let mut temp_props = parse_style_properties(&temp_props);
+          let temp_props = parse_style_properties(&temp_props);
 
-          let mut props = parse_style_values(temp_props, self.platform.clone());
-          props.sort_by(|a, b| {
+          static_props = parse_style_values(temp_props, self.platform.clone());
+          static_props.sort_by(|a, b| {
             let a = match a {
               PropOrSpread::Prop(prop) => match &**prop {
                 Prop::KeyValue(key_value_prop) => match &key_value_prop.key {
@@ -1091,19 +1049,16 @@ impl<'i> JSXMutVisitor<'i> {
           });
           lit.props.iter().for_each(|prop| {
             if let PropOrSpread::Spread(_) = prop {
-              props.push(prop.clone())
+              static_props.push(prop.clone())
             }
            });
-          props.extend(dynamic_properties);
-          lit.props = props;
         }
       }
       _ => {
-        has_dynamic_style = true;
       }
     }
 
-    has_dynamic_style
+    (static_props, dynamic_properties)
   }
 }
 
@@ -1112,15 +1067,18 @@ impl<'i> VisitMut for JSXMutVisitor<'i> {
 
   fn visit_mut_call_expr(&mut self, n: &mut CallExpr) {
     let mut has_style = false;
-    let mut has_dynamic_style = false;
-    let mut style_attr_value = None;
 
     if self.check_is_jsx_callee(n) {
+    
+      // 静态属性
+      let mut static_styles = vec![];
+      // 动态属性
+      let mut dynamic_styles = vec![];
+
       let span_key = SpanKey(n.span);
-      if let Some(element) = self.jsx_record.borrow().get(&span_key) {
-        let style_record = self.style_record.borrow();
+      if let Some(_) = self.jsx_record.borrow_mut().get(&span_key) {
         let jsx_element_or_callee = JSXElementOrJSXCallee::JSXCallee(&n);
-        let (class_attr_value, has_dynamic_class) = self.get_jsx_element_or_callee_calss_value_and_dynamic_class_bool(&jsx_element_or_callee);
+        let (class_attr_value, has_dynamic_class) = self.get_jsx_element_or_callee_calss_value_and_dynamic_class_styles(&jsx_element_or_callee);
 
         if let Some(attr) = n.args.get_mut(1) {
           if let Expr::Object(object) = &mut *attr.expr {
@@ -1134,20 +1092,17 @@ impl<'i> VisitMut for JSXMutVisitor<'i> {
                       // 只支持值为字符串、对象形式的 style
                       match expr {
                         Expr::Lit(lit) => {
-                          let value = self.process_attribute_lit_value(lit, has_dynamic_class, element, &self.style_record.borrow());
-
+                          let value = self.process_attribute_lit_value(lit, has_dynamic_class);
                           if let Some(value) = value {
-                            key_value_prop.value = Expr::Object(ObjectLit {
-                              span: DUMMY_SP,
-                              props: parse_style_values(value, self.platform.clone()),
-                            }).into();
+                            static_styles = parse_style_values(value, self.platform.clone());
                           }
                         }
                         _ => {
-                          let mut expr = &mut key_value_prop.value;
-                          has_dynamic_style = self.process_attribute_expr_value(expr, has_dynamic_class, element, &self.style_record.borrow());
-                          style_attr_value = Some((*expr).clone());
-                          
+                          let expr = &mut key_value_prop.value;
+                          // 解析出动态和静态style
+                          let (static_props, dynamic_props) = self.process_attribute_expr_value(expr, has_dynamic_class);
+                          static_styles = static_props;
+                          dynamic_styles = dynamic_props;
                         }
                       };
                     }
@@ -1158,200 +1113,12 @@ impl<'i> VisitMut for JSXMutVisitor<'i> {
           }
         }
 
-        if !has_dynamic_class && !has_dynamic_style {
-          if !has_style {
-            if let Some(style_declaration) = style_record.get(&element.span) {
-              let parsed_properties = parse_style_properties(&style_declaration);
-              let attrs = n.args.get_mut(1);
-              if let Some(attr) = attrs {
-                if let Expr::Object(object) = &mut *attr.expr {
-                  object.props.push(PropOrSpread::Prop(Box::new(Prop::KeyValue(KeyValueProp {
-                    key: PropName::Ident(Ident::new("style".into(), DUMMY_SP)),
-                    value: Box::new(Expr::Object(ObjectLit {
-                      span: DUMMY_SP,
-                      props: parse_style_values(parsed_properties, self.platform.clone())
-                    })),
-                  }))));
-                }
-              }
-            }
-          }
-        } else {
-          let fun_call_expr = Expr::Call(CallExpr {
-            span: DUMMY_SP,
-            callee: Callee::Expr(Box::new(Expr::Ident(Ident::new(
-              CALC_DYMAMIC_STYLE.into(),
-              DUMMY_SP,
-            )))),
-            args: vec![
-              ExprOrSpread::from(Box::new(Expr::Call(CallExpr {
-                span: DUMMY_SP,
-                callee: Callee::Expr(Box::new(Expr::Ident(Ident::new(
-                  INNER_STYLE.into(),
-                  DUMMY_SP,
-                )))),
-                type_args: None,
-                args: vec![]
-              }))),
-              match class_attr_value {
-                Some(value) => ExprOrSpread::from(Box::new(value)),
-                None => ExprOrSpread::from(Box::new(Expr::Lit(Lit::Null(Null { span: DUMMY_SP })))),
-              },
-              match style_attr_value {
-                Some(value) => ExprOrSpread::from(value),
-                None => ExprOrSpread::from(Box::new(Expr::Lit(Lit::Null(Null { span: DUMMY_SP })))),
-              },
-            ],
-            type_args: None,
-          });
-          if has_style {
-            if let Some(attr) = n.args.get_mut(1) {
-              let expr = &mut attr.expr;
-              if let Expr::Object(object) = &mut **expr {
-                for prop in object.props.iter_mut() {
-                  if let PropOrSpread::Prop(prop) = prop {
-                    if let Prop::KeyValue(key_value_prop) = &mut **prop {
-                      if let PropName::Ident(ident) = &key_value_prop.key {
-                        if ident.sym.to_string() == "style" {
-                          key_value_prop.value = Box::new(fun_call_expr.clone());
-                        }
-                      }
-                    }
-                  }
-                }
-              }
-            }
-          } else {
-            let attrs = n.args.get_mut(1);
-            if let Some(attr) = attrs {
-              if let Expr::Object(object) = &mut *attr.expr {
-                object.props.push(PropOrSpread::Prop(Box::new(Prop::KeyValue(KeyValueProp {
-                  key: PropName::Ident(Ident::new("style".into(), DUMMY_SP)),
-                  value: Box::new(fun_call_expr),
-                }))));
-              }
-            }
-          }
-        }
-      }
-    }
 
-    n.visit_mut_children_with(self);
-  }
-
-  fn visit_mut_jsx_element(&mut self, n: &mut JSXElement) {
-    let mut has_style = false;
-    let mut has_dynamic_style = false;
-    let mut style_attr_value = None;
-    let span_key = SpanKey(n.span);
-
-    if let Some(element) = self.jsx_record.borrow().get(&span_key) {
-      // 将 style_record 中的样式添加到 JSXElement 的 style 属性中
-      let style_record = self.style_record.borrow();
-      let pesudo_style_record = self.pesudo_style_record.borrow();
-      let jsx_element_or_callee = JSXElementOrJSXCallee::JSXElement(&n);
-      let (class_attr_value, has_dynamic_class) = self.get_jsx_element_or_callee_calss_value_and_dynamic_class_bool(&jsx_element_or_callee);
-
-      let attrs = &mut n.opening.attrs;
-      for attr in attrs.iter_mut() {
-        if let JSXAttrOrSpread::JSXAttr(attr) = attr {
-          if let JSXAttrName::Ident(ident) = &attr.name {
-            if ident.sym.to_string() == "style" {
-              has_style = true;
-              // 只支持值为字符串、对象形式的 style
-              match &mut attr.value {
-                Some(value) => {
-                  match value {
-                    JSXAttrValue::Lit(lit) => {
-                      let value = self.process_attribute_lit_value(lit, has_dynamic_class, element, &style_record);
-
-                      if let Some(value) = value {
-                        attr.value = Some(JSXAttrValue::JSXExprContainer(JSXExprContainer {
-                          span: DUMMY_SP,
-                          expr: JSXExpr::Expr(Box::new(Expr::Object(ObjectLit {
-                            span: DUMMY_SP,
-                            props: parse_style_values(value, self.platform.clone())
-                          }))),
-                        }));
-                      }
-                    }
-                    JSXAttrValue::JSXExprContainer(expr_container) => {
-                      match &mut expr_container.expr {
-                        JSXExpr::Expr(expr) => {
-                          has_dynamic_style = self.process_attribute_expr_value(expr, has_dynamic_class, element, &style_record);
-                          style_attr_value = Some((**expr).clone());
-                        }
-                        _ => {
-                          has_style = false;
-                        }
-                      }
-                    }
-                    JSXAttrValue::JSXElement(_) => {
-                      has_dynamic_style = true;
-                    }
-                    JSXAttrValue::JSXFragment(_) => {
-                      has_dynamic_style = true;
-                    }
-                  }
-                }
-                None => {
-                  has_style = false;
-                }
-              };
-            }
-          }
-        }
-      }
-    
-      // 如果没有 style 属性，且没有动态的 class 属性，将 style_record 中的样式添加到 JSXElement 的 style 属性中
-      if !has_dynamic_class && !has_dynamic_style {
-        if !has_style {
-          if let Some(style_declaration) = style_record.get(&element.span) {
-            let parsed_properties = parse_style_properties(&style_declaration);
-
-            let mut props = parse_style_values(parsed_properties, self.platform.clone());
-
-            // 插入伪类样式: style={{ height: 100px, width: 100px, ["::before"]: { height: 10px; }, ["::after"]: {...} }}
-            if let Some(style_declarations) = pesudo_style_record.get(&element.span) {
-              style_declarations.iter().for_each(|(selector, style_declaration)| {
-                let parsed_properties = parse_style_properties(&style_declaration);
-                props.push(PropOrSpread::Prop(Box::new(
-                  Prop::KeyValue(KeyValueProp {
-                    key: PropName::Computed(ComputedPropName {
-                      span: DUMMY_SP,
-                      expr: Box::new(Expr::Lit(Lit::Str(Str {
-                        span: DUMMY_SP,
-                        value: Atom::from(format!("::{}", selector)),
-                        raw: None,
-                      }))),
-                    }),
-                    value: Box::new(Expr::Object(ObjectLit {
-                      span: DUMMY_SP,
-                      props: parse_style_values(parsed_properties, self.platform.clone())
-                    })),
-                  })
-                )));
-              })
-            }
-
-            n.opening.attrs.push(JSXAttrOrSpread::JSXAttr(JSXAttr {
-              span: DUMMY_SP,
-              name: JSXAttrName::Ident(Ident::new("style".into(), DUMMY_SP)),
-              value: Some(JSXAttrValue::JSXExprContainer(JSXExprContainer {
-                span: DUMMY_SP,
-                expr: JSXExpr::Expr(Box::new(Expr::Object(ObjectLit {
-                  span: DUMMY_SP,
-                  props: props
-                }))),
-              })),
-            }));
-          }
-        }
-      } else {
+        // 插入静态style
         let fun_call_expr = Expr::Call(CallExpr {
           span: DUMMY_SP,
           callee: Callee::Expr(Box::new(Expr::Ident(Ident::new(
-            CALC_DYMAMIC_STYLE.into(),
+            CALC_STATIC_STYLE.into(),
             DUMMY_SP,
           )))),
           args: vec![
@@ -1368,37 +1135,205 @@ impl<'i> VisitMut for JSXMutVisitor<'i> {
               Some(value) => ExprOrSpread::from(Box::new(value)),
               None => ExprOrSpread::from(Box::new(Expr::Lit(Lit::Null(Null { span: DUMMY_SP })))),
             },
-            match style_attr_value {
-              Some(value) => ExprOrSpread::from(Box::new(value)),
-              None => ExprOrSpread::from(Box::new(Expr::Lit(Lit::Null(Null { span: DUMMY_SP })))),
-            },
+            match static_styles.len() > 0 {
+              true => Expr::Object(ObjectLit {
+                span: DUMMY_SP,
+                props: static_styles
+              }).into(),
+              false => Expr::Lit(Lit::Null(Null { span: DUMMY_SP })).into(),
+            }
+            
           ],
           type_args: None,
         });
-        if has_style {
-          for attr in &mut n.opening.attrs {
-            if let JSXAttrOrSpread::JSXAttr(attr) = attr {
-              if let JSXAttrName::Ident(ident) = &attr.name {
-                if ident.sym.to_string() == "style" {
-                  attr.value = Some(JSXAttrValue::JSXExprContainer(JSXExprContainer {
-                    span: DUMMY_SP,
-                    expr: JSXExpr::Expr(Box::new(fun_call_expr.clone())),
-                  }));
+        if let Some(attr) = n.args.get_mut(1) {
+          if let Expr::Object(object) = &mut *attr.expr {
+            // shift style 插入到前面
+            
+            object.props.insert(
+              0,
+              PropOrSpread::Prop(Box::new(Prop::KeyValue(KeyValueProp {
+                key: PropName::Ident(Ident::new(HM_STYLE.into(), DUMMY_SP)),
+                value: Box::new(fun_call_expr),
+              }))),
+            )
+          }
+        }
+      
+        // 插入动态style
+        if dynamic_styles.len() > 0 {
+          if !has_style {
+            if let Some(attr) = n.args.get_mut(1) {
+              if let Expr::Object(object) = &mut *attr.expr {
+                object.props.push(
+                  PropOrSpread::Prop(Box::new(Prop::KeyValue(KeyValueProp {
+                    key: PropName::Ident(Ident::new("style".into(), DUMMY_SP)),
+                    value: Box::new(Expr::Object(ObjectLit {
+                      span: DUMMY_SP,
+                      props: dynamic_styles.clone(),
+                    })),
+                  }))),
+                )
+              }
+            }
+          } else {
+            if let Some(attr) = n.args.get_mut(1) {
+              if let Expr::Object(object) = &mut *attr.expr {
+                for prop in object.props.iter_mut() {
+                  if let PropOrSpread::Prop(prop) = prop {
+                    if let Prop::KeyValue(key_value_prop) = &mut **prop {
+                      if let PropName::Ident(ident) = &key_value_prop.key {
+                        if ident.sym.to_string() == "style" {
+                          key_value_prop.value = Box::new(Expr::Object(ObjectLit {
+                            span: DUMMY_SP,
+                            props: dynamic_styles.clone()
+                          })); 
+                        }
+                      }
+                    }
+                  }
                 }
               }
             }
           }
-        } else {
-          n.opening.attrs.push(JSXAttrOrSpread::JSXAttr(JSXAttr {
+        }
+        
+      }
+    }
+
+    n.visit_mut_children_with(self);
+  }
+
+  fn visit_mut_jsx_element(&mut self, n: &mut JSXElement) {
+    let mut has_style = false;
+    let span_key = SpanKey(n.span);
+
+    if let Some(_) = self.jsx_record.borrow_mut().get(&span_key) {
+      // 将 style_record 中的样式添加到 JSXElement 的 style 属性中
+      let jsx_element_or_callee = JSXElementOrJSXCallee::JSXElement(&n);
+      let (class_attr_value, has_dynamic_class) = self.get_jsx_element_or_callee_calss_value_and_dynamic_class_styles(&jsx_element_or_callee);
+
+      // 静态属性
+      let mut static_styles = vec![];
+      // 动态属性
+      let mut dynamic_styles = vec![];
+
+      let attrs = &mut n.opening.attrs;
+      for attr in attrs.iter_mut() {
+        if let JSXAttrOrSpread::JSXAttr(attr) = attr {
+          if let JSXAttrName::Ident(ident) = &attr.name {
+            if ident.sym.to_string() == "style" {
+              has_style = true;
+              // 只支持值为字符串、对象形式的 style
+              match &mut attr.value {
+                Some(value) => {
+                  match value {
+                    JSXAttrValue::Lit(lit) => {
+                      let value = self.process_attribute_lit_value(lit, has_dynamic_class);
+                      if let Some(value) = value {
+                        static_styles = parse_style_values(value, self.platform.clone());
+                      }
+                    }
+                    JSXAttrValue::JSXExprContainer(expr_container) => {
+                      match &mut expr_container.expr {
+                        JSXExpr::Expr(expr) => {
+                          // 解析出动态和静态style
+                          let (static_props, dynamic_props) = self.process_attribute_expr_value(expr, has_dynamic_class);
+                          static_styles = static_props;
+                          dynamic_styles = dynamic_props;
+                        }
+                        _ => {
+                          has_style = false;
+                        }
+                      }
+                    }
+                    _ => {}
+                  }
+                }
+                None => {
+                  has_style = false;
+                }
+              };
+            }
+          }
+        }
+      }
+
+      // 插入静态style
+      let fun_call_expr = Expr::Call(CallExpr {
+        span: DUMMY_SP,
+        callee: Callee::Expr(Box::new(Expr::Ident(Ident::new(
+          CALC_STATIC_STYLE.into(),
+          DUMMY_SP,
+        )))),
+        args: vec![
+          ExprOrSpread::from(Box::new(Expr::Call(CallExpr {
+            span: DUMMY_SP,
+            callee: Callee::Expr(Box::new(Expr::Ident(Ident::new(
+              INNER_STYLE.into(),
+              DUMMY_SP,
+            )))),
+            type_args: None,
+            args: vec![]
+          }))),
+          match class_attr_value {
+            Some(value) => ExprOrSpread::from(Box::new(value)),
+            None => ExprOrSpread::from(Box::new(Expr::Lit(Lit::Null(Null { span: DUMMY_SP })))),
+          },
+          match static_styles.len() > 0 {
+            true => Expr::Object(ObjectLit {
+              span: DUMMY_SP,
+              props: static_styles
+            }).into(),
+            false => Expr::Lit(Lit::Null(Null { span: DUMMY_SP })).into(),
+          }
+          
+        ],
+        type_args: None,
+      });
+      n.opening.attrs.push(JSXAttrOrSpread::JSXAttr(JSXAttr {
+        span: DUMMY_SP,
+        name: JSXAttrName::Ident(Ident::new(HM_STYLE.into(), DUMMY_SP)),
+        value: Some(JSXAttrValue::JSXExprContainer(JSXExprContainer {
+          span: DUMMY_SP,
+          expr: JSXExpr::Expr(Box::new(fun_call_expr)),
+        })),
+      }));
+
+      // 插入动态style
+      if dynamic_styles.len() > 0 {
+        if !has_style {
+          n.opening.attrs.insert(0, JSXAttrOrSpread::JSXAttr(JSXAttr {
             span: DUMMY_SP,
             name: JSXAttrName::Ident(Ident::new("style".into(), DUMMY_SP)),
             value: Some(JSXAttrValue::JSXExprContainer(JSXExprContainer {
               span: DUMMY_SP,
-              expr: JSXExpr::Expr(Box::new(fun_call_expr)),
+              expr: JSXExpr::Expr(Box::new(Expr::Object(ObjectLit {
+                span: DUMMY_SP,
+                props: dynamic_styles
+              }))),
             })),
           }));
+        } else {
+          n.opening.attrs.iter_mut().for_each(|attr| {
+            if let JSXAttrOrSpread::JSXAttr(attr) = attr {
+              if let JSXAttrName::Ident(ident) = &attr.name {
+                if ident.sym.to_string() == "style" {
+                  let style = Some(JSXAttrValue::JSXExprContainer(JSXExprContainer {
+                    span: DUMMY_SP,
+                    expr: JSXExpr::Expr(Box::new(Expr::Object(ObjectLit {
+                      span: DUMMY_SP,
+                      props: dynamic_styles.clone()
+                    }))),
+                  }));
+                  attr.value = style;
+                }
+              }
+            }
+          });
         }
       }
+      
     }
     n.visit_mut_children_with(self);
   }

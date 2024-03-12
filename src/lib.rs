@@ -65,7 +65,6 @@ pub fn parse(component: String, styles: Vec<String>, options: ParseOptions) -> S
   let mut style_write = StyleWrite::new(
     program.clone(),
     jsx_record.clone(),
-    style_data.style_record.clone(),
     style_data.pesudo_style_record.clone(),
     style_data.all_style.clone(),
     is_enable_nesting,

@@ -4,7 +4,7 @@ use swc_ecma_ast::{Expr, Ident, KeyValueProp, MemberExpr, MemberProp, ObjectLit,
 
 use crate::{style_propetries::traits::ToExpr, generate_invalid_expr, generate_expr_lit_str, generate_prop_name};
 
-use super::unit::PropertyTuple;
+use super::unit::{convert_color_keywords_to_hex, PropertyTuple};
 
 
 #[derive(Debug, Clone)]
@@ -142,7 +142,7 @@ impl From<(String, &Property<'_>)> for TextDecoration {
           if c == "currentColor" {
             color = None
           } else {
-            color = Some(TextDecorationColor(c));
+            color = Some(TextDecorationColor(convert_color_keywords_to_hex(c)));
           }
         } else {
           color = None
@@ -198,7 +198,7 @@ impl From<(String, &Property<'_>)> for TextDecoration {
           if c == "currentColor" {
             color = None
           } else {
-            color = Some(TextDecorationColor(c));
+            color = Some(TextDecorationColor(convert_color_keywords_to_hex(c)));
           }
         } else {
           color = None

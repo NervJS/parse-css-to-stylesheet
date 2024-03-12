@@ -22,7 +22,7 @@ use swc_ecma_ast::{
 
 use crate::generate_invalid_expr;
 
-use super::{linear_gradient::{LinearGradientDirection, LinearGradientItem}, traits::ToExpr, unit::PropertyTuple};
+use super::{linear_gradient::{LinearGradientDirection, LinearGradientItem}, traits::ToExpr, unit::{convert_color_keywords_to_hex, PropertyTuple}};
 
 pub fn parse_background_image_item(image: &Image) -> Option<BackgroundImageKind> {
   match image {
@@ -40,7 +40,7 @@ pub fn parse_background_image_item(image: &Image) -> Option<BackgroundImageKind>
                 .clone()
                 .unwrap_or(DimensionPercentage::Dimension(LengthValue::Px(0.0)));
               color_stops.push((
-                color_stop
+                convert_color_keywords_to_hex(color_stop
                   .color
                   .to_css_string(PrinterOptions {
                     minify: false,
@@ -50,7 +50,7 @@ pub fn parse_background_image_item(image: &Image) -> Option<BackgroundImageKind>
                     },
                     ..PrinterOptions::default()
                   })
-                  .unwrap(),
+                  .unwrap()),
                 match &color_stop_position {
                   DimensionPercentage::Dimension(length) => {
                     length.to_css_string(PrinterOptions::default()).unwrap()

@@ -116,6 +116,8 @@ macro_rules! generate_expr_based_on_platform {
 #[macro_export]
 macro_rules! generate_color_property {
   ($class:ident, $( $property_name:ident ), *) => {
+    use $crate::utils::fix_rgba;
+
     #[derive(Debug, Clone)]
     pub struct $class {
       pub id: String,
@@ -126,7 +128,7 @@ macro_rules! generate_color_property {
       fn to_expr(&self) -> PropertyTuple {
         PropertyTuple::One(
           self.id.clone(),
-          swc_ecma_ast::Expr::Lit(swc_ecma_ast::Lit::Str(self.value.clone().into())).into()
+          swc_ecma_ast::Expr::Lit(swc_ecma_ast::Lit::Str(fix_rgba(self.value.clone()).into())).into()
         )
       }
       fn to_rn_expr(&self) -> PropertyTuple {

@@ -48,7 +48,7 @@ impl LinearGradientItem {
               expr: Expr::Array(ArrayLit {
                 span: DUMMY_SP,
                 elems: vec![
-                  Some(Expr::Lit(Lit::Str(Str::from(fix_rgba(&item.0)))).into()),
+                  Some(Expr::Lit(Lit::Str(Str::from(fix_rgba(item.0.clone())))).into()),
                   Some(Expr::Lit(Lit::Str(Str::from(item.1.to_string()))).into()),
                 ],
               })

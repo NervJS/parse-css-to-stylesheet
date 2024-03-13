@@ -1,13 +1,11 @@
 use std::collections::HashMap;
 
 use html5ever::{namespace_url, ns, LocalName, QualName};
-use lightningcss::{stylesheet::PrinterOptions, targets::{Targets, Features}, properties::Property};
-use regex::Regex;
-use swc_common::DUMMY_SP;
+use pcre2::bytes::Regex;
 // use lightningcss::values::number::CSSNumber;
-use swc_ecma_ast::{JSXMemberExpr, JSXObject, Callee, Expr, CallExpr, Ident, Lit, Number, PropOrSpread, Prop, PropName, ExprOrSpread};
+use swc_ecma_ast::{JSXMemberExpr, JSXObject, Expr, CallExpr, PropOrSpread, Prop, PropName};
 
-use crate::{constants::{CONVERT_STYLE_PREFIX, CONVERT_STYLE_PX_FN}, style_propetries::unit::Platform};
+use crate::style_propetries::unit::Platform;
 
 pub fn recursion_jsx_member(expr: &JSXMemberExpr) -> String {
   match &expr.obj {
@@ -73,54 +71,6 @@ pub fn prefix_style_key(s: String, platform: Platform) -> String {
   }
 }
 
-pub fn convert_px_to_units(input: String) -> Expr {
-  // 定义匹配 '16px' 的正则表达式
-  let re: Regex = Regex::new(r"(-?(\d+(\.\d*)?|\.\d+))((px)|(vw)|(vh))").unwrap();
-  // 使用正则表达式进行匹配
-  if let Some(captures) = re.captures(&input) {
-      // 提取匹配到的数字部分
-      let input_str = captures.get(1).unwrap().as_str();
-      let unit = match captures.get(4) {
-        Some(m) => m.as_str(),
-        None => "vp"
-      };
-
-      if let Ok(number) = input_str.parse::<f64>() {
-
-        let mut args: Vec<ExprOrSpread> = vec![
-          Expr::Lit(Lit::Num(Number::from(number))).into(),
-        ];
-        match unit {
-          "vw" => {
-            args.push(Expr::Lit(Lit::Str("vw".into())).into());
-          },
-          "vh" => {
-            args.push(Expr::Lit(Lit::Str("vh".into())).into());
-          },
-          // "px" => {
-          //   args.push(Expr::Lit(Lit::Str("px".into())).into());
-          // },
-          _ => {}
-        }
-
-        let fun_call_expr = Expr::Call(CallExpr {
-          span: DUMMY_SP,
-          callee: Callee::Expr(Box::new(Expr::Ident(Ident::new(
-            CONVERT_STYLE_PX_FN.into(),
-            DUMMY_SP
-          )))),
-          args,
-          type_args: None,
-        });
-
-        // 替换原始字符串
-        return fun_call_expr;
-      } 
-  }
-  // 如果没有匹配到，则返回原始字符串
-  Expr::Lit(Lit::Str(input.into()))
-}
-
 pub fn get_callee_attributes (callee: &CallExpr) -> HashMap<String, Box<Expr>> {
   let mut attributes = HashMap::new();
 
@@ -147,21 +97,21 @@ pub fn get_callee_attributes (callee: &CallExpr) -> HashMap<String, Box<Expr>> {
 
 pub fn fix_rgba(input: String) -> String {
   // 定义匹配 rgba 格式的正则表达式
-  let re = Regex::new(r"rgba\((\d+), (\d+), (\d+), (\.\d+)\)").unwrap();
-  // 使用正则表达式进行替换
-  let result = re.replace_all(input.as_str(), |caps: &regex::Captures| {
-      // 从捕获组获取每个数字部分
-      let r = &caps[1];
-      let g = &caps[2];
-      let b = &caps[3];
-      let alpha = &caps[4];
-      // 对 alpha 部分进行修正，补全回 0.x 的形式
-      let corrected_alpha = format!("0{:.2}", alpha);
-      // 返回修正后的字符串
-      format!("rgba({}, {}, {}, {})", r, g, b, corrected_alpha)
-  });
-
-  result.into()
+  let re = Regex::new(r"rgba\((?P<r>\d+), (?P<g>\d+), (?P<b>\d+), (?P<a>\.\d+)\)").unwrap();
+  // let re = Regex::new(r"'(?P<title>[^']+)'\s+\((?P<year>\d{4})\)").unwrap();
+  let bytes: &[u8] = input.as_bytes();
+  for result in re.captures_iter(bytes) {
+    if let Ok(caps) = result {
+      if let Ok(a) = std::str::from_utf8(&caps["a"]) {
+        let r = std::str::from_utf8(&caps["r"]).unwrap();
+        let g = std::str::from_utf8(&caps["g"]).unwrap();
+        let b = std::str::from_utf8(&caps["b"]).unwrap();
+        let corrected_alpha = format!("0{:.2}", a);
+        return format!("rgba({}, {}, {}, {})", r, g, b, corrected_alpha)
+      }
+    }
+  }
+  input
 }
 
 #[derive(Debug, Clone)]
@@ -179,10 +129,9 @@ pub fn split_selector(selector: &str) -> Vec<TSelector> {
     for c in selector.chars() {
         if c == ' ' || c == '>' || c == '+' || c == '~' {
             if !current_word.is_empty() {
-                result.push(split_classes(current_word.clone()));
+                result.push(split_classes(current_word.as_str()));
                 current_word.clear();
             }
-            
             buffer.push(c);
             if buffer == " > " || buffer == " + " || buffer == " ~ " {
                 result.push(TSelector::String(buffer.clone()));
@@ -198,7 +147,7 @@ pub fn split_selector(selector: &str) -> Vec<TSelector> {
     }
 
     if !current_word.is_empty() {
-        result.push(split_classes(current_word.clone()));
+        result.push(split_classes(current_word.as_str()));
     }
 
     if !buffer.is_empty() {
@@ -208,19 +157,26 @@ pub fn split_selector(selector: &str) -> Vec<TSelector> {
     result
 }
 
-fn split_classes(input: String) -> TSelector {
-    // 定义一个多类选择器的正则表达式
-    let selector_regex = Regex::new(r"\.(\w+)").unwrap();
-
-    // 进行匹配
-    let mut matchs = vec![];
-    for class_capture in selector_regex.find_iter(input.as_str()) {
-        // 提取每个类
-        matchs.push(class_capture.as_str().to_string().replace(".", ""));
-    }
-    if matchs.len() > 1 {
-      TSelector::Array(matchs)
-    } else {
+// 分割类名 .a.b.c => ["a", "b", "c"]
+fn split_classes(input: &str) -> TSelector {
+  let mut matches = Vec::new();
+  let mut current_class = String::new();
+  for char in input.chars() {
+      if char == '.' {
+        if !current_class.is_empty() {
+            matches.push(current_class.clone());
+            current_class.clear();
+        }
+      } else {
+        current_class.push(char);
+      }
+  }
+  if !current_class.is_empty() {
+      matches.push(current_class);
+  }
+  if matches.len() > 1 {
+      TSelector::Array(matches)
+  } else {
       TSelector::String(input.replace(".", ""))
-    }
+  }
 }

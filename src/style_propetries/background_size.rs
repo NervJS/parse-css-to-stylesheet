@@ -1,19 +1,17 @@
 use lightningcss::{
   properties::{background::BackgroundSize as LNBackgroundSize, Property},
-  stylesheet::PrinterOptions,
-  traits::ToCss,
   values::length::LengthPercentageOrAuto,
 };
 use smallvec::SmallVec;
 use swc_common::DUMMY_SP;
 use swc_ecma_ast::{
-  ArrayLit, Expr, Ident, KeyValueProp, MemberExpr, MemberProp, ObjectLit, Prop, PropName,
+  Expr, Ident, KeyValueProp, MemberExpr, MemberProp, ObjectLit, Prop, PropName,
   PropOrSpread,
 };
 
 use crate::{generate_expr_by_length_percentage_or_auto, generate_invalid_expr};
 
-use super::{traits::ToExpr, unit::{generate_expr_with_css_input, Platform, PropertyTuple}};
+use super::{traits::ToExpr, unit::{Platform, PropertyTuple}};
 
 pub fn parse_background_size_item(size_item: &LNBackgroundSize) -> Option<ImageSize> {
   match size_item {

@@ -1,5 +1,5 @@
 use lightningcss::{values::length::LengthValue, traits::ToCss, stylesheet::PrinterOptions};
-use regex::Regex;
+use pcre2::bytes::Regex;
 use swc_common::DUMMY_SP;
 use swc_ecma_ast::{ExprOrSpread, Expr,  Callee, Ident, CallExpr, Lit, Number};
 use crate::{constants::{CONVERT_STYLE_PX_FN, RN_CONVERT_STYLE_PX_FN, RN_CONVERT_STYLE_VU_FN}, generate_expr_lit_num, generate_expr_lit_str, utils::fix_rgba};
@@ -125,63 +125,69 @@ pub fn generate_expr_by_length_value(length_value: &LengthValue, platform: Platf
 
 pub fn generate_expr_with_css_input(input: String, platform: Platform) -> Expr {
   // 定义匹配 '16px' 的正则表达式
-  let re: Regex = Regex::new(r"(-?(\d+(\.\d*)?|\.\d+))((px)|(vw)|(vh))").unwrap();
+  let re = Regex::new(r"(-?(?P<num>\d+(\.\d*)?|\.\d+))(?P<unit>(px)|(vw)|(vh))").unwrap();
+  let bytes = input.as_bytes();
   // 使用正则表达式进行匹配
-  if let Some(captures) = re.captures(&input) {
-    // 提取匹配到的数字部分
-    let input_str = captures.get(1).unwrap().as_str();
-    let unit = match captures.get(4) {
-      Some(m) => m.as_str(),
-      None => "vp"
-    };
+  if let Ok(caps) = re.captures(bytes) {
+    if let Some(caps) = caps {
+      // 提取匹配到的数字部分
+      let input_str =  std::str::from_utf8(&caps["num"]);
+      let unit = match std::str::from_utf8(&caps["unit"]) {
+        Ok(s) => s,
+        Err(_) => "vp",
+      };
+      if let Ok(input_str) = input_str {
+        if let Ok(number) = input_str.parse::<f64>() {
 
-    if let Ok(number) = input_str.parse::<f64>() {
-
-      let mut args: Vec<Expr> = vec![];
-      let mut handler: Option<String> = None;
-
-      match unit {
-        "vw" | "vh" | "vmin" | "vmax" => {
-          handler = match platform {
-            Platform::ReactNative => Some(RN_CONVERT_STYLE_VU_FN.to_string()),
-            Platform::Harmony => Some(CONVERT_STYLE_PX_FN.to_string())
-          };
-          args.push(generate_expr_lit_num!(number));
-          args.push(generate_expr_lit_str!(unit));
-        },
-        "px" => {
-          handler = match platform {
-            Platform::ReactNative => Some(RN_CONVERT_STYLE_PX_FN.to_string()),
-            Platform::Harmony => Some(CONVERT_STYLE_PX_FN.to_string())
-          };
-          args.push(generate_expr_lit_num!(number));
-        },
-        "rem" => {
-          handler = match platform {
-            Platform::ReactNative => Some(RN_CONVERT_STYLE_PX_FN.to_string()),
-            Platform::Harmony => Some(CONVERT_STYLE_PX_FN.to_string())
-          };
-          args.push(generate_expr_lit_num!(number * 16.0));
-        },
-        _ => {}
+          let mut args: Vec<Expr> = vec![];
+          let mut handler: Option<String> = None;
+    
+          match unit {
+            "vw" | "vh" | "vmin" | "vmax" => {
+              handler = match platform {
+                Platform::ReactNative => Some(RN_CONVERT_STYLE_VU_FN.to_string()),
+                Platform::Harmony => Some(CONVERT_STYLE_PX_FN.to_string())
+              };
+              args.push(generate_expr_lit_num!(number));
+              args.push(generate_expr_lit_str!(unit));
+            },
+            "px" => {
+              handler = match platform {
+                Platform::ReactNative => Some(RN_CONVERT_STYLE_PX_FN.to_string()),
+                Platform::Harmony => Some(CONVERT_STYLE_PX_FN.to_string())
+              };
+              args.push(generate_expr_lit_num!(number));
+            },
+            "rem" => {
+              handler = match platform {
+                Platform::ReactNative => Some(RN_CONVERT_STYLE_PX_FN.to_string()),
+                Platform::Harmony => Some(CONVERT_STYLE_PX_FN.to_string())
+              };
+              args.push(generate_expr_lit_num!(number * 16.0));
+            },
+            _ => {}
+          }
+    
+          // 替换原始字符串
+          if let Some(handler_name) = handler {
+            return Expr::Call(CallExpr {
+              span: DUMMY_SP,
+              callee: Callee::Expr(Box::new(Expr::Ident(Ident::new(
+                handler_name.into(),
+                DUMMY_SP
+              )))),
+              args: args.into_iter().map(|arg| ExprOrSpread {
+                spread: None,
+                expr: Box::new(arg),
+              }).collect(),
+              type_args: None,
+            })
+          }
+        } 
       }
+    }
 
-      // 替换原始字符串
-      if let Some(handler_name) = handler {
-        return Expr::Call(CallExpr {
-          span: DUMMY_SP,
-          callee: Callee::Expr(Box::new(Expr::Ident(Ident::new(
-            handler_name.into(),
-            DUMMY_SP
-          )))),
-          args: args.into_iter().map(|arg| ExprOrSpread {
-            spread: None,
-            expr: Box::new(arg),
-          }).collect(),
-          type_args: None,
-        })
-      }
-    } 
+    
   }
   
   

@@ -28,73 +28,73 @@ const code = parse(jsxCode, [cssCode1, cssCode2, ...], {
 
 所有元素都支持的样式：
 
-| 属性                       | 可选值 / 单位                                                                                                                               | ✔️  |
-| -------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------- | :-: |
-| flex                       | `flexGrow  flexShrink flexBasis`                                                                                                            | ✔️  |
-| flexGrow                   | Number                                                                                                                                      | ✔️  |
-| flexShrink                 | Number                                                                                                                                      | ✔️  |
-| flexBasis                  | Length                                                                                                                                      | ✔️  |
-| flexDirection              | 'row','row-reverse','column','column-reverse'                                                                                               | ✔️  |
-| justifyContent             | 'flex-start', 'flex-end', 'center', 'space-between', 'space-around', 'space-evenly'                                                         | ✔️  |
-| alignContent               | 'flex-start', 'flex-end', 'center', 'space-between', 'space-around', 'space-evenly'                                                         | ✔️  |
-| alignItems                 | 'flex-start', 'flex-end', 'center', 'baseline', 'stretch' , 'auto'                                                                          | ✔️  |
-| alignSelf                  | 'flex-start', 'flex-end', 'center', 'baseline', 'stretch' , 'auto'                                                                          | ✔️  |
-| flexWrap                   | 'nowrap', 'wrap', 'wrap-reverse'                                                                                                            | ❌  |
-| position                   | 'relative', 'absolute'                                                                                                                      | ✔️  |
-| left                       | Length                                                                                                                                      | ✔️  |
-| top                        | Length                                                                                                                                      | ❌  |
-| right                      | Length                                                                                                                                      | ❌  |
-| zIndex                     | Number                                                                                                                                      | ✔️  |
-| bottom                     | Length                                                                                                                                      | ✔️  |
-| margin                     | Length \ Length Length \ Length Length Length \ Length Length Length Length                                                                 | ✔️  |
-| marginTop                  | Length                                                                                                                                      | ✔️  |
-| marginRight                | Length                                                                                                                                      | ✔️  |
-| marginBottom               | Length                                                                                                                                      | ✔️  |
-| marginLeft                 | Length                                                                                                                                      | ✔️  |
-| padding                    | Length \ Length Length \ Length Length Length \ Length Length Length Length                                                                 | ✔️  |
-| paddingTop                 | Length                                                                                                                                      | ✔️  |
-| paddingRight               | Length                                                                                                                                      | ✔️  |
-| paddingBottom              | Length                                                                                                                                      | ✔️  |
-| paddingLeft                | Length                                                                                                                                      | ✔️  |
-| width                      | Length                                                                                                                                      | ✔️  |
-| height                     | Length                                                                                                                                      | ✔️  |
-| minHeight                  | Length                                                                                                                                      | ✔️  |
-| minWidth                   | Length                                                                                                                                      | ✔️  |
-| maxHeight                  | Length                                                                                                                                      | ✔️  |
-| maxWidth                   | Length                                                                                                                                      | ✔️  |
-| background                 |                                                                                                                                             | ✔️  |
-| background-color           | Color                                                                                                                                       | ✔️  |
-| background-image           | "src('xxx')"                                                                                                                                | ✔️  |
-| background-size            | 'cover', 'contain', Length(x y), Length(x) Length(y)                                                                                        | ✔️  |
-| background-position        | center', 'top', 'bottom', 'left', 'right', , Length(x y), Length(x) Length(y)                                                               | ✔️  |
-| background-repeat          | 'repeat', 'no-repeat', 'repeat-x', 'repeat-y'                                                                                               | ✔️  |
-| border                     | Border（可设置 4 个值，控制 4 个方向）                                                                                                      | ✔️  |
-| border-top                 | Border                                                                                                                                      | ✔️  |
-| border-left                | Border                                                                                                                                      | ✔️  |
-| border-right               | Border                                                                                                                                      | ✔️  |
-| border-bottom              | Border                                                                                                                                      | ✔️  |
-| border-color               | Color（可设置 4 个值，控制 4 个方向）                                                                                                       | ✔️  |
-| border-top-color           | Color                                                                                                                                       | ✔️  |
-| border-right-color         | Color                                                                                                                                       | ✔️  |
-| border-bottom-color        | Color                                                                                                                                       | ✔️  |
-| border-left-color          | Color                                                                                                                                       | ✔️  |
-| border-radius              | Length（可设置 4 个值，控制 4 个方向）                                                                                                      | ✔️  |
-| border-top-left-radius     | Length                                                                                                                                      | ✔️  |
-| border-top-right-radius    | Length                                                                                                                                      | ✔️  |
-| border-bottom-left-radius  | Length                                                                                                                                      | ✔️  |
-| border-bottom-right-radius | Length                                                                                                                                      | ✔️  |
-| border-style               | 'dotted', 'dashed', 'solid' （4 个值，控制 4 个方向）                                                                                       | ✔️  |
-| border-top-style           | 'dotted', 'dashed', 'solid'                                                                                                                 | ✔️  |
-| border-right-style         | 'dotted', 'dashed', 'solid'                                                                                                                 | ✔️  |
-| border-bottom-style        | 'dotted', 'dashed', 'solid'                                                                                                                 | ✔️  |
-| border-left-style          | 'dotted', 'dashed', 'solid'                                                                                                                 | ✔️  |
-| opacity                    | Number                                                                                                                                      | ✔️  |
-| display                    | 'flex', 'none', 'block'                                                                                                                     | ✔️  |
-| display                    | 'inline-block', 'inline-flex', 'inline'                                                                                                     | ❌  |
-| overflow                   | 'hidden', 'visible'                                                                                                                         | ✔️  |
-| transform                  | translate、translateX、translateY、translateZ、translate2d、translate3d、scale、scaleX、scaleY、scale3d、rotate、rotateX、rotateY、rotate3d | ✔️  |
-| transform-origin           | Length Length                                                                                                                               | ✔️  |
-| content                    |                                                                                                                                             | ✔️  |
+| 属性                       | 可选值 / 单位                                                                                                                               | 支持情况 |
+| -------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------- | :------: |
+| flex                       | `flexGrow  flexShrink flexBasis`                                                                                                            |    ✔️    |
+| flexGrow                   | Number                                                                                                                                      |    ✔️    |
+| flexShrink                 | Number                                                                                                                                      |    ✔️    |
+| flexBasis                  | Length                                                                                                                                      |    ✔️    |
+| flexDirection              | 'row','row-reverse','column','column-reverse'                                                                                               |    ✔️    |
+| justifyContent             | 'flex-start', 'flex-end', 'center', 'space-between', 'space-around', 'space-evenly'                                                         |    ✔️    |
+| alignContent               | 'flex-start', 'flex-end', 'center', 'space-between', 'space-around', 'space-evenly'                                                         |    ✔️    |
+| alignItems                 | 'flex-start', 'flex-end', 'center', 'baseline', 'stretch' , 'auto'                                                                          |    ✔️    |
+| alignSelf                  | 'flex-start', 'flex-end', 'center', 'baseline', 'stretch' , 'auto'                                                                          |    ✔️    |
+| flexWrap                   | 'nowrap', 'wrap', 'wrap-reverse'                                                                                                            |    ❌    |
+| position                   | 'relative', 'absolute'                                                                                                                      |    ✔️    |
+| left                       | Length                                                                                                                                      |    ✔️    |
+| top                        | Length                                                                                                                                      |    ❌    |
+| right                      | Length                                                                                                                                      |    ❌    |
+| zIndex                     | Number                                                                                                                                      |    ✔️    |
+| bottom                     | Length                                                                                                                                      |    ✔️    |
+| margin                     | Length \ Length Length \ Length Length Length \ Length Length Length Length                                                                 |    ✔️    |
+| marginTop                  | Length                                                                                                                                      |    ✔️    |
+| marginRight                | Length                                                                                                                                      |    ✔️    |
+| marginBottom               | Length                                                                                                                                      |    ✔️    |
+| marginLeft                 | Length                                                                                                                                      |    ✔️    |
+| padding                    | Length \ Length Length \ Length Length Length \ Length Length Length Length                                                                 |    ✔️    |
+| paddingTop                 | Length                                                                                                                                      |    ✔️    |
+| paddingRight               | Length                                                                                                                                      |    ✔️    |
+| paddingBottom              | Length                                                                                                                                      |    ✔️    |
+| paddingLeft                | Length                                                                                                                                      |    ✔️    |
+| width                      | Length                                                                                                                                      |    ✔️    |
+| height                     | Length                                                                                                                                      |    ✔️    |
+| minHeight                  | Length                                                                                                                                      |    ✔️    |
+| minWidth                   | Length                                                                                                                                      |    ✔️    |
+| maxHeight                  | Length                                                                                                                                      |    ✔️    |
+| maxWidth                   | Length                                                                                                                                      |    ✔️    |
+| background                 |                                                                                                                                             |    ✔️    |
+| background-color           | Color                                                                                                                                       |    ✔️    |
+| background-image           | "src('xxx')"                                                                                                                                |    ✔️    |
+| background-size            | 'cover', 'contain', Length(x y), Length(x) Length(y)                                                                                        |    ✔️    |
+| background-position        | center', 'top', 'bottom', 'left', 'right', , Length(x y), Length(x) Length(y)                                                               |    ✔️    |
+| background-repeat          | 'repeat', 'no-repeat', 'repeat-x', 'repeat-y'                                                                                               |    ✔️    |
+| border                     | Border（可设置 4 个值，控制 4 个方向）                                                                                                      |    ✔️    |
+| border-top                 | Border                                                                                                                                      |    ✔️    |
+| border-left                | Border                                                                                                                                      |    ✔️    |
+| border-right               | Border                                                                                                                                      |    ✔️    |
+| border-bottom              | Border                                                                                                                                      |    ✔️    |
+| border-color               | Color（可设置 4 个值，控制 4 个方向）                                                                                                       |    ✔️    |
+| border-top-color           | Color                                                                                                                                       |    ✔️    |
+| border-right-color         | Color                                                                                                                                       |    ✔️    |
+| border-bottom-color        | Color                                                                                                                                       |    ✔️    |
+| border-left-color          | Color                                                                                                                                       |    ✔️    |
+| border-radius              | Length（可设置 4 个值，控制 4 个方向）                                                                                                      |    ✔️    |
+| border-top-left-radius     | Length                                                                                                                                      |    ✔️    |
+| border-top-right-radius    | Length                                                                                                                                      |    ✔️    |
+| border-bottom-left-radius  | Length                                                                                                                                      |    ✔️    |
+| border-bottom-right-radius | Length                                                                                                                                      |    ✔️    |
+| border-style               | 'dotted', 'dashed', 'solid' （4 个值，控制 4 个方向）                                                                                       |    ✔️    |
+| border-top-style           | 'dotted', 'dashed', 'solid'                                                                                                                 |    ✔️    |
+| border-right-style         | 'dotted', 'dashed', 'solid'                                                                                                                 |    ✔️    |
+| border-bottom-style        | 'dotted', 'dashed', 'solid'                                                                                                                 |    ✔️    |
+| border-left-style          | 'dotted', 'dashed', 'solid'                                                                                                                 |    ✔️    |
+| opacity                    | Number                                                                                                                                      |    ✔️    |
+| display                    | 'flex', 'none', 'block'                                                                                                                     |    ✔️    |
+| display                    | 'inline-block', 'inline-flex', 'inline'                                                                                                     |    ❌    |
+| overflow                   | 'hidden', 'visible'                                                                                                                         |    ✔️    |
+| transform                  | translate、translateX、translateY、translateZ、translate2d、translate3d、scale、scaleX、scaleY、scale3d、rotate、rotateX、rotateY、rotate3d |    ✔️    |
+| transform-origin           | Length Length                                                                                                                               |    ✔️    |
+| content                    |                                                                                                                                             |    ✔️    |
 
 ⚠️ 注意：
 
@@ -104,18 +104,18 @@ const code = parse(jsxCode, [cssCode1, cssCode2, ...], {
 
 ### 文本样式
 
-| 属性               | 可选值 / 单位                                           | ✔️  |
-| ------------------ | ------------------------------------------------------- | :-: |
-| font-size          | Length                                                  | ✔️  |
-| font-family        |                                                         | ✔️  |
-| font-style         | 'normal', 'italic'                                      | ✔️  |
-| font-weight        | 100~900, 'bold','bolder','light','lighter','normal'     | ✔️  |
-| line-height        | 'XXpx' (需要指定具体指，不支持 Number)                  | ✔️  |
-| text-align         | 'center', 'left', 'right'                               | ✔️  |
-| text-decoration    | ('none', 'underline', 'line-through', 'overline') Color | ✔️  |
-| text-overflow      | 'ellipsis', 'clip'                                      | ✔️  |
-| color              | Color                                                   | ✔️  |
-| -webkit-line-clamp | Number                                                  | ✔️  |
+| 属性               | 可选值 / 单位                                           | 支持情况 |
+| ------------------ | ------------------------------------------------------- | :------: |
+| font-size          | Length                                                  |    ✔️    |
+| font-family        |                                                         |    ✔️    |
+| font-style         | 'normal', 'italic'                                      |    ✔️    |
+| font-weight        | 100~900, 'bold','bolder','light','lighter','normal'     |    ✔️    |
+| line-height        | 'XXpx' (需要指定具体指，不支持 Number)                  |    ✔️    |
+| text-align         | 'center', 'left', 'right'                               |    ✔️    |
+| text-decoration    | ('none', 'underline', 'line-through', 'overline') Color |    ✔️    |
+| text-overflow      | 'ellipsis', 'clip'                                      |    ✔️    |
+| color              | Color                                                   |    ✔️    |
+| -webkit-line-clamp | Number                                                  |    ✔️    |
 
 ⚠️ 注意：
 
@@ -177,14 +177,14 @@ const code = parse(jsxCode, [cssCode1, cssCode2, ...], {
 
 - 支持**before、after**，
 
-| 选择器            | 示例                     | 示例说明                                                          | Harmony |
-| ----------------- | ------------------------ | ----------------------------------------------------------------- | :-----: |
-| :before           | .intro:before            | 在每个 class="intro" 元素之前插入内容                             |   ✔️    |
-| :after            | .intro:after             | 在每个 class="intro" 元素之后插入内容                             |   ✔️    |
-| :nth-child()      | .intro:nth-child(2)      | 选择 class="intro" 元素是其父级的第二个子元素                     |   ❌    |
-| :nth-last-child() | .intro:nth-last-child(2) | 选择 class="intro" 元素是其父级的第二个子元素, 从最后一个子项计数 |   ❌    |
-| :first-child      | .intro:first-child       | 选择 class="intro" 元素是其父级的第一个子级                       |   ❌    |
-| :last-child       | .intro:last-child        | 选择 class="intro" 元素是其父级的最后一个子级                     |   ❌    |
-| :root             | :root                    | 选择文档的根元素                                                  |   ❌    |
-| :checked          | input:checked            | 选择每个选中的输入元素                                            |   ❌    |
-| ...               |                          | 其他                                                              |   ❌    |
+| 选择器            | 示例                     | 示例说明                                                          | 支持情况 |
+| ----------------- | ------------------------ | ----------------------------------------------------------------- | :------: |
+| :before           | .intro:before            | 在每个 class="intro" 元素之前插入内容                             |    ✔️    |
+| :after            | .intro:after             | 在每个 class="intro" 元素之后插入内容                             |    ✔️    |
+| :nth-child()      | .intro:nth-child(2)      | 选择 class="intro" 元素是其父级的第二个子元素                     |    ❌    |
+| :nth-last-child() | .intro:nth-last-child(2) | 选择 class="intro" 元素是其父级的第二个子元素, 从最后一个子项计数 |    ❌    |
+| :first-child      | .intro:first-child       | 选择 class="intro" 元素是其父级的第一个子级                       |    ❌    |
+| :last-child       | .intro:last-child        | 选择 class="intro" 元素是其父级的最后一个子级                     |    ❌    |
+| :root             | :root                    | 选择文档的根元素                                                  |    ❌    |
+| :checked          | input:checked            | 选择每个选中的输入元素                                            |    ❌    |
+| ...               |                          | 其他                                                              |    ❌    |

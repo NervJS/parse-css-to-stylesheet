@@ -16,6 +16,14 @@ const code = parse(jsxCode, [cssCode1, cssCode2, ...], {
 })
 ```
 
+在 Harmony 中，编译结果会依赖`@tarojs/plugin-platform-harmony-ets`中提供的几个包方法：
+
+1. `convertNumber2VP` 用于运行时进行单位转换
+2. `calcStaticStyle` 用于合成类，匹配类名
+3. `__combine_nesting_style__` 嵌套样式的合成
+
+具体位于 [Taro 主仓](https://github.com/NervJS/taro) 路径：_/taro/packages/taro-platform-harmony/src/runtime-ets_ 中
+
 ## 样式支持情况
 
 | 类型   | 举例合法值                                       |        备注         |

@@ -488,6 +488,9 @@ impl ModuleMutVisitor {
   fn enable_nesting_for_function (&self, body: &mut Box<Function>) {
     body.visit_mut_children_with(&mut &mut self.get_nesting_visitor());
   }
+  fn enable_nesting_for_arrow_function (&self, body: &mut Box<BlockStmtOrExpr>) {
+    body.visit_mut_children_with(&mut &mut self.get_nesting_visitor());
+  }
 }
 
 impl VisitMut for ModuleMutVisitor {
@@ -614,10 +617,12 @@ impl VisitMut for ModuleMutVisitor {
                 Some(init) => {
                   match &mut **init {
                     Expr::Fn(FnExpr { function, .. }) => {
+                      // const Index = function () {}
                       self.enable_nesting_for_function(function);
                     },
                     Expr::Arrow(ArrowExpr { body, .. }) => {
-                      // Todo: support arrow funciton
+                      // const Index = () => {}
+                      self.enable_nesting_for_arrow_function(body);
                     },
                     _ => ()
                   }

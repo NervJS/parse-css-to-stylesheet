@@ -1,3 +1,12 @@
+## [0.0.38](https://github.com/NervJS/parse-css-to-stylesheet/compare/v0.0.37...v0.0.38) (2024-03-13)
+
+
+### Features
+
+* 支持箭头函数的解析 ([96166e5](https://github.com/NervJS/parse-css-to-stylesheet/commit/96166e56855935163995b2b72a8f34c4f93fea22))
+
+
+
 ## [0.0.37](https://github.com/NervJS/parse-css-to-stylesheet/compare/v0.0.36...v0.0.37) (2024-03-13)
 
 

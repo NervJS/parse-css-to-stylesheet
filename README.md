@@ -31,37 +31,37 @@ const code = parse(jsxCode, [cssCode1, cssCode2, ...], {
 | 属性                       | 可选值 / 单位                                                                                                                               | 支持情况 |
 | -------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------- | :------: |
 | flex                       | `flexGrow  flexShrink flexBasis`                                                                                                            |    ✔️    |
-| flexGrow                   | Number                                                                                                                                      |    ✔️    |
-| flexShrink                 | Number                                                                                                                                      |    ✔️    |
-| flexBasis                  | Length                                                                                                                                      |    ✔️    |
-| flexDirection              | 'row','row-reverse','column','column-reverse'                                                                                               |    ✔️    |
-| justifyContent             | 'flex-start', 'flex-end', 'center', 'space-between', 'space-around', 'space-evenly'                                                         |    ✔️    |
-| alignContent               | 'flex-start', 'flex-end', 'center', 'space-between', 'space-around', 'space-evenly'                                                         |    ✔️    |
-| alignItems                 | 'flex-start', 'flex-end', 'center', 'baseline', 'stretch' , 'auto'                                                                          |    ✔️    |
-| alignSelf                  | 'flex-start', 'flex-end', 'center', 'baseline', 'stretch' , 'auto'                                                                          |    ✔️    |
-| flexWrap                   | 'nowrap', 'wrap', 'wrap-reverse'                                                                                                            |    ❌    |
+| flex-grow                  | Number                                                                                                                                      |    ✔️    |
+| flex-shrink                | Number                                                                                                                                      |    ✔️    |
+| flex-basis                 | Length                                                                                                                                      |    ✔️    |
+| flex-direction             | 'row','row-reverse','column','column-reverse'                                                                                               |    ✔️    |
+| justify-content            | 'flex-start', 'flex-end', 'center', 'space-between', 'space-around', 'space-evenly'                                                         |    ✔️    |
+| align-content              | 'flex-start', 'flex-end', 'center', 'space-between', 'space-around', 'space-evenly'                                                         |    ✔️    |
+| alignitems                 | 'flex-start', 'flex-end', 'center', 'baseline', 'stretch' , 'auto'                                                                          |    ✔️    |
+| align-self                 | 'flex-start', 'flex-end', 'center', 'baseline', 'stretch' , 'auto'                                                                          |    ✔️    |
+| flex-wrap                  | 'nowrap', 'wrap', 'wrap-reverse'                                                                                                            |    ❌    |
 | position                   | 'relative', 'absolute'                                                                                                                      |    ✔️    |
 | left                       | Length                                                                                                                                      |    ✔️    |
 | top                        | Length                                                                                                                                      |    ❌    |
 | right                      | Length                                                                                                                                      |    ❌    |
-| zIndex                     | Number                                                                                                                                      |    ✔️    |
+| z-zndex                    | Number                                                                                                                                      |    ✔️    |
 | bottom                     | Length                                                                                                                                      |    ✔️    |
 | margin                     | Length \ Length Length \ Length Length Length \ Length Length Length Length                                                                 |    ✔️    |
-| marginTop                  | Length                                                                                                                                      |    ✔️    |
-| marginRight                | Length                                                                                                                                      |    ✔️    |
-| marginBottom               | Length                                                                                                                                      |    ✔️    |
-| marginLeft                 | Length                                                                                                                                      |    ✔️    |
+| margin-top                 | Length                                                                                                                                      |    ✔️    |
+| margin-right               | Length                                                                                                                                      |    ✔️    |
+| margin-bottom              | Length                                                                                                                                      |    ✔️    |
+| margin-left                | Length                                                                                                                                      |    ✔️    |
 | padding                    | Length \ Length Length \ Length Length Length \ Length Length Length Length                                                                 |    ✔️    |
-| paddingTop                 | Length                                                                                                                                      |    ✔️    |
-| paddingRight               | Length                                                                                                                                      |    ✔️    |
-| paddingBottom              | Length                                                                                                                                      |    ✔️    |
-| paddingLeft                | Length                                                                                                                                      |    ✔️    |
+| padding-top                | Length                                                                                                                                      |    ✔️    |
+| padding-right              | Length                                                                                                                                      |    ✔️    |
+| padding-bottom             | Length                                                                                                                                      |    ✔️    |
+| padding-left               | Length                                                                                                                                      |    ✔️    |
 | width                      | Length                                                                                                                                      |    ✔️    |
 | height                     | Length                                                                                                                                      |    ✔️    |
-| minHeight                  | Length                                                                                                                                      |    ✔️    |
-| minWidth                   | Length                                                                                                                                      |    ✔️    |
-| maxHeight                  | Length                                                                                                                                      |    ✔️    |
-| maxWidth                   | Length                                                                                                                                      |    ✔️    |
+| min-height                 | Length                                                                                                                                      |    ✔️    |
+| min-width                  | Length                                                                                                                                      |    ✔️    |
+| max-height                 | Length                                                                                                                                      |    ✔️    |
+| max-eidth                  | Length                                                                                                                                      |    ✔️    |
 | background                 |                                                                                                                                             |    ✔️    |
 | background-color           | Color                                                                                                                                       |    ✔️    |
 | background-image           | "src('xxx')"                                                                                                                                |    ✔️    |

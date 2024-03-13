@@ -1,3 +1,12 @@
+## [0.0.37](https://github.com/NervJS/parse-css-to-stylesheet/compare/v0.0.36...v0.0.37) (2024-03-13)
+
+
+### Features
+
+* 替换正则库，删除无用代码，提升性能 ([44efe6b](https://github.com/NervJS/parse-css-to-stylesheet/commit/44efe6b3383264098449c24e97dfef734566af10))
+
+
+
 ## [0.0.36](https://github.com/NervJS/parse-css-to-stylesheet/compare/v0.0.35...v0.0.36) (2024-03-12)
 
 

@@ -64,7 +64,7 @@ const code = parse(jsxCode, [cssCode1, cssCode2, ...], {
 | max-eidth                  | Length                                                                                                                                      |    ✔️    |
 | background                 |                                                                                                                                             |    ✔️    |
 | background-color           | Color                                                                                                                                       |    ✔️    |
-| background-image           | "src('xxx')"                                                                                                                                |    ✔️    |
+| background-image           | "src('xxx')", "linear-gradient(xxx)" 支持图片资源和线性渐变                                                                                 |    ✔️    |
 | background-size            | 'cover', 'contain', Length(x y), Length(x) Length(y)                                                                                        |    ✔️    |
 | background-position        | center', 'top', 'bottom', 'left', 'right', , Length(x y), Length(x) Length(y)                                                               |    ✔️    |
 | background-repeat          | 'repeat', 'no-repeat', 'repeat-x', 'repeat-y'                                                                                               |    ✔️    |

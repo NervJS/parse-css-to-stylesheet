@@ -1,3 +1,12 @@
+## [0.0.39](https://github.com/NervJS/parse-css-to-stylesheet/compare/v0.0.38...v0.0.39) (2024-03-14)
+
+
+### Features
+
+* 支持calc，支持大小写px ([5c39eb4](https://github.com/NervJS/parse-css-to-stylesheet/commit/5c39eb4b1fec994c6913cf5b31366feaaa57cd29))
+
+
+
 ## [0.0.38](https://github.com/NervJS/parse-css-to-stylesheet/compare/v0.0.37...v0.0.38) (2024-03-13)
 
 

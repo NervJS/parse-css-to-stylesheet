@@ -19,6 +19,48 @@ macro_rules! generate_expr_lit_num {
   };
 }
 
+
+#[macro_export]
+macro_rules! generate_expr_lit_calc {
+  ($var:expr, $platform:expr) => {{
+
+    use $crate::constants::{CONVERT_STYLE_PX_FN, RN_CONVERT_STYLE_PX_FN, RN_CONVERT_STYLE_VU_FN};
+
+    let re = regex::Regex::new(r#"(\d+(?:px|vw|vh))"#).unwrap();
+    let result = re.replace_all($var.as_str(), |caps: &regex::Captures| {
+        let value = &caps[1];
+        let unit = &value[value.len() - 2..];
+        let parsed_value: i32 = value[..value.len() - 2].parse().unwrap();
+        if $platform == Platform::Harmony {
+          if unit == "px" {
+            return format!("${{{}({}, 'px')}}", CONVERT_STYLE_PX_FN, parsed_value);
+          } else {
+            return format!("${{{}({}, '{}')}}", CONVERT_STYLE_PX_FN, parsed_value, unit);
+          }
+        } else {
+          if unit == "px" {
+            return format!("${{{}({}, 'px')}}", RN_CONVERT_STYLE_PX_FN, parsed_value);
+          } else {
+            return format!("${{{}({}, '{}')}}", RN_CONVERT_STYLE_VU_FN, parsed_value, unit);
+          }
+        }
+    });
+    
+    swc_ecma_ast::Expr::Tpl(swc_ecma_ast::Tpl {
+      span: swc_common::DUMMY_SP,
+      exprs: vec![],
+      quasis: vec![
+        swc_ecma_ast::TplElement {
+          span: swc_common::DUMMY_SP,
+          tail: false,
+          cooked: None,
+          raw: swc_atoms::Atom::from(result).into(),
+        }
+      ],
+    })
+  }};
+}
+
 #[macro_export]
 macro_rules! generate_expr_ident {
   ($var:expr) => {
@@ -45,10 +87,14 @@ macro_rules! generate_string_by_css_color {
 macro_rules! generate_expr_by_length  {
   ($var:expr, $platform:expr) => {{
     use $crate::style_propetries::unit::{Platform, generate_expr_by_length_value};
+    use $crate::generate_expr_lit_calc;
     use lightningcss::values::length::Length;
     match $var {
       Length::Value(val) => generate_expr_by_length_value(&val, $platform),
-      Length::Calc(val) => generate_expr_lit_str!(*val.to_css_string(lightningcss::stylesheet::PrinterOptions::default()).unwrap()),
+      Length::Calc(val) => {
+        let calc_string = val.to_css_string(lightningcss::stylesheet::PrinterOptions::default()).unwrap();
+        generate_expr_lit_calc!(calc_string, $platform)
+      },
     }
   }};
 }
@@ -70,13 +116,16 @@ macro_rules! generate_expr_by_length_percentage_or_auto {
 #[macro_export]
 macro_rules! generate_expr_by_length_percentage {
   ($var:expr, $platform:expr) => {{
-    use $crate::{generate_expr_lit_str, style_propetries::unit::{generate_expr_by_length_value} };
+    use $crate::{generate_expr_lit_str, generate_expr_lit_calc, style_propetries::unit::{generate_expr_by_length_value} };
     use lightningcss::traits::ToCss;
     
     match $var {
       lightningcss::values::percentage::DimensionPercentage::Dimension(dimension) => generate_expr_by_length_value(&dimension, $platform),
       lightningcss::values::percentage::DimensionPercentage::Percentage(percentage) => generate_expr_lit_str!((percentage.0 * 100.0).to_string() + "%"),
-      lightningcss::values::percentage::DimensionPercentage::Calc(calc) => generate_expr_lit_str!(calc.to_css_string(lightningcss::stylesheet::PrinterOptions::default()).unwrap()),
+      lightningcss::values::percentage::DimensionPercentage::Calc(calc) => {
+        let calc_string = calc.to_css_string(lightningcss::stylesheet::PrinterOptions::default()).unwrap();
+        generate_expr_lit_calc!(calc_string, $platform)
+      },
     }
   }};
 }
@@ -237,6 +286,9 @@ macro_rules! generate_number_property {
 #[macro_export]
 macro_rules! generate_length_value_property {
   ($class:ident, $( $property_name:ident ), *) => {
+
+    use $crate::{generate_dimension_percentage, generate_expr_lit_calc};
+
     #[derive(Debug, Clone)]
     pub struct $class {
       pub id: String,
@@ -256,7 +308,7 @@ macro_rules! generate_length_value_property {
         PropertyTuple::One(
           self.id.clone(),
           match &self.value {
-            EnumValue::String(value) => generate_expr_lit_str!(value.to_owned()),
+            EnumValue::String(value) => generate_expr_lit_calc!(value, Platform::Harmony),
             EnumValue::LengthValue(length_value) => generate_expr_by_length_value(length_value, Platform::Harmony),
             EnumValue::Percentage(value) => generate_expr_lit_str!((value.0 * 100.0).to_string() + "%"),
             EnumValue::Auto => generate_invalid_expr!()   // harmony 是个非法制，固不会生效
@@ -268,7 +320,7 @@ macro_rules! generate_length_value_property {
         PropertyTuple::One(
           self.id.clone(),
           match &self.value {
-            EnumValue::String(value) => generate_expr_lit_str!(value.to_owned()),
+            EnumValue::String(value) => generate_expr_lit_calc!(value, Platform::ReactNative),
             EnumValue::LengthValue(length_value) => generate_expr_by_length_value(length_value, Platform::ReactNative),
             EnumValue::Percentage(value) => generate_expr_lit_str!((value.0 * 100.0).to_string() + "%"),
             EnumValue::Auto => generate_expr_lit_str!("auto")
@@ -309,6 +361,8 @@ macro_rules! generate_length_value_property {
 macro_rules! generate_size_property {
   ($class:ident, $( $property_name:ident ), *) => {
 
+    use $crate::generate_expr_lit_calc;
+
     #[derive(Debug, Clone)]
     pub struct $class {
       pub id: String,
@@ -328,7 +382,7 @@ macro_rules! generate_size_property {
         PropertyTuple::One(
           self.id.clone(),
           match &self.value {
-            EnumValue::String(value) => generate_expr_lit_str!(value.to_owned()),
+            EnumValue::String(value) => generate_expr_lit_calc!(value, Platform::Harmony),
             EnumValue::LengthValue(length_value) => generate_expr_by_length_value(length_value, Platform::Harmony),
             EnumValue::Percentage(value) => generate_expr_lit_str!((value.0 * 100.0).to_string() + "%"),
             EnumValue::Auto => generate_expr_lit_str!("auto")   // harmony 是个非法制，固不会生效
@@ -340,7 +394,7 @@ macro_rules! generate_size_property {
         PropertyTuple::One(
           self.id.clone(),
           match &self.value {
-            EnumValue::String(value) => generate_expr_lit_str!(value.to_owned()),
+            EnumValue::String(value) => generate_expr_lit_calc!(value, Platform::ReactNative),
             EnumValue::LengthValue(length_value) => generate_expr_by_length_value(length_value, Platform::ReactNative),
             EnumValue::Percentage(value) => generate_expr_lit_str!((value.0 * 100.0).to_string() + "%"),
             EnumValue::Auto => generate_expr_lit_str!("auto")

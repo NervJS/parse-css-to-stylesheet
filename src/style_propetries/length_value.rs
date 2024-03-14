@@ -1,6 +1,6 @@
 use lightningcss::traits::ToCss;
 
-use crate::{generate_expr_lit_str, generate_length_value_property, generate_dimension_percentage, generate_invalid_expr};
+use crate::{generate_expr_lit_str, generate_length_value_property, generate_invalid_expr};
 use super::unit::PropertyTuple;
 use super::{traits::ToExpr, unit::{generate_expr_by_length_value, Platform}};
 

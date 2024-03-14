@@ -101,6 +101,20 @@ pub fn generate_expr_by_length_value(length_value: &LengthValue, platform: Platf
         }
       }
     },
+    LengthValue::Ch(num) => {
+      match platform {
+        Platform::ReactNative => {
+          handler = Some(RN_CONVERT_STYLE_VU_FN.to_string());
+          args.push(generate_expr_lit_num!(*num as f64));
+          args.push(generate_expr_lit_str!("PX"));
+        },
+        Platform::Harmony => {
+          handler = Some(CONVERT_STYLE_PX_FN.to_string());
+          args.push(generate_expr_lit_num!(*num as f64));
+          args.push(generate_expr_lit_str!("PX"));
+        }
+      }
+    }
     _ => {}
   }
 
@@ -125,7 +139,7 @@ pub fn generate_expr_by_length_value(length_value: &LengthValue, platform: Platf
 
 pub fn generate_expr_with_css_input(input: String, platform: Platform) -> Expr {
   // 定义匹配 '16px' 的正则表达式
-  let re = Regex::new(r"(-?(?P<num>\d+(\.\d*)?|\.\d+))(?P<unit>(px)|(vw)|(vh))").unwrap();
+  let re = Regex::new(r"(-?(?P<num>\d+(\.\d*)?|\.\d+))(?P<unit>(px)|(vw)|(vh)|(pX)|(PX)|(Px))").unwrap();
   let bytes = input.as_bytes();
   // 使用正则表达式进行匹配
   if let Ok(caps) = re.captures(bytes) {
@@ -165,6 +179,14 @@ pub fn generate_expr_with_css_input(input: String, platform: Platform) -> Expr {
               };
               args.push(generate_expr_lit_num!(number * 16.0));
             },
+            "pX" | "PX" | "Px" => {
+              handler = match platform {
+                Platform::ReactNative => Some(RN_CONVERT_STYLE_VU_FN.to_string()),
+                Platform::Harmony => Some(CONVERT_STYLE_PX_FN.to_string())
+              };
+              args.push(generate_expr_lit_num!(number));
+              args.push(generate_expr_lit_str!("PX"));
+            }
             _ => {}
           }
     

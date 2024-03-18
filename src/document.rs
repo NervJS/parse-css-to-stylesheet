@@ -21,6 +21,7 @@ use crate::{
 pub struct JSXDocument {
   pub program: Option<Program>,
   pub jsx_record: Option<JSXRecord>,
+  pub taro_components: Vec<String>,
 }
 
 impl JSXDocument {
@@ -28,6 +29,7 @@ impl JSXDocument {
     JSXDocument {
       program: None,
       jsx_record: None,
+      taro_components: Vec::new(),
     }
   }
 
@@ -70,6 +72,7 @@ impl JSXDocument {
       // 收集使用的 Taro Component
       let mut visitor = CollectVisitor::new();
       program.visit_with(&mut visitor);
+      self.taro_components = visitor.taro_components.to_vec();
       let mut visitor = AstVisitor::new(&mut jsx_record, &visitor.taro_components);
       program.visit_all_with(&mut visitor);
       self.program = Some(program);

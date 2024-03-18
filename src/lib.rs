@@ -41,7 +41,8 @@ pub fn parse(component: String, styles: Vec<String>, options: ParseOptions) -> S
     _ => Platform::Harmony
   };
 
-  let mut is_enable_nesting = options.is_enable_nesting.map_or(false, |item| item);
+  // let mut is_enable_nesting = options.is_enable_nesting.map_or(false, |item| item);
+  let mut is_enable_nesting = true;
 
   // 解析组件文件
   let cm: Lrc<SourceMap> = Default::default();
@@ -69,7 +70,7 @@ pub fn parse(component: String, styles: Vec<String>, options: ParseOptions) -> S
     style_data.all_style.clone(),
     is_enable_nesting,
   );
-  style_write.write(platform);
+  style_write.write(platform, document.taro_components.clone());
 
   // ast 转代码
   let mut buf = Vec::new();

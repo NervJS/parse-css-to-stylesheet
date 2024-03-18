@@ -20,7 +20,7 @@ use swc_ecma_visit::{
 
 use crate::{
   constants::{CALC_DYMAMIC_STYLE, CALC_STATIC_STYLE, COMBINE_NESTING_STYLE, CONVERT_STYLE_PX_FN, HM_STYLE, INNER_STYLE, INNER_STYLE_DATA, NESTING_STYLE, NESTINT_STYLE_DATA, RN_CONVERT_STYLE_PX_FN, RN_CONVERT_STYLE_VU_FN}, parse_style_properties::parse_style_properties, scraper::Element, style_parser::StyleValue, style_propetries::{style_value_type::StyleValueType, traits::ToStyleValue, unit::{Platform, PropertyTuple}}, utils::{
-    create_qualname, get_callee_attributes, prefix_style_key, recursion_jsx_member, split_selector, to_camel_case, to_kebab_case, TSelector
+    create_qualname, get_callee_attributes, is_starts_with_uppercase, prefix_style_key, recursion_jsx_member, split_selector, to_camel_case, to_kebab_case, TSelector
   }
 };
 
@@ -435,7 +435,16 @@ impl ModuleMutVisitor {
 
 impl ModuleMutVisitor {
   fn get_nesting_visitor (&self) -> impl VisitMut {
-    struct MyVisitor;
+    struct MyVisitor {
+      is_enable_nesting: bool
+    }
+    impl MyVisitor {
+      fn new (is_enable_nesting: bool) -> Self {
+        MyVisitor {
+          is_enable_nesting
+        }
+      }
+    }
     impl VisitMut for MyVisitor {
       fn visit_mut_function(&mut self, _: &mut Function) {}
       fn visit_mut_arrow_expr(&mut self, _: &mut ArrowExpr) {}
@@ -457,12 +466,19 @@ impl ModuleMutVisitor {
               callee: Callee::Expr(Box::new(Expr::Ident(quote_ident!(COMBINE_NESTING_STYLE)))),
               args: vec![
                 ExprOrSpread { expr, spread: None },
-                ExprOrSpread { expr: Box::new(Expr::Call(CallExpr {
-                  span: DUMMY_SP,
-                  callee: Callee::Expr(Box::new(Expr::Ident(quote_ident!(NESTING_STYLE)))),
-                  args: vec![],
-                  type_args: None
-                })), spread: None }
+                ExprOrSpread { 
+                  expr: Box::new(
+                    match self.is_enable_nesting {
+                      true => Expr::Call(CallExpr {
+                        span: DUMMY_SP,
+                        callee: Callee::Expr(Box::new(Expr::Ident(quote_ident!(NESTING_STYLE)))),
+                        args: vec![],
+                        type_args: None
+                      }),
+                      false => Expr::Lit(Lit::Null(Null { span: DUMMY_SP }))
+                    }
+                  ), 
+                  spread: None }
               ],
               type_args: None,
             })))
@@ -470,7 +486,7 @@ impl ModuleMutVisitor {
         }
       }
     }
-    MyVisitor {}
+    MyVisitor::new(self.is_enable_nesting)
   }
   fn enable_nesting_for_class (&self, class: &mut Box<Class>) {
     let render_function = class.body.iter_mut().find(|item| {
@@ -575,64 +591,62 @@ impl VisitMut for ModuleMutVisitor {
         last_import_index = index;
       }
       // 开启层叠功能
-      if self.is_enable_nesting {
-        match stmt {
-          ModuleItem::ModuleDecl(ModuleDecl::ExportDefaultDecl(ExportDefaultDecl { decl, .. })) => {
-            match decl {
-              // export defualt class Index {}
-              DefaultDecl::Class(ClassExpr { class, .. }) => {
-                self.enable_nesting_for_class(class);
-              },
-              // export defualt function Index () {}
-              DefaultDecl::Fn(FnExpr { function, ..}) => {
-                self.enable_nesting_for_function(function);
-              }
-              _ => ()
+      match stmt {
+        ModuleItem::ModuleDecl(ModuleDecl::ExportDefaultDecl(ExportDefaultDecl { decl, .. })) => {
+          match decl {
+            // export defualt class Index {}
+            DefaultDecl::Class(ClassExpr { class, .. }) => {
+              self.enable_nesting_for_class(class);
+            },
+            // export defualt function Index () {}
+            DefaultDecl::Fn(FnExpr { function, ..}) => {
+              self.enable_nesting_for_function(function);
             }
-          },
-          ModuleItem::ModuleDecl(ModuleDecl::ExportDecl(ExportDecl { decl, .. })) => {
-            match decl {
-              // export class Index {}
-              Decl::Class(ClassDecl { class, .. }) => {
-                self.enable_nesting_for_class(class);
-              },
-              // export function Index () {}
-              Decl::Fn(FnDecl { function, ..}) => {
-                self.enable_nesting_for_function(function);
-              }
-              _ => ()
-            }
-          },
-          ModuleItem::Stmt(Stmt::Decl(Decl::Class(ClassDecl { class, .. }))) => {
-            // class Index {}
-            self.enable_nesting_for_class(class);
-          },
-          ModuleItem::Stmt(Stmt::Decl(Decl::Fn(FnDecl { function, .. }))) => {
-            // function Index () {}
-            self.enable_nesting_for_function(function);
-          },
-          ModuleItem::Stmt(Stmt::Decl(Decl::Var(var_decl))) => {
-            var_decl.decls.iter_mut().for_each(|decl| {
-              match &mut decl.init {
-                Some(init) => {
-                  match &mut **init {
-                    Expr::Fn(FnExpr { function, .. }) => {
-                      // const Index = function () {}
-                      self.enable_nesting_for_function(function);
-                    },
-                    Expr::Arrow(ArrowExpr { body, .. }) => {
-                      // const Index = () => {}
-                      self.enable_nesting_for_arrow_function(body);
-                    },
-                    _ => ()
-                  }
-                },
-                None => (),
-              }
-            })
+            _ => ()
           }
-          _ => ()
+        },
+        ModuleItem::ModuleDecl(ModuleDecl::ExportDecl(ExportDecl { decl, .. })) => {
+          match decl {
+            // export class Index {}
+            Decl::Class(ClassDecl { class, .. }) => {
+              self.enable_nesting_for_class(class);
+            },
+            // export function Index () {}
+            Decl::Fn(FnDecl { function, ..}) => {
+              self.enable_nesting_for_function(function);
+            }
+            _ => ()
+          }
+        },
+        ModuleItem::Stmt(Stmt::Decl(Decl::Class(ClassDecl { class, .. }))) => {
+          // class Index {}
+          self.enable_nesting_for_class(class);
+        },
+        ModuleItem::Stmt(Stmt::Decl(Decl::Fn(FnDecl { function, .. }))) => {
+          // function Index () {}
+          self.enable_nesting_for_function(function);
+        },
+        ModuleItem::Stmt(Stmt::Decl(Decl::Var(var_decl))) => {
+          var_decl.decls.iter_mut().for_each(|decl| {
+            match &mut decl.init {
+              Some(init) => {
+                match &mut **init {
+                  Expr::Fn(FnExpr { function, .. }) => {
+                    // const Index = function () {}
+                    self.enable_nesting_for_function(function);
+                  },
+                  Expr::Arrow(ArrowExpr { body, .. }) => {
+                    // const Index = () => {}
+                    self.enable_nesting_for_arrow_function(body);
+                  },
+                  _ => ()
+                }
+              },
+              None => (),
+            }
+          })
         }
+        _ => ()
       }
     }
     if last_import_index != 0 {
@@ -829,6 +843,7 @@ fn generate_stylesheet(fn_name: String, fn_data_name: String, style_object: Box<
 pub struct JSXMutVisitor<'i> {
   pub jsx_record: Rc<RefCell<JSXRecord>>,
   pub pesudo_style_record: Rc<RefCell<HashMap<SpanKey, Vec<(String, Vec<(String, Property<'i>)>)>>>>,
+  pub taro_components: Vec<String>,
   pub platform: Platform
 }
 
@@ -836,11 +851,13 @@ impl<'i> JSXMutVisitor<'i> {
   pub fn new(
     jsx_record: Rc<RefCell<JSXRecord>>,
     pesudo_style_record: Rc<RefCell<HashMap<SpanKey, Vec<(String, Vec<(String, Property<'i>)>)>>>>,
+    taro_components: Vec<String>,
     platform: Platform
   ) -> Self {
     JSXMutVisitor {
       jsx_record,
       pesudo_style_record,
+      taro_components,
       platform
     }
   }
@@ -1120,51 +1137,98 @@ impl<'i> VisitMut for JSXMutVisitor<'i> {
 
 
         // 插入静态style
-        let fun_call_expr = Expr::Call(CallExpr {
-          span: DUMMY_SP,
-          callee: Callee::Expr(Box::new(Expr::Ident(Ident::new(
-            CALC_STATIC_STYLE.into(),
-            DUMMY_SP,
-          )))),
-          args: vec![
-            ExprOrSpread::from(Box::new(Expr::Call(CallExpr {
-              span: DUMMY_SP,
-              callee: Callee::Expr(Box::new(Expr::Ident(Ident::new(
-                INNER_STYLE.into(),
-                DUMMY_SP,
-              )))),
-              type_args: None,
-              args: vec![]
-            }))),
-            match class_attr_value {
-              Some(value) => ExprOrSpread::from(Box::new(value)),
-              None => ExprOrSpread::from(Box::new(Expr::Lit(Lit::Null(Null { span: DUMMY_SP })))),
-            },
-            match static_styles.len() > 0 {
-              true => Expr::Object(ObjectLit {
+        fn get_fun_call_expr (class_attr_value: Expr, static_styles: Vec<PropOrSpread>) -> Expr {
+          Expr::Call(CallExpr {
+            span: DUMMY_SP,
+            callee: Callee::Expr(Box::new(Expr::Ident(Ident::new(
+              CALC_STATIC_STYLE.into(),
+              DUMMY_SP,
+            )))),
+            args: vec![
+              ExprOrSpread::from(Box::new(Expr::Call(CallExpr {
                 span: DUMMY_SP,
-                props: static_styles
-              }).into(),
-              false => Expr::Lit(Lit::Null(Null { span: DUMMY_SP })).into(),
-            }
-            
-          ],
-          type_args: None,
-        });
-        if let Some(attr) = n.args.get_mut(1) {
-          if let Expr::Object(object) = &mut *attr.expr {
-            // shift style 插入到前面
-            
-            object.props.insert(
-              0,
-              PropOrSpread::Prop(Box::new(Prop::KeyValue(KeyValueProp {
-                key: PropName::Ident(Ident::new(HM_STYLE.into(), DUMMY_SP)),
-                value: Box::new(fun_call_expr),
+                callee: Callee::Expr(Box::new(Expr::Ident(Ident::new(
+                  INNER_STYLE.into(),
+                  DUMMY_SP,
+                )))),
+                type_args: None,
+                args: vec![]
               }))),
-            )
-          }
+              ExprOrSpread::from(Box::new(class_attr_value)),
+              match static_styles.len() > 0 {
+                true => Expr::Object(ObjectLit {
+                  span: DUMMY_SP,
+                  props: static_styles
+                }).into(),
+                false => Expr::Lit(Lit::Null(Null { span: DUMMY_SP })).into(),
+              }
+              
+            ],
+            type_args: None,
+          })
         }
-      
+        let expr = n.args.get_mut(0);
+        match expr {
+          Some(expr_or_spread) => {
+            match *expr_or_spread.expr.clone() {
+              Expr::Ident(ident) => {
+                let name = ident.sym.to_string();
+
+                if let Some(attr) = n.args.get_mut(1) {
+                  if let Expr::Object(object) = &mut *attr.expr {
+                    if 
+                      (is_starts_with_uppercase(name.as_str()) && self.taro_components.contains(&name))
+                      || !is_starts_with_uppercase(name.as_str())
+                    {
+                      let mut shouldInsert = static_styles.len() > 0;
+                      if let Some(_) = &class_attr_value {
+                        shouldInsert = true
+                      }
+                      if shouldInsert {
+                        object.props.insert(
+                          0,
+                          PropOrSpread::Prop(Box::new(Prop::KeyValue(KeyValueProp {
+                            key: PropName::Ident(Ident::new(HM_STYLE.into(), DUMMY_SP)),
+                            value: Box::new(get_fun_call_expr(match class_attr_value {
+                                Some(value) => value.clone(),
+                                None => Expr::Lit(Lit::Null(Null { span: DUMMY_SP })),
+                            }, static_styles)),
+                          }))),
+                        )
+                      }
+                    } else {
+                      if let Some(class_attr_value) = class_attr_value {
+                        object.props.insert(
+                          0,
+                          PropOrSpread::Prop(Box::new(Prop::KeyValue(KeyValueProp {
+                            key: PropName::Ident(Ident::new("__styleSheet".into(), DUMMY_SP)),
+                            value: Box::new(Expr::Object(ObjectLit {
+                              span: DUMMY_SP,
+                              props: vec![
+                                PropOrSpread::Prop(Box::new(Prop::KeyValue(KeyValueProp {
+                                  key: PropName::Ident(Ident::new("key".into(), DUMMY_SP)),
+                                  value: Box::new(class_attr_value.clone()),
+                                }))),
+                                PropOrSpread::Prop(Box::new(Prop::KeyValue(KeyValueProp {
+                                  key: PropName::Ident(Ident::new("value".into(), DUMMY_SP)),
+                                  value: Box::new(get_fun_call_expr(class_attr_value.clone(), vec![])),
+                                }))),
+                              ],
+                            })),
+                          }))
+                        ))
+                      };
+                    }
+                  }
+                }
+              
+              },
+              _ => {}
+            };
+          },
+          None => {}
+        }
+    
         // 插入动态style
         if dynamic_styles.len() > 0 {
           if !has_style {
@@ -1265,45 +1329,93 @@ impl<'i> VisitMut for JSXMutVisitor<'i> {
       }
 
       // 插入静态style
-      let fun_call_expr = Expr::Call(CallExpr {
-        span: DUMMY_SP,
-        callee: Callee::Expr(Box::new(Expr::Ident(Ident::new(
-          CALC_STATIC_STYLE.into(),
-          DUMMY_SP,
-        )))),
-        args: vec![
-          ExprOrSpread::from(Box::new(Expr::Call(CallExpr {
-            span: DUMMY_SP,
-            callee: Callee::Expr(Box::new(Expr::Ident(Ident::new(
-              INNER_STYLE.into(),
-              DUMMY_SP,
-            )))),
-            type_args: None,
-            args: vec![]
-          }))),
-          match class_attr_value {
-            Some(value) => ExprOrSpread::from(Box::new(value)),
-            None => ExprOrSpread::from(Box::new(Expr::Lit(Lit::Null(Null { span: DUMMY_SP })))),
-          },
-          match static_styles.len() > 0 {
-            true => Expr::Object(ObjectLit {
-              span: DUMMY_SP,
-              props: static_styles
-            }).into(),
-            false => Expr::Lit(Lit::Null(Null { span: DUMMY_SP })).into(),
-          }
-          
-        ],
-        type_args: None,
-      });
-      n.opening.attrs.push(JSXAttrOrSpread::JSXAttr(JSXAttr {
-        span: DUMMY_SP,
-        name: JSXAttrName::Ident(Ident::new(HM_STYLE.into(), DUMMY_SP)),
-        value: Some(JSXAttrValue::JSXExprContainer(JSXExprContainer {
+      fn get_fun_call_expr (class_attr_value: Expr, static_styles: Vec<PropOrSpread>) -> Expr {
+        Expr::Call(CallExpr {
           span: DUMMY_SP,
-          expr: JSXExpr::Expr(Box::new(fun_call_expr)),
-        })),
-      }));
+          callee: Callee::Expr(Box::new(Expr::Ident(Ident::new(
+            CALC_STATIC_STYLE.into(),
+            DUMMY_SP,
+          )))),
+          args: vec![
+            ExprOrSpread::from(Box::new(Expr::Call(CallExpr {
+              span: DUMMY_SP,
+              callee: Callee::Expr(Box::new(Expr::Ident(Ident::new(
+                INNER_STYLE.into(),
+                DUMMY_SP,
+              )))),
+              type_args: None,
+              args: vec![]
+            }))),
+            ExprOrSpread::from(Box::new(class_attr_value)),
+            match static_styles.len() > 0 {
+              true => Expr::Object(ObjectLit {
+                span: DUMMY_SP,
+                props: static_styles
+              }).into(),
+              false => Expr::Lit(Lit::Null(Null { span: DUMMY_SP })).into(),
+            }
+            
+          ],
+          type_args: None,
+        })
+      }
+      // 判断是否Taro组件还是自定义组件
+      // Taro组件插入__hmStyle__属性
+      // 自定义组件插入__styleSheet属性
+      if let JSXElementName::Ident(ident) = &n.opening.name {
+        let name = ident.sym.to_string();
+        if 
+          (is_starts_with_uppercase(name.as_str()) && self.taro_components.contains(&name))
+          || !is_starts_with_uppercase(name.as_str())
+         {
+          let mut shouldInsert = static_styles.len() > 0;
+          if let Some(_) = &class_attr_value {
+            shouldInsert = true
+          }
+          if shouldInsert {
+            n.opening.attrs.insert(
+              0,
+              JSXAttrOrSpread::JSXAttr(JSXAttr {
+                span: DUMMY_SP,
+                name: JSXAttrName::Ident(Ident::new(HM_STYLE.into(), DUMMY_SP)),
+                value: Some(JSXAttrValue::JSXExprContainer(JSXExprContainer {
+                  span: DUMMY_SP,
+                  expr: JSXExpr::Expr(Box::new(get_fun_call_expr(match class_attr_value {
+                      Some(value) => value.clone(),
+                      None => Expr::Lit(Lit::Null(Null { span: DUMMY_SP })),
+                  }, static_styles))),
+                })),
+              }),
+            );
+          }
+        } else {
+          match class_attr_value.clone() {
+            Some(class_attr_value) => {
+              n.opening.attrs.push(JSXAttrOrSpread::JSXAttr(JSXAttr {
+                span: DUMMY_SP,
+                name: JSXAttrName::Ident(Ident::new("__styleSheet".into(), DUMMY_SP)),
+                value: Some(JSXAttrValue::JSXExprContainer(JSXExprContainer {
+                  span: DUMMY_SP,
+                  expr: JSXExpr::Expr(Box::new(Expr::Object(ObjectLit {
+                    span: DUMMY_SP,
+                    props: vec![
+                      PropOrSpread::Prop(Box::new(Prop::KeyValue(KeyValueProp {
+                        key: PropName::Ident(Ident::new("key".into(), DUMMY_SP)),
+                        value: Box::new(class_attr_value.clone()),
+                      }))),
+                      PropOrSpread::Prop(Box::new(Prop::KeyValue(KeyValueProp {
+                        key: PropName::Ident(Ident::new("value".into(), DUMMY_SP)),
+                        value: Box::new(get_fun_call_expr(class_attr_value.clone(), vec![])),
+                      }))),
+                    ],
+                  }))),
+                })),
+              }));
+            },
+            None => {},
+          }
+        }
+      }
 
       // 插入动态style
       if dynamic_styles.len() > 0 {

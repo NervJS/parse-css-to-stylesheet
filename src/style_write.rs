@@ -33,13 +33,14 @@ impl<'i> StyleWrite<'i> {
     }
   }
 
-  pub fn write(&mut self, platform: Platform) {
+  pub fn write(&mut self, platform: Platform, taro_components: Vec<String>) {
     // 插入到jsx的style里
     {
       let mut jsx_mut_visitor =
         JSXMutVisitor::new(
           self.jsx_record.clone(), 
           self.pesudo_style_record.clone(),
+          taro_components.clone(),
           platform.clone()
         );
       self

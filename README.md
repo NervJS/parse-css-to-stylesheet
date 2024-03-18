@@ -196,3 +196,58 @@ const code = parse(jsxCode, [cssCode1, cssCode2, ...], {
 | :root             | :root                    | 选择文档的根元素                                                  |    ❌    |
 | :checked          | input:checked            | 选择每个选中的输入元素                                            |    ❌    |
 | ...               |                          | 其他                                                              |    ❌    |
+
+## 常见问题
+
+### 1. 跨组件传递 className、style
+
+#### ❌ 错误做法
+
+比如业务上针对`@tarojs/components`的组件进行重导出，如引入了`Image`，对其进行了**二次封装**，然后通过一个入口统一导出如：
+
+```js
+// ./components.js
+import { View, Text } from "@tarojs/components";
+
+// 这里的Image实际上是对TaroImage的二次封装，一样的暴露出style和classname使用
+export { default as Image } from "./xxxx";
+```
+
+- 在 Taro 编译的视角来看`<Image/>`已经是一个**自定义组件**，并且它接收了`className`，也就说明了它的类名其实是往下传递了，我们会在运行时进行**样式合成**
+- `<View/>`和`<Text/>`其实是原封不动的直接导出的，本质上它并不是一个自定义组件，所以 Taro 在编译时，会在**编译阶段将样式赋予上去**
+
+```js
+// 注意：这里的组件从统一入口进行导入
+import { View, Image } from "./components";
+
+function Index() {
+  return (
+    <View className="xxx">
+      <Image className="xxxxxx" />
+    </View>
+  );
+}
+```
+
+但是问题来了，这里在实际使用时，`<View/>`和`<Image/>`都是通过`'./components'`导入，编译阶段无法知道他们是**Taro 组件**还是**自定义组件**，顾在实际运行时，都会视为**自定义组件**对待
+
+因为**自定义组件**是在**运行时动态合成样式**，顾性能远不及**Taro 组件**
+
+#### ✅ 正确做法
+
+如果 Taro 组件没有二次封装，我们建议从`@tarojs/components`导入，提供编译的优化效果
+
+```js
+// 自定义组件引入
+import { Image } from "./components";
+// Taro组件引入
+import { View } from "@tarojs/components";
+
+function Index() {
+  return (
+    <View className="xxx">
+      <Image className="xxxxxx" />
+    </View>
+  );
+}
+```

@@ -1,3 +1,12 @@
+## [0.0.40](https://github.com/NervJS/parse-css-to-stylesheet/compare/v0.0.39...v0.0.40) (2024-03-18)
+
+
+### Features
+
+* 支持跨组件传递class和style ([5d785cf](https://github.com/NervJS/parse-css-to-stylesheet/commit/5d785cf6731d27ae00247963fabf633021983b2d))
+
+
+
 ## [0.0.39](https://github.com/NervJS/parse-css-to-stylesheet/compare/v0.0.38...v0.0.39) (2024-03-14)
 
 

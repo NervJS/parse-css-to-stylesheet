@@ -11,6 +11,7 @@ pub type StyleValue = Vec<StyleValueType>;
 pub struct StyleData<'i> {
   pub pesudo_style_record: Rc<RefCell<HashMap<SpanKey, Vec<(String, Vec<(String, Property<'i>)>)>>>>,
   pub all_style: Rc<RefCell<HashMap<String, StyleValue>>>,
+  pub css_variables: Rc<RefCell<Vec<(String, Property<'i>)>>>,
   pub has_nesting: bool
 }
 
@@ -96,12 +97,26 @@ impl<'i> StyleParser<'i> {
     let mut all_style = self.all_style.borrow_mut();
     let mut style_record = HashMap::new();
     let mut pesudo_style_record = HashMap::new();
-    let mut final_all_style = self.calc_style_record(&mut all_style);
+    let mut css_variables = vec![];
     // 是否含有嵌套选择器
     let mut has_nesting = false;
 
     // final_all_style 转换为驼峰命名
-    let mut final_all_style = final_all_style.iter_mut().map(|(selector, style_value)| {
+    let mut final_all_style = vec![];
+    self.calc_style_record(&mut all_style).iter_mut().for_each(|(selector, style_value)| {
+      // 判断是否含有伪类:root
+      if selector == ":root" {
+        css_variables = style_value.declaration.declarations.iter().map(|property| {
+          (
+            property
+              .property_id()
+              .to_css_string(PrinterOptions::default())
+              .unwrap(),
+            property.clone(),
+          )
+        }).collect::<Vec<(_, _)>>();
+        return;
+      }
       let properties = style_value.declaration.declarations.iter().map(|property| {
         (
           to_camel_case(
@@ -120,16 +135,15 @@ impl<'i> StyleParser<'i> {
       if selector.contains(" ") || selector.chars().filter(|&c| c == '.').count() > 1 {
         has_nesting = true
       }
-      (selector.to_owned(), properties)
-    })
-    .collect::<Vec<(_, _)>>();
+      final_all_style.push((selector.to_owned(), properties));
+    });
 
     let mut pesudo_selector = None;
     for (selector, style_value) in final_all_style.iter_mut() {
       // 用于查询的选择器
       let mut element_selector = selector.clone();
       // 判断是否伪类(暂时支持鸿蒙)
-      if selector.contains(":") && self.platform == Platform::Harmony {
+      if (selector.contains(":before") || selector.contains(":after")) && self.platform == Platform::Harmony {
         let _selectors = selector.split(":").collect::<Vec<&str>>();
         pesudo_selector = _selectors[1].parse::<String>().ok();
         // 伪类需要把 : 之后的选择器去掉，只保留 : 之前的选择器，用于查询所属的element
@@ -172,6 +186,7 @@ impl<'i> StyleParser<'i> {
     StyleData {
       pesudo_style_record: Rc::new(RefCell::new(final_pesudo_style_record)),
       all_style: Rc::new(RefCell::new(final_all_style)),
+      css_variables: Rc::new(RefCell::new(css_variables)),
       has_nesting
     }
   }

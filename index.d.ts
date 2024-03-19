@@ -7,4 +7,7 @@ export interface ParseOptions {
   platformString: string
   isEnableNesting?: boolean
 }
+export interface ParseResult {
+  code: string
+}
 export function parse(component: string, styles: Array<string>, options: ParseOptions): string

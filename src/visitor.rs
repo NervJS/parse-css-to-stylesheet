@@ -1,6 +1,6 @@
 
 use std::{
-  borrow::Borrow, cell::{Ref, RefCell}, collections::{BTreeMap, HashMap, VecDeque}, hash::{Hash, Hasher}, rc::Rc, vec
+  cell::RefCell, collections::{BTreeMap, HashMap, VecDeque}, hash::{Hash, Hasher}, rc::Rc, vec
 };
 
 use html5ever::{tendril::StrTendril, Attribute};
@@ -19,7 +19,7 @@ use swc_ecma_visit::{
 };
 
 use crate::{
-  constants::{CALC_DYMAMIC_STYLE, CALC_STATIC_STYLE, COMBINE_NESTING_STYLE, CONVERT_STYLE_PX_FN, HM_STYLE, INNER_STYLE, INNER_STYLE_DATA, NESTING_STYLE, NESTINT_STYLE_DATA, RN_CONVERT_STYLE_PX_FN, RN_CONVERT_STYLE_VU_FN}, parse_style_properties::parse_style_properties, scraper::Element, style_parser::StyleValue, style_propetries::{style_value_type::StyleValueType, traits::ToStyleValue, unit::{Platform, PropertyTuple}}, utils::{
+  constants::{CALC_STATIC_STYLE, COMBINE_NESTING_STYLE, CONVERT_STYLE_PX_FN, HM_STYLE, INNER_STYLE, INNER_STYLE_DATA, NESTING_STYLE, NESTINT_STYLE_DATA, RN_CONVERT_STYLE_PX_FN, RN_CONVERT_STYLE_VU_FN}, parse_style_properties::parse_style_properties, scraper::Element, style_parser::StyleValue, style_propetries::{style_value_type::StyleValueType, traits::ToStyleValue, unit::{Platform, PropertyTuple}}, utils::{
     create_qualname, get_callee_attributes, is_starts_with_uppercase, prefix_style_key, recursion_jsx_member, split_selector, to_camel_case, to_kebab_case, TSelector
   }
 };
@@ -447,7 +447,7 @@ impl ModuleMutVisitor {
     }
     impl VisitMut for MyVisitor {
       fn visit_mut_function(&mut self, _: &mut Function) {}
-      fn visit_mut_arrow_expr(&mut self, _: &mut ArrowExpr) {}
+      fn visit_mut_arrow_expr(&mut self, arrow: &mut ArrowExpr) {}
       fn visit_mut_return_stmt(&mut self, stmt: &mut ReturnStmt) {
         let arg = &mut stmt.arg;
         if let Some(expr_in_box) = arg {
@@ -485,6 +485,23 @@ impl ModuleMutVisitor {
           }
         }
       }
+      fn visit_mut_call_expr(&mut self,n: &mut CallExpr) {
+        n.args.iter_mut().for_each(|arg| {
+          arg.expr.visit_mut_children_with(self);
+          match &mut *arg.expr {
+            Expr::Arrow(arrow) => {
+              arrow.body.visit_mut_children_with(self);
+            },
+            Expr::Fn(func) => {
+              func.function.body.visit_mut_children_with(self);
+            },
+            Expr::Call(call) => {
+              call.visit_mut_with(self);
+            }
+            _ => {}
+          }
+        });
+      }
     }
     MyVisitor::new(self.is_enable_nesting)
   }
@@ -507,6 +524,12 @@ impl ModuleMutVisitor {
   fn enable_nesting_for_arrow_function (&self, body: &mut Box<BlockStmtOrExpr>) {
     body.visit_mut_children_with(&mut &mut self.get_nesting_visitor());
   }
+  fn enable_nesting_for_call_expr (&self, call: &mut CallExpr) {
+    call.visit_mut_with(&mut &mut self.get_nesting_visitor());
+  }
+  fn enable_nesting_for_expr (&self, expr: &mut Expr) {
+    expr.visit_mut_children_with(&mut &mut self.get_nesting_visitor());
+  }
 }
 
 impl VisitMut for ModuleMutVisitor {
@@ -527,7 +550,7 @@ impl VisitMut for ModuleMutVisitor {
       let mut insert_key = key.to_string();
       let mut insert_value = vec![];
 
-      if key.contains(":") && self.platform == Platform::Harmony {
+      if (key.contains(":after") || key.contains(":before")) && self.platform == Platform::Harmony {
         let mut pesudo_key = String::new();
         let key_arr = key.split(":").collect::<Vec<&str>>();
         if key_arr.len() == 2 {
@@ -639,7 +662,14 @@ impl VisitMut for ModuleMutVisitor {
                     // const Index = () => {}
                     self.enable_nesting_for_arrow_function(body);
                   },
-                  _ => ()
+                  Expr::Call(call) => {
+                    // const Index = withStyle()(() => {})
+                    self.enable_nesting_for_call_expr(call);
+                  },
+                  _ => {}
+                  // expr => {
+                  //   self.enable_nesting_for_expr(expr)
+                  // }
                 }
               },
               None => (),

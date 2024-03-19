@@ -1,17 +1,13 @@
-.pesudo {
-  height: 400px;
-  width: 400px;
-  margin-top: calc(100% - 30px);
+:root {
+  --color: #403635 + #403635;
+  --angle: 30deg;
+  --length: 200px;
+  --res-olution: 300dpi;
+  --url: url("https://www.google.com");
+  --var: var(--color, '48px');
 }
 
-.pesudo:last-child {
-	color: red;
-}
-
-
-.aaa {
-  font-size: 20px;
-  -webkit-line-clamp: 2;
-  text-overflow: ellipsis;
-  color: #00f;
+.hello {
+  height: 30px;
+  color: var(--color);
 }

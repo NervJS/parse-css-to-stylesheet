@@ -32,6 +32,11 @@ pub struct ParseOptions {
   pub is_enable_nesting: Option<bool>,
 }
 
+#[napi(object)]
+pub struct ParseResult {
+  pub code: String,
+}
+
 #[napi]
 pub fn parse(component: String, styles: Vec<String>, options: ParseOptions) -> String {
 
@@ -85,5 +90,6 @@ pub fn parse(component: String, styles: Vec<String>, options: ParseOptions) -> S
     emitter.emit_program(&program.borrow()).unwrap();
   }
   let code = String::from_utf8(buf).unwrap().replace("\r\n", "\n");
+
   code
 }

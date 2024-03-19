@@ -1,3 +1,12 @@
+## [0.0.41](https://github.com/NervJS/parse-css-to-stylesheet/compare/v0.0.40...v0.0.41) (2024-03-19)
+
+
+### Features
+
+* 支持解析高阶组件 ([e75aa7f](https://github.com/NervJS/parse-css-to-stylesheet/commit/e75aa7fae41b6280eff7779bfea72d13e309cab6))
+
+
+
 ## [0.0.40](https://github.com/NervJS/parse-css-to-stylesheet/compare/v0.0.39...v0.0.40) (2024-03-18)
 
 

@@ -181,7 +181,7 @@ const code = parse(jsxCode, [cssCode1, cssCode2, ...], {
 | \[attribute=value] | \[target=blank]     | 选择所有使用 target="blank"的元素                            |   ❌    |
 | ...                |                     | 其他                                                         |   ❌    |
 
-### 伪类
+### 伪元素
 
 - 支持**before、after**，
 

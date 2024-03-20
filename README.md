@@ -194,8 +194,8 @@ const code = parse(jsxCode, [cssCode1, cssCode2, ...], {
 | :first-child      | .intro:first-child       | 选择 class="intro" 元素是其父级的第一个子级                       |    ❌    | 后续支持 |
 | :last-child       | .intro:last-child        | 选择 class="intro" 元素是其父级的最后一个子级                     |    ❌    | 后续支持 |
 | :root             | :root                    | 选择文档的根元素                                                  |    ❌    | 后续支持 |
-| :checked          | input:checked            | 选择每个选中的输入元素                                            |    ❌    |    ✔️    |
-| ...               |                          | 其他                                                              |    ❌    |    ✔️    |
+| :checked          | input:checked            | 选择每个选中的输入元素                                            |    ❌    |          |
+| ...               |                          | 其他                                                              |    ❌    |          |
 
 ## CSS 变量
 

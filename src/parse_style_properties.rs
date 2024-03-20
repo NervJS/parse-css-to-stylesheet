@@ -11,7 +11,7 @@ pub fn parse_style_properties(properties: &Vec<(String, Property)>) -> Vec<Style
     match value {
       Property::Unparsed(unpared) => {
         unpared.value.0.iter().for_each(|value| {
-          let expr = get_token_or_value(value.clone());
+          let expr = get_token_or_value(value.clone(), "jsx");
           final_properties.push(StyleValueType::Variables(Variables::new(id.to_string(), expr)));
         });
       },

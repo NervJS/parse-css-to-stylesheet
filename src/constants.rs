@@ -8,6 +8,10 @@ pub const COMBINE_NESTING_STYLE: &'static str = "__combine_nesting_style__";
 pub const NESTINT_STYLE_DATA: &'static str = "__nesting_style_data__";
 pub const CALC_DYMAMIC_STYLE: &'static str = "calcDynamicStyle";
 pub const CALC_STATIC_STYLE: &'static str = "calcStaticStyle";
+pub const CSS_VARIABLE_MAP: &'static str = "__css_var_map__";
+pub const CSS_VAR_FN: &'static str = "__var_fn";
+pub const LAZY_CSS_VAR_FN: &'static str = "__lazy_var_fn";
+
 
 
 pub const RN_CONVERT_STYLE_PX_FN: &'static str = "scalePx2dp";

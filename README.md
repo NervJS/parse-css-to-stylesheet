@@ -10,10 +10,12 @@
 import { parse } from '@tarojs/parse-css-to-stylesheet'
 
 // Harmony
-const code = parse(jsxCode, [cssCode1, cssCode2, ...], {
+const { code, cssVariables } = parse(jsxCode, [cssCode1, cssCode2, ...], {
   platformString: 'Harmony',
   isEnableNesting: true // 支持解析嵌套选择器，默认关闭
 })
+// code: jsx代码 string
+// cssVariables: css变量 string
 ```
 
 在 Harmony 中，编译结果会依赖`@tarojs/plugin-platform-harmony-ets`中提供的几个包方法：
@@ -202,6 +204,8 @@ const code = parse(jsxCode, [cssCode1, cssCode2, ...], {
 ## CSS 变量
 
 若使用 CSS 变量，挂载的属性应当挂载`:root`选择器上
+
+⚠️：暂不支持`var传递3个及以上参数`, 如`height: var(--h, --he, 30px);`、`margin: var(--m, 30px 30px);`
 
 ```css
 :root {

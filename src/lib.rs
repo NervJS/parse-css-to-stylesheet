@@ -36,10 +36,11 @@ pub struct ParseOptions {
 #[napi(object)]
 pub struct ParseResult {
   pub code: String,
+  pub css_variables: Option<String>,
 }
 
 #[napi]
-pub fn parse(component: String, styles: Vec<String>, options: ParseOptions) -> String {
+pub fn parse(component: String, styles: Vec<String>, options: ParseOptions) -> ParseResult {
 
   let platform = match options.platform_string.as_str() {
     "ReactNative" => Platform::ReactNative,
@@ -67,6 +68,12 @@ pub fn parse(component: String, styles: Vec<String>, options: ParseOptions) -> S
     is_enable_nesting = style_data.has_nesting;
   }
 
+  // 解析CSS变量
+  let variable_code = parse_css_variables::write(
+    parse_css_variables::parse(style_data.css_variables.borrow().clone())
+  );
+
+
   let program = Rc::new(RefCell::new(document.program.as_ref().unwrap().clone()));
   let jsx_record = Rc::new(RefCell::new(document.jsx_record.as_ref().unwrap().clone()));
   let mut style_write = StyleWrite::new(
@@ -92,5 +99,13 @@ pub fn parse(component: String, styles: Vec<String>, options: ParseOptions) -> S
   }
   let code = String::from_utf8(buf).unwrap().replace("\r\n", "\n");
 
-  code
+  ParseResult {
+    code,
+    css_variables: variable_code,
+  }
+}
+
+#[napi]
+pub fn combine_css_variables(variables: Vec<String>) -> Option<String> {
+  parse_css_variables::combine_css_variables(variables)
 }

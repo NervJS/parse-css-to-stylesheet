@@ -33,7 +33,7 @@ impl JSXDocument {
     }
   }
 
-  pub fn parse(&mut self, jsx: String, cm: Lrc<SourceMap>, comments: &SingleThreadedComments) {
+  pub fn jsx_parse (&mut self, jsx: String, cm: Lrc<SourceMap>, comments: &SingleThreadedComments) -> Program {
     // 初始化 swc 的错误处理器
     let handler = Handler::with_tty_emitter(ColorConfig::Auto, true, false, Some(cm.clone()));
 
@@ -59,6 +59,11 @@ impl JSXDocument {
       .parse_program()
       .map_err(|e| e.into_diagnostic(&handler).emit())
       .expect("解析 JSX 失败");
+    program
+  }
+
+  pub fn parse(&mut self, jsx: String, cm: Lrc<SourceMap>, comments: &SingleThreadedComments) {
+    let program = self.jsx_parse(jsx, cm, comments);
 
     let globals = Globals::default();
     GLOBALS.set(&globals, || {

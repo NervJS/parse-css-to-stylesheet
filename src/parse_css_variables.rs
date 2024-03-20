@@ -2,13 +2,14 @@ use std::{collections::HashMap, rc::Rc};
 
 use lightningcss::{properties::{custom::{Token, TokenOrValue}, Property}, traits::ToCss, values::time::Time};
 use swc_common::{comments::SingleThreadedComments, sync::Lrc, SourceMap, DUMMY_SP};
-use swc_ecma_ast::{AssignExpr, AssignOp, BindingIdent, CallExpr, Callee, ComputedPropName, Decl, Expr, ExprOrSpread, ExprStmt, KeyValueProp, Lit, MemberExpr, MemberProp, Module, ModuleItem, Number, ObjectLit, Pat, PatOrExpr, Program, Prop, PropName, PropOrSpread, Stmt, VarDecl, VarDeclKind, VarDeclarator};
+use swc_ecma_ast::{ArrowExpr, AssignExpr, AssignOp, BindingIdent, BlockStmt, BlockStmtOrExpr, CallExpr, Callee, ComputedPropName, Decl, DefaultDecl, ExportDefaultDecl, ExportDefaultExpr, Expr, ExprOrSpread, ExprStmt, Ident, ImportDecl, ImportNamedSpecifier, ImportSpecifier, KeyValueProp, Lit, MemberExpr, MemberProp, Module, ModuleDecl, ModuleExportName, ModuleItem, Number, ObjectLit, ParenExpr, Pat, PatOrExpr, Program, Prop, PropName, PropOrSpread, ReturnStmt, Stmt, VarDecl, VarDeclKind, VarDeclarator};
 use swc_ecma_codegen::{text_writer::JsWriter, Emitter};
-use swc_ecma_utils::quote_ident;
+use swc_ecma_utils::{quote_ident, quote_str};
+use swc_ecma_visit::{Visit, VisitAll, VisitAllWith};
 
-use crate::style_propetries::unit::{convert_color_keywords_to_hex, generate_expr_by_length_value, generate_expr_with_css_input, Platform};
+use crate::{constants::{CALC_STATIC_STYLE, CONVERT_STYLE_PX_FN, CSS_VARIABLE_MAP, CSS_VAR_FN, LAZY_CSS_VAR_FN}, document::JSXDocument, style_propetries::unit::{convert_color_keywords_to_hex, generate_expr_by_length_value, generate_expr_with_css_input, Platform}};
 
-
+// 解析CSS变量
 pub fn parse(properties: Vec<(String, Property<'_>)>) -> HashMap<String, Expr> {
 
   let mut css_variables = HashMap::new();
@@ -18,7 +19,7 @@ pub fn parse(properties: Vec<(String, Property<'_>)>) -> HashMap<String, Expr> {
       Property::Custom(custom) => {
         let token_or_value = custom.value.0.get(0);
         if let Some(token_or_value) = token_or_value {
-          expr = Some(get_token_or_value(token_or_value.to_owned()));
+          expr = Some(get_token_or_value(token_or_value.to_owned(), "css"));
         }
       },
       _ => {}
@@ -30,11 +31,11 @@ pub fn parse(properties: Vec<(String, Property<'_>)>) -> HashMap<String, Expr> {
   css_variables
 }
 
-
-pub fn write(css_variables: HashMap<String, Expr>) -> String {
+// 生成CSS变量代码
+pub fn write(css_variables: HashMap<String, Expr>) -> Option<String> {
 
   if css_variables.len() == 0 {
-    return "".to_string();
+    return None
   }
 
   let obj = Expr::Object(ObjectLit {
@@ -56,25 +57,13 @@ pub fn write(css_variables: HashMap<String, Expr>) -> String {
     span: DUMMY_SP,
     body: vec![
       ModuleItem::Stmt(
-        Stmt::Decl(
-          Decl::Var(
-            Box::new(
-              VarDecl {
-                span: DUMMY_SP,
-                kind: VarDeclKind::Const,
-                declare: false,
-                decls: vec![
-                  VarDeclarator {
-                    span: DUMMY_SP,
-                    name: Pat::Ident(BindingIdent::from(quote_ident!("css_var_map"))),
-                    init: Some(Box::new(obj)),
-                    definite: false,
-                  }
-                ]
-              }
-            )
-          )
-        )
+        Stmt::Expr(ExprStmt {
+          span: DUMMY_SP,
+          expr: Box::new(Expr::Paren(ParenExpr {
+            span: DUMMY_SP,
+            expr: Box::new(obj)
+          }))
+        })
       )
     ],
     shebang: None,
@@ -90,10 +79,139 @@ pub fn write(css_variables: HashMap<String, Expr>) -> String {
     };
     emitter.emit_program(&program).unwrap();
   }
-  String::from_utf8(buf).unwrap().replace("\r\n", "\n")
+  
+  Some(String::from_utf8(buf).unwrap().replace("\r\n", "\n"))
 }
 
-pub fn get_token_or_value (token_or_value: TokenOrValue<'_>) -> Expr {
+// 汇总css变量，生成代码
+pub fn combine_css_variables (css_variable_strings: Vec<String>) -> Option<String> {
+
+  if css_variable_strings.len() == 0 {
+    return None
+  }
+
+  let mut document = JSXDocument::new();
+  // 解析组件文件
+  let cm: Lrc<SourceMap> = Default::default();
+  let comments = SingleThreadedComments::default();
+  let mut visitor = CssVariableVisitor::new();
+
+  css_variable_strings.into_iter().for_each(|css_variable_string| {
+    // 使用swc解析，并且拿到表达式
+    let program = document.jsx_parse(css_variable_string, cm.clone(), &comments);
+    program.visit_all_with(&mut visitor);
+  });
+
+  // 生成新的代码
+  // import { var_fn, convertNumber2VP, globalCss } from "@tarojs/taro-runtime"
+  // const CSS_VARIABLE_MAP = {...}
+  // globalCss.map = CSS_VARIABLE_MAP
+  let program  = Program::Module(Module {
+    span: DUMMY_SP,
+    body: vec![
+      // import ...
+      ModuleItem::ModuleDecl(ModuleDecl::Import(ImportDecl {
+        span:DUMMY_SP,
+        specifiers: vec![
+          ImportSpecifier::Named(ImportNamedSpecifier {
+            span: DUMMY_SP,
+            local: Ident::new(CSS_VAR_FN.into(), DUMMY_SP),
+            imported: None,
+            is_type_only: false,
+          }),
+          ImportSpecifier::Named(ImportNamedSpecifier {
+            span: DUMMY_SP,
+            local: Ident::new(LAZY_CSS_VAR_FN.into(), DUMMY_SP),
+            imported: None,
+            is_type_only: false,
+          }),
+          ImportSpecifier::Named(ImportNamedSpecifier {
+            span: DUMMY_SP,
+            local: Ident::new(CONVERT_STYLE_PX_FN.into(), DUMMY_SP),
+            imported: None,
+            is_type_only: false,
+          }),
+          ImportSpecifier::Named(ImportNamedSpecifier {
+            span: DUMMY_SP,
+            local: Ident::new("globalCss".into(), DUMMY_SP),
+            imported: None,
+            is_type_only: false,
+          })
+        ],
+        src: quote_str!("@tarojs/runtime").into(),
+        type_only:false, 
+        with: None
+      })), 
+      ModuleItem::Stmt(Stmt::Decl(Decl::Var(Box::new(VarDecl {
+        span: DUMMY_SP,
+        kind: VarDeclKind::Var,
+        declare: false,
+        decls: vec![VarDeclarator {
+          span: DUMMY_SP,
+          name: Pat::Ident(BindingIdent {
+            id: quote_ident!(CSS_VARIABLE_MAP),
+            type_ann: None,
+          }),
+          init: Some(Box::new(Expr::Object(ObjectLit {
+            span: DUMMY_SP,
+            props: visitor.lits.clone().into(),
+          }))),
+          definite: false,
+        }],
+      })))),
+      ModuleItem::Stmt(Stmt::Expr(ExprStmt {
+        span: DUMMY_SP,
+        expr: Box::new(Expr::Assign(AssignExpr {
+          span: DUMMY_SP,
+          op: AssignOp::Assign,
+          left: PatOrExpr::Pat(Box::new(Pat::Expr(Box::new(Expr::Member(MemberExpr {
+            span: DUMMY_SP,
+            obj: Box::new(Expr::Ident(quote_ident!("globalCss"))),
+            prop: MemberProp::Ident(quote_ident!("map")),
+          }))))),
+          right: Box::new(Expr::Ident(quote_ident!(CSS_VARIABLE_MAP))),
+        })),
+      })),
+    ],
+    shebang: None,
+  });
+  // 生成代码
+  let mut buf = vec![];
+  {
+    let mut emitter = Emitter {
+      cfg: swc_ecma_codegen::Config::default(),
+      cm: cm.clone(),
+      comments: Some(&comments),
+      wr: JsWriter::new(cm.clone(), "\n", &mut buf, None),
+    };
+    emitter.emit_program(&program).unwrap();
+  }
+  
+  Some(String::from_utf8(buf).unwrap().replace("\r\n", "\n"))
+}
+
+struct CssVariableVisitor {
+  lits: Vec<PropOrSpread>,
+}
+
+impl CssVariableVisitor {
+  fn new() -> Self {
+    CssVariableVisitor {
+      lits: vec![],
+    }
+  }
+}
+
+impl VisitAll for CssVariableVisitor {
+  fn visit_object_lit(&mut self, n: &ObjectLit) {
+    n.props.iter().for_each(|prop_or_spread| {
+      self.lits.push(prop_or_spread.clone());
+    });
+  }
+}
+
+// 获取TokenOrValue的值
+pub fn get_token_or_value (token_or_value: TokenOrValue<'_>, importSource: &str) -> Expr {
   match token_or_value {
     TokenOrValue::Token(token) => {
       match token {
@@ -143,27 +261,69 @@ pub fn get_token_or_value (token_or_value: TokenOrValue<'_>) -> Expr {
       expr_or_spead.push(ExprOrSpread {
         spread: None,
         expr: Box::new(
-          Expr::Member(MemberExpr {
-            span: DUMMY_SP,
-            obj: Box::new(Expr::Ident(quote_ident!("css_var_map"))),
-            prop: MemberProp::Computed(ComputedPropName {
-              span: DUMMY_SP,
-              expr: Box::new(Expr::Lit(Lit::Str(ident_string.into()))),
-            })
-          })
+          match importSource {
+            "css" => {
+              Expr::Arrow(ArrowExpr {
+                span: DUMMY_SP,
+                params: vec![],
+                body: Box::new(BlockStmtOrExpr::BlockStmt(BlockStmt {
+                    span: DUMMY_SP,
+                    stmts: vec![
+                      Stmt::Return(ReturnStmt {
+                        span: DUMMY_SP,
+                        arg: Some(Box::new(Expr::Member(MemberExpr {
+                          span: DUMMY_SP,
+                          obj: Box::new(Expr::Ident(quote_ident!(CSS_VARIABLE_MAP))),
+                          prop: MemberProp::Computed(ComputedPropName {
+                            span: DUMMY_SP,
+                            expr: Box::new(Expr::Lit(Lit::Str(ident_string.clone().into()))),
+                          }),
+                        }))),
+                      }),
+                    ],
+                  }),
+                ),
+                is_async: false,
+                is_generator: false,
+                type_params: None,
+                return_type: None,
+              })
+            },
+            _ => {
+              Expr::Member(MemberExpr {
+                span: DUMMY_SP,
+                obj: Box::new(
+                  Expr::Member(MemberExpr {
+                    span: DUMMY_SP,
+                    obj: Box::new(Expr::Ident(quote_ident!("globalCss"))),
+                    prop: MemberProp::Ident(quote_ident!("map")),
+                  })
+                ),
+                prop: MemberProp::Computed(ComputedPropName {
+                  span: DUMMY_SP,
+                  expr: Box::new(Expr::Lit(Lit::Str(ident_string.into()))),
+                })
+              })
+            }
+          }
         )
       });
       if let Some(fallback) = &var.fallback {
-        fallback.0.iter().for_each(|token_or_value| {
+        // 仅支持两个参数
+        fallback.0.iter().take(1).for_each(|token_or_value| {
           expr_or_spead.push(ExprOrSpread {
             spread: None,
-            expr: Box::new(get_token_or_value(token_or_value.to_owned())),
+            expr: Box::new(get_token_or_value(token_or_value.to_owned(), importSource)),
           })
         });
       }
       Expr::Call(CallExpr {
         span: Default::default(),
-        callee: Callee::Expr(Box::new(Expr::Ident(quote_ident!("var_fn")))),
+        callee: Callee::Expr(Box::new(Expr::Ident(quote_ident!(match importSource {
+          "css" => LAZY_CSS_VAR_FN,
+          _ => CSS_VAR_FN
+            
+        })))),
         args: expr_or_spead,
         type_args: None,
       })
@@ -201,14 +361,51 @@ pub fn get_token_or_value (token_or_value: TokenOrValue<'_>) -> Expr {
     },
     TokenOrValue::DashedIdent(dashed_ident) => {
       let ident_string = dashed_ident.to_css_string(Default::default()).unwrap();
-      Expr::Member(MemberExpr {
-        span: DUMMY_SP,
-        obj: Box::new(Expr::Ident(quote_ident!("css_var_map"))),
-        prop: MemberProp::Computed(ComputedPropName {
-          span: DUMMY_SP,
-          expr: Box::new(Expr::Lit(Lit::Str(ident_string.into()))),
-        })
-      })
+      match importSource {
+        "css" => {
+          Expr::Arrow(ArrowExpr {
+            span: DUMMY_SP,
+            params: vec![],
+            body: Box::new(BlockStmtOrExpr::BlockStmt(BlockStmt {
+                span: DUMMY_SP,
+                stmts: vec![
+                  Stmt::Return(ReturnStmt {
+                    span: DUMMY_SP,
+                    arg: Some(Box::new(Expr::Member(MemberExpr {
+                      span: DUMMY_SP,
+                      obj: Box::new(Expr::Ident(quote_ident!(CSS_VARIABLE_MAP))),
+                      prop: MemberProp::Computed(ComputedPropName {
+                        span: DUMMY_SP,
+                        expr: Box::new(Expr::Lit(Lit::Str(ident_string.clone().into()))),
+                      }),
+                    }))),
+                  }),
+                ],
+              }),
+            ),
+            is_async: false,
+            is_generator: false,
+            type_params: None,
+            return_type: None,
+          })
+        },
+        _ => {
+          Expr::Member(MemberExpr {
+            span: DUMMY_SP,
+            obj: Box::new(
+              Expr::Member(MemberExpr {
+                span: DUMMY_SP,
+                obj: Box::new(Expr::Ident(quote_ident!("globalCss"))),
+                prop: MemberProp::Ident(quote_ident!("map")),
+              })
+            ),
+            prop: MemberProp::Computed(ComputedPropName {
+              span: DUMMY_SP,
+              expr: Box::new(Expr::Lit(Lit::Str(ident_string.into()))),
+            })
+          })
+        }
+      }
     },
   }
 }

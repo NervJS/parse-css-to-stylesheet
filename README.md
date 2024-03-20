@@ -179,7 +179,7 @@ const code = parse(jsxCode, [cssCode1, cssCode2, ...], {
 | element            | p                   | 选择所有\<p>元素                                             |   ❌    |          |
 | \[attribute]       | \[target]           | 选择所有带有 target 属性元素                                 |   ❌    |  不支持  |
 | \[attribute=value] | \[target=blank]     | 选择所有使用 target="blank"的元素                            |   ❌    |  不支持  |
-| ...                |                     | 其他                                                         |   ❌    |    ✔️    |
+| ...                |                     | 其他                                                         |   ❌    |          |
 
 ### 伪元素 / 伪类
 

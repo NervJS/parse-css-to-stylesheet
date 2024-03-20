@@ -49,6 +49,7 @@ const code = parse(jsxCode, [cssCode1, cssCode2, ...], {
 | align-self                 | 'flex-start', 'flex-end', 'center', 'baseline', 'stretch' , 'auto'                                                                          |    ✔️    |
 | flex-wrap                  | 'nowrap', 'wrap', 'wrap-reverse'                                                                                                            |    ❌    |
 | position                   | 'relative', 'absolute'                                                                                                                      |    ✔️    |
+| position                   | 'flex'                                                                                                                                      |    ❌    |
 | left                       | Length                                                                                                                                      |    ✔️    |
 | top                        | Length                                                                                                                                      |    ❌    |
 | right                      | Length                                                                                                                                      |    ❌    |
@@ -102,6 +103,7 @@ const code = parse(jsxCode, [cssCode1, cssCode2, ...], {
 | overflow                   | 'hidden', 'visible'                                                                                                                         |    ✔️    |
 | transform                  | translate、translateX、translateY、translateZ、translate2d、translate3d、scale、scaleX、scaleY、scale3d、rotate、rotateX、rotateY、rotate3d |    ✔️    |
 | transform-origin           | Length Length                                                                                                                               |    ✔️    |
+| animation                  |                                                                                                                                             | 后续支持 |
 | content                    |                                                                                                                                             |    ✔️    |
 
 ⚠️ 注意：

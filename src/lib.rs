@@ -21,6 +21,7 @@ mod constants;
 mod style_propetries;
 mod style_parser;
 mod parse_style_properties;
+mod parse_css_variables;
 
 // component: jsx的code string
 // styles: css的code string

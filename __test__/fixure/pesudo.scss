@@ -1,10 +1,7 @@
 :root {
-  --color: #403635 + #403635;
+  --color: #403635;
   --angle: 30deg;
-  --length: 200px;
-  --res-olution: 300dpi;
-  --url: url("https://www.google.com");
-  --var: var(--color, '48px');
+  --var: var(--color, 30px)
 }
 
 .hello {

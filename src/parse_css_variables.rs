@@ -1,19 +1,16 @@
 use std::{collections::HashMap, rc::Rc};
 
-use lightningcss::{properties::{custom::TokenOrValue, Property}, traits::ToCss, values::time::Time};
+use lightningcss::{properties::{custom::{Token, TokenOrValue}, Property}, traits::ToCss, values::time::Time};
 use swc_common::{comments::SingleThreadedComments, sync::Lrc, SourceMap, DUMMY_SP};
-use swc_ecma_ast::{AssignExpr, AssignOp, CallExpr, Callee, ComputedPropName, Expr, ExprOrSpread, ExprStmt, KeyValueProp, Lit, MemberExpr, MemberProp, Module, ModuleItem, Number, ObjectLit, PatOrExpr, Program, Prop, PropName, PropOrSpread, Stmt};
+use swc_ecma_ast::{AssignExpr, AssignOp, BindingIdent, CallExpr, Callee, ComputedPropName, Decl, Expr, ExprOrSpread, ExprStmt, KeyValueProp, Lit, MemberExpr, MemberProp, Module, ModuleItem, Number, ObjectLit, Pat, PatOrExpr, Program, Prop, PropName, PropOrSpread, Stmt, VarDecl, VarDeclKind, VarDeclarator};
 use swc_ecma_codegen::{text_writer::JsWriter, Emitter};
 use swc_ecma_utils::quote_ident;
 
-use crate::style_propetries::unit::{convert_color_keywords_to_hex, generate_expr_by_length_value, Platform};
+use crate::style_propetries::unit::{convert_color_keywords_to_hex, generate_expr_by_length_value, generate_expr_with_css_input, Platform};
 
 
 pub fn parse(properties: Vec<(String, Property<'_>)>) -> HashMap<String, Expr> {
 
-  // properties.iter().for_each(|(key, value)| {
-  //   println!("key: {}, value: {:?}", key, value);
-  // });
   let mut css_variables = HashMap::new();
   properties.iter().for_each(|(key, value)| {
     let mut expr: Option<Expr> = None;
@@ -35,9 +32,10 @@ pub fn parse(properties: Vec<(String, Property<'_>)>) -> HashMap<String, Expr> {
 
 
 pub fn write(css_variables: HashMap<String, Expr>) -> String {
-  // css_variables.iter().for_each(|(key, value)| {
-  //   println!("key: {}, value: {:?}", key, value);
-  // });
+
+  if css_variables.len() == 0 {
+    return "".to_string();
+  }
 
   let obj = Expr::Object(ObjectLit {
     span: DUMMY_SP,
@@ -58,16 +56,26 @@ pub fn write(css_variables: HashMap<String, Expr>) -> String {
     span: DUMMY_SP,
     body: vec![
       ModuleItem::Stmt(
-        Stmt::Expr(ExprStmt {
-          span: DUMMY_SP,
-          expr: Box::new(Expr::Assign(AssignExpr { 
-            span: DUMMY_SP, 
-            op: AssignOp::Assign,
-            left: PatOrExpr::Expr(Box::new(Expr::Ident(quote_ident!("css_var_map")))), 
-            right: Box::new(obj)
-          }))
-        })
-      ),
+        Stmt::Decl(
+          Decl::Var(
+            Box::new(
+              VarDecl {
+                span: DUMMY_SP,
+                kind: VarDeclKind::Const,
+                declare: false,
+                decls: vec![
+                  VarDeclarator {
+                    span: DUMMY_SP,
+                    name: Pat::Ident(BindingIdent::from(quote_ident!("css_var_map"))),
+                    init: Some(Box::new(obj)),
+                    definite: false,
+                  }
+                ]
+              }
+            )
+          )
+        )
+      )
     ],
     shebang: None,
   });
@@ -87,8 +95,17 @@ pub fn write(css_variables: HashMap<String, Expr>) -> String {
 
 pub fn get_token_or_value (token_or_value: TokenOrValue<'_>) -> Expr {
   match token_or_value {
-    TokenOrValue::Token(_) => {
-      Expr::Lit(Lit::Str("".into()))
+    TokenOrValue::Token(token) => {
+      match token {
+        Token::Number { has_sign, value, int_value } => {
+          Expr::Lit(Lit::Num(Number {
+            span: DUMMY_SP,
+            value: value as f64,
+            raw: None,
+          }))
+        },
+        val => {Expr::Lit(Lit::Str(val.to_css_string(Default::default()).unwrap().into()))}
+      }
     },
     TokenOrValue::Color(color) => {
       let color_string = convert_color_keywords_to_hex(color.to_css_string(lightningcss::stylesheet::PrinterOptions {

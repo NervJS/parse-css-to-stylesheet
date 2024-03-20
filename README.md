@@ -165,37 +165,54 @@ const code = parse(jsxCode, [cssCode1, cssCode2, ...], {
 - 支持**类选择器**，
 - 不支持**ID 选择器、标签选择器、属性选择器**
 
-| 选择器             | 示例                | 示例说明                                                     | Harmony |
-| ------------------ | ------------------- | ------------------------------------------------------------ | :-----: |
-| .class             | .intro              | 选择所有 class="intro" 的元素                                |   ✔️    |
-| .class.class       | .red.big            | 选择所有 class="red big" 元素                                |   ✔️    |
-| .class, .class     | .item, .text        | 选择所有 class="item" 元素和 class="text" 元素               |   ✔️    |
-| .class .class      | .grandfather .child | 选择所有 class="grandfather" 内所有的 class="child" 的元素   |   ✔️    |
-| .class > .class    | .parent > .child    | 选择所有 父级是 class="parent"的 class="child" 元素          |   ✔️    |
-| .class+.class      | .red+.big           | 选择所有紧跟在 class="red" 元素之后的第一个 class="big" 元素 |   ❌    |
-| .class~.class      | .red~.big           | 选择所有紧跟在 class="red" 之后的每一个 class="big" 元素     |   ❌    |
-| #id                | #firstname          | 选择所有 id="firstname"的元素                                |   ❌    |
-| \*                 | \*                  | 选择所有元素                                                 |   ❌    |
-| element            | p                   | 选择所有\<p>元素                                             |   ❌    |
-| \[attribute]       | \[target]           | 选择所有带有 target 属性元素                                 |   ❌    |
-| \[attribute=value] | \[target=blank]     | 选择所有使用 target="blank"的元素                            |   ❌    |
-| ...                |                     | 其他                                                         |   ❌    |
+| 选择器             | 示例                | 示例说明                                                     | Harmony |   备注   |
+| ------------------ | ------------------- | ------------------------------------------------------------ | :-----: | :------: |
+| .class             | .intro              | 选择所有 class="intro" 的元素                                |   ✔️    |          |
+| .class.class       | .red.big            | 选择所有 class="red big" 元素                                |   ✔️    |          |
+| .class, .class     | .item, .text        | 选择所有 class="item" 元素和 class="text" 元素               |   ✔️    |          |
+| .class .class      | .grandfather .child | 选择所有 class="grandfather" 内所有的 class="child" 的元素   |   ✔️    |          |
+| .class > .class    | .parent > .child    | 选择所有 父级是 class="parent"的 class="child" 元素          |   ✔️    |          |
+| .class+.class      | .red+.big           | 选择所有紧跟在 class="red" 元素之后的第一个 class="big" 元素 |   ❌    | 后续支持 |
+| .class~.class      | .red~.big           | 选择所有紧跟在 class="red" 之后的每一个 class="big" 元素     |   ❌    | 后续支持 |
+| #id                | #firstname          | 选择所有 id="firstname"的元素                                |   ❌    |          |
+| \*                 | \*                  | 选择所有元素                                                 |   ❌    |  不支持  |
+| element            | p                   | 选择所有\<p>元素                                             |   ❌    |          |
+| \[attribute]       | \[target]           | 选择所有带有 target 属性元素                                 |   ❌    |  不支持  |
+| \[attribute=value] | \[target=blank]     | 选择所有使用 target="blank"的元素                            |   ❌    |  不支持  |
+| ...                |                     | 其他                                                         |   ❌    |    ✔️    |
 
-### 伪元素
+### 伪元素 / 伪类
 
 - 支持**before、after**，
 
-| 选择器            | 示例                     | 示例说明                                                          | 支持情况 |
-| ----------------- | ------------------------ | ----------------------------------------------------------------- | :------: |
-| :before           | .intro:before            | 在每个 class="intro" 元素之前插入内容                             |    ✔️    |
-| :after            | .intro:after             | 在每个 class="intro" 元素之后插入内容                             |    ✔️    |
-| :nth-child()      | .intro:nth-child(2)      | 选择 class="intro" 元素是其父级的第二个子元素                     |    ❌    |
-| :nth-last-child() | .intro:nth-last-child(2) | 选择 class="intro" 元素是其父级的第二个子元素, 从最后一个子项计数 |    ❌    |
-| :first-child      | .intro:first-child       | 选择 class="intro" 元素是其父级的第一个子级                       |    ❌    |
-| :last-child       | .intro:last-child        | 选择 class="intro" 元素是其父级的最后一个子级                     |    ❌    |
-| :root             | :root                    | 选择文档的根元素                                                  |    ❌    |
-| :checked          | input:checked            | 选择每个选中的输入元素                                            |    ❌    |
-| ...               |                          | 其他                                                              |    ❌    |
+| 选择器            | 示例                     | 示例说明                                                          | 支持情况 |   备注   |
+| ----------------- | ------------------------ | ----------------------------------------------------------------- | :------: | :------: |
+| :before           | .intro:before            | 在每个 class="intro" 元素之前插入内容                             |    ✔️    |          |
+| :after            | .intro:after             | 在每个 class="intro" 元素之后插入内容                             |    ✔️    |          |
+| :nth-child()      | .intro:nth-child(2)      | 选择 class="intro" 元素是其父级的第二个子元素                     |    ❌    | 后续支持 |
+| :nth-last-child() | .intro:nth-last-child(2) | 选择 class="intro" 元素是其父级的第二个子元素, 从最后一个子项计数 |    ❌    | 后续支持 |
+| :first-child      | .intro:first-child       | 选择 class="intro" 元素是其父级的第一个子级                       |    ❌    | 后续支持 |
+| :last-child       | .intro:last-child        | 选择 class="intro" 元素是其父级的最后一个子级                     |    ❌    | 后续支持 |
+| :root             | :root                    | 选择文档的根元素                                                  |    ❌    | 后续支持 |
+| :checked          | input:checked            | 选择每个选中的输入元素                                            |    ❌    |    ✔️    |
+| ...               |                          | 其他                                                              |    ❌    |    ✔️    |
+
+## CSS 变量
+
+若使用 CSS 变量，挂载的属性应当挂载`:root`选择器上
+
+```css
+:root {
+  --color: #403635;
+  --angle: 30deg;
+  --var: var(--color, 30px);
+}
+
+.hello {
+  height: 30px;
+  color: var(--color);
+}
+```
 
 ## 常见问题
 

@@ -1,3 +1,12 @@
+## [0.0.43](https://github.com/NervJS/parse-css-to-stylesheet/compare/v0.0.42...v0.0.43) (2024-03-21)
+
+
+### Features
+
+* 增加属性测试用力、修改swc版本，统一从swc_core获取 ([57fdfcf](https://github.com/NervJS/parse-css-to-stylesheet/commit/57fdfcf182c3074ec479e6a41aaf627280839340))
+
+
+
 ## [0.0.42](https://github.com/NervJS/parse-css-to-stylesheet/compare/v0.0.41...v0.0.42) (2024-03-20)
 
 

@@ -1,8 +1,5 @@
 use lightningcss::{
-  properties::{
-    background::{BackgroundRepeat, BackgroundRepeatKeyword},
-    Property,
-  },
+  properties::Property,
   stylesheet::PrinterOptions,
   traits::ToCss,
   values::{
@@ -15,10 +12,9 @@ use lightningcss::{
   }, targets::{Targets, Features},
 };
 use smallvec::SmallVec;
-use swc_common::DUMMY_SP;
-use swc_ecma_ast::{
-  ArrayLit, Expr, Ident, KeyValueProp, Lit, ObjectLit, Prop, PropName, PropOrSpread, Str,
-};
+
+use swc_core::ecma::ast::*;
+use swc_core::common::DUMMY_SP;
 
 use crate::generate_invalid_expr;
 
@@ -130,7 +126,7 @@ pub fn parse_background_image_item(image: &Image) -> Option<BackgroundImageKind>
 
 pub fn parse_background_image(image: &SmallVec<[Image; 1]>) -> Vec<BackgroundImageKind> {
   let mut background_image = vec![];
-  for (index, item) in image.iter().enumerate() {
+  for (_, item) in image.iter().enumerate() {
     if let Some(item) = parse_background_image_item(item) {
       background_image.push(item);
     }

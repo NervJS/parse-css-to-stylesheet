@@ -1,7 +1,8 @@
 use lightningcss::{values::length::LengthValue, traits::ToCss, stylesheet::PrinterOptions};
 use pcre2::bytes::Regex;
-use swc_common::DUMMY_SP;
-use swc_ecma_ast::{ExprOrSpread, Expr,  Callee, Ident, CallExpr, Lit, Number};
+
+use swc_core::ecma::ast::*;
+use swc_core::common::DUMMY_SP;
 use crate::{constants::{CONVERT_STYLE_PX_FN, RN_CONVERT_STYLE_PX_FN, RN_CONVERT_STYLE_VU_FN}, generate_expr_lit_num, generate_expr_lit_str, utils::fix_rgba};
 
 #[derive(Debug, Clone, PartialEq)]

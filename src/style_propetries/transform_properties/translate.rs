@@ -1,13 +1,12 @@
 use std::{borrow::Borrow, vec};
 
-use lightningcss::
-  values::{
-    length::{Length, LengthValue}, percentage::DimensionPercentage
-  }
-;
-use swc_atoms::Atom;
-use swc_common::DUMMY_SP;
-use swc_ecma_ast::{Expr, Ident, KeyValueProp, Lit, ObjectLit, Prop, PropName, PropOrSpread};
+use lightningcss::values::{length::{Length, LengthValue}, percentage::DimensionPercentage};
+
+use swc_core::ecma::ast::*;
+use swc_core::{
+  atoms::Atom,
+  common::DUMMY_SP
+};
 
 use crate::{generate_expr_by_length_percentage, style_propetries::unit::{generate_expr_by_length_value, Platform}, utils::to_camel_case};
 

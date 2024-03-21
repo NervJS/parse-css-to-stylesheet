@@ -1,8 +1,11 @@
 use std::{cell::RefCell, collections::HashMap, rc::Rc};
 
 use lightningcss::properties::Property;
-use swc_ecma_ast::Program;
-use swc_ecma_visit::VisitMutWith;
+
+use swc_core::ecma::{
+    ast::Program,
+    visit::VisitMutWith
+  };
 
 use crate::{
   style_parser::StyleValue, style_propetries::unit::Platform, visitor::{JSXMutVisitor, JSXRecord, ModuleMutVisitor, SpanKey}

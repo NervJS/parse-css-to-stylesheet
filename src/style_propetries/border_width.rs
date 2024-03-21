@@ -2,8 +2,8 @@ use lightningcss::{
   properties::{Property, border::BorderSideWidth},
   traits::ToCss
 };
-use swc_ecma_ast::Expr;
-use crate::{generate_expr_by_length, generate_expr_lit_str, generate_invalid_expr };
+use swc_core::ecma::ast::Expr;
+use crate::{generate_expr_by_length, generate_invalid_expr };
 
 use super::{traits::ToExpr, unit::PropertyTuple};
 

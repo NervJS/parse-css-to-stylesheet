@@ -2,7 +2,7 @@ use lightningcss::{
   properties::Property,
   values::{length::LengthValue, percentage::DimensionPercentage}
 };
-use swc_ecma_ast::Expr;
+use swc_core::ecma::ast::Expr;
 use crate::{generate_expr_lit_str, generate_invalid_expr };
 
 use super::{traits::ToExpr, unit::{PropertyTuple, generate_expr_by_length_value, Platform}};

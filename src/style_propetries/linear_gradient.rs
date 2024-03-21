@@ -1,8 +1,6 @@
-use swc_common::DUMMY_SP;
-use swc_ecma_ast::{
-  ArrayLit, ComputedPropName, Expr, ExprOrSpread, Ident, KeyValueProp, Lit, MemberExpr,
-  MemberProp, ObjectLit, Prop, PropName, PropOrSpread, Str,
-};
+
+use swc_core::ecma::ast::*;
+use swc_core::common::DUMMY_SP;
 
 use crate::{generate_expr_lit_num, utils::fix_rgba};
 
@@ -96,15 +94,15 @@ impl LinearGradientItem {
 #[derive(Debug, Clone)]
 pub struct LinearGradient(pub Vec<LinearGradientItem>);
 
-impl LinearGradient {
-  fn to_expr(&self) -> Expr {
-    Expr::Array(ArrayLit {
-      span: DUMMY_SP,
-      elems: self
-        .0
-        .iter()
-        .map(|item| Some(item.to_expr().into()))
-        .collect::<Vec<_>>(),
-    })
-  }
-}
+// impl LinearGradient {
+//   fn to_expr(&self) -> Expr {
+//     Expr::Array(ArrayLit {
+//       span: DUMMY_SP,
+//       elems: self
+//         .0
+//         .iter()
+//         .map(|item| Some(item.to_expr().into()))
+//         .collect::<Vec<_>>(),
+//     })
+//   }
+// }

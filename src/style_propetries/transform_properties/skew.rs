@@ -2,11 +2,10 @@ use std::{borrow::Borrow, vec};
 
 use lightningcss::{printer::PrinterOptions, traits::ToCss, values::angle::Angle}
 ;
-use swc_common::DUMMY_SP;
-use swc_ecma_ast::{Expr, Ident, KeyValueProp, ObjectLit, Prop, PropName, PropOrSpread};
+use swc_core::ecma::ast::*;
+use swc_core::common::DUMMY_SP;
 
 use crate::{generate_expr_lit_str, utils::to_camel_case};
-
 
 #[derive(Debug, Clone)]
 pub struct Skew {

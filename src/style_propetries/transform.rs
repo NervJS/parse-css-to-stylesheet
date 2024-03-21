@@ -1,7 +1,8 @@
 use std::vec;
 
 use lightningcss::properties::{transform::Transform as LNTransform, Property};
-use swc_ecma_ast::{ArrayLit, Expr, ExprOrSpread, ObjectLit};
+
+use swc_core::ecma::ast::*;
 
 use crate::style_propetries::traits::ToExpr;
 

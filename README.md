@@ -101,13 +101,14 @@ export function combineCssVariables(variables: Array<string>): string | null;
 | flex-direction             | 'row','row-reverse','column','column-reverse'                                                                                               |    ✔️    |
 | justify-content            | 'flex-start', 'flex-end', 'center', 'space-between', 'space-around', 'space-evenly'                                                         |    ✔️    |
 | align-content              | 'flex-start', 'flex-end', 'center', 'space-between', 'space-around', 'space-evenly'                                                         |    ✔️    |
-| alignitems                 | 'flex-start', 'flex-end', 'center', 'baseline', 'stretch' , 'auto'                                                                          |    ✔️    |
+| align-items                | 'flex-start', 'flex-end', 'center', 'baseline', 'stretch'                                                                                   |    ✔️    |
 | align-self                 | 'flex-start', 'flex-end', 'center', 'baseline', 'stretch' , 'auto'                                                                          |    ✔️    |
 | flex-wrap                  | 'nowrap', 'wrap', 'wrap-reverse'                                                                                                            |    ❌    |
 | position                   | 'relative', 'absolute'                                                                                                                      |    ✔️    |
 | position                   | 'flex'                                                                                                                                      |    ❌    |
 | left                       | Length                                                                                                                                      |    ✔️    |
-| top                        | Length                                                                                                                                      |    ❌    |
+| top                        | Length                                                                                                                                      |    ✔️    |
+| bottom                     | Length                                                                                                                                      |    ❌    |
 | right                      | Length                                                                                                                                      |    ❌    |
 | z-zndex                    | Number                                                                                                                                      |    ✔️    |
 | bottom                     | Length                                                                                                                                      |    ✔️    |
@@ -158,7 +159,7 @@ export function combineCssVariables(variables: Array<string>): string | null;
 | display                    | 'inline-block', 'inline-flex', 'inline'                                                                                                     |    ❌    |
 | overflow                   | 'hidden', 'visible'                                                                                                                         |    ✔️    |
 | transform                  | translate、translateX、translateY、translateZ、translate2d、translate3d、scale、scaleX、scaleY、scale3d、rotate、rotateX、rotateY、rotate3d |    ✔️    |
-| transform-origin           | Length Length                                                                                                                               |    ✔️    |
+| transform-origin           | Length(top/center/bottom) Length(left/center/right)                                                                                         |    ✔️    |
 | animation                  |                                                                                                                                             | 后续支持 |
 | content                    |                                                                                                                                             |    ✔️    |
 
@@ -175,11 +176,12 @@ export function combineCssVariables(variables: Array<string>): string | null;
 | font-size          | Length                                                  |    ✔️    |
 | font-family        |                                                         |    ✔️    |
 | font-style         | 'normal', 'italic'                                      |    ✔️    |
-| font-weight        | 100~900, 'bold','bolder','light','lighter','normal'     |    ✔️    |
+| font-weight        | 100~900, 'bold','bolder','lighter','normal'             |    ✔️    |
 | line-height        | 'XXpx' (需要指定具体指，不支持 Number)                  |    ✔️    |
 | text-align         | 'center', 'left', 'right'                               |    ✔️    |
 | text-decoration    | ('none', 'underline', 'line-through', 'overline') Color |    ✔️    |
 | text-overflow      | 'ellipsis', 'clip'                                      |    ✔️    |
+| vertical-align     | 'middle', 'top', 'bottom'                               |    ✔️    |
 | color              | Color                                                   |    ✔️    |
 | -webkit-line-clamp | Number                                                  |    ✔️    |
 

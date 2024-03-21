@@ -2,8 +2,8 @@ use lightningcss::properties::{
   align::AlignItems as LNAlignItems, align::AlignSelf as LNAlignSelf, align::BaselinePosition,
   align::SelfPosition, Property,
 };
-use swc_common::DUMMY_SP;
-use swc_ecma_ast::{Expr, Ident, MemberExpr, MemberProp};
+use swc_core::ecma::ast::*;
+use swc_core::common::DUMMY_SP;
 
 use crate::generate_expr_lit_str;
 

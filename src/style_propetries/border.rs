@@ -2,8 +2,10 @@ use lightningcss::{
   properties::Property,
   traits::ToCss
 };
-use swc_atoms::Atom;
-use swc_ecma_ast::{Expr, Tpl};
+
+use swc_core::common::DUMMY_SP;
+use swc_core::ecma::ast::*;
+use swc_core::atoms::Atom;
 use crate::{generate_expr_lit_str, generate_expr_by_length, generate_invalid_expr, generate_expr_by_border_side_width, generate_expr_by_line_style, style_propetries::unit::Platform, generate_string_by_css_color };
 
 use super::{traits::ToExpr, unit::PropertyTuple, border_color::BorderColor, border_style::{BorderStyle, get_expr_by_val}, border_width::BorderWidth};
@@ -12,29 +14,29 @@ use super::{traits::ToExpr, unit::PropertyTuple, border_color::BorderColor, bord
 macro_rules! generate_tpl_expr {
     ($props: expr) => {
       Expr::Tpl(Tpl {
-        span: swc_common::DUMMY_SP,
+        span: DUMMY_SP,
         exprs: $props,
         quasis: vec![
-          swc_ecma_ast::TplElement {
-            span: swc_common::DUMMY_SP,
+          TplElement {
+            span: DUMMY_SP,
             tail: false,
             cooked: None,
             raw: Atom::from("").into(),
           },
-          swc_ecma_ast::TplElement {
-            span: swc_common::DUMMY_SP,
+          TplElement {
+            span: DUMMY_SP,
             tail: false,
             cooked: Some(" ".into()),
             raw: Atom::from(" ").into(),
           },
-          swc_ecma_ast::TplElement {
-            span: swc_common::DUMMY_SP,
+          TplElement {
+            span: DUMMY_SP,
             tail: false,
             cooked: Some(" ".into()),
             raw: Atom::from(" ").into(),
           },
-          swc_ecma_ast::TplElement {
-            span: swc_common::DUMMY_SP,
+          TplElement {
+            span: DUMMY_SP,
             tail: true,
             cooked: None,
             raw: Atom::from("").into(),
@@ -143,7 +145,7 @@ impl ToExpr for Border {
     fn to_expr(&self) -> PropertyTuple {
       let prop_name = &self.id;
       let mut props: Vec<(String, Expr)> = vec![];
-      if (self.width.is_none() || self.style.is_none() || self.color.is_none()) {
+      if self.width.is_none() || self.style.is_none() || self.color.is_none() {
         return PropertyTuple::One(prop_name.to_owned(), generate_invalid_expr!());
       }
       match prop_name.as_str() {
@@ -190,7 +192,7 @@ impl ToExpr for Border {
     fn to_rn_expr(&self) -> PropertyTuple {
       let prop_name = &self.id;
       let mut props: Vec<Box<Expr>> = vec![];
-      if (self.width.is_none() || self.style.is_none() || self.color.is_none()) {
+      if self.width.is_none() || self.style.is_none() || self.color.is_none() {
         return PropertyTuple::One(prop_name.to_owned(), generate_invalid_expr!());
       }
       match prop_name.as_str() {

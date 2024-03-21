@@ -1,6 +1,3 @@
-use swc_common::DUMMY_SP;
-use swc_ecma_ast::Number;
-
 use crate::{style_propetries::traits::ToExpr, generate_number_property};
 
 use super::unit::PropertyTuple;

@@ -1,28 +1,38 @@
 #[macro_export]
 macro_rules! generate_prop_name {
-  ($key: expr) => {
-    swc_ecma_ast::PropName::Ident(swc_ecma_ast::Ident::new($key.into(), swc_common::DUMMY_SP))
-  };
+  ($key: expr) => {{
+    use swc_core::ecma::ast::*;
+    use swc_core::common::DUMMY_SP;
+    PropName::Ident(Ident::new($key.into(), DUMMY_SP))
+  }};
 }
 
 #[macro_export]
 macro_rules! generate_expr_lit_str {
-  ($var:expr) => {
-    swc_ecma_ast::Expr::Lit(swc_ecma_ast::Lit::Str($var.into()))
-  };
+  ($var:expr) => {{
+    use swc_core::ecma::ast::*;
+    Expr::Lit(Lit::Str($var.into()))
+  }};
 }
 
 #[macro_export]
 macro_rules! generate_expr_lit_num {
-  ($var:expr) => {
-    swc_ecma_ast::Expr::Lit(swc_ecma_ast::Lit::Num(swc_ecma_ast::Number::from($var)))
-  };
+  ($var:expr) => {{
+    use swc_core::ecma::ast::*;
+    Expr::Lit(Lit::Num(Number::from($var)))
+  }};
 }
 
 
 #[macro_export]
 macro_rules! generate_expr_lit_calc {
   ($var:expr, $platform:expr) => {{
+
+    use swc_core::ecma::ast::*;
+    use swc_core::{
+      common::DUMMY_SP,
+      atoms::Atom
+    };
 
     use $crate::constants::{CONVERT_STYLE_PX_FN, RN_CONVERT_STYLE_PX_FN, RN_CONVERT_STYLE_VU_FN};
 
@@ -46,15 +56,15 @@ macro_rules! generate_expr_lit_calc {
         }
     });
     
-    swc_ecma_ast::Expr::Tpl(swc_ecma_ast::Tpl {
-      span: swc_common::DUMMY_SP,
+    Expr::Tpl(Tpl {
+      span: DUMMY_SP,
       exprs: vec![],
       quasis: vec![
-        swc_ecma_ast::TplElement {
-          span: swc_common::DUMMY_SP,
+        TplElement {
+          span: DUMMY_SP,
           tail: false,
           cooked: None,
-          raw: swc_atoms::Atom::from(result).into(),
+          raw: Atom::from(result).into(),
         }
       ],
     })
@@ -63,9 +73,11 @@ macro_rules! generate_expr_lit_calc {
 
 #[macro_export]
 macro_rules! generate_expr_ident {
-  ($var:expr) => {
-    swc_ecma_ast::Expr::Ident(swc_ecma_ast::Ident::new($var.into(), swc_common::DUMMY_SP))
-  };
+  ($var:expr) => {{
+    use swc_core::ecma::ast::*;
+    use swc_core::common::DUMMY_SP;
+    Expr::Ident(Ident::new($var.into(), DUMMY_SP))
+  }};
 }
 
 #[macro_export]
@@ -132,9 +144,12 @@ macro_rules! generate_expr_by_length_percentage {
 
 #[macro_export]
 macro_rules! generate_invalid_expr {
-  () => {
-    swc_ecma_ast::Expr::Invalid(swc_ecma_ast::Invalid { span: swc_common::DUMMY_SP })
-  };
+  () => {{
+    use swc_core::ecma::ast::*;
+    use swc_core::common::DUMMY_SP;
+
+    Expr::Invalid(Invalid { span: DUMMY_SP })
+  }};
 }
 
 
@@ -167,6 +182,8 @@ macro_rules! generate_color_property {
   ($class:ident, $( $property_name:ident ), *) => {
     use $crate::utils::fix_rgba;
 
+    use swc_core::ecma::ast::*;
+
     #[derive(Debug, Clone)]
     pub struct $class {
       pub id: String,
@@ -177,13 +194,13 @@ macro_rules! generate_color_property {
       fn to_expr(&self) -> PropertyTuple {
         PropertyTuple::One(
           self.id.clone(),
-          swc_ecma_ast::Expr::Lit(swc_ecma_ast::Lit::Str(fix_rgba(self.value.clone()).into())).into()
+          Expr::Lit(Lit::Str(fix_rgba(self.value.clone()).into())).into()
         )
       }
       fn to_rn_expr(&self) -> PropertyTuple {
         PropertyTuple::One(
           self.id.clone(),
-          swc_ecma_ast::Expr::Lit(swc_ecma_ast::Lit::Str(self.value.clone().into())).into()
+          Expr::Lit(Lit::Str(self.value.clone().into())).into()
         )
       }
     }
@@ -219,6 +236,10 @@ macro_rules! generate_color_property {
 #[macro_export]
 macro_rules! generate_number_property {
   ($class:ident, $( $property_name:ident ), *) => {
+
+    use swc_core::ecma::ast::*;
+    use swc_core::common::DUMMY_SP;
+
     #[derive(Debug, Clone)]
     pub struct $class {
       pub id: String,
@@ -229,7 +250,7 @@ macro_rules! generate_number_property {
       fn to_expr(&self) -> PropertyTuple {
         PropertyTuple::One(
           self.id.clone(),
-          swc_ecma_ast::Expr::Lit(swc_ecma_ast::Lit::Num(Number {
+          Expr::Lit(Lit::Num(Number {
             span: DUMMY_SP,
             value: self.value as f64,
             raw: None,
@@ -240,7 +261,7 @@ macro_rules! generate_number_property {
       fn to_rn_expr(&self) -> PropertyTuple {
         PropertyTuple::One(
           self.id.clone(),
-          swc_ecma_ast::Expr::Lit(swc_ecma_ast::Lit::Num(Number {
+          Expr::Lit(Lit::Num(Number {
             span: DUMMY_SP,
             value: self.value as f64,
             raw: None,
@@ -439,27 +460,33 @@ macro_rules! generate_size_property {
 macro_rules! generate_tpl_expr {
   ($items: expr) => {{
 
+    use swc_core::ecma::ast::*;
+    use swc_core::{
+      atoms::Atom,
+      common::DUMMY_SP
+    };
+
     let mut quasis = vec![
-      swc_ecma_ast::TplElement {
-        span: swc_common::DUMMY_SP,
+      TplElement {
+        span: DUMMY_SP,
         tail: false,
         cooked: None,
-        raw: swc_atoms::Atom::from("").into(),
+        raw: Atom::from("").into(),
       },
     ];
     let mut exprs = vec![];
     $items.iter().for_each(|value| {
       match value {
-        swc_ecma_ast::Expr::Lit(lit) => {
+        Expr::Lit(lit) => {
           match lit {
-            swc_ecma_ast::Lit::Str(str_lit) => {
+            Lit::Str(str_lit) => {
               let mut quasi = quasis.pop().unwrap();
-              quasi.raw = swc_atoms::Atom::from(format!(" {} {} ",quasi.raw.to_string(), str_lit.value.as_ref()));
+              quasi.raw = Atom::from(format!(" {} {} ",quasi.raw.to_string(), str_lit.value.as_ref()));
               quasis.push(quasi);
             },
-            swc_ecma_ast::Lit::Num(num_lit) => {
+            Lit::Num(num_lit) => {
               let mut quasi = quasis.pop().unwrap();
-              quasi.raw = swc_atoms::Atom::from(format!(" {} {} ",quasi.raw.to_string(), num_lit.value.to_string()));
+              quasi.raw = Atom::from(format!(" {} {} ",quasi.raw.to_string(), num_lit.value.to_string()));
               quasis.push(quasi);
             },
             _ => {}
@@ -468,11 +495,11 @@ macro_rules! generate_tpl_expr {
         _ => {
           exprs.push(Box::new(value.to_owned()));
           quasis.push(
-            swc_ecma_ast::TplElement {
-              span: swc_common::DUMMY_SP,
+            TplElement {
+              span: DUMMY_SP,
               tail: false,
               cooked: None,
-              raw: swc_atoms::Atom::from("").into(),
+              raw: Atom::from("").into(),
             },
           )
         }
@@ -486,20 +513,20 @@ macro_rules! generate_tpl_expr {
       .collect::<Vec<&str>>()
       .join(" ");
       if i == 0 {
-        quasis[i].raw = swc_atoms::Atom::from(format!("{} ", cleaned_string).trim_start()).into();
+        quasis[i].raw = Atom::from(format!("{} ", cleaned_string).trim_start()).into();
       } else if i == quasis.len() - 1 {
-        quasis[i].raw = swc_atoms::Atom::from(format!(" {}", cleaned_string).trim_end()).into();
+        quasis[i].raw = Atom::from(format!(" {}", cleaned_string).trim_end()).into();
         quasis[i].tail = true;
       } else {
-        quasis[i].raw = swc_atoms::Atom::from(format!(" {} ", cleaned_string.trim())).into();
+        quasis[i].raw = Atom::from(format!(" {} ", cleaned_string.trim())).into();
       }
     }
     if quasis.len() == 1 {
-      quasis[0].raw = swc_atoms::Atom::from(format!("{} ", quasis[0].raw).trim()).into();
+      quasis[0].raw = Atom::from(format!("{} ", quasis[0].raw).trim()).into();
     }
 
-    swc_ecma_ast::Expr::Tpl(swc_ecma_ast::Tpl {
-      span: swc_common::DUMMY_SP,
+    Expr::Tpl(Tpl {
+      span: DUMMY_SP,
       exprs,
       quasis: quasis,
     })

@@ -9,14 +9,18 @@ use lightningcss::{
   properties::{Property, PropertyId},
   stylesheet::ParserOptions,
 };
-use swc_atoms::Atom;
-use swc_common::{Span, DUMMY_SP};
-use swc_ecma_ast::*;
-use swc_ecma_utils::quote_ident;
-use swc_ecma_visit::{
-  noop_visit_mut_type, noop_visit_type, Visit, VisitAll, VisitAllWith, VisitMut, VisitMutWith,
-  VisitWith,
+use swc_core::{
+  common::{Span, DUMMY_SP},
+  atoms::Atom,
+  ecma::{
+    utils::quote_ident,
+    visit::{
+      noop_visit_mut_type, noop_visit_type, Visit, VisitAll, VisitAllWith, VisitMut, VisitMutWith,
+      VisitWith,
+    }
+  },
 };
+use swc_core::ecma::ast::*;
 
 use crate::{
   constants::{CALC_STATIC_STYLE, COMBINE_NESTING_STYLE, CONVERT_STYLE_PX_FN, CSS_VAR_FN, HM_STYLE, INNER_STYLE, INNER_STYLE_DATA, NESTING_STYLE, NESTINT_STYLE_DATA, RN_CONVERT_STYLE_PX_FN, RN_CONVERT_STYLE_VU_FN}, parse_style_properties::parse_style_properties, scraper::Element, style_parser::StyleValue, style_propetries::{style_value_type::StyleValueType, traits::ToStyleValue, unit::{Platform, PropertyTuple}}, utils::{
@@ -217,8 +221,8 @@ impl<'a> VisitAll for AstVisitor<'a> {
 
   fn visit_jsx_element(&mut self, jsx: &JSXElement) {
     let element = self.create_element(JSXElementOrJSXCallee::JSXElement(jsx));
-    if let JSXElementName::Ident(ident) = &jsx.opening.name {
-      let name = ident.sym.to_string();
+    if let JSXElementName::Ident(_) = &jsx.opening.name {
+      // let name = ident.sym.to_string();
       // if is_starts_with_uppercase(name.as_str()) {
       //   if self.taro_components.contains(&name) {
       //     self.jsx_record.insert(SpanKey(jsx.span), element);
@@ -298,7 +302,7 @@ pub fn parse_style_values(value: Vec<StyleValueType>, platform: Platform) -> Vec
 
   index_map.into_iter().for_each(|(id, expr)| {
     prop_or_spread.push(PropOrSpread::Prop(Box::new(Prop::KeyValue(KeyValueProp {
-      key: PropName::Ident(Ident::new(id.into(), swc_common::DUMMY_SP)),
+      key: PropName::Ident(Ident::new(id.into(), DUMMY_SP)),
       value: expr,
     }))))
   });
@@ -320,6 +324,7 @@ pub fn insert_import_module_decl(module: &mut Module, last_import_index: usize, 
         last_index,
         ModuleItem::ModuleDecl(ModuleDecl::Import(ImportDecl {
           span: DUMMY_SP,
+          phase: Default::default(),
           specifiers: vec![
             ImportSpecifier::Named(ImportNamedSpecifier {
               span: DUMMY_SP,
@@ -338,6 +343,7 @@ pub fn insert_import_module_decl(module: &mut Module, last_import_index: usize, 
         last_index,
         ModuleItem::ModuleDecl(ModuleDecl::Import(ImportDecl {
           span: DUMMY_SP,
+          phase: Default::default(),
           specifiers: vec![
             ImportSpecifier::Named(ImportNamedSpecifier {
               span: DUMMY_SP,
@@ -385,6 +391,7 @@ pub fn insert_import_module_decl(module: &mut Module, last_import_index: usize, 
         last_index,
         ModuleItem::ModuleDecl(ModuleDecl::Import(ImportDecl {
           span: DUMMY_SP,
+          phase: Default::default(),
           specifiers: vec![
             // ImportSpecifier::Named(ImportNamedSpecifier {
             //   span: DUMMY_SP,
@@ -459,7 +466,7 @@ impl ModuleMutVisitor {
     }
     impl VisitMut for MyVisitor {
       fn visit_mut_function(&mut self, _: &mut Function) {}
-      fn visit_mut_arrow_expr(&mut self, arrow: &mut ArrowExpr) {}
+      fn visit_mut_arrow_expr(&mut self, _: &mut ArrowExpr) {}
       fn visit_mut_return_stmt(&mut self, stmt: &mut ReturnStmt) {
         let arg = &mut stmt.arg;
         if let Some(expr_in_box) = arg {
@@ -538,9 +545,6 @@ impl ModuleMutVisitor {
   }
   fn enable_nesting_for_call_expr (&self, call: &mut CallExpr) {
     call.visit_mut_with(&mut &mut self.get_nesting_visitor());
-  }
-  fn enable_nesting_for_expr (&self, expr: &mut Expr) {
-    expr.visit_mut_children_with(&mut &mut self.get_nesting_visitor());
   }
 }
 
@@ -691,9 +695,7 @@ impl VisitMut for ModuleMutVisitor {
         _ => ()
       }
     }
-    if last_import_index != 0 {
-      last_import_index += 1;
-    }
+    last_import_index += 1;
     // 插入平台所需的运行时代码， 如： import { calcDynamicStyle } from '@tarojs/runtime'
     last_import_index = insert_import_module_decl(module, last_import_index, self.platform.clone());
     last_import_index += 1;
@@ -740,7 +742,7 @@ impl VisitMut for ModuleMutVisitor {
       let nesting_style_object = Box::new(Expr::Array(ArrayLit {
         span: DUMMY_SP,
         elems: nestings.into_iter()
-          .map(|(key, value)| {
+          .map(|(_, value)| {
             Some(ExprOrSpread {
               spread: None,
               expr: Box::new(Expr::Object(ObjectLit {
@@ -805,11 +807,11 @@ fn generate_stylesheet(fn_name: String, fn_data_name: String, style_object: Box<
 
   let identifier = Stmt::Decl(Decl::Var(Box::new(VarDecl {
     span: DUMMY_SP,
-    kind: swc_ecma_ast::VarDeclKind::Let,
+    kind: VarDeclKind::Let,
     declare: false,
-    decls: vec![swc_ecma_ast::VarDeclarator {
+    decls: vec![VarDeclarator {
       span: DUMMY_SP,
-      name: swc_ecma_ast::Pat::Ident(BindingIdent {
+      name: Pat::Ident(BindingIdent {
         id: ident.clone(),
         type_ann: None,
       }),
@@ -839,7 +841,10 @@ fn generate_stylesheet(fn_name: String, fn_data_name: String, style_object: Box<
             span: DUMMY_SP,
             expr: Box::new(
               Expr::Assign(AssignExpr { span: DUMMY_SP, op: AssignOp::Assign, 
-                left: swc_ecma_ast::PatOrExpr::Expr(Box::new(Expr::Ident(ident.clone()))), 
+                left: AssignTarget::Simple(SimpleAssignTarget::Ident(BindingIdent {
+                  id: ident.clone(),
+                  type_ann: None
+                })),
                 right: style_object
               })
             )
@@ -1222,11 +1227,11 @@ impl<'i> VisitMut for JSXMutVisitor<'i> {
                       (is_starts_with_uppercase(name.as_str()) && self.taro_components.contains(&name))
                       || !is_starts_with_uppercase(name.as_str())
                     {
-                      let mut shouldInsert = static_styles.len() > 0;
+                      let mut should_insert = static_styles.len() > 0;
                       if let Some(_) = &class_attr_value {
-                        shouldInsert = true
+                        should_insert = true
                       }
-                      if shouldInsert {
+                      if should_insert {
                         object.props.insert(
                           0,
                           PropOrSpread::Prop(Box::new(Prop::KeyValue(KeyValueProp {
@@ -1410,11 +1415,11 @@ impl<'i> VisitMut for JSXMutVisitor<'i> {
           (is_starts_with_uppercase(name.as_str()) && self.taro_components.contains(&name))
           || !is_starts_with_uppercase(name.as_str())
          {
-          let mut shouldInsert = static_styles.len() > 0;
+          let mut should_insert = static_styles.len() > 0;
           if let Some(_) = &class_attr_value {
-            shouldInsert = true
+            should_insert = true
           }
-          if shouldInsert {
+          if should_insert {
             n.opening.attrs.insert(
               0,
               JSXAttrOrSpread::JSXAttr(JSXAttr {

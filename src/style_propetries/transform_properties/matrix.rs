@@ -1,6 +1,5 @@
-
-use swc_common::DUMMY_SP;
-use swc_ecma_ast::{ArrayLit, Expr, Ident, KeyValueProp, Lit, ObjectLit, Prop, PropName, PropOrSpread};
+use swc_core::ecma::ast::*;
+use swc_core::common::DUMMY_SP;
 
 use crate::generate_expr_lit_num;
 

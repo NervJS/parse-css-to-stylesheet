@@ -3,11 +3,9 @@ use lightningcss::{
   values::length::LengthPercentageOrAuto,
 };
 use smallvec::SmallVec;
-use swc_common::DUMMY_SP;
-use swc_ecma_ast::{
-  Expr, Ident, KeyValueProp, MemberExpr, MemberProp, ObjectLit, Prop, PropName,
-  PropOrSpread,
-};
+
+use swc_core::ecma::ast::*;
+use swc_core::common::DUMMY_SP;
 
 use crate::{generate_expr_by_length_percentage_or_auto, generate_invalid_expr};
 
@@ -60,7 +58,6 @@ pub fn parse_background_size(size: &SmallVec<[LNBackgroundSize; 1]>) -> Vec<Imag
 pub enum ImageSize {
   Cover,
   Contain,
-  Auto,
   ImageSizeWH(LengthPercentageOrAuto, LengthPercentageOrAuto),
 }
 
@@ -72,54 +69,51 @@ pub struct BackgroundSize {
 
 impl ToExpr for BackgroundSize {
   fn to_expr(&self) -> PropertyTuple {
-     let expr = match self.value.get(0).unwrap() {
-      ImageSize::Cover => Expr::Member(MemberExpr {
-        span: DUMMY_SP,
-        obj: Box::new(Expr::Ident(Ident::new("ImageSize".into(), DUMMY_SP))),
-        prop: MemberProp::Ident(Ident {
-          span: DUMMY_SP,
-          sym: "Cover".into(),
-          optional: false,
-        }),
-      })
-      .into(),
-      ImageSize::Contain => Expr::Member(MemberExpr {
-        span: DUMMY_SP,
-        obj: Box::new(Expr::Ident(Ident::new("ImageSize".into(), DUMMY_SP))),
-        prop: MemberProp::Ident(Ident {
-          span: DUMMY_SP,
-          sym: "Contain".into(),
-          optional: false,
-        }),
-      })
-      .into(),
-      ImageSize::Auto => Expr::Member(MemberExpr {
-        span: DUMMY_SP,
-        obj: Box::new(Expr::Ident(Ident::new("ImageSize".into(), DUMMY_SP))),
-        prop: MemberProp::Ident(Ident {
-          span: DUMMY_SP,
-          sym: "Auto".into(),
-          optional: false,
-        }),
-      })
-      .into(),
-      ImageSize::ImageSizeWH(width, height) => {
-        
-        let props = vec![
-          PropOrSpread::Prop(Box::new(Prop::KeyValue(KeyValueProp {
-            key: PropName::Ident(Ident::new("width".into(), DUMMY_SP)),
-            value: Box::new(generate_expr_by_length_percentage_or_auto!(width, Platform::Harmony))
-          }))),
-          PropOrSpread::Prop(Box::new(Prop::KeyValue(KeyValueProp {
-            key: PropName::Ident(Ident::new("height".into(), DUMMY_SP)),
-            value: Box::new(generate_expr_by_length_percentage_or_auto!(height, Platform::Harmony))
-          }))),
-        ];
-      
-        Expr::Object(ObjectLit {
-          span: DUMMY_SP,
-          props: props.into()
-        }).into()
+   let expr = match self.value.get(0) {
+      Some(image_size) => {
+        match image_size {
+          ImageSize::Cover => Expr::Member(MemberExpr {
+            span: DUMMY_SP,
+            obj: Box::new(Expr::Ident(Ident::new("ImageSize".into(), DUMMY_SP))),
+            prop: MemberProp::Ident(Ident {
+              span: DUMMY_SP,
+              sym: "Cover".into(),
+              optional: false,
+            }),
+          })
+          .into(),
+          ImageSize::Contain => Expr::Member(MemberExpr {
+            span: DUMMY_SP,
+            obj: Box::new(Expr::Ident(Ident::new("ImageSize".into(), DUMMY_SP))),
+            prop: MemberProp::Ident(Ident {
+              span: DUMMY_SP,
+              sym: "Contain".into(),
+              optional: false,
+            }),
+          })
+          .into(),
+          ImageSize::ImageSizeWH(width, height) => {
+            
+            let props = vec![
+              PropOrSpread::Prop(Box::new(Prop::KeyValue(KeyValueProp {
+                key: PropName::Ident(Ident::new("width".into(), DUMMY_SP)),
+                value: Box::new(generate_expr_by_length_percentage_or_auto!(width, Platform::Harmony))
+              }))),
+              PropOrSpread::Prop(Box::new(Prop::KeyValue(KeyValueProp {
+                key: PropName::Ident(Ident::new("height".into(), DUMMY_SP)),
+                value: Box::new(generate_expr_by_length_percentage_or_auto!(height, Platform::Harmony))
+              }))),
+            ];
+          
+            Expr::Object(ObjectLit {
+              span: DUMMY_SP,
+              props: props.into()
+            }).into()
+          }
+        }
+      },
+      _ => {
+        generate_invalid_expr!()
       }
     };
     PropertyTuple::One(

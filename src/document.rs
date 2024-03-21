@@ -1,17 +1,24 @@
 use std::collections::HashMap;
 
 use selectors::attr::CaseSensitivity;
-use swc_common::{
-  comments::SingleThreadedComments,
-  errors::{ColorConfig, Handler},
-  sync::Lrc,
-  Globals, Mark, SourceMap, GLOBALS,
+
+use swc_core::{
+  ecma::{
+    ast::{EsVersion, Program},
+    parser::{lexer::Lexer, Parser, StringInput, Syntax, TsConfig},
+    visit::{FoldWith, VisitAllWith, VisitWith},
+    transforms::{
+      base::{fixer::fixer, hygiene::hygiene, resolver},
+      typescript::strip
+    },
+  },
+  common::{
+    comments::SingleThreadedComments,
+    errors::{ColorConfig, Handler},
+    sync::Lrc,
+    Globals, Mark, SourceMap, GLOBALS,FileName
+  }
 };
-use swc_ecma_ast::{EsVersion, Program};
-use swc_ecma_parser::{lexer::Lexer, Parser, StringInput, Syntax, TsConfig};
-use swc_ecma_transforms_base::{fixer::fixer, hygiene::hygiene, resolver};
-use swc_ecma_visit::{FoldWith, VisitAllWith, VisitWith};
-use swc_ecmascript::transforms::typescript::strip;
 
 use crate::{
   scraper::Element,
@@ -38,7 +45,7 @@ impl JSXDocument {
     let handler = Handler::with_tty_emitter(ColorConfig::Auto, true, false, Some(cm.clone()));
 
     // 将 JSX 代码转换为 SourceFile
-    let fm = cm.new_source_file(swc_common::FileName::Anon, jsx);
+    let fm = cm.new_source_file(FileName::Anon, jsx);
     // 初始化 swc 的词法分析器
     let lexer = Lexer::new(
       Syntax::Typescript(TsConfig {

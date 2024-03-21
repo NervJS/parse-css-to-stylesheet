@@ -2,7 +2,8 @@ use lightningcss::{
   properties::Property,
   traits::ToCss, values::color::CssColor
 };
-use swc_ecma_ast::Expr;
+
+use swc_core::ecma::ast::Expr;
 
 use crate::generate_string_by_css_color;
 

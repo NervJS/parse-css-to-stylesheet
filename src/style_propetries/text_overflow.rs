@@ -1,7 +1,7 @@
 use lightningcss::properties::{Property, overflow};
-use swc_common::DUMMY_SP;
-use swc_ecma_ast::{Expr, Ident, MemberExpr, MemberProp, ObjectLit, PropOrSpread, Prop, KeyValueProp, PropName};
 
+use swc_core::ecma::ast::*;
+use swc_core::common::DUMMY_SP;
 use crate::{generate_invalid_expr, style_propetries::traits::ToExpr};
 
 use super::unit::PropertyTuple;

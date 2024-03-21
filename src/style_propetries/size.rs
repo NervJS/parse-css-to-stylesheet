@@ -8,4 +8,4 @@ use super::unit::PropertyTuple;
 use super::{traits::ToExpr, unit::{generate_expr_by_length_value, Platform}};
 
 // 生成property_name的value类型为 Size的属性
-generate_size_property![SizeProperty, Height, Width];
+generate_size_property![SizeProperty, Height, Width, MinWidth, MinHeight];

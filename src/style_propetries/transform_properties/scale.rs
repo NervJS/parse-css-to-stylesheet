@@ -1,13 +1,11 @@
 use std::{borrow::Borrow, vec};
 
-use lightningcss::
-  values::
-    percentage::NumberOrPercentage
-  
-;
-use swc_atoms::Atom;
-use swc_common::DUMMY_SP;
-use swc_ecma_ast::{Expr, Ident, KeyValueProp, Lit, ObjectLit, Prop, PropName, PropOrSpread};
+use lightningcss::values::percentage::NumberOrPercentage;
+use swc_core::ecma::ast::*;
+use swc_core::{
+  atoms::Atom,
+  common::DUMMY_SP
+};
 
 use crate::{generate_expr_lit_num, utils::to_camel_case};
 

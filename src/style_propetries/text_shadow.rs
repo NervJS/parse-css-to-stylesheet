@@ -1,8 +1,8 @@
 use lightningcss::{properties::Property, values::{length::Length, color::CssColor}, traits::ToCss};
-use swc_common::DUMMY_SP;
-use swc_ecma_ast::{Expr, ObjectLit, PropOrSpread, Prop, KeyValueProp};
 
-use crate::{style_propetries::traits::ToExpr, generate_expr_lit_str, generate_prop_name, generate_expr_by_length, generate_string_by_css_color};
+use swc_core::ecma::ast::*;
+use swc_core::common::DUMMY_SP;
+use crate::{style_propetries::traits::ToExpr, generate_prop_name, generate_expr_by_length, generate_string_by_css_color};
 
 use super::unit::PropertyTuple;
 

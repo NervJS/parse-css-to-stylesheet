@@ -1,7 +1,9 @@
 use lightningcss::properties::{Property, border::LineStyle};
 
-use swc_common::DUMMY_SP;
-use swc_ecma_ast::{Expr, MemberExpr, Ident, MemberProp};
+
+use swc_core::ecma::ast::*;
+use swc_core::common::DUMMY_SP;
+
 use crate::generate_invalid_expr;
 
 use super::{traits::ToExpr, unit::{PropertyTuple, Platform}};

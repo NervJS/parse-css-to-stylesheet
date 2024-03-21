@@ -9,11 +9,8 @@ use lightningcss::{
   },
 };
 use smallvec::SmallVec;
-use swc_common::DUMMY_SP;
-use swc_ecma_ast::{
-  ArrayLit, Expr, Ident, KeyValueProp, MemberExpr, MemberProp, ObjectLit, Prop, PropName,
-  PropOrSpread, 
-};
+use swc_core::ecma::ast::*;
+use swc_core::common::DUMMY_SP;
 
 use crate::{generate_invalid_expr, style_propetries::traits::ToExpr};
 

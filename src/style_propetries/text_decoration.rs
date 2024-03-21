@@ -1,7 +1,7 @@
 use lightningcss::{properties::{Property, text}, traits::ToCss, stylesheet::PrinterOptions, targets::{Targets, Features}};
-use swc_common::DUMMY_SP;
-use swc_ecma_ast::{Expr, Ident, KeyValueProp, MemberExpr, MemberProp, ObjectLit, Prop, PropOrSpread};
 
+use swc_core::ecma::ast::*;
+use swc_core::common::DUMMY_SP;
 use crate::{style_propetries::traits::ToExpr, generate_invalid_expr, generate_expr_lit_str, generate_prop_name};
 
 use super::unit::{convert_color_keywords_to_hex, PropertyTuple};

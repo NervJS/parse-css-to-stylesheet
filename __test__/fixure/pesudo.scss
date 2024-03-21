@@ -1,11 +1,4 @@
-:root {
-  --angle: 30deg;
-  --var: var(--aaa, #00f);
-  --color: #f00;
-}
-
 .container {
   height: 200px;
   width: 200px;
-  background-color: var(--var, --color);
 }

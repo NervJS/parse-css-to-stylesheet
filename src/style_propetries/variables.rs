@@ -1,6 +1,7 @@
-use swc_ecma_ast::Expr;
 
-use super::{traits::ToExpr, unit::{generate_expr_with_css_input, Platform, PropertyTuple}};
+use swc_core::ecma::ast::Expr;
+
+use super::{traits::ToExpr, unit::PropertyTuple};
 
 
 

@@ -6,7 +6,6 @@ use lightningcss::{
   values::color::CssColor,
 };
 use smallvec::SmallVec;
-use swc_ecma_ast::Prop;
 
 use crate::{generate_expr_lit_str, generate_invalid_expr};
 

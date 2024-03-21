@@ -1,6 +1,7 @@
 use lightningcss::{properties::Property, values::{length::LengthPercentage, position::{HorizontalPositionKeyword, PositionComponent::{self, Center, Side}, VerticalPositionKeyword}}};
-use swc_common::DUMMY_SP;
-use swc_ecma_ast::{Expr, PropOrSpread, ObjectLit, Prop, KeyValueProp, PropName, Ident};
+
+use swc_core::ecma::ast::*;
+use swc_core::common::DUMMY_SP;
 
 use crate::{generate_expr_by_length_percentage, generate_expr_lit_str, generate_tpl_expr, style_propetries::traits::ToExpr};
 

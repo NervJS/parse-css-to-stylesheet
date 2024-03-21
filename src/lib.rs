@@ -1,12 +1,15 @@
 #![deny(clippy::all)]
 
 use std::{cell::RefCell, rc::Rc};
+use serde::Deserialize;
 
 use style_parser::StyleParser;
 use style_propetries::unit::Platform;
-use swc_common::{comments::SingleThreadedComments, sync::Lrc, SourceMap};
-use swc_ecma_codegen::{text_writer::JsWriter, Emitter};
 
+use swc_core::{
+  ecma::codegen::{text_writer::JsWriter, Emitter},
+  common::{comments::SingleThreadedComments, sync::Lrc, SourceMap}
+};
 use crate::{document::JSXDocument, style_write::StyleWrite};
 
 #[macro_use]
@@ -28,6 +31,7 @@ mod parse_css_variables;
 // platform_string: "ReactNative" | "Harmony"
 
 #[napi(object)]
+#[derive(Deserialize)]
 pub struct ParseOptions {
   pub platform_string: String,
   pub is_enable_nesting: Option<bool>,

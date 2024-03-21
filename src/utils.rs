@@ -3,7 +3,7 @@ use std::collections::HashMap;
 use html5ever::{namespace_url, ns, LocalName, QualName};
 use pcre2::bytes::Regex;
 // use lightningcss::values::number::CSSNumber;
-use swc_ecma_ast::{JSXMemberExpr, JSXObject, Expr, CallExpr, PropOrSpread, Prop, PropName};
+use swc_core::ecma::ast::{JSXMemberExpr, JSXObject, Expr, CallExpr, PropOrSpread, Prop, PropName};
 
 use crate::style_propetries::unit::Platform;
 

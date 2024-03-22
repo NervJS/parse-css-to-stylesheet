@@ -1312,6 +1312,28 @@ impl<'i> VisitMut for JSXMutVisitor<'i> {
               }
             }
           }
+        } else {
+          // 移除原本的style
+          if has_style {
+            if let Some(attr) = n.args.get_mut(1) {
+              if let Expr::Object(object) = &mut *attr.expr {
+                let mut index = 0;
+                for (i, prop) in object.props.iter().enumerate() {
+                  if let PropOrSpread::Prop(prop) = prop {
+                    if let Prop::KeyValue(key_value_prop) = &**prop {
+                      if let PropName::Ident(ident) = &key_value_prop.key {
+                        if ident.sym.to_string() == "style" {
+                          index = i;
+                          break;
+                        }
+                      }
+                    }
+                  }
+                }
+                object.props.remove(index);
+              }
+            }
+          }
         }
         
       }
@@ -1495,6 +1517,21 @@ impl<'i> VisitMut for JSXMutVisitor<'i> {
               }
             }
           });
+        }
+      } else {
+        // 移除原本的style，从属性上去掉
+        if has_style {
+          let attrs = n.opening.attrs.iter().filter(|attr| {
+            if let JSXAttrOrSpread::JSXAttr(attr) = attr {
+              if let JSXAttrName::Ident(ident) = &attr.name {
+                if ident.sym.to_string() == "style" {
+                  return false
+                }
+              }
+            }
+            return true
+          }).collect::<Vec<&JSXAttrOrSpread>>();
+          n.opening.attrs = attrs.into_iter().map(|attr| attr.clone()).collect::<Vec<JSXAttrOrSpread>>();
         }
       }
       

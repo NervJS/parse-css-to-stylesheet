@@ -1,4 +1,4 @@
-use std::collections::HashMap;
+use std::collections::BTreeMap;
 
 use lightningcss::{printer::PrinterOptions, properties::{custom::{Token, TokenOrValue}, Property}, traits::ToCss, values::time::Time};
 
@@ -14,9 +14,9 @@ use swc_core:: {
 use crate::{constants::{CONVERT_STYLE_PX_FN, CSS_VARIABLE_MAP, CSS_VAR_FN, LAZY_CSS_VAR_FN}, document::JSXDocument, style_propetries::unit::{convert_color_keywords_to_hex, generate_expr_by_length_value, Platform}};
 
 // 解析CSS变量
-pub fn parse(properties: Vec<(String, Property<'_>)>) -> HashMap<String, Expr> {
+pub fn parse(properties: Vec<(String, Property<'_>)>) -> BTreeMap<String, Expr> {
 
-  let mut css_variables = HashMap::new();
+  let mut css_variables = BTreeMap::new();
   properties.iter().for_each(|(key, value)| {
     let mut expr: Option<Expr> = None;
     match value.clone() {
@@ -26,7 +26,8 @@ pub fn parse(properties: Vec<(String, Property<'_>)>) -> HashMap<String, Expr> {
           expr = Some(get_token_or_value(token_or_value.to_owned(), "css"));
         }
       },
-      Property::Unparsed(unparsed) => {
+      // 解析不出来的_unparsed
+      Property::Unparsed(_) => {
         value.value_to_css_string(PrinterOptions::default()).unwrap();
       },
       _ => {}
@@ -39,7 +40,7 @@ pub fn parse(properties: Vec<(String, Property<'_>)>) -> HashMap<String, Expr> {
 }
 
 // 生成CSS变量代码
-pub fn write(css_variables: HashMap<String, Expr>) -> Option<String> {
+pub fn write(css_variables: BTreeMap<String, Expr>) -> Option<String> {
 
   if css_variables.len() == 0 {
     return None

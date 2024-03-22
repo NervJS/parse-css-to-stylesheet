@@ -3,5 +3,5 @@ import './pesudo.scss'
 
 export default function Pesudo() {
 
-  return <View className='pesudo'></View>
+  return <View style={{height: '100px'}}></View>
 }

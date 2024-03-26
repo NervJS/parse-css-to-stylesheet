@@ -1,3 +1,12 @@
+## [0.0.45](https://github.com/NervJS/parse-css-to-stylesheet/compare/v0.0.44...v0.0.45) (2024-03-26)
+
+
+### Features
+
+* 增加半编译支持 ([318fa24](https://github.com/NervJS/parse-css-to-stylesheet/commit/318fa244ceecbb57fb7f0100aca7225ec842a9aa))
+
+
+
 ## [0.0.44](https://github.com/NervJS/parse-css-to-stylesheet/compare/v0.0.43...v0.0.44) (2024-03-26)
 
 

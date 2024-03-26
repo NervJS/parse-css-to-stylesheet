@@ -1,6 +1,6 @@
 {
   "name": "@tarojs/parse-css-to-stylesheet",
-  "version": "0.0.44",
+  "version": "0.0.45",
   "main": "index.js",
   "types": "index.d.ts",
   "napi": {

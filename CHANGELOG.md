@@ -1,3 +1,12 @@
+## [0.0.44](https://github.com/NervJS/parse-css-to-stylesheet/compare/v0.0.43...v0.0.44) (2024-03-26)
+
+
+### Bug Fixes
+
+* 移除css变量逻辑，迁移到postcss处理 ([24f8a46](https://github.com/NervJS/parse-css-to-stylesheet/commit/24f8a46aae8940e5f117e47e935cf57503f1cca6))
+
+
+
 ## [0.0.43](https://github.com/NervJS/parse-css-to-stylesheet/compare/v0.0.42...v0.0.43) (2024-03-21)
 
 

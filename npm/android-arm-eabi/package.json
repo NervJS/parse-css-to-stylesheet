@@ -1,6 +1,6 @@
 {
   "name": "@tarojs/parse-css-to-stylesheet-android-arm-eabi",
-  "version": "0.0.43",
+  "version": "0.0.44",
   "os": [
     "android"
   ],

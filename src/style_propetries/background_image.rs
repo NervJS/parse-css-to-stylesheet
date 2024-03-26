@@ -1,15 +1,12 @@
 use lightningcss::{
-  properties::Property,
-  stylesheet::PrinterOptions,
-  traits::ToCss,
-  values::{
+  properties::Property, stylesheet::PrinterOptions, targets::{Features, Targets}, traits::ToCss, values::{
     angle::Angle,
-    gradient::{Gradient, GradientItem, LineDirection},
+    gradient::{ Gradient, GradientItem, LineDirection},
     image::Image,
     length::LengthValue,
     percentage::DimensionPercentage,
     position::{HorizontalPositionKeyword, VerticalPositionKeyword},
-  }, targets::{Targets, Features},
+  }
 };
 use smallvec::SmallVec;
 
@@ -18,7 +15,7 @@ use swc_core::common::DUMMY_SP;
 
 use crate::generate_invalid_expr;
 
-use super::{linear_gradient::{LinearGradientDirection, LinearGradientItem}, traits::ToExpr, unit::{convert_color_keywords_to_hex, PropertyTuple}};
+use super::{graident_properties::linear_gradient::{LinearGradientDirection, LinearGradientItem}, traits::ToExpr, unit::{convert_color_keywords_to_hex, PropertyTuple}};
 
 pub fn parse_background_image_item(image: &Image) -> Option<BackgroundImageKind> {
   match image {
@@ -26,98 +23,104 @@ pub fn parse_background_image_item(image: &Image) -> Option<BackgroundImageKind>
       BackgroundImageKind::String(url.url.to_string())
     ),
     Image::Gradient(gradient) => {
-      if let Gradient::Linear(gradient) = &**gradient {
-        let mut color_stops = vec![];
-        for item in &gradient.items {
-          match item {
-            GradientItem::ColorStop(color_stop) => {
-              let color_stop_position = color_stop
-                .position
-                .clone()
-                .unwrap_or(DimensionPercentage::Dimension(LengthValue::Px(0.0)));
-              color_stops.push((
-                convert_color_keywords_to_hex(color_stop
-                  .color
-                  .to_css_string(PrinterOptions {
-                    minify: false,
-                    targets: Targets {
-                      include: Features::HexAlphaColors,
-                      ..Targets::default()
-                    },
-                    ..PrinterOptions::default()
-                  })
-                  .unwrap()),
-                match &color_stop_position {
-                  DimensionPercentage::Dimension(length) => {
-                    length.to_css_string(PrinterOptions::default()).unwrap()
-                  }
-                  DimensionPercentage::Percentage(percentage) => percentage.0.to_string(),
-                  _ => color_stop_position
-                    .to_css_string(PrinterOptions::default())
-                    .unwrap(),
-                },
-              ));
-            }
-            _ => {}
-          };
-        }
-        let direction = &gradient.direction;
-        match direction {
-          LineDirection::Angle(angle) => {
-            let angle = match angle {
-              Angle::Deg(deg) => Some(*deg),
-              Angle::Rad(rad) => Some(rad.to_degrees()),
-              Angle::Turn(turn) => Some(turn * 360.0),
-              Angle::Grad(grad) => Some(grad * 0.9),
+      match &**gradient {
+        Gradient::Linear(gradient) => {
+          let mut color_stops = vec![];
+          for item in &gradient.items {
+            match item {
+              GradientItem::ColorStop(color_stop) => {
+                let color_stop_position = color_stop
+                  .position
+                  .clone()
+                  .unwrap_or(DimensionPercentage::Dimension(LengthValue::Px(0.0)));
+                color_stops.push((
+                  convert_color_keywords_to_hex(color_stop
+                    .color
+                    .to_css_string(PrinterOptions {
+                      minify: false,
+                      targets: Targets {
+                        include: Features::HexAlphaColors,
+                        ..Targets::default()
+                      },
+                      ..PrinterOptions::default()
+                    })
+                    .unwrap()),
+                  match &color_stop_position {
+                    DimensionPercentage::Dimension(length) => {
+                      length.to_css_string(PrinterOptions::default()).unwrap()
+                    }
+                    DimensionPercentage::Percentage(percentage) => percentage.0.to_string(),
+                    _ => color_stop_position
+                      .to_css_string(PrinterOptions::default())
+                      .unwrap(),
+                  },
+                ));
+              }
+              _ => {}
             };
-            Some(
-              BackgroundImageKind::LinearGradient(LinearGradientItem {
-                angle,
-                color_stops,
-                derection: None,
-              })
-            )
           }
-          LineDirection::Horizontal(horizontal) => Some(BackgroundImageKind::LinearGradient(LinearGradientItem {
-            angle: None,
-            color_stops,
-            derection: Some(match horizontal {
-              HorizontalPositionKeyword::Left => LinearGradientDirection::Left,
-              HorizontalPositionKeyword::Right => LinearGradientDirection::Right,
-            })
-          })),
-          LineDirection::Vertical(vertical) => Some(BackgroundImageKind::LinearGradient(LinearGradientItem {
-            angle: None,
-            color_stops,
-            derection: Some(match vertical {
-              VerticalPositionKeyword::Top => LinearGradientDirection::Top,
-              VerticalPositionKeyword::Bottom => LinearGradientDirection::Bottom,
-            }),
-          })),
-          LineDirection::Corner {
-            horizontal,
-            vertical,
-          } => Some(BackgroundImageKind::LinearGradient(LinearGradientItem {
-            angle: None,
-            color_stops,
-            derection: Some(match (horizontal, vertical) {
-              (HorizontalPositionKeyword::Left, VerticalPositionKeyword::Top) => {
-                LinearGradientDirection::LeftTop
-              }
-              (HorizontalPositionKeyword::Left, VerticalPositionKeyword::Bottom) => {
-                LinearGradientDirection::LeftBottom
-              }
-              (HorizontalPositionKeyword::Right, VerticalPositionKeyword::Top) => {
-                LinearGradientDirection::RightTop
-              }
-              (HorizontalPositionKeyword::Right, VerticalPositionKeyword::Bottom) => {
-                LinearGradientDirection::RightBottom
-              }
-            }),
-          })),
-        }
-      } else {
-        None
+          let direction = &gradient.direction;
+          match direction {
+            LineDirection::Angle(angle) => {
+              let angle = match angle {
+                Angle::Deg(deg) => Some(*deg),
+                Angle::Rad(rad) => Some(rad.to_degrees()),
+                Angle::Turn(turn) => Some(turn * 360.0),
+                Angle::Grad(grad) => Some(grad * 0.9),
+              };
+              Some(
+                BackgroundImageKind::LinearGradient(LinearGradientItem {
+                  angle,
+                  color_stops,
+                  derection: None,
+                })
+              )
+            }
+            LineDirection::Horizontal(horizontal) => Some(BackgroundImageKind::LinearGradient(LinearGradientItem {
+              angle: None,
+              color_stops,
+              derection: Some(match horizontal {
+                HorizontalPositionKeyword::Left => LinearGradientDirection::Left,
+                HorizontalPositionKeyword::Right => LinearGradientDirection::Right,
+              })
+            })),
+            LineDirection::Vertical(vertical) => Some(BackgroundImageKind::LinearGradient(LinearGradientItem {
+              angle: None,
+              color_stops,
+              derection: Some(match vertical {
+                VerticalPositionKeyword::Top => LinearGradientDirection::Top,
+                VerticalPositionKeyword::Bottom => LinearGradientDirection::Bottom,
+              }),
+            })),
+            LineDirection::Corner {
+              horizontal,
+              vertical,
+            } => Some(BackgroundImageKind::LinearGradient(LinearGradientItem {
+              angle: None,
+              color_stops,
+              derection: Some(match (horizontal, vertical) {
+                (HorizontalPositionKeyword::Left, VerticalPositionKeyword::Top) => {
+                  LinearGradientDirection::LeftTop
+                }
+                (HorizontalPositionKeyword::Left, VerticalPositionKeyword::Bottom) => {
+                  LinearGradientDirection::LeftBottom
+                }
+                (HorizontalPositionKeyword::Right, VerticalPositionKeyword::Top) => {
+                  LinearGradientDirection::RightTop
+                }
+                (HorizontalPositionKeyword::Right, VerticalPositionKeyword::Bottom) => {
+                  LinearGradientDirection::RightBottom
+                }
+              }),
+            })),
+          }
+        },
+        Gradient::RepeatingLinear(_) => None,
+        Gradient::Radial(_) => None,
+        Gradient::RepeatingRadial(_) => None,
+        Gradient::Conic(_) => None,
+        Gradient::RepeatingConic(_) => None,
+        Gradient::WebKitGradient(_) => None,
       }
     }
     _ => None,
@@ -137,7 +140,7 @@ pub fn parse_background_image(image: &SmallVec<[Image; 1]>) -> Vec<BackgroundIma
 #[derive(Debug, Clone)]
 pub enum BackgroundImageKind {
   String(String),
-  LinearGradient(LinearGradientItem),
+  LinearGradient(LinearGradientItem)
 }
 
 #[derive(Debug, Clone)]

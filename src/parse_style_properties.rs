@@ -1,24 +1,12 @@
 use lightningcss::{properties::Property, stylesheet::PrinterOptions};
 
-use crate::style_propetries::{variables::Variables, aspect_ratio::AspactRatio, background::Background, background_image::BackgroundImage, background_position::BackgroundPosition, background_repeat::BackgroundRepeat, background_size::BackgroundSize, border::Border, border_color::BorderColor, border_radius::BorderRadius, border_style::BorderStyle, border_width::BorderWidth, color::ColorProperty, display::Display, flex::Flex, flex_align::FlexAlign, flex_basis::FlexBasis, flex_direction::FlexDirection, flex_wrap::FlexWrap, font_size::FontSize, font_style::FontStyle, font_weight::FontWeight, gap::Gap, item_align::ItemAlign, length_value::LengthValueProperty, letter_spacing::LetterSpacing, line_height::LineHeight, marin_padding::MarginPadding, max_size::MaxSizeProperty, normal::Normal, number::NumberProperty, overflow::Overflow, size::SizeProperty, style_value_type::StyleValueType, text_align::TextAlign, text_decoration::TextDecoration, text_overflow::TextOverflow, text_shadow::TextShadow, text_transform::TextTransform, transform::Transform, transform_origin::TransformOrigin, vertical_align::VerticalAlign};
-use crate::parse_css_variables::get_token_or_value;
+use crate::style_propetries::{aspect_ratio::AspactRatio, background::Background, background_image::BackgroundImage, background_position::BackgroundPosition, background_repeat::BackgroundRepeat, background_size::BackgroundSize, border::Border, border_color::BorderColor, border_radius::BorderRadius, border_style::BorderStyle, border_width::BorderWidth, color::ColorProperty, display::Display, flex::Flex, flex_align::FlexAlign, flex_basis::FlexBasis, flex_direction::FlexDirection, flex_wrap::FlexWrap, font_size::FontSize, font_style::FontStyle, font_weight::FontWeight, gap::Gap, item_align::ItemAlign, length_value::LengthValueProperty, letter_spacing::LetterSpacing, line_height::LineHeight, marin_padding::MarginPadding, max_size::MaxSizeProperty, normal::Normal, number::NumberProperty, overflow::Overflow, size::SizeProperty, style_value_type::StyleValueType, text_align::TextAlign, text_decoration::TextDecoration, text_overflow::TextOverflow, text_shadow::TextShadow, text_transform::TextTransform, transform::Transform, transform_origin::TransformOrigin, vertical_align::VerticalAlign};
 
 pub fn parse_style_properties(properties: &Vec<(String, Property)>) -> Vec<StyleValueType> {
   let mut final_properties = vec![];
-
   for (id, value)  in properties.iter() {
-    // 查询值是否是使用的css变量
-    match value {
-      Property::Unparsed(unpared) => {
-        unpared.value.0.iter().for_each(|value| {
-          let expr = get_token_or_value(value.clone(), "jsx");
-          final_properties.push(StyleValueType::Variables(Variables::new(id.to_string(), expr)));
-        });
-      },
-      _ => {
-        // 正常值
-        let property_name = id.as_str();
-        match property_name {
+    let property_name = id.as_str();
+    match property_name {
           // 基础样式
           "alignContent" => {
             final_properties.push(StyleValueType::FlexAlign(FlexAlign::from((id.to_string(), value))));
@@ -189,9 +177,6 @@ pub fn parse_style_properties(properties: &Vec<(String, Property)>) -> Vec<Style
             final_properties.push(StyleValueType::Normal(Normal::new(id.to_string(), value.value_to_css_string(PrinterOptions::default()).unwrap())));
           }
         }
-  
-      }
-    };
 }
   final_properties
 }

@@ -94,15 +94,6 @@ impl LinearGradientItem {
 #[derive(Debug, Clone)]
 pub struct LinearGradient(pub Vec<LinearGradientItem>);
 
-// impl LinearGradient {
-//   fn to_expr(&self) -> Expr {
-//     Expr::Array(ArrayLit {
-//       span: DUMMY_SP,
-//       elems: self
-//         .0
-//         .iter()
-//         .map(|item| Some(item.to_expr().into()))
-//         .collect::<Vec<_>>(),
-//     })
-//   }
-// }
+
+
+

@@ -214,6 +214,25 @@ impl<'a> AstVisitor<'a> {
 
     Element::new(qual_name, SpanKey(jsx_callee.span), attributes)
   }
+
+  fn find_jsx_callee_ident_name (&mut self, ident: &Ident, call_expr: &CallExpr) -> Option<(String, Element)> {
+    let name;
+    let element;
+    if ident.sym.to_string() == "createElement" {
+      element = self.create_element(JSXElementOrJSXCallee::JSXCallee(call_expr));
+      let name_ident = call_expr.args.get(0).unwrap();
+      name = match &*name_ident.expr {
+        Expr::Ident(ident) => ident.sym.to_string(),
+        Expr::Lit(lit) => match lit {
+          Lit::Str(str) => str.value.to_string(),
+          _ => "".to_string(),
+        },
+        _ => "".to_string()
+      };
+      return Some((name, element))
+    };
+    None
+  }
 }
 
 impl<'a> VisitAll for AstVisitor<'a> {
@@ -241,35 +260,24 @@ impl<'a> VisitAll for AstVisitor<'a> {
   // 兼容 React.createElement 的方式
   fn visit_call_expr(&mut self, call_expr: &CallExpr) {
     if let Callee::Expr(expr) = &call_expr.callee {
-      if let Expr::Member(member) = &**expr {
-        if let Expr::Ident(ident) = &*member.obj {
-          if ident.sym.to_string() == "React" {
-            if let MemberProp::Ident(ident) = &member.prop {
-              if ident.sym.to_string() == "createElement" {
-                let element = self.create_element(JSXElementOrJSXCallee::JSXCallee(call_expr));
-                let name_ident = call_expr.args.get(0).unwrap();
-                let name = match &*name_ident.expr {
-                  Expr::Ident(ident) => ident.sym.to_string(),
-                  Expr::Lit(lit) => match lit {
-                    Lit::Str(str) => str.value.to_string(),
-                    _ => "".to_string(),
-                  },
-                  _ => "".to_string()
-                };
-
-                // if is_starts_with_uppercase(name.as_str()) {
-                //   if self.taro_components.contains(&name) {
-                //     self.jsx_record.insert(SpanKey(call_expr.span), element);
-                //   }
-                // } else {
-                  if !name.is_empty() {
-                    self.jsx_record.insert(SpanKey(call_expr.span), element);
-                  }
-                // }
+      match &**expr {
+        Expr::Member(member) => {
+          if let MemberProp::Ident(ident) = &member.prop {
+            if let Some((name, element)) = self.find_jsx_callee_ident_name(ident, call_expr) {
+              if !name.is_empty() {
+                self.jsx_record.insert(SpanKey(call_expr.span), element);
               }
             }
           }
-        }
+        },
+        Expr::Ident(ident) => {
+          if let Some((name, element)) = self.find_jsx_callee_ident_name(ident, call_expr) {
+            if !name.is_empty() {
+              self.jsx_record.insert(SpanKey(call_expr.span), element);
+            }
+          }
+        },
+        _ => {}
       }
     }
     call_expr.visit_all_children_with(self);
@@ -447,7 +455,11 @@ pub struct ModuleMutVisitor {
 }
 
 impl ModuleMutVisitor {
-  pub fn new(all_style: Rc<RefCell<HashMap<String, StyleValue>>>, platform: Platform, is_enable_nesting: bool) -> Self {
+  pub fn new(
+    all_style: Rc<RefCell<HashMap<String, StyleValue>>>, 
+    platform: Platform, 
+    is_enable_nesting: bool
+  ) -> Self {
     ModuleMutVisitor { all_style, platform, is_enable_nesting }
   }
 }
@@ -912,14 +924,15 @@ impl<'i> JSXMutVisitor<'i> {
   fn check_is_jsx_callee (&self, call_expr: &CallExpr) -> bool {
     if let Callee::Expr(expr) = &call_expr.callee {
       if let Expr::Member(member) = &**expr {
-        if let Expr::Ident(ident) = &*member.obj {
-          if ident.sym.to_string() == "React" {
-            if let MemberProp::Ident(ident) = &member.prop {
-              if ident.sym.to_string() == "createElement" {
-                return true
-              }
-            }
+        if let MemberProp::Ident(ident) = &member.prop {
+          if ident.sym.to_string() == "createElement" {
+            return true
           }
+        }
+      }
+      if let Expr::Ident(ident) = &**expr {
+        if ident.sym.to_string() == "createElement" {
+          return true
         }
       }
     }
@@ -1014,7 +1027,7 @@ impl<'i> JSXMutVisitor<'i> {
             &properties
               .iter()
               .map(|(key, value)| (key.to_owned(), value.clone()))
-              .collect::<Vec<_>>(),
+              .collect::<Vec<_>>()
           );
 
           return Some(parsed_properties);
@@ -1218,9 +1231,32 @@ impl<'i> VisitMut for JSXMutVisitor<'i> {
         match expr {
           Some(expr_or_spread) => {
             match *expr_or_spread.expr.clone() {
+              Expr::Lit(lit) => {
+                if let Lit::Str(_) = lit {
+                  if let Some(attr) = n.args.get_mut(1) {
+                    if let Expr::Object(object) = &mut *attr.expr {
+                      let mut should_insert = static_styles.len() > 0;
+                      if let Some(_) = &class_attr_value {
+                        should_insert = true
+                      }
+                      if should_insert {
+                        object.props.insert(
+                          0,
+                          PropOrSpread::Prop(Box::new(Prop::KeyValue(KeyValueProp {
+                            key: PropName::Ident(Ident::new(HM_STYLE.into(), DUMMY_SP)),
+                            value: Box::new(get_fun_call_expr(match class_attr_value {
+                                Some(value) => value.clone(),
+                                None => Expr::Lit(Lit::Null(Null { span: DUMMY_SP })),
+                            }, static_styles)),
+                          }))),
+                        )
+                      }
+                    }
+                  }
+                }
+               },
               Expr::Ident(ident) => {
                 let name = ident.sym.to_string();
-
                 if let Some(attr) = n.args.get_mut(1) {
                   if let Expr::Object(object) = &mut *attr.expr {
                     if 

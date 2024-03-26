@@ -53,7 +53,7 @@ impl<'i> StyleWrite<'i> {
     }
     // 插入样式表
     {
-      let mut insert_mut_visitor = ModuleMutVisitor::new(self.all_style.clone(), platform.clone(), self.is_enable_nesting);
+      let mut insert_mut_visitor = ModuleMutVisitor::new(self.all_style.clone(),platform.clone(), self.is_enable_nesting);
       self
         .module
         .borrow_mut()

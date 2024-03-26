@@ -11,7 +11,6 @@ pub type StyleValue = Vec<StyleValueType>;
 pub struct StyleData<'i> {
   pub pesudo_style_record: Rc<RefCell<HashMap<SpanKey, Vec<(String, Vec<(String, Property<'i>)>)>>>>,
   pub all_style: Rc<RefCell<HashMap<String, StyleValue>>>,
-  pub css_variables: Rc<RefCell<Vec<(String, Property<'i>)>>>,
   pub has_nesting: bool
 }
 
@@ -175,7 +174,7 @@ impl<'i> StyleParser<'i> {
           &properties
             .iter()
             .map(|(k, v)| (k.to_owned(), v.clone()))
-            .collect::<Vec<_>>(),
+            .collect::<Vec<_>>()
         ),
       )
     })
@@ -186,7 +185,6 @@ impl<'i> StyleParser<'i> {
     StyleData {
       pesudo_style_record: Rc::new(RefCell::new(final_pesudo_style_record)),
       all_style: Rc::new(RefCell::new(final_all_style)),
-      css_variables: Rc::new(RefCell::new(css_variables)),
       has_nesting
     }
   }

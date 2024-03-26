@@ -3,7 +3,6 @@ use std::vec;
 use lightningcss::{
   properties::Property, values::length::LengthPercentageOrAuto
 };
-
 use crate::{generate_expr_by_length_percentage, generate_expr_by_length_percentage_or_auto, generate_expr_lit_str, generate_invalid_expr, generate_tpl_expr, style_propetries::traits::ToExpr};
 
 use super::unit::{Platform, PropertyTuple};
@@ -22,7 +21,7 @@ impl MarginPadding {
   
   pub fn new(id: String) -> Self {
     MarginPadding {
-      id: id,
+      id,
       top: None,
       right: None,
       bottom: None,
@@ -39,16 +38,16 @@ impl ToExpr for MarginPadding {
         generate_invalid_expr!()
       )
     }
+
     // 判断self.id是否padding开头
     let is_padding = self.id.starts_with("padding");
     let key_name = if is_padding { "padding" } else { "margin" };
-
+    
     PropertyTuple::Array(vec![
       (format!("{}Top", key_name), generate_expr_by_length_percentage_or_auto!(self.top.as_ref().unwrap(), Platform::Harmony)),
       (format!("{}Right", key_name), generate_expr_by_length_percentage_or_auto!(self.right.as_ref().unwrap(), Platform::Harmony)),
       (format!("{}Bottom", key_name), generate_expr_by_length_percentage_or_auto!(self.bottom.as_ref().unwrap(), Platform::Harmony)),
       (format!("{}Left", key_name), generate_expr_by_length_percentage_or_auto!(self.left.as_ref().unwrap(), Platform::Harmony)),
-    
     ])
   }
 

@@ -613,7 +613,7 @@ test('Harmony attrbute test font-weight', t => {
     font-weight: bold;
   }
   .border {
-    font-weight: bolrder;
+    font-weight: bolder;
   }
   .lighter {
     font-weight: lighter;

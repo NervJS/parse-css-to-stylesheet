@@ -252,7 +252,6 @@ if (!nativeBinding) {
   throw new Error(`Failed to load native binding`)
 }
 
-const { parse, combineCssVariables } = nativeBinding
+const { parse } = nativeBinding
 
 module.exports.parse = parse
-module.exports.combineCssVariables = combineCssVariables

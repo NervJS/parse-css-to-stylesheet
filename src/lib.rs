@@ -24,7 +24,6 @@ mod constants;
 mod style_propetries;
 mod style_parser;
 mod parse_style_properties;
-mod parse_css_variables;
 
 // component: jsx的code string
 // styles: css的code string
@@ -39,8 +38,7 @@ pub struct ParseOptions {
 
 #[napi(object)]
 pub struct ParseResult {
-  pub code: String,
-  pub css_variables: Option<String>,
+  pub code: String
 }
 
 #[napi]
@@ -72,12 +70,6 @@ pub fn parse(component: String, styles: Vec<String>, options: ParseOptions) -> P
     is_enable_nesting = style_data.has_nesting;
   }
 
-  // 解析CSS变量
-  let variable_code = parse_css_variables::write(
-    parse_css_variables::parse(style_data.css_variables.borrow().clone())
-  );
-
-
   let program = Rc::new(RefCell::new(document.program.as_ref().unwrap().clone()));
   let jsx_record = Rc::new(RefCell::new(document.jsx_record.as_ref().unwrap().clone()));
   let mut style_write = StyleWrite::new(
@@ -104,12 +96,6 @@ pub fn parse(component: String, styles: Vec<String>, options: ParseOptions) -> P
   let code = String::from_utf8(buf).unwrap().replace("\r\n", "\n");
 
   ParseResult {
-    code,
-    css_variables: variable_code,
+    code
   }
-}
-
-#[napi]
-pub fn combine_css_variables(variables: Vec<String>) -> Option<String> {
-  parse_css_variables::combine_css_variables(variables)
 }

@@ -9,7 +9,5 @@ export interface ParseOptions {
 }
 export interface ParseResult {
   code: string
-  cssVariables?: string
 }
 export function parse(component: string, styles: Array<string>, options: ParseOptions): ParseResult
-export function combineCssVariables(variables: Array<string>): string | null

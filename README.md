@@ -17,24 +17,6 @@ const { code } = parse(jsxCode, [cssCode1, cssCode2, ...], {
 // code: jsx代码 string
 ```
 
-### css 变量打包
-
-如果需要支持 css 变量的打包，需要将出参`cssVariables`进行二次编译，如下例子所示：
-
-```typescript
-import { parse, combineCssVariables } from '@tarojs/parse-css-to-stylesheet'
-
-// Harmony
-const { code: CodeA, cssVariables: cssVariablesA } = parse(jsxCodeA, [cssRootVarCode, cssCodeA, ...], {
-  platformString: 'Harmony'
-})
-const { code: codeB, cssVariables: cssVariablesB } = parse(jsxCodeB, [cssRootVarCode, cssCodeB, ...], {
-  platformString: 'Harmony'
-})
-// 获取合并后的css变量代码
-const css_variable_code: String =  cssVariables([cssVariablesA, cssVariablesB])
-```
-
 ## 参数说明
 
 ```typescript
@@ -44,7 +26,6 @@ export interface ParseOptions {
 }
 export interface ParseResult {
   code: string; // 输出的jsxcode
-  cssVariables?: string; // css变量字符串片段
 }
 
 // 样式解析
@@ -53,9 +34,6 @@ export function parse(
   styles: Array<string>,
   options: ParseOptions
 ): ParseResult;
-
-// 合并css变量字符串片段，输出运行的代码字符
-export function combineCssVariables(variables: Array<string>): string | null;
 ```
 
 #### ParseOptions
@@ -67,18 +45,17 @@ export function combineCssVariables(variables: Array<string>): string | null;
 
 #### ParseResult
 
-| 配置参数     | 类型    | 说明                      |
-| ------------ | ------- | ------------------------- |
-| code         | String  | 经过样式解析后的 JSX 代码 |
-| cssVariables | Boolean | CSS 变量字符串片段        |
+| 配置参数 | 类型   | 说明                      |
+| -------- | ------ | ------------------------- |
+| code     | String | 经过样式解析后的 JSX 代码 |
 
-<!-- 在 Harmony 中，编译结果会依赖`@tarojs/plugin-platform-harmony-ets`中提供的几个包方法：
+在 Harmony 中，编译结果会依赖`@tarojs/plugin-platform-harmony-ets`中提供的几个包方法：
 
 1. `convertNumber2VP` 用于运行时进行单位转换
 2. `calcStaticStyle` 用于合成类，匹配类名
 3. `__combine_nesting_style__` 嵌套样式的合成
 
-具体位于 [Taro 主仓](https://github.com/NervJS/taro) 路径：_/taro/packages/taro-platform-harmony/src/runtime-ets_ 中 -->
+具体位于 [Taro 主仓](https://github.com/NervJS/taro) 路径：_/taro/packages/taro-platform-harmony/src/runtime-ets_ 中
 
 ## 样式支持情况
 

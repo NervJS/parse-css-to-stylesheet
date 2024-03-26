@@ -116,7 +116,45 @@ pub fn parse_background_image_item(image: &Image) -> Option<BackgroundImageKind>
           }
         },
         Gradient::RepeatingLinear(_) => None,
-        Gradient::Radial(_) => None,
+        Gradient::Radial(gradient) => { 
+          // Radial 话啊喂的半径需要
+          let mut color_stops = vec![];
+          for item in &gradient.items {
+            match item {
+              GradientItem::ColorStop(color_stop) => {
+                let color_stop_position = color_stop
+                  .position
+                  .clone()
+                  .unwrap_or(DimensionPercentage::Dimension(LengthValue::Px(0.0)));
+                color_stops.push((
+                  convert_color_keywords_to_hex(color_stop
+                    .color
+                    .to_css_string(PrinterOptions {
+                      minify: false,
+                      targets: Targets {
+                        include: Features::HexAlphaColors,
+                        ..Targets::default()
+                      },
+                      ..PrinterOptions::default()
+                    })
+                    .unwrap()),
+                  match &color_stop_position {
+                    DimensionPercentage::Dimension(length) => {
+                      length.to_css_string(PrinterOptions::default()).unwrap()
+                    }
+                    DimensionPercentage::Percentage(percentage) => percentage.0.to_string(),
+                    _ => color_stop_position
+                      .to_css_string(PrinterOptions::default())
+                      .unwrap(),
+                  },
+                ));
+              }
+              _ => {}
+            };
+          }
+          
+          None
+        },
         Gradient::RepeatingRadial(_) => None,
         Gradient::Conic(_) => None,
         Gradient::RepeatingConic(_) => None,

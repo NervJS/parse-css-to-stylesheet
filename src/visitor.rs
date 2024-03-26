@@ -10,15 +10,13 @@ use lightningcss::{
   stylesheet::ParserOptions,
 };
 use swc_core::{
-  common::{Span, DUMMY_SP},
-  atoms::Atom,
-  ecma::{
+  atoms::Atom, common::{Span, DUMMY_SP}, ecma::{
     utils::quote_ident,
     visit::{
       noop_visit_mut_type, noop_visit_type, Visit, VisitAll, VisitAllWith, VisitMut, VisitMutWith,
       VisitWith,
     }
-  },
+  }
 };
 use swc_core::ecma::ast::*;
 
@@ -899,25 +897,35 @@ fn generate_stylesheet(fn_name: String, fn_data_name: String, style_object: Box<
   )
 }
 
+pub enum EtsDirection {
+  Row,
+  Column,
+}
 pub struct JSXMutVisitor<'i> {
   pub jsx_record: Rc<RefCell<JSXRecord>>,
+  pub all_style: Rc<RefCell<HashMap<String, StyleValue>>>, 
   pub pesudo_style_record: Rc<RefCell<HashMap<SpanKey, Vec<(String, Vec<(String, Property<'i>)>)>>>>,
   pub taro_components: Vec<String>,
-  pub platform: Platform
+  pub platform: Platform,
+  // 半编译模式组件
+  is_compile_mode: bool
 }
 
 impl<'i> JSXMutVisitor<'i> {
   pub fn new(
     jsx_record: Rc<RefCell<JSXRecord>>,
+    all_style: Rc<RefCell<HashMap<String, StyleValue>>>, 
     pesudo_style_record: Rc<RefCell<HashMap<SpanKey, Vec<(String, Vec<(String, Property<'i>)>)>>>>,
     taro_components: Vec<String>,
     platform: Platform
   ) -> Self {
     JSXMutVisitor {
       jsx_record,
+      all_style,
       pesudo_style_record,
       taro_components,
-      platform
+      platform,
+      is_compile_mode: false
     }
   }
 
@@ -1141,6 +1149,147 @@ impl<'i> JSXMutVisitor<'i> {
     }
 
     (static_props, dynamic_properties)
+  }
+
+  // 半编译模版注入
+  // 1、识别静态style的值是否携带flexDirection、display
+  // 2、识别静态classname所对应的表里是否携带flexDirection、display
+  // 3、识别出最终会计算出的值，设置harmonyDirection
+  fn compile_mode_inject (&self, jsx: &mut JSXElement, static_styles: &Vec<PropOrSpread>) {
+    let binding = self.all_style.borrow();
+
+    let mut has_harmony_direction = false;
+    let mut direction = EtsDirection::Column;
+    let mut is_flex = false;
+
+    // 识别jsx中的classname
+    jsx.opening.attrs.iter_mut().for_each(|attr| {
+      if let JSXAttrOrSpread::JSXAttr(attr) = attr {
+        if let JSXAttrName::Ident(ident) = &attr.name {
+          if ident.sym.to_string() == "harmonyDirection" {
+            has_harmony_direction = true;
+            if let Some(JSXAttrValue::Lit(Lit::Str(Str { value, .. }))) = &attr.value {
+              if value == "row" {
+                  direction = EtsDirection::Row;
+              }
+            }
+          } else if ident.sym.to_string() == "className" {
+            // 遍历attr.value
+            if let Some(value) = &attr.value {
+              match value {
+                // 静态classname
+                JSXAttrValue::Lit(Lit::Str(lit_str)) => {
+                  // 根据空格分割lit_str
+                  let classnames = lit_str.value.split(" ").collect::<Vec<&str>>();
+                  // 遍历classnames，查看self.allStyle是否含有该classname
+                  classnames.iter().for_each(|classname| {
+                    if let Some(style_value) = binding.get(format!(".{}", classname).as_str()) {
+                      // 遍历style_value，查看是否含有flexDirection、display
+                      for style_value_type in style_value.iter() {
+                        match style_value_type {
+                          StyleValueType::FlexDirection(flex_direction) => {
+                            is_flex = true;
+                            // 判断是否为column
+                            match flex_direction.value {
+                              crate::style_propetries::flex_direction::EnumValue::Column =>  {
+                                direction = EtsDirection::Column
+                              },
+                              crate::style_propetries::flex_direction::EnumValue::Row =>  {
+                                direction = EtsDirection::Row
+                              },
+                              _ => {}
+                            }
+                          },
+                          StyleValueType::Display(display) => {
+                            // 判断是否为flex
+                            match display.value {
+                              crate::style_propetries::display::EnumValue::Flex => {
+                                if is_flex == false {
+                                  direction = EtsDirection::Row
+                                }
+                              },
+                              _ => {}
+                            }
+                          },
+                          _ => {}
+                        }
+                      }
+                    }
+                  });
+                },
+                _ => {}
+              }
+            }
+          }
+        }
+      }
+    });
+    
+    // 识别静态style
+    static_styles.into_iter().for_each(|props_or_value| {
+      if let PropOrSpread::Prop(prop) = props_or_value {
+        if let Prop::KeyValue(key_value) = *prop.clone() {
+          // 判断是否是display
+          if let PropName::Ident(ident) = key_value.key {
+            if ident.sym.to_string() == "display" {
+              match *key_value.value {
+                Expr::Lit(Lit::Str(str)) => {
+                  match str.value.as_str() {
+                    "flex" => {
+                      if is_flex == false {
+                        direction = EtsDirection::Row;
+                      }
+                    },
+                    _ => {}
+                  }
+                },
+                _ => {}
+              }
+            } else if ident.sym.to_string() == "flexDirection" {
+              // 判断是否是flexDirection
+              is_flex = true;
+              match *key_value.value {
+                Expr::Member(member) => {
+                  if let Expr::Ident(ident) = *member.obj {
+                    if ident.sym.to_string() == "FlexDirection" {
+                      match member.prop {
+                        MemberProp::Ident(ident) => {
+                          match ident.sym.to_string().as_str() {
+                            "Column" => {
+                              direction = EtsDirection::Column
+                            },
+                            "Row" => {
+                              direction = EtsDirection::Row
+                            }
+                            _ => {}
+                          }
+                        },
+                        _ => {}
+                      }
+                    }
+                  }
+                }
+                _ => {}
+              }
+            }
+          }
+        }
+       }
+    });
+
+    // jsx属性插入harmonyDirection
+    if !has_harmony_direction {
+      let value = match direction {
+        EtsDirection::Row => "row",
+        EtsDirection::Column => "column"
+      };
+      jsx.opening.attrs.push(JSXAttrOrSpread::JSXAttr(JSXAttr {
+        span: DUMMY_SP,
+        name: JSXAttrName::Ident(Ident::new("harmonyDirection".into(), DUMMY_SP)),
+        value: Some(JSXAttrValue::Lit(Lit::Str(value.into()))),
+      }));
+    
+    }
   }
 }
 
@@ -1396,6 +1545,9 @@ impl<'i> VisitMut for JSXMutVisitor<'i> {
       for attr in attrs.iter_mut() {
         if let JSXAttrOrSpread::JSXAttr(attr) = attr {
           if let JSXAttrName::Ident(ident) = &attr.name {
+            if ident.sym.to_string() == "compileMode" {
+              self.is_compile_mode = true
+            }
             if ident.sym.to_string() == "style" {
               has_style = true;
               // 只支持值为字符串、对象形式的 style
@@ -1433,6 +1585,12 @@ impl<'i> VisitMut for JSXMutVisitor<'i> {
         }
       }
 
+
+      // 半编译模式下，识别能识别出来的静态样式，设置harmonyDirection
+      if self.is_compile_mode {
+        self.compile_mode_inject(n, &static_styles);
+      }
+      
       // 插入静态style
       fn get_fun_call_expr (class_attr_value: Expr, static_styles: Vec<PropOrSpread>) -> Expr {
         Expr::Call(CallExpr {

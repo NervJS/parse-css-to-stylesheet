@@ -259,9 +259,7 @@ export function combineCssVariables(variables: Array<string>): string | null;
 
 ## CSS 变量
 
-若使用 CSS 变量，挂载的属性应当挂载`:root`选择器上
-
-⚠️：暂不支持`var传递3个及以上参数`, 如`height: var(--h, --he, 30px);`、`margin: var(--m, 30px 30px);`
+⚠️：暂不支持 **动态修改 Css 变量的值**
 
 ```css
 :root {

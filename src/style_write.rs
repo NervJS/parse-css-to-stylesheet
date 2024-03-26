@@ -42,6 +42,7 @@ impl<'i> StyleWrite<'i> {
       let mut jsx_mut_visitor =
         JSXMutVisitor::new(
           self.jsx_record.clone(), 
+          self.all_style.clone(),
           self.pesudo_style_record.clone(),
           taro_components.clone(),
           platform.clone()

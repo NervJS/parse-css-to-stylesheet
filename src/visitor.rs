@@ -21,7 +21,7 @@ use swc_core::{
 use swc_core::ecma::ast::*;
 
 use crate::{
-  constants::{CALC_STATIC_STYLE, COMBINE_NESTING_STYLE, CONVERT_STYLE_PX_FN, CSS_VAR_FN, HM_STYLE, INNER_STYLE, INNER_STYLE_DATA, NESTING_STYLE, NESTINT_STYLE_DATA, RN_CONVERT_STYLE_PX_FN, RN_CONVERT_STYLE_VU_FN}, parse_style_properties::parse_style_properties, scraper::Element, style_parser::StyleValue, style_propetries::{style_value_type::StyleValueType, traits::ToStyleValue, unit::{Platform, PropertyTuple}}, utils::{
+  constants::{CALC_STATIC_STYLE, COMBINE_NESTING_STYLE, CONVERT_STYLE_PX_FN, CSS_VAR_FN, HM_STYLE, INNER_STYLE, INNER_STYLE_DATA, NESTING_STYLE, NESTINT_STYLE_DATA, RN_CONVERT_STYLE_PX_FN, RN_CONVERT_STYLE_VU_FN, SUPPORT_PSEUDO_KEYS}, parse_style_properties::parse_style_properties, scraper::Element, style_parser::StyleValue, style_propetries::{style_value_type::StyleValueType, traits::ToStyleValue, unit::{Platform, PropertyTuple}}, utils::{
     create_qualname, get_callee_attributes, is_starts_with_uppercase, prefix_style_key, recursion_jsx_member, split_selector, to_camel_case, to_kebab_case, TSelector
   }
 };
@@ -576,7 +576,7 @@ impl VisitMut for ModuleMutVisitor {
       let mut insert_key = key.to_string();
       let mut insert_value = vec![];
 
-      if (key.contains(":after") || key.contains(":before")) && self.platform == Platform::Harmony {
+      if (SUPPORT_PSEUDO_KEYS.into_iter().any(|s| key.contains(s))) && self.platform == Platform::Harmony {
         let mut pesudo_key = String::new();
         let key_arr = key.split(":").collect::<Vec<&str>>();
         if key_arr.len() == 2 {
@@ -1298,6 +1298,7 @@ impl<'i> VisitMut for JSXMutVisitor<'i> {
 
   fn visit_mut_call_expr(&mut self, n: &mut CallExpr) {
     let mut has_style = false;
+    let mut should_remove_style = false;
 
     if self.check_is_jsx_callee(n) {
     
@@ -1326,6 +1327,9 @@ impl<'i> VisitMut for JSXMutVisitor<'i> {
                           let value = self.process_attribute_lit_value(lit, has_dynamic_class);
                           if let Some(value) = value {
                             static_styles = parse_style_values(value, self.platform.clone());
+                            if static_styles.len() > 0 {
+                              should_remove_style = true;
+                            }
                           }
                         }
                         _ => {
@@ -1334,6 +1338,9 @@ impl<'i> VisitMut for JSXMutVisitor<'i> {
                           let (static_props, dynamic_props) = self.process_attribute_expr_value(expr, has_dynamic_class);
                           static_styles = static_props;
                           dynamic_styles = dynamic_props;
+                          if static_styles.len() > 0 || dynamic_styles.len() > 0 {
+                            should_remove_style = true;
+                          }
                         }
                       };
                     }
@@ -1499,7 +1506,7 @@ impl<'i> VisitMut for JSXMutVisitor<'i> {
           }
         } else {
           // 移除原本的style
-          if has_style {
+          if has_style && should_remove_style {
             if let Some(attr) = n.args.get_mut(1) {
               if let Expr::Object(object) = &mut *attr.expr {
                 let mut index = 0;
@@ -1529,6 +1536,7 @@ impl<'i> VisitMut for JSXMutVisitor<'i> {
 
   fn visit_mut_jsx_element(&mut self, n: &mut JSXElement) {
     let mut has_style = false;
+    let mut should_remove_style = false;
     let span_key = SpanKey(n.span);
 
     if let Some(_) = self.jsx_record.borrow_mut().get(&span_key) {
@@ -1558,6 +1566,9 @@ impl<'i> VisitMut for JSXMutVisitor<'i> {
                       let value = self.process_attribute_lit_value(lit, has_dynamic_class);
                       if let Some(value) = value {
                         static_styles = parse_style_values(value, self.platform.clone());
+                        if static_styles.len() > 0 {
+                          should_remove_style = true;
+                        }
                       }
                     }
                     JSXAttrValue::JSXExprContainer(expr_container) => {
@@ -1567,6 +1578,9 @@ impl<'i> VisitMut for JSXMutVisitor<'i> {
                           let (static_props, dynamic_props) = self.process_attribute_expr_value(expr, has_dynamic_class);
                           static_styles = static_props;
                           dynamic_styles = dynamic_props;
+                          if static_styles.len() > 0 || dynamic_styles.len() > 0 {
+                            should_remove_style = true;
+                          }
                         }
                         _ => {
                           has_style = false;
@@ -1714,7 +1728,7 @@ impl<'i> VisitMut for JSXMutVisitor<'i> {
         }
       } else {
         // 移除原本的style，从属性上去掉
-        if has_style {
+        if has_style && should_remove_style {
           let attrs = n.opening.attrs.iter().filter(|attr| {
             if let JSXAttrOrSpread::JSXAttr(attr) = attr {
               if let JSXAttrName::Ident(ident) = &attr.name {

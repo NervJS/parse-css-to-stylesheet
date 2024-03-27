@@ -87,7 +87,7 @@ export function parse(
 | top                        | Length                                                                                                                                      |    ✔️    |
 | bottom                     | Length                                                                                                                                      |    ❌    |
 | right                      | Length                                                                                                                                      |    ❌    |
-| z-zndex                    | Number                                                                                                                                      |    ✔️    |
+| z-index                    | Number                                                                                                                                      |    ✔️    |
 | bottom                     | Length                                                                                                                                      |    ✔️    |
 | margin                     | Length \ Length Length \ Length Length Length \ Length Length Length Length                                                                 |    ✔️    |
 | margin-top                 | Length                                                                                                                                      |    ✔️    |
@@ -104,7 +104,7 @@ export function parse(
 | min-height                 | Length                                                                                                                                      |    ✔️    |
 | min-width                  | Length                                                                                                                                      |    ✔️    |
 | max-height                 | Length                                                                                                                                      |    ✔️    |
-| max-eidth                  | Length                                                                                                                                      |    ✔️    |
+| max-width                  | Length                                                                                                                                      |    ✔️    |
 | background                 |                                                                                                                                             |    ✔️    |
 | background-color           | Color                                                                                                                                       |    ✔️    |
 | background-image           | "src('xxx')", "linear-gradient(xxx)" 支持图片资源和线性渐变                                                                                 |    ✔️    |
@@ -222,17 +222,15 @@ export function parse(
 
 - 支持**before、after**，
 
-| 选择器            | 示例                     | 示例说明                                                          | 支持情况 |   备注   |
-| ----------------- | ------------------------ | ----------------------------------------------------------------- | :------: | :------: |
-| :before           | .intro:before            | 在每个 class="intro" 元素之前插入内容                             |    ✔️    |          |
-| :after            | .intro:after             | 在每个 class="intro" 元素之后插入内容                             |    ✔️    |          |
-| :nth-child()      | .intro:nth-child(2)      | 选择 class="intro" 元素是其父级的第二个子元素                     |    ❌    | 后续支持 |
-| :nth-last-child() | .intro:nth-last-child(2) | 选择 class="intro" 元素是其父级的第二个子元素, 从最后一个子项计数 |    ❌    | 后续支持 |
-| :first-child      | .intro:first-child       | 选择 class="intro" 元素是其父级的第一个子级                       |    ❌    | 后续支持 |
-| :last-child       | .intro:last-child        | 选择 class="intro" 元素是其父级的最后一个子级                     |    ❌    | 后续支持 |
-| :root             | :root                    | 选择文档的根元素                                                  |    ❌    | 后续支持 |
-| :checked          | input:checked            | 选择每个选中的输入元素                                            |    ❌    |          |
-| ...               |                          | 其他                                                              |    ❌    |          |
+| 选择器       | 示例                | 示例说明                                      | 支持情况 | 备注 |
+| ------------ | ------------------- | --------------------------------------------- | :------: | :--: |
+| :before      | .intro:before       | 在每个 class="intro" 元素之前插入内容         |    ✔️    |      |
+| :after       | .intro:after        | 在每个 class="intro" 元素之后插入内容         |    ✔️    |      |
+| :nth-child() | .intro:nth-child(2) | 选择 class="intro" 元素是其父级的第二个子元素 |    ✔️    |      |
+| :first-child | .intro:first-child  | 选择 class="intro" 元素是其父级的第一个子级   |    ✔️    |      |
+| :last-child  | .intro:last-child   | 选择 class="intro" 元素是其父级的最后一个子级 |    ✔️    |      |
+| :checked     | input:checked       | 选择每个选中的输入元素                        |    ❌    |      |
+| ...          |                     | 其他                                          |    ❌    |      |
 
 ## CSS 变量
 

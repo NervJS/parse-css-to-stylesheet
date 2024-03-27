@@ -205,4 +205,46 @@ test('Harmony selector combine .item{} .item{} important!', t => {
   t.snapshot(code)
 })
 
+test('Harmony selector .item:before .item:after', t => {
+  const { code } = parse(normal, [`
+  .item {
+    height: 100px;
+  }
+  .item::before {
+    height: 100px;
+    width: 30px;
+  }
+  .item::after {
+    height: 100px;
+    width: 30px;
+  }
+  `], {
+    platformString: 'Harmony'
+  })
+  t.snapshot(code)
+})
+
+
+test('Harmony selector .item:first-child .item:last-child .item.nth-child(2n-1)', t => {
+  const { code } = parse(normal, [`
+  .item {
+    height: 100px;
+  }
+  .item:first-child {
+    height: 100px;
+    width: 30px;
+  }
+  .item:last-child {
+    height: 100px;
+    width: 30px;
+  }
+  .item:nth-child(2n-1) {
+    height: 100px;
+    width: 30px;
+  }
+  `], {
+    platformString: 'Harmony'
+  })
+  t.snapshot(code)
+})
 

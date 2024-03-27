@@ -2,7 +2,7 @@ use std::{rc::Rc, cell::RefCell, convert::Infallible, collections::HashMap, hash
 
 use lightningcss::{stylesheet::{StyleSheet, ParserOptions, PrinterOptions}, visitor::{Visit, Visitor, VisitTypes}, visit_types, rules::CssRule, properties::Property, declaration::DeclarationBlock, traits::ToCss};
 
-use crate::{document::JSXDocument, style_propetries::{style_value_type::StyleValueType, unit::Platform}, utils::to_camel_case, visitor::SpanKey};
+use crate::{constants::SUPPORT_PSEUDO_KEYS, document::JSXDocument, style_propetries::{style_value_type::StyleValueType, unit::Platform}, utils::to_camel_case, visitor::SpanKey};
 
 use super::parse_style_properties::parse_style_properties;
 
@@ -142,7 +142,7 @@ impl<'i> StyleParser<'i> {
       // 用于查询的选择器
       let mut element_selector = selector.clone();
       // 判断是否伪类(暂时支持鸿蒙)
-      if (selector.contains(":before") || selector.contains(":after")) && self.platform == Platform::Harmony {
+      if (SUPPORT_PSEUDO_KEYS.into_iter().any(|s| selector.contains(s))) && self.platform == Platform::Harmony {
         let _selectors = selector.split(":").collect::<Vec<&str>>();
         pesudo_selector = _selectors[1].parse::<String>().ok();
         // 伪类需要把 : 之后的选择器去掉，只保留 : 之前的选择器，用于查询所属的element

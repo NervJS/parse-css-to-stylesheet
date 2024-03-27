@@ -49,18 +49,18 @@ pub fn to_camel_case(s: &str, is_first: bool) -> String {
   result
 }
 
-pub fn to_kebab_case(s: &str) -> String {
-  let mut result = String::new();
-  for c in s.chars() {
-    if c.is_uppercase() {
-      result.push('-');
-      result.extend(c.to_lowercase());
-    } else {
-      result.push(c);
-    }
-  }
-  result
-}
+// pub fn to_kebab_case(s: &str) -> String {
+//   let mut result = String::new();
+//   for c in s.chars() {
+//     if c.is_uppercase() {
+//       result.push('-');
+//       result.extend(c.to_lowercase());
+//     } else {
+//       result.push(c);
+//     }
+//   }
+//   result
+// }
 
 pub fn prefix_style_key(s: String, platform: Platform) -> String {
   match platform {

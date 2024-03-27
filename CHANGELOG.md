@@ -1,3 +1,12 @@
+## [0.0.46](https://github.com/NervJS/parse-css-to-stylesheet/compare/v0.0.45...v0.0.46) (2024-03-27)
+
+
+### Features
+
+* 支持伪类first-child\last-child\nth-child ([ee404ef](https://github.com/NervJS/parse-css-to-stylesheet/commit/ee404ef9f4bf21fe25c2e2cc100b959aecf7c74f))
+
+
+
 ## [0.0.45](https://github.com/NervJS/parse-css-to-stylesheet/compare/v0.0.44...v0.0.45) (2024-03-26)
 
 

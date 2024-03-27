@@ -1,3 +1,12 @@
+## [0.0.47](https://github.com/NervJS/parse-css-to-stylesheet/compare/v0.0.46...v0.0.47) (2024-03-27)
+
+
+### Features
+
+* 移除编译时处理style ([e1af9d3](https://github.com/NervJS/parse-css-to-stylesheet/commit/e1af9d34f1e25ef6933a6b2f63a0e97674ecc8d8))
+
+
+
 ## [0.0.46](https://github.com/NervJS/parse-css-to-stylesheet/compare/v0.0.45...v0.0.46) (2024-03-27)
 
 

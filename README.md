@@ -107,7 +107,7 @@ export function parse(
 | max-width                  | Length                                                                                                                                      |    ✔️    |
 | background                 |                                                                                                                                             |    ✔️    |
 | background-color           | Color                                                                                                                                       |    ✔️    |
-| background-image           | "src('xxx')", "linear-gradient(xxx)" 支持图片资源和线性渐变                                                                                 |    ✔️    |
+| background-image           | "src('xxx')", "linear-gradient(xxx)", "radial-gradient(xxx)" 支持图片资源和性渐变                                                           |    ✔️    |
 | background-size            | 'cover', 'contain', Length(x y), Length(x) Length(y)                                                                                        |    ✔️    |
 | background-position        | center', 'top', 'bottom', 'left', 'right', , Length(x y), Length(x) Length(y)                                                               |    ✔️    |
 | background-repeat          | 'repeat', 'no-repeat', 'repeat-x', 'repeat-y'                                                                                               |    ✔️    |
@@ -143,6 +143,8 @@ export function parse(
 ⚠️ 注意：
 
 - `transform` 不允许连续出现 2 个同类型如：transform: translate(20px 20px) translate3d(10px, 30px, 30px)
+- `radial-linear`
+  - \<radial-extent>不支持,如（closest-side、closest-corner、farthest-side、farthest-corner）
 - `display` 不支持**行内**
 - 定位不支持 **bottom** 和 **right**
 

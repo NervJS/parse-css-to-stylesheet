@@ -1,7 +1,4 @@
-use lightningcss::{
-  properties::{Property, border::BorderSideWidth},
-  traits::ToCss
-};
+use lightningcss::properties::{Property, border::BorderSideWidth};
 use swc_core::ecma::ast::Expr;
 use crate::{generate_expr_by_length, generate_invalid_expr };
 

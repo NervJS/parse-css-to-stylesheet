@@ -335,6 +335,9 @@ test('Harmony attrbute test background-image', t => {
   .linear-gradient {
     background-image: linear-gradient(to right, #f00, #00f);
   }
+  .radial-gradient {
+    background-image: radial-gradient(30px at center, #fff, #000);
+  }
   `], {
     platformString: 'Harmony'
   })

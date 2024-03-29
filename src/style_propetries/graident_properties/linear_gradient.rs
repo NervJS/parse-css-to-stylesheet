@@ -2,7 +2,7 @@
 use swc_core::ecma::ast::*;
 use swc_core::common::DUMMY_SP;
 
-use crate::{generate_expr_lit_num, utils::fix_rgba};
+use crate::generate_expr_lit_num;
 
 
 #[derive(Debug, Clone)]
@@ -20,7 +20,7 @@ pub enum LinearGradientDirection {
 #[derive(Debug, Clone)]
 pub struct LinearGradientItem {
   pub angle: Option<f32>,
-  pub color_stops: Vec<(String, String)>,
+  pub color_stops: Vec<(Expr, Expr)>,
   pub derection: Option<LinearGradientDirection>
 }
 
@@ -46,8 +46,14 @@ impl LinearGradientItem {
               expr: Expr::Array(ArrayLit {
                 span: DUMMY_SP,
                 elems: vec![
-                  Some(Expr::Lit(Lit::Str(Str::from(fix_rgba(item.0.clone())))).into()),
-                  Some(Expr::Lit(Lit::Str(Str::from(item.1.to_string()))).into()),
+                  Some(ExprOrSpread {
+                    spread: None,
+                    expr: Box::new(item.0.clone())
+                  }),
+                  Some(ExprOrSpread {
+                    spread: None,
+                    expr: Box::new(item.1.clone())
+                  }),
                 ],
               })
               .into(),

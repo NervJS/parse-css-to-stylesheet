@@ -100,6 +100,7 @@ macro_rules! generate_expr_by_length  {
   ($var:expr, $platform:expr) => {{
     use $crate::style_propetries::unit::{Platform, generate_expr_by_length_value};
     use $crate::generate_expr_lit_calc;
+    use lightningcss::traits::ToCss;
     use lightningcss::values::length::Length;
     match $var {
       Length::Value(val) => generate_expr_by_length_value(&val, $platform),

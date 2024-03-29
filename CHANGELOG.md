@@ -1,240 +1,175 @@
-## [0.0.47](https://github.com/NervJS/parse-css-to-stylesheet/compare/v0.0.46...v0.0.47) (2024-03-27)
-
+## [0.0.48](https://github.com/NervJS/parse-css-to-stylesheet/compare/v0.0.46...v0.0.48) (2024-03-29)
 
 ### Features
 
-* 移除编译时处理style ([e1af9d3](https://github.com/NervJS/parse-css-to-stylesheet/commit/e1af9d34f1e25ef6933a6b2f63a0e97674ecc8d8))
+- 移除编译时处理 style ([e1af9d3](https://github.com/NervJS/parse-css-to-stylesheet/commit/e1af9d34f1e25ef6933a6b2f63a0e97674ecc8d8))
+- 支径向渐变 ([1962ab3](https://github.com/NervJS/parse-css-to-stylesheet/commit/1962ab3f5b8052c451704b5ff8bb86cc36a472f8))
 
+## [0.0.47](https://github.com/NervJS/parse-css-to-stylesheet/compare/v0.0.46...v0.0.47) (2024-03-27)
 
+### Features
+
+- 移除编译时处理 style ([e1af9d3](https://github.com/NervJS/parse-css-to-stylesheet/commit/e1af9d34f1e25ef6933a6b2f63a0e97674ecc8d8))
 
 ## [0.0.46](https://github.com/NervJS/parse-css-to-stylesheet/compare/v0.0.45...v0.0.46) (2024-03-27)
 
-
 ### Features
 
-* 支持伪类first-child\last-child\nth-child ([ee404ef](https://github.com/NervJS/parse-css-to-stylesheet/commit/ee404ef9f4bf21fe25c2e2cc100b959aecf7c74f))
-
-
+- 支持伪类 first-child\last-child\nth-child ([ee404ef](https://github.com/NervJS/parse-css-to-stylesheet/commit/ee404ef9f4bf21fe25c2e2cc100b959aecf7c74f))
 
 ## [0.0.45](https://github.com/NervJS/parse-css-to-stylesheet/compare/v0.0.44...v0.0.45) (2024-03-26)
 
-
 ### Features
 
-* 增加半编译支持 ([318fa24](https://github.com/NervJS/parse-css-to-stylesheet/commit/318fa244ceecbb57fb7f0100aca7225ec842a9aa))
-
-
+- 增加半编译支持 ([318fa24](https://github.com/NervJS/parse-css-to-stylesheet/commit/318fa244ceecbb57fb7f0100aca7225ec842a9aa))
 
 ## [0.0.44](https://github.com/NervJS/parse-css-to-stylesheet/compare/v0.0.43...v0.0.44) (2024-03-26)
 
-
 ### Bug Fixes
 
-* 移除css变量逻辑，迁移到postcss处理 ([24f8a46](https://github.com/NervJS/parse-css-to-stylesheet/commit/24f8a46aae8940e5f117e47e935cf57503f1cca6))
-
-
+- 移除 css 变量逻辑，迁移到 postcss 处理 ([24f8a46](https://github.com/NervJS/parse-css-to-stylesheet/commit/24f8a46aae8940e5f117e47e935cf57503f1cca6))
 
 ## [0.0.43](https://github.com/NervJS/parse-css-to-stylesheet/compare/v0.0.42...v0.0.43) (2024-03-21)
 
-
 ### Features
 
-* 增加属性测试用力、修改swc版本，统一从swc_core获取 ([57fdfcf](https://github.com/NervJS/parse-css-to-stylesheet/commit/57fdfcf182c3074ec479e6a41aaf627280839340))
-
-
+- 增加属性测试用力、修改 swc 版本，统一从 swc_core 获取 ([57fdfcf](https://github.com/NervJS/parse-css-to-stylesheet/commit/57fdfcf182c3074ec479e6a41aaf627280839340))
 
 ## [0.0.42](https://github.com/NervJS/parse-css-to-stylesheet/compare/v0.0.41...v0.0.42) (2024-03-20)
 
-
 ### Features
 
-* 支持css变量 ([680176f](https://github.com/NervJS/parse-css-to-stylesheet/commit/680176fdbf3dc2342d25b3f69abcd544d2f0185d))
-
-
+- 支持 css 变量 ([680176f](https://github.com/NervJS/parse-css-to-stylesheet/commit/680176fdbf3dc2342d25b3f69abcd544d2f0185d))
 
 ## [0.0.41](https://github.com/NervJS/parse-css-to-stylesheet/compare/v0.0.40...v0.0.41) (2024-03-19)
 
-
 ### Features
 
-* 支持解析高阶组件 ([e75aa7f](https://github.com/NervJS/parse-css-to-stylesheet/commit/e75aa7fae41b6280eff7779bfea72d13e309cab6))
-
-
+- 支持解析高阶组件 ([e75aa7f](https://github.com/NervJS/parse-css-to-stylesheet/commit/e75aa7fae41b6280eff7779bfea72d13e309cab6))
 
 ## [0.0.40](https://github.com/NervJS/parse-css-to-stylesheet/compare/v0.0.39...v0.0.40) (2024-03-18)
 
-
 ### Features
 
-* 支持跨组件传递class和style ([5d785cf](https://github.com/NervJS/parse-css-to-stylesheet/commit/5d785cf6731d27ae00247963fabf633021983b2d))
-
-
+- 支持跨组件传递 class 和 style ([5d785cf](https://github.com/NervJS/parse-css-to-stylesheet/commit/5d785cf6731d27ae00247963fabf633021983b2d))
 
 ## [0.0.39](https://github.com/NervJS/parse-css-to-stylesheet/compare/v0.0.38...v0.0.39) (2024-03-14)
 
-
 ### Features
 
-* 支持calc，支持大小写px ([5c39eb4](https://github.com/NervJS/parse-css-to-stylesheet/commit/5c39eb4b1fec994c6913cf5b31366feaaa57cd29))
-
-
+- 支持 calc，支持大小写 px ([5c39eb4](https://github.com/NervJS/parse-css-to-stylesheet/commit/5c39eb4b1fec994c6913cf5b31366feaaa57cd29))
 
 ## [0.0.38](https://github.com/NervJS/parse-css-to-stylesheet/compare/v0.0.37...v0.0.38) (2024-03-13)
 
-
 ### Features
 
-* 支持箭头函数的解析 ([96166e5](https://github.com/NervJS/parse-css-to-stylesheet/commit/96166e56855935163995b2b72a8f34c4f93fea22))
-
-
+- 支持箭头函数的解析 ([96166e5](https://github.com/NervJS/parse-css-to-stylesheet/commit/96166e56855935163995b2b72a8f34c4f93fea22))
 
 ## [0.0.37](https://github.com/NervJS/parse-css-to-stylesheet/compare/v0.0.36...v0.0.37) (2024-03-13)
 
-
 ### Features
 
-* 替换正则库，删除无用代码，提升性能 ([44efe6b](https://github.com/NervJS/parse-css-to-stylesheet/commit/44efe6b3383264098449c24e97dfef734566af10))
-
-
+- 替换正则库，删除无用代码，提升性能 ([44efe6b](https://github.com/NervJS/parse-css-to-stylesheet/commit/44efe6b3383264098449c24e97dfef734566af10))
 
 ## [0.0.36](https://github.com/NervJS/parse-css-to-stylesheet/compare/v0.0.35...v0.0.36) (2024-03-12)
 
-
 ### Features
 
-* 修改文档 ([6987591](https://github.com/NervJS/parse-css-to-stylesheet/commit/6987591858e0e9b847b109fb37b4e0065afc7564))
-* 支持多类选择器、修复rgba等小问题 ([0f3648b](https://github.com/NervJS/parse-css-to-stylesheet/commit/0f3648b81cb1e895681c9131c104b2cd1cd95382))
-
-
+- 修改文档 ([6987591](https://github.com/NervJS/parse-css-to-stylesheet/commit/6987591858e0e9b847b109fb37b4e0065afc7564))
+- 支持多类选择器、修复 rgba 等小问题 ([0f3648b](https://github.com/NervJS/parse-css-to-stylesheet/commit/0f3648b81cb1e895681c9131c104b2cd1cd95382))
 
 ## [0.0.35](https://github.com/NervJS/parse-css-to-stylesheet/compare/v0.0.34...v0.0.35) (2024-03-07)
 
-
 ### Bug Fixes
 
-* 当返回值为 JSX 时才处理层叠 ([d2bbcc8](https://github.com/NervJS/parse-css-to-stylesheet/commit/d2bbcc84b6a07a1feabc3720f9e4d8cb8255710f))
-* 修复嵌套和伪类的bug ([feba800](https://github.com/NervJS/parse-css-to-stylesheet/commit/feba800e7cab86c3b99241b8a844c67c59503905))
-
-
+- 当返回值为 JSX 时才处理层叠 ([d2bbcc8](https://github.com/NervJS/parse-css-to-stylesheet/commit/d2bbcc84b6a07a1feabc3720f9e4d8cb8255710f))
+- 修复嵌套和伪类的 bug ([feba800](https://github.com/NervJS/parse-css-to-stylesheet/commit/feba800e7cab86c3b99241b8a844c67c59503905))
 
 ## [0.0.34](https://github.com/NervJS/parse-css-to-stylesheet/compare/v0.0.33...v0.0.34) (2024-03-06)
 
-
 ### Features
 
-* 给组件返回值包裹用于层叠的函数 ([aa0c128](https://github.com/NervJS/parse-css-to-stylesheet/commit/aa0c128d1b21d1ceff084ee471cd91dfa4dc7939))
-* 完善组件返回值包裹用于层叠的函数 ([4c15e38](https://github.com/NervJS/parse-css-to-stylesheet/commit/4c15e380fe2ef805c485a7313c84fbbc031e16e0))
-* 新增paser配置 ([fca94e6](https://github.com/NervJS/parse-css-to-stylesheet/commit/fca94e65f6e92e1bcf54f37f84fd2a709590d25a))
-* 增加嵌套拆分逻辑 ([4af4b9a](https://github.com/NervJS/parse-css-to-stylesheet/commit/4af4b9ad0509b815041141cdb943b61eca217d18))
-* 增加权重逻辑 ([a5bb785](https://github.com/NervJS/parse-css-to-stylesheet/commit/a5bb7859dcd15b1fd2dd0bc5df4005adb5fbaaea))
-
-
+- 给组件返回值包裹用于层叠的函数 ([aa0c128](https://github.com/NervJS/parse-css-to-stylesheet/commit/aa0c128d1b21d1ceff084ee471cd91dfa4dc7939))
+- 完善组件返回值包裹用于层叠的函数 ([4c15e38](https://github.com/NervJS/parse-css-to-stylesheet/commit/4c15e380fe2ef805c485a7313c84fbbc031e16e0))
+- 新增 paser 配置 ([fca94e6](https://github.com/NervJS/parse-css-to-stylesheet/commit/fca94e65f6e92e1bcf54f37f84fd2a709590d25a))
+- 增加嵌套拆分逻辑 ([4af4b9a](https://github.com/NervJS/parse-css-to-stylesheet/commit/4af4b9ad0509b815041141cdb943b61eca217d18))
+- 增加权重逻辑 ([a5bb785](https://github.com/NervJS/parse-css-to-stylesheet/commit/a5bb7859dcd15b1fd2dd0bc5df4005adb5fbaaea))
 
 ## [0.0.33](https://github.com/NervJS/parse-css-to-stylesheet/compare/v0.0.32...v0.0.33) (2024-03-05)
 
-
 ### Bug Fixes
 
-* 修复border报错 ([6f107df](https://github.com/NervJS/parse-css-to-stylesheet/commit/6f107df252cacde364e549ee20c50cde2e1a208f))
-
-
+- 修复 border 报错 ([6f107df](https://github.com/NervJS/parse-css-to-stylesheet/commit/6f107df252cacde364e549ee20c50cde2e1a208f))
 
 ## [0.0.32](https://github.com/NervJS/parse-css-to-stylesheet/compare/v0.0.31...v0.0.32) (2024-03-05)
 
-
 ### Features
 
-* 补充background相关属性 ([66d8225](https://github.com/NervJS/parse-css-to-stylesheet/commit/66d8225d9d17e1dc492c74a8544b55765b0841e8))
-* 打通rn的module接入流程及补充部分样式的解析 ([43ab51e](https://github.com/NervJS/parse-css-to-stylesheet/commit/43ab51ee13dd4a4d00de8f4c1885afe93dc99b1f))
-* 添加单独编译rn的css的入口、增加rn测试案例场景 ([5a0c11f](https://github.com/NervJS/parse-css-to-stylesheet/commit/5a0c11fe0047430bb745dc1f14a2c61682040824))
-* 完成布局属性的处理 ([a276442](https://github.com/NervJS/parse-css-to-stylesheet/commit/a276442ed458504f80b8516cd9093fd50cd51311))
-* 完成所有文本样式的解析 ([a7a9e18](https://github.com/NervJS/parse-css-to-stylesheet/commit/a7a9e18a80bf2a9d2a0ded402bd7b2c7750f9dcd))
-* 完成完整的重构 ([42a42a8](https://github.com/NervJS/parse-css-to-stylesheet/commit/42a42a8c0acf51cadd76d07fec452b5ce5a24694))
-* 完成转换工作 ([12a65e0](https://github.com/NervJS/parse-css-to-stylesheet/commit/12a65e0c49c1f520a4d255758939862f24a2c495))
-* 完成jsx和css的融合对接 ([5021e29](https://github.com/NervJS/parse-css-to-stylesheet/commit/5021e29714cbdb5df241473f9609c53706da2f2f))
-* 完善transform、margin、padding、flex ([2226548](https://github.com/NervJS/parse-css-to-stylesheet/commit/222654854af0dac7c7007b9c1dfa92752eac6d41))
-* 增加对border的支持 ([71f8f1f](https://github.com/NervJS/parse-css-to-stylesheet/commit/71f8f1f3ef679ff45fc65713ef69efdfbc42cdad))
-* 增加属性一对多的输出逻辑、增加部分文本类样式解析 ([78f53f5](https://github.com/NervJS/parse-css-to-stylesheet/commit/78f53f5731a385d5f8f21123077ccf089ec66f86))
-* 增加伪类 ([0ed8cb3](https://github.com/NervJS/parse-css-to-stylesheet/commit/0ed8cb3cb64952f1ca9270d4dfdf41868a459241))
-* 增加transformOrigin ([35369db](https://github.com/NervJS/parse-css-to-stylesheet/commit/35369db8839d68702066dd6b0ee845cfd5854fda))
-* 增加transformOrigin ([5aa0b05](https://github.com/NervJS/parse-css-to-stylesheet/commit/5aa0b058c492a7437a3d7e83fa85a9cfbb7ea040))
-
-
+- 补充 background 相关属性 ([66d8225](https://github.com/NervJS/parse-css-to-stylesheet/commit/66d8225d9d17e1dc492c74a8544b55765b0841e8))
+- 打通 rn 的 module 接入流程及补充部分样式的解析 ([43ab51e](https://github.com/NervJS/parse-css-to-stylesheet/commit/43ab51ee13dd4a4d00de8f4c1885afe93dc99b1f))
+- 添加单独编译 rn 的 css 的入口、增加 rn 测试案例场景 ([5a0c11f](https://github.com/NervJS/parse-css-to-stylesheet/commit/5a0c11fe0047430bb745dc1f14a2c61682040824))
+- 完成布局属性的处理 ([a276442](https://github.com/NervJS/parse-css-to-stylesheet/commit/a276442ed458504f80b8516cd9093fd50cd51311))
+- 完成所有文本样式的解析 ([a7a9e18](https://github.com/NervJS/parse-css-to-stylesheet/commit/a7a9e18a80bf2a9d2a0ded402bd7b2c7750f9dcd))
+- 完成完整的重构 ([42a42a8](https://github.com/NervJS/parse-css-to-stylesheet/commit/42a42a8c0acf51cadd76d07fec452b5ce5a24694))
+- 完成转换工作 ([12a65e0](https://github.com/NervJS/parse-css-to-stylesheet/commit/12a65e0c49c1f520a4d255758939862f24a2c495))
+- 完成 jsx 和 css 的融合对接 ([5021e29](https://github.com/NervJS/parse-css-to-stylesheet/commit/5021e29714cbdb5df241473f9609c53706da2f2f))
+- 完善 transform、margin、padding、flex ([2226548](https://github.com/NervJS/parse-css-to-stylesheet/commit/222654854af0dac7c7007b9c1dfa92752eac6d41))
+- 增加对 border 的支持 ([71f8f1f](https://github.com/NervJS/parse-css-to-stylesheet/commit/71f8f1f3ef679ff45fc65713ef69efdfbc42cdad))
+- 增加属性一对多的输出逻辑、增加部分文本类样式解析 ([78f53f5](https://github.com/NervJS/parse-css-to-stylesheet/commit/78f53f5731a385d5f8f21123077ccf089ec66f86))
+- 增加伪类 ([0ed8cb3](https://github.com/NervJS/parse-css-to-stylesheet/commit/0ed8cb3cb64952f1ca9270d4dfdf41868a459241))
+- 增加 transformOrigin ([35369db](https://github.com/NervJS/parse-css-to-stylesheet/commit/35369db8839d68702066dd6b0ee845cfd5854fda))
+- 增加 transformOrigin ([5aa0b05](https://github.com/NervJS/parse-css-to-stylesheet/commit/5aa0b058c492a7437a3d7e83fa85a9cfbb7ea040))
 
 ## [0.0.31](https://github.com/NervJS/parse-css-to-stylesheet/compare/v0.0.30...v0.0.31) (2024-02-23)
 
-
 ### Features
 
-* 移除对taro-component的标签判断识别 ([36c8a3f](https://github.com/NervJS/parse-css-to-stylesheet/commit/36c8a3f194f3517fbe5df2cee5c68d970e055031))
-
-
+- 移除对 taro-component 的标签判断识别 ([36c8a3f](https://github.com/NervJS/parse-css-to-stylesheet/commit/36c8a3f194f3517fbe5df2cee5c68d970e055031))
 
 ## [0.0.30](https://github.com/NervJS/parse-css-to-stylesheet/compare/v0.0.28...v0.0.30) (2023-12-25)
 
-
 ### Features
 
-* 扁平化样式解析 ([c5b68c9](https://github.com/NervJS/parse-css-to-stylesheet/commit/c5b68c9b1832bf181cc41b7cce5858bbe1fa41e7))
-
-
+- 扁平化样式解析 ([c5b68c9](https://github.com/NervJS/parse-css-to-stylesheet/commit/c5b68c9b1832bf181cc41b7cce5858bbe1fa41e7))
 
 ## [0.0.29](https://github.com/NervJS/parse-css-to-stylesheet/compare/v0.0.28...v0.0.29) (2023-12-20)
 
-
-
 ## [0.0.28](https://github.com/NervJS/parse-css-to-stylesheet/compare/v0.0.26...v0.0.28) (2023-12-20)
-
 
 ### Features
 
-* 支持rgba、支持font-style解析、border解析、补充部分遗漏属性 ([1c74b9f](https://github.com/NervJS/parse-css-to-stylesheet/commit/1c74b9fa7b60fc602b1f9e5f345ed09feeabe11f))
-* 支持vw\vh ([4f56f05](https://github.com/NervJS/parse-css-to-stylesheet/commit/4f56f054de94b1992a797e76dfe90be500b0bfa6))
-
-
+- 支持 rgba、支持 font-style 解析、border 解析、补充部分遗漏属性 ([1c74b9f](https://github.com/NervJS/parse-css-to-stylesheet/commit/1c74b9fa7b60fc602b1f9e5f345ed09feeabe11f))
+- 支持 vw\vh ([4f56f05](https://github.com/NervJS/parse-css-to-stylesheet/commit/4f56f054de94b1992a797e76dfe90be500b0bfa6))
 
 ## [0.0.27](https://github.com/NervJS/parse-css-to-stylesheet/compare/v0.0.26...v0.0.27) (2023-12-19)
 
-
 ### Features
 
-* 支持vw\vh ([4f56f05](https://github.com/NervJS/parse-css-to-stylesheet/commit/4f56f054de94b1992a797e76dfe90be500b0bfa6))
-
-
+- 支持 vw\vh ([4f56f05](https://github.com/NervJS/parse-css-to-stylesheet/commit/4f56f054de94b1992a797e76dfe90be500b0bfa6))
 
 ## [0.0.26](https://github.com/NervJS/parse-css-to-stylesheet/compare/v0.0.25...v0.0.26) (2023-11-30)
 
-
 ### Bug Fixes
 
-* 修复以前样式解析写法不严谨导致的报错问题以及 ets 样式名错误问题 ([cf6e958](https://github.com/NervJS/parse-css-to-stylesheet/commit/cf6e958c2806d1e0e3a4eeed9129c6cf373211eb))
-* 修复条件判断不正确导致的静态样式被转换成动态样式的问题，并更新项目测试快照 ([151b5c3](https://github.com/NervJS/parse-css-to-stylesheet/commit/151b5c3f44464dccf48978f435bf22482ad270f4))
-
+- 修复以前样式解析写法不严谨导致的报错问题以及 ets 样式名错误问题 ([cf6e958](https://github.com/NervJS/parse-css-to-stylesheet/commit/cf6e958c2806d1e0e3a4eeed9129c6cf373211eb))
+- 修复条件判断不正确导致的静态样式被转换成动态样式的问题，并更新项目测试快照 ([151b5c3](https://github.com/NervJS/parse-css-to-stylesheet/commit/151b5c3f44464dccf48978f435bf22482ad270f4))
 
 ### Features
 
-* 抽离写入逻辑的公共函数，支持 React.createElement 形式的代码 ([d2731f2](https://github.com/NervJS/parse-css-to-stylesheet/commit/d2731f268651ce76f42caa993b893b9da9ec984e))
-* 接入 React.createElement 的输入解析 ([29041fe](https://github.com/NervJS/parse-css-to-stylesheet/commit/29041fe4bea8c41dae2c53859eba1e56572ad154))
-
-
+- 抽离写入逻辑的公共函数，支持 React.createElement 形式的代码 ([d2731f2](https://github.com/NervJS/parse-css-to-stylesheet/commit/d2731f268651ce76f42caa993b893b9da9ec984e))
+- 接入 React.createElement 的输入解析 ([29041fe](https://github.com/NervJS/parse-css-to-stylesheet/commit/29041fe4bea8c41dae2c53859eba1e56572ad154))
 
 ## [0.0.25](https://github.com/NervJS/parse-css-to-stylesheet/compare/v0.0.24...v0.0.25) (2023-11-21)
 
-
 ### Features
 
-* 让dynmaic计算放到运行时获取 ([7ba90f8](https://github.com/NervJS/parse-css-to-stylesheet/commit/7ba90f84ef95dd2ac3648e3d5498669a245cb4ab))
-
-
+- 让 dynmaic 计算放到运行时获取 ([7ba90f8](https://github.com/NervJS/parse-css-to-stylesheet/commit/7ba90f84ef95dd2ac3648e3d5498669a245cb4ab))
 
 ## [0.0.24](https://github.com/NervJS/parse-css-to-stylesheet/compare/v0.0.23...v0.0.24) (2023-11-17)
 
-
 ### Bug Fixes
 
-* 修复px数值单位匹配丢失了负数和小数匹配错误问题 ([8981589](https://github.com/NervJS/parse-css-to-stylesheet/commit/8981589cec79da20c3aed51e55869adec84f1259))
-
-
+- 修复 px 数值单位匹配丢失了负数和小数匹配错误问题 ([8981589](https://github.com/NervJS/parse-css-to-stylesheet/commit/8981589cec79da20c3aed51e55869adec84f1259))
 
 ## [0.0.23](https://github.com/NervJS/parse-css-to-stylesheet/compare/v0.0.22...v0.0.23) (2023-11-13)
 

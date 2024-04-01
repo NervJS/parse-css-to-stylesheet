@@ -1,3 +1,12 @@
+## [0.0.49](https://github.com/NervJS/parse-css-to-stylesheet/compare/v0.0.48...v0.0.49) (2024-04-01)
+
+
+### Bug Fixes
+
+* 修复部分组件没有包裹combine ([adeae60](https://github.com/NervJS/parse-css-to-stylesheet/commit/adeae60a5d97190097fc2c0b4811d6c6321614a5))
+
+
+
 ## [0.0.48](https://github.com/NervJS/parse-css-to-stylesheet/compare/v0.0.46...v0.0.48) (2024-03-29)
 
 ### Features

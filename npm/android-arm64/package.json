@@ -1,6 +1,6 @@
 {
   "name": "@tarojs/parse-css-to-stylesheet-android-arm64",
-  "version": "0.0.48",
+  "version": "0.0.49",
   "os": [
     "android"
   ],

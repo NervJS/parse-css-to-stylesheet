@@ -661,6 +661,31 @@ impl VisitMut for ModuleMutVisitor {
             Decl::Fn(FnDecl { function, ..}) => {
               self.enable_nesting_for_function(function);
             }
+            // export const Index = () => {}
+            Decl::Var(var_decl) => {
+              var_decl.decls.iter_mut().for_each(|decl| {
+                match &mut decl.init {
+                  Some(init) => {
+                    match &mut **init {
+                      // export const Index = () => {}
+                      Expr::Arrow(ArrowExpr { body, .. }) => {
+                        self.enable_nesting_for_arrow_function(body);
+                      },
+                      // export const Index = withXxxx(() => {})
+                      Expr::Call(call) => {
+                        self.enable_nesting_for_call_expr(call);
+                      },
+                      // export const Index = function() {}
+                      Expr::Fn(FnExpr { function, .. }) => {
+                        self.enable_nesting_for_function(function);
+                      },
+                      _ => ()
+                    }
+                  },
+                  None => ()
+                }
+              })
+            }
             _ => ()
           }
         },

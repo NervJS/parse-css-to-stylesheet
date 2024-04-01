@@ -43,7 +43,7 @@ macro_rules! generate_expr_lit_calc {
         let parsed_value: i32 = value[..value.len() - 2].parse().unwrap();
         if $platform == Platform::Harmony {
           if unit == "px" {
-            return format!("${{{}({}, 'px')}}", CONVERT_STYLE_PX_FN, parsed_value);
+            return format!("{}lpx", parsed_value);
           } else {
             return format!("${{{}({}, '{}')}}", CONVERT_STYLE_PX_FN, parsed_value, unit);
           }

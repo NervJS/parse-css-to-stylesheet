@@ -81,8 +81,7 @@ export function parse(
 | align-items                | 'flex-start', 'flex-end', 'center', 'baseline', 'stretch'                                                                                   |    ✔️    |
 | align-self                 | 'flex-start', 'flex-end', 'center', 'baseline', 'stretch' , 'auto'                                                                          |    ✔️    |
 | flex-wrap                  | 'nowrap', 'wrap', 'wrap-reverse'                                                                                                            |    ❌    |
-| position                   | 'relative', 'absolute'                                                                                                                      |    ✔️    |
-| position                   | 'flex'                                                                                                                                      |    ❌    |
+| position                   | 'relative', 'absolute', 'fixed'                                                                                                             |    ✔️    |
 | left                       | Length                                                                                                                                      |    ✔️    |
 | top                        | Length                                                                                                                                      |    ✔️    |
 | bottom                     | Length                                                                                                                                      |    ❌    |

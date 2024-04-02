@@ -71,7 +71,7 @@ export function parse(
 
 | 属性                       | 可选值 / 单位                                                                                                                               | 支持情况 |
 | -------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------- | :------: |
-| flex                       | `flexGrow  flexShrink flexBasis`                                                                                                            |    ✔️    |
+| flex                       | 'flexGrow', 'flexShrink', 'flexBasis'                                                                                                       |    ✔️    |
 | flex-grow                  | Number                                                                                                                                      |    ✔️    |
 | flex-shrink                | Number                                                                                                                                      |    ✔️    |
 | flex-basis                 | Length                                                                                                                                      |    ✔️    |

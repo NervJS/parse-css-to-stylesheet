@@ -80,7 +80,7 @@ export function parse(
 | align-content              | 'flex-start', 'flex-end', 'center', 'space-between', 'space-around', 'space-evenly'                                                         |    ✔️    |
 | align-items                | 'flex-start', 'flex-end', 'center', 'baseline', 'stretch'                                                                                   |    ✔️    |
 | align-self                 | 'flex-start', 'flex-end', 'center', 'baseline', 'stretch' , 'auto'                                                                          |    ✔️    |
-| flex-wrap                  | 'nowrap', 'wrap', 'wrap-reverse'                                                                                                            |    ❌    |
+| flex-wrap                  | 'nowrap', 'wrap', 'wrap-reverse'                                                                                                            |    ✔️    |
 | position                   | 'relative', 'absolute', 'fixed'                                                                                                             |    ✔️    |
 | left                       | Length                                                                                                                                      |    ✔️    |
 | top                        | Length                                                                                                                                      |    ✔️    |
@@ -133,7 +133,7 @@ export function parse(
 | opacity                    | Number                                                                                                                                      |    ✔️    |
 | display                    | 'flex', 'none', 'block'                                                                                                                     |    ✔️    |
 | display                    | 'inline-block', 'inline-flex', 'inline'                                                                                                     |    ❌    |
-| overflow                   | 'hidden', 'visible'                                                                                                                         |    ✔️    |
+| overflow                   | 'hidden', 'visible', 'scroll'                                                                                                               |    ✔️    |
 | transform                  | translate、translateX、translateY、translateZ、translate2d、translate3d、scale、scaleX、scaleY、scale3d、rotate、rotateX、rotateY、rotate3d |    ✔️    |
 | transform-origin           | Length(top/center/bottom) Length(left/center/right)                                                                                         |    ✔️    |
 | animation                  |                                                                                                                                             | 后续支持 |

@@ -1,3 +1,17 @@
+## [0.0.50](https://github.com/NervJS/parse-css-to-stylesheet/compare/v0.0.48...v0.0.50) (2024-04-08)
+
+
+### Bug Fixes
+
+* 修复部分组件没有包裹combine ([adeae60](https://github.com/NervJS/parse-css-to-stylesheet/commit/adeae60a5d97190097fc2c0b4811d6c6321614a5))
+
+
+### Features
+
+* 支持overflow:auto ([6983bd5](https://github.com/NervJS/parse-css-to-stylesheet/commit/6983bd5e1d7e8b62e9041ba288440b2b06665488))
+
+
+
 ## [0.0.49](https://github.com/NervJS/parse-css-to-stylesheet/compare/v0.0.48...v0.0.49) (2024-04-01)
 
 

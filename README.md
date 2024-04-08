@@ -133,7 +133,7 @@ export function parse(
 | opacity                    | Number                                                                                                                                      |    ✔️    |
 | display                    | 'flex', 'none', 'block'                                                                                                                     |    ✔️    |
 | display                    | 'inline-block', 'inline-flex', 'inline'                                                                                                     |    ❌    |
-| overflow                   | 'hidden', 'visible', 'scroll'                                                                                                               |    ✔️    |
+| overflow                   | 'hidden', 'visible', 'scroll', 'auto'                                                                                                       |    ✔️    |
 | transform                  | translate、translateX、translateY、translateZ、translate2d、translate3d、scale、scaleX、scaleY、scale3d、rotate、rotateX、rotateY、rotate3d |    ✔️    |
 | transform-origin           | Length(top/center/bottom) Length(left/center/right)                                                                                         |    ✔️    |
 | animation                  |                                                                                                                                             | 后续支持 |

@@ -120,11 +120,11 @@ export function parse(
 | border-right-color         | Color                                                                                                                                       |    ✔️    |
 | border-bottom-color        | Color                                                                                                                                       |    ✔️    |
 | border-left-color          | Color                                                                                                                                       |    ✔️    |
-| border-radius              | Length（可设置 4 个值，控制 4 个方向）                                                                                                      |    ✔️    |
-| border-top-left-radius     | Length                                                                                                                                      |    ✔️    |
-| border-top-right-radius    | Length                                                                                                                                      |    ✔️    |
-| border-bottom-left-radius  | Length                                                                                                                                      |    ✔️    |
-| border-bottom-right-radius | Length                                                                                                                                      |    ✔️    |
+| border-radius              | Length（可设置 4 个值，控制 4 个方向）, 不支持百分比                                                                                        |    ✔️    |
+| border-top-left-radius     | Length, 不支持百分比                                                                                                                        |    ✔️    |
+| border-top-right-radius    | Length, 不支持百分比                                                                                                                        |    ✔️    |
+| border-bottom-left-radius  | Length, 不支持百分比                                                                                                                        |    ✔️    |
+| border-bottom-right-radius | Length, 不支持百分比                                                                                                                        |    ✔️    |
 | border-style               | 'dotted', 'dashed', 'solid' （4 个值，控制 4 个方向）                                                                                       |    ✔️    |
 | border-top-style           | 'dotted', 'dashed', 'solid'                                                                                                                 |    ✔️    |
 | border-right-style         | 'dotted', 'dashed', 'solid'                                                                                                                 |    ✔️    |

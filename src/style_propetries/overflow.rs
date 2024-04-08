@@ -32,7 +32,7 @@ impl From<(String, &Property<'_>)> for Overflow {
             OverflowKeyword::Visible => EnumValue::Visible,
             OverflowKeyword::Clip => EnumValue::Invalid,
             OverflowKeyword::Scroll => EnumValue::Scroll,
-            OverflowKeyword::Auto => EnumValue::Invalid
+            OverflowKeyword::Auto => EnumValue::Scroll
           }
         },
         _ => EnumValue::Invalid

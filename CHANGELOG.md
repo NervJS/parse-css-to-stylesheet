@@ -1,3 +1,7 @@
+## [0.0.51](https://github.com/NervJS/parse-css-to-stylesheet/compare/v0.0.50...v0.0.51) (2024-04-09)
+
+
+
 ## [0.0.50](https://github.com/NervJS/parse-css-to-stylesheet/compare/v0.0.48...v0.0.50) (2024-04-08)
 
 

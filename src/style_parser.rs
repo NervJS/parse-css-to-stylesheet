@@ -1,6 +1,6 @@
 use std::{rc::Rc, cell::RefCell, convert::Infallible, collections::HashMap, hash::Hash};
 
-use lightningcss::{stylesheet::{StyleSheet, ParserOptions, PrinterOptions}, visitor::{Visit, Visitor, VisitTypes}, visit_types, rules::CssRule, properties::Property, declaration::DeclarationBlock, traits::ToCss};
+use lightningcss::{declaration::DeclarationBlock, properties::Property, rules::{keyframes::KeyframeSelector, CssRule}, stylesheet::{ParserOptions, PrinterOptions, StyleSheet}, traits::ToCss, visit_types, visitor::{Visit, VisitTypes, Visitor}};
 
 use crate::{constants::SUPPORT_PSEUDO_KEYS, document::JSXDocument, style_propetries::{style_value_type::StyleValueType, unit::Platform}, utils::to_camel_case, visitor::SpanKey};
 
@@ -14,6 +14,16 @@ pub struct StyleData<'i> {
   pub has_nesting: bool
 }
 
+pub struct KeyFramesData {
+  pub name: String,
+  pub keyframes: Vec<KeyFrameItem>
+}
+
+#[derive(Debug)]
+pub struct KeyFrameItem {
+  pub percentage: f32,
+  pub declarations: Vec<StyleValueType>
+}
 
 #[derive(Debug, Clone)]
 pub struct StyleDeclaration<'i> {
@@ -23,14 +33,17 @@ pub struct StyleDeclaration<'i> {
 
 struct StyleVisitor<'i> {
   all_style: Rc<RefCell<Vec<(String, Vec<StyleDeclaration<'i>>)>>>,
+  keyframes: Rc<RefCell<HashMap<String, Vec<KeyFrameItem>>>>,
 }
 
 impl<'i> StyleVisitor<'i> {
   pub fn new(
     all_style: Rc<RefCell<Vec<(String, Vec<StyleDeclaration<'i>>)>>>,
+    keyframes: Rc<RefCell<HashMap<String, Vec<KeyFrameItem>>>>,
   ) -> Self {
     StyleVisitor {
-      all_style
+      all_style,
+      keyframes
     }
   }
 }
@@ -39,8 +52,10 @@ impl<'i> StyleVisitor<'i> {
 impl<'i> Visitor<'i> for StyleVisitor<'i> {
   type Error = Infallible;
   const TYPES: VisitTypes = visit_types!(RULES);
+
   fn visit_rule(&mut self, rule: &mut CssRule<'i>) -> Result<(), Self::Error> {
     match rule {
+      // 属性规则收集
       CssRule::Style(style) => {
         let selectors_str = style.selectors.to_string();
         let selectors: Vec<&str> = selectors_str.split(",").collect::<Vec<&str>>();
@@ -64,6 +79,47 @@ impl<'i> Visitor<'i> for StyleVisitor<'i> {
           }
         }
       }
+      // 动画收集
+      CssRule::Keyframes(keyframes_rule) => {
+        let mut keyframe_data = KeyFramesData {
+          name: keyframes_rule.name.to_css_string(PrinterOptions::default()).unwrap(),
+          keyframes: vec![]
+        };
+        keyframes_rule.keyframes.clone().into_iter().for_each(|keyframe| {
+          keyframe.selectors.into_iter().for_each(|selector| {
+            let properties = keyframe.declarations.iter().map(|property| {
+              (
+                to_camel_case(
+                  property.0
+                    .property_id()
+                    .to_css_string(PrinterOptions::default())
+                    .unwrap()
+                    .as_str(),
+                  false,
+                ),
+                property.0.clone(),
+              )
+            })
+            .collect::<Vec<(_, _)>>(); // Speci
+            let keyframe_item = KeyFrameItem {
+              percentage: match selector {
+                KeyframeSelector::Percentage(percentage) => {
+                  percentage.0
+                }
+                KeyframeSelector::From => 0.0,
+                KeyframeSelector::To => 100.0,
+              },
+              declarations: parse_style_properties(&properties, None)
+            };
+
+            keyframe_data.keyframes.push(keyframe_item)
+            
+          });
+        });
+
+        let mut keyframes = self.keyframes.borrow_mut();
+        keyframes.insert(keyframe_data.name, keyframe_data.keyframes);
+      }
       _ => {}
     }
     Ok(())
@@ -72,6 +128,7 @@ impl<'i> Visitor<'i> for StyleVisitor<'i> {
 
 pub struct StyleParser<'i> {
   pub all_style: Rc<RefCell<Vec<(String, Vec<StyleDeclaration<'i>>)>>>,
+  pub keyframes: Rc<RefCell<HashMap<String, Vec<KeyFrameItem>>>>,
   pub document: &'i JSXDocument,
   pub platform: Platform
 }
@@ -80,6 +137,7 @@ impl<'i> StyleParser<'i> {
   pub fn new(document: &'i JSXDocument, platform:Platform) -> Self {
     StyleParser {
       all_style: Rc::new(RefCell::new(vec![])),
+      keyframes: Rc::new(RefCell::new(HashMap::new())),
       document,
       platform
     }
@@ -87,7 +145,7 @@ impl<'i> StyleParser<'i> {
 
   pub fn parse(&mut self, css: &'i str) {
     let mut stylesheet = StyleSheet::parse(css, ParserOptions::default()).expect("解析样式失败");
-    let mut style_visitor = StyleVisitor::new(Rc::clone(&self.all_style));
+    let mut style_visitor = StyleVisitor::new(Rc::clone(&self.all_style), Rc::clone(&self.keyframes));
     stylesheet.visit(&mut style_visitor).unwrap();
   }
 
@@ -174,7 +232,8 @@ impl<'i> StyleParser<'i> {
           &properties
             .iter()
             .map(|(k, v)| (k.to_owned(), v.clone()))
-            .collect::<Vec<_>>()
+            .collect::<Vec<_>>(),
+          Some(self.keyframes.clone())
         ),
       )
     })

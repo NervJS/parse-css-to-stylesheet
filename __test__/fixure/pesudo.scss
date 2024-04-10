@@ -3,10 +3,11 @@
 }
 
 @keyframes fade {
-  0% {
+  0%, 10% {
     opacity: 0;
   }
   100% {
     opacity: 1;
+    width: 30px;
   }
 }

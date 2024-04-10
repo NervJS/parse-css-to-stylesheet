@@ -1,8 +1,10 @@
+use std::{cell::RefCell, collections::HashMap, rc::Rc};
+
 use lightningcss::{properties::Property, stylesheet::PrinterOptions};
 
-use crate::style_propetries::{aspect_ratio::AspactRatio, background::Background, background_image::BackgroundImage, background_position::BackgroundPosition, background_repeat::BackgroundRepeat, background_size::BackgroundSize, border::Border, border_color::BorderColor, border_radius::BorderRadius, border_style::BorderStyle, border_width::BorderWidth, color::ColorProperty, display::Display, flex::Flex, flex_align::FlexAlign, flex_basis::FlexBasis, flex_direction::FlexDirection, flex_wrap::FlexWrap, font_size::FontSize, font_style::FontStyle, font_weight::FontWeight, gap::Gap, item_align::ItemAlign, length_value::LengthValueProperty, letter_spacing::LetterSpacing, line_height::LineHeight, marin_padding::MarginPadding, max_size::MaxSizeProperty, normal::Normal, number::NumberProperty, overflow::Overflow, size::SizeProperty, style_value_type::StyleValueType, text_align::TextAlign, text_decoration::TextDecoration, text_overflow::TextOverflow, text_shadow::TextShadow, text_transform::TextTransform, transform::Transform, transform_origin::TransformOrigin, vertical_align::VerticalAlign};
+use crate::{style_parser::KeyFrameItem, style_propetries::{animation::Animation, aspect_ratio::AspactRatio, background::Background, background_image::BackgroundImage, background_position::BackgroundPosition, background_repeat::BackgroundRepeat, background_size::BackgroundSize, border::Border, border_color::BorderColor, border_radius::BorderRadius, border_style::BorderStyle, border_width::BorderWidth, color::ColorProperty, display::Display, flex::Flex, flex_align::FlexAlign, flex_basis::FlexBasis, flex_direction::FlexDirection, flex_wrap::FlexWrap, font_size::FontSize, font_style::FontStyle, font_weight::FontWeight, gap::Gap, item_align::ItemAlign, length_value::LengthValueProperty, letter_spacing::LetterSpacing, line_height::LineHeight, marin_padding::MarginPadding, max_size::MaxSizeProperty, normal::Normal, number::NumberProperty, overflow::Overflow, size::SizeProperty, style_value_type::StyleValueType, text_align::TextAlign, text_decoration::TextDecoration, text_overflow::TextOverflow, text_shadow::TextShadow, text_transform::TextTransform, transform::Transform, transform_origin::TransformOrigin, vertical_align::VerticalAlign}};
 
-pub fn parse_style_properties(properties: &Vec<(String, Property)>) -> Vec<StyleValueType> {
+pub fn parse_style_properties(properties: &Vec<(String, Property)>, keyframes_map: Option<Rc<RefCell<HashMap<String, Vec<KeyFrameItem>>>>>) -> Vec<StyleValueType> {
   let mut final_properties = vec![];
   for (id, value)  in properties.iter() {
     let property_name = id.as_str();
@@ -170,6 +172,11 @@ pub fn parse_style_properties(properties: &Vec<(String, Property)>) -> Vec<Style
               // 替换字符串，将左右两边的"干掉
               let content_value = content_value.trim_matches('"');
               final_properties.push(StyleValueType::Normal(Normal::new(id.to_string(), content_value.to_string())));
+            }
+          }
+          "animation" => {
+            if let Some(ref keyframes_map) = keyframes_map {
+              final_properties.push(StyleValueType::Animation(Animation::from((id.to_string(), value, keyframes_map.clone()))))
             }
           }
           _ => {

@@ -44,3 +44,4 @@ pub mod background_size;
 pub mod background_image;
 pub mod background;
 pub mod graident_properties;
+pub mod animation;

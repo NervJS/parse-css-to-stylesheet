@@ -49,6 +49,15 @@ impl Rotate {
       }
     });
 
+    if let Angle::Deg(angle) = self.angle {
+      props.push(
+        PropOrSpread::Prop(Box::new(Prop::KeyValue(KeyValueProp {
+          key: PropName::Ident(Ident::new("angle".into(), DUMMY_SP)),
+          value: Box::new(generate_expr_lit_num!(angle as f64))
+        })))
+      );
+    }
+
     PropOrSpread::Prop(Box::new(Prop::KeyValue(KeyValueProp {
       key: PropName::Ident(Ident::new("Rotate".into(), DUMMY_SP)),
       value: Expr::Object(ObjectLit {

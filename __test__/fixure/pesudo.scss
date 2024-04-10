@@ -1,3 +1,12 @@
 .container {
-  background-image: radial-gradient(closest-side at 48% 55%, rgba(255, 27, 27, 0) 48%, #ff6f5b 98%);
+  animation: fade 1s ease-in-out;
+}
+
+@keyframes fade {
+  0% {
+    opacity: 0;
+  }
+  100% {
+    opacity: 1;
+  }
 }

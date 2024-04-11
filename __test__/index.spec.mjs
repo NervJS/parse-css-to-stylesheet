@@ -736,3 +736,27 @@ test('Harmony attrbute test -webkt-line-clamp', t => {
   })
   t.snapshot(code)
 })
+
+test('Harmony attrbute test animation', t => {
+  const { code } = parse(normal, [`
+  .anim {
+    animation: move 2s infinite;
+  }
+  
+  @keyframes move {
+    0% {
+      transform: translateX(0);
+    }
+    50% {
+      transform: translateX(650px);
+    }
+    100% {
+      transform: translateX(0);
+    }
+  }
+  
+  `], {
+    platformString: 'Harmony'
+  })
+  t.snapshot(code)
+})

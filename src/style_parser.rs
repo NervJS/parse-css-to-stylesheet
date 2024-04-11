@@ -107,7 +107,7 @@ impl<'i> Visitor<'i> for StyleVisitor<'i> {
                   percentage.0
                 }
                 KeyframeSelector::From => 0.0,
-                KeyframeSelector::To => 100.0,
+                KeyframeSelector::To => 1.0,
               },
               declarations: parse_style_properties(&properties, None)
             };

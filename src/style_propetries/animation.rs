@@ -4,7 +4,7 @@ use std::{cell::RefCell, collections::HashMap, rc::Rc};
 
 use lightningcss::{printer::PrinterOptions, properties::{animation, Property}, traits::ToCss, values::{easing::EasingFunction, time}};
 
-use crate::{generate_expr_lit_num, generate_invalid_expr, style_parser::KeyFrameItem, visitor::parse_style_values};
+use crate::{generate_expr_lit_num, generate_expr_lit_str, generate_invalid_expr, style_parser::KeyFrameItem, visitor::parse_style_values};
 use swc_core::{common::DUMMY_SP, ecma::ast::*};
 use super::{traits::ToExpr, unit::{Platform, PropertyTuple}};
 
@@ -128,6 +128,10 @@ impl ToExpr for Animation {
                             key: PropName::Str("duration".into()),
                             value: Box::new(generate_expr_lit_num!(item_duration as f64))
                           }))),
+                          PropOrSpread::Prop(Box::new(Prop::KeyValue(KeyValueProp {
+                            key: PropName::Str("curve".into()),
+                            value: Box::new(generate_expr_lit_str!(self.animation_timeing_function.to_css_string(PrinterOptions::default()).unwrap()))
+                          }))),                        
                           PropOrSpread::Prop(Box::new(Prop::KeyValue(KeyValueProp {
                             key: PropName::Str("event".into()),
                             value: Box::new(Expr::Object(ObjectLit {

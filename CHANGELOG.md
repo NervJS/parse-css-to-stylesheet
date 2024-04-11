@@ -1,3 +1,20 @@
+## [0.0.52](https://github.com/NervJS/parse-css-to-stylesheet/compare/v0.0.51...v0.0.52) (2024-04-11)
+
+
+### Bug Fixes
+
+* 修复rotate解析异常 ([30dcdeb](https://github.com/NervJS/parse-css-to-stylesheet/commit/30dcdeb2b5cbc2da028a3866ab2ff129f5ebed36))
+
+
+### Features
+
+* 更新快照 ([fc197b3](https://github.com/NervJS/parse-css-to-stylesheet/commit/fc197b32544bf5545f141f8c166cb23c0eed369d))
+* 增加animation、keyframe的解析 ([09fcb0e](https://github.com/NervJS/parse-css-to-stylesheet/commit/09fcb0e4b9360ed7e3ecaa658e64d393b312f422))
+* 增加animation的duration计算 ([0bb6a8c](https://github.com/NervJS/parse-css-to-stylesheet/commit/0bb6a8c99012e0140388ac7f0387c4064384c7b3))
+* 支持解析animation ([2fe6a2f](https://github.com/NervJS/parse-css-to-stylesheet/commit/2fe6a2fe56975a91a315d76843186c2d73669387))
+
+
+
 ## [0.0.51](https://github.com/NervJS/parse-css-to-stylesheet/compare/v0.0.50...v0.0.51) (2024-04-09)
 
 

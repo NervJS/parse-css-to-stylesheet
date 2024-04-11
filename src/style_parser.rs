@@ -116,6 +116,8 @@ impl<'i> Visitor<'i> for StyleVisitor<'i> {
             
           });
         });
+        // 更具percentage排序
+        keyframe_data.keyframes.sort_by(|a, b| a.percentage.partial_cmp(&b.percentage).unwrap());
 
         let mut keyframes = self.keyframes.borrow_mut();
         keyframes.insert(keyframe_data.name, keyframe_data.keyframes);

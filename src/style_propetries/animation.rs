@@ -2,7 +2,7 @@
 
 use std::{cell::RefCell, collections::HashMap, rc::Rc};
 
-use lightningcss::{printer::PrinterOptions, properties::{animation, Property}, traits::ToCss, values::time};
+use lightningcss::{printer::PrinterOptions, properties::{animation, Property}, traits::ToCss, values::{easing::EasingFunction, time}};
 
 use crate::{generate_expr_lit_num, generate_invalid_expr, style_parser::KeyFrameItem, visitor::parse_style_values};
 use swc_core::{common::DUMMY_SP, ecma::ast::*};
@@ -15,7 +15,8 @@ pub struct Animation {
   pub animation_name: Option<String>,
   pub animation_duration: f32,
   pub animation_delay: f32,
-  pub animation_iteration: f32
+  pub animation_iteration: f32,
+  pub animation_timeing_function: EasingFunction
   // pub value: Option<Vec<KeyFrameItem>>
 }
 
@@ -27,6 +28,7 @@ impl From<(String, &Property<'_>, Rc<RefCell<HashMap<String, Vec<KeyFrameItem>>>
     let mut animation_duration: f32 = 0.0;
     let mut animation_delay: f32 = 0.0;
     let mut animation_iteration: f32 = 1.0;
+    let mut animation_timeing_function: EasingFunction = EasingFunction::Ease;
     
     match value.1 {
       // Property::AnimationName(_, _) => todo!(),
@@ -51,7 +53,9 @@ impl From<(String, &Property<'_>, Rc<RefCell<HashMap<String, Vec<KeyFrameItem>>>
           animation_iteration = match animation.iteration_count {
             animation::AnimationIterationCount::Number(num) => num,
             animation::AnimationIterationCount::Infinite => -1.0,
-          }
+          };
+
+          animation_timeing_function = animation.timing_function.clone();
         });
       },
       _ => {}
@@ -63,7 +67,8 @@ impl From<(String, &Property<'_>, Rc<RefCell<HashMap<String, Vec<KeyFrameItem>>>
       animation_name,
       animation_duration,
       animation_delay,
-      animation_iteration
+      animation_iteration,
+      animation_timeing_function
     }
 
   }
@@ -76,7 +81,7 @@ impl ToExpr for Animation {
       let keyframe_map = self.keyframs.borrow();
       if let Some(keyframe_items) = keyframe_map.get(name) {
 
-        
+        let mut mut_percentage = 0.0;
 
         return PropertyTuple::One(
           "animation".to_string(),
@@ -108,7 +113,9 @@ impl ToExpr for Animation {
                 value: Box::new(Expr::Array(ArrayLit {
                   span: DUMMY_SP,
                   elems: keyframe_items.into_iter().map(|item| {
-                    Some(ExprOrSpread {
+                    let item_duration = (item.percentage - mut_percentage) * self.animation_duration * 1000.0;
+                    mut_percentage = item.percentage;
+                    return Some(ExprOrSpread {
                       spread: None,
                       expr: Box::new(Expr::Object(ObjectLit {
                         span: DUMMY_SP,
@@ -116,6 +123,10 @@ impl ToExpr for Animation {
                           PropOrSpread::Prop(Box::new(Prop::KeyValue(KeyValueProp {
                             key: PropName::Str("percentage".into()),
                             value: Box::new(generate_expr_lit_num!(item.percentage as f64))
+                          }))),
+                          PropOrSpread::Prop(Box::new(Prop::KeyValue(KeyValueProp {
+                            key: PropName::Str("duration".into()),
+                            value: Box::new(generate_expr_lit_num!(item_duration as f64))
                           }))),
                           PropOrSpread::Prop(Box::new(Prop::KeyValue(KeyValueProp {
                             key: PropName::Str("event".into()),

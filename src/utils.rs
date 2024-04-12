@@ -106,7 +106,7 @@ pub fn fix_rgba(input: String) -> String {
         let r = std::str::from_utf8(&caps["r"]).unwrap();
         let g = std::str::from_utf8(&caps["g"]).unwrap();
         let b = std::str::from_utf8(&caps["b"]).unwrap();
-        let corrected_alpha = format!("0{:.2}", a);
+        let corrected_alpha = format!("0{:.6}", a);
         return format!("rgba({}, {}, {}, {})", r, g, b, corrected_alpha)
       }
     }

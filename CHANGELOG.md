@@ -1,3 +1,12 @@
+## [0.0.53](https://github.com/NervJS/parse-css-to-stylesheet/compare/v0.0.52...v0.0.53) (2024-04-12)
+
+
+### Bug Fixes
+
+* 修复rgba精度丢失 ([81c0914](https://github.com/NervJS/parse-css-to-stylesheet/commit/81c091489608939568d02fb1e03f592df148100b))
+
+
+
 ## [0.0.52](https://github.com/NervJS/parse-css-to-stylesheet/compare/v0.0.51...v0.0.52) (2024-04-11)
 
 

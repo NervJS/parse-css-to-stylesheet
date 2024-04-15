@@ -136,7 +136,7 @@ export function parse(
 | overflow                   | 'hidden', 'visible', 'scroll', 'auto'                                                                                                       |    ✔️    |
 | transform                  | translate、translateX、translateY、translateZ、translate2d、translate3d、scale、scaleX、scaleY、scale3d、rotate、rotateX、rotateY、rotate3d |    ✔️    |
 | transform-origin           | Length(top/center/bottom) Length(left/center/right)                                                                                         |    ✔️    |
-| animation                  |                                                                                                                                             | 后续支持 |
+| animation                  | 仅支持 animation-name, animation-duration , animation-timing-function, animation-delay, animation-iteration-count， 暂不支持 style 设置     |    ✔️    |
 | content                    |                                                                                                                                             |    ✔️    |
 
 ⚠️ 注意：

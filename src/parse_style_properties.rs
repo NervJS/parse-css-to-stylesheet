@@ -174,10 +174,13 @@ pub fn parse_style_properties(properties: &Vec<(String, Property)>, keyframes_ma
               final_properties.push(StyleValueType::Normal(Normal::new(id.to_string(), content_value.to_string())));
             }
           }
-          "animation" => {
+          "animation" | "animationName" => {
             if let Some(ref keyframes_map) = keyframes_map {
-              final_properties.push(StyleValueType::Animation(Animation::from((id.to_string(), value, keyframes_map.clone()))))
+              final_properties.push(StyleValueType::Animation(Animation::from((id.to_string(), value, Some(keyframes_map.clone())))))
             }
+          }
+          "animationDelay" | "animationDuration" | "animationIterationCount" | "animationTimingFunction" => {
+            final_properties.push(StyleValueType::Animation(Animation::from((id.to_string(), value, None))))
           }
           _ => {
             // position、zIndex等... 会自动处理 单位、数字等相关信息

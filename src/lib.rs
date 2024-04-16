@@ -32,8 +32,7 @@ mod parse_style_properties;
 #[napi(object)]
 #[derive(Deserialize)]
 pub struct ParseOptions {
-  pub platform_string: String,
-  pub is_enable_nesting: Option<bool>,
+  pub platform_string: String
 }
 
 #[napi(object)]
@@ -50,7 +49,6 @@ pub fn parse(component: String, styles: Vec<String>, options: ParseOptions) -> P
     _ => Platform::Harmony
   };
 
-  // let mut is_enable_nesting = options.is_enable_nesting.map_or(false, |item| item);
   let mut is_enable_nesting = true;
 
   // 解析组件文件

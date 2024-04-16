@@ -5,7 +5,6 @@
 
 export interface ParseOptions {
   platformString: string
-  isEnableNesting?: boolean
 }
 export interface ParseResult {
   code: string

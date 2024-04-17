@@ -3,6 +3,7 @@ pub mod traits;
 pub mod macros;
 pub mod unit;
 pub mod normal;
+pub mod expr;
 pub mod length_value;
 pub mod size;
 pub mod max_size;

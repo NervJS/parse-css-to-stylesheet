@@ -6,6 +6,8 @@ pub const INNER_STYLE_DATA: &'static str = "__inner_style_data__";
 pub const NESTING_STYLE: &'static str = "__nesting_style__";
 pub const COMBINE_NESTING_STYLE: &'static str = "__combine_nesting_style__";
 pub const NESTINT_STYLE_DATA: &'static str = "__nesting_style_data__";
+pub const ENV_FUN: &'static str = "__env__";
+
 // pub const CALC_DYMAMIC_STYLE: &'static str = "calcDynamicStyle";
 pub const CALC_STATIC_STYLE: &'static str = "calcStaticStyle";
 pub const CSS_VAR_FN: &'static str = "__var_fn";

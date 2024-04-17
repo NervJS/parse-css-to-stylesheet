@@ -18,7 +18,7 @@ use swc_core::{
 use swc_core::ecma::ast::*;
 
 use crate::{
-  constants::{CALC_STATIC_STYLE, COMBINE_NESTING_STYLE, CONVERT_STYLE_PX_FN, CSS_VAR_FN, HM_STYLE, INNER_STYLE, INNER_STYLE_DATA, NESTING_STYLE, NESTINT_STYLE_DATA, RN_CONVERT_STYLE_PX_FN, RN_CONVERT_STYLE_VU_FN, SUPPORT_PSEUDO_KEYS}, scraper::Element, style_parser::StyleValue, style_propetries::{style_value_type::StyleValueType, traits::ToStyleValue, unit::{Platform, PropertyTuple}}, utils::{
+  constants::{CALC_STATIC_STYLE, COMBINE_NESTING_STYLE, CONVERT_STYLE_PX_FN, CSS_VAR_FN, ENV_FUN, HM_STYLE, INNER_STYLE, INNER_STYLE_DATA, NESTING_STYLE, NESTINT_STYLE_DATA, RN_CONVERT_STYLE_PX_FN, RN_CONVERT_STYLE_VU_FN, SUPPORT_PSEUDO_KEYS}, scraper::Element, style_parser::StyleValue, style_propetries::{style_value_type::StyleValueType, traits::ToStyleValue, unit::{Platform, PropertyTuple}}, utils::{
     create_qualname, get_callee_attributes, is_starts_with_uppercase, prefix_style_key, recursion_jsx_member, split_selector, TSelector
   }
 };
@@ -423,6 +423,12 @@ pub fn insert_import_module_decl(module: &mut Module, last_import_index: usize, 
             ImportSpecifier::Named(ImportNamedSpecifier {
               span: DUMMY_SP,
               local: Ident::new(CSS_VAR_FN.into(), DUMMY_SP),
+              imported: None,
+              is_type_only: false,
+            }),
+            ImportSpecifier::Named(ImportNamedSpecifier {
+              span: DUMMY_SP,
+              local: Ident::new(ENV_FUN.into(), DUMMY_SP),
               imported: None,
               is_type_only: false,
             }),

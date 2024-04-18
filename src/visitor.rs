@@ -514,6 +514,22 @@ impl ModuleMutVisitor {
               ],
               type_args: None,
             })))
+          } else {
+            match &mut **expr_in_box {
+              // export const Index = () => {}
+              Expr::Arrow(ArrowExpr { body, .. }) => {
+                body.visit_mut_children_with(self)
+              },
+              // export const Index = withXxxx(() => {})
+              Expr::Call(call) => {
+                call.visit_mut_children_with(self)
+              },
+              // export const Index = function() {}
+              Expr::Fn(FnExpr { function, .. }) => {
+                function.visit_mut_children_with(self)
+              },
+              _ => {}
+            }            
           }
         }
       }

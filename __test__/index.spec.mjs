@@ -760,3 +760,71 @@ test('Harmony attrbute test animation', t => {
   })
   t.snapshot(code)
 })
+
+test('Harmony combine test function component', t => {
+  const { code } = parse(`
+  import { View } from '@tarojs/components'
+  function FunctionComponent() {
+    return <View className='index' />
+  }
+  `, [`
+  .a > .b {
+    height: 100px;
+  }
+  `], {
+    platformString: 'Harmony'
+  })
+  t.snapshot(code)
+})
+
+test('Harmony combine test arrow component', t => {
+  const { code } = parse(`
+  import { View } from '@tarojs/components'
+  const ArrowComponent = () => {
+    return <View className='index' />
+  }
+  `, [`
+  .a > .b {
+    height: 100px;
+  }
+  `], {
+    platformString: 'Harmony'
+  })
+  t.snapshot(code)
+})
+
+
+test('Harmony combine test hoc', t => {
+  const { code } = parse(`
+  import { View } from '@tarojs/components'
+  export default function Pesudo() {
+    return () => {
+      return <View className='index' />
+    }
+  }
+  `, [`
+  .a > .b {
+    height: 100px;
+  }
+  `], {
+    platformString: 'Harmony'
+  })
+  t.snapshot(code)
+})
+
+
+test('Harmony combine test useHoc', t => {
+  const { code } = parse(`
+  import { View } from '@tarojs/components'
+  export const Pesudo = withLogin(() => {
+    return <View className='index' />
+  })
+  `, [`
+  .a > .b {
+    height: 100px;
+  }
+  `], {
+    platformString: 'Harmony'
+  })
+  t.snapshot(code)
+})

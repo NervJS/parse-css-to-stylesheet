@@ -1,3 +1,12 @@
+## [0.0.56](https://github.com/NervJS/parse-css-to-stylesheet/compare/v0.0.55...v0.0.56) (2024-04-18)
+
+
+### Features
+
+* 支持解析hoc ([5f7932c](https://github.com/NervJS/parse-css-to-stylesheet/commit/5f7932cc0306c8d8157055ccdbf8e16d744a1282))
+
+
+
 ## [0.0.55](https://github.com/NervJS/parse-css-to-stylesheet/compare/v0.0.54...v0.0.55) (2024-04-17)
 
 

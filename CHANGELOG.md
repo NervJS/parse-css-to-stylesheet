@@ -1,3 +1,12 @@
+## [0.0.57](https://github.com/NervJS/parse-css-to-stylesheet/compare/v0.0.56...v0.0.57) (2024-04-19)
+
+
+### Bug Fixes
+
+* 修复export default 没有包裹combine ([38dcd1d](https://github.com/NervJS/parse-css-to-stylesheet/commit/38dcd1dfa1ba5cd3b3492b6e99d678f07ea37d71))
+
+
+
 ## [0.0.56](https://github.com/NervJS/parse-css-to-stylesheet/compare/v0.0.55...v0.0.56) (2024-04-18)
 
 

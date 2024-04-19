@@ -515,6 +515,7 @@ impl ModuleMutVisitor {
               type_args: None,
             })))
           } else {
+            // 高阶函数 return () => jsx
             match &mut **expr_in_box {
               // export const Index = () => {}
               Expr::Arrow(ArrowExpr { body, .. }) => {
@@ -574,6 +575,40 @@ impl ModuleMutVisitor {
   }
   fn enable_nesting_for_call_expr (&self, call: &mut CallExpr) {
     call.visit_mut_with(&mut &mut self.get_nesting_visitor());
+  }
+  fn enable_nesting_for_expr (&self, expr: &mut Expr) {
+    match expr {
+      // export default () => {}
+      Expr::Arrow(ArrowExpr { body, .. }) => {
+        self.enable_nesting_for_arrow_function(body);
+      },
+      // export default withXxxx(() => {})
+      Expr::Call(call) => {
+        self.enable_nesting_for_call_expr(call);
+      },
+      Expr::Fn(FnExpr { function, .. }) => {
+        // export default function () {}
+        self.enable_nesting_for_function(function);
+      },
+      Expr::Paren(ParenExpr { expr, .. }) => {
+        match &mut **expr {
+          // export default (() => {})()
+          Expr::Arrow(ArrowExpr { body, .. }) => {
+            self.enable_nesting_for_arrow_function(body);
+          },
+          // export default withXxxx(() => {})()
+          Expr::Call(call) => {
+            self.enable_nesting_for_call_expr(call);
+          },
+          Expr::Fn(FnExpr { function, .. }) => {
+            // export default function () {}
+            self.enable_nesting_for_function(function);
+          },
+          _ => ()
+        }
+      },
+      _ => ()
+    };
   }
 }
 
@@ -673,6 +708,9 @@ impl VisitMut for ModuleMutVisitor {
             _ => ()
           }
         },
+        ModuleItem::ModuleDecl(ModuleDecl::ExportDefaultExpr(ExportDefaultExpr { span: _, expr })) => {
+          self.enable_nesting_for_expr(&mut **expr)
+        },
         ModuleItem::ModuleDecl(ModuleDecl::ExportDecl(ExportDecl { decl, .. })) => {
           match decl {
             // export class Index {}
@@ -688,21 +726,7 @@ impl VisitMut for ModuleMutVisitor {
               var_decl.decls.iter_mut().for_each(|decl| {
                 match &mut decl.init {
                   Some(init) => {
-                    match &mut **init {
-                      // export const Index = () => {}
-                      Expr::Arrow(ArrowExpr { body, .. }) => {
-                        self.enable_nesting_for_arrow_function(body);
-                      },
-                      // export const Index = withXxxx(() => {})
-                      Expr::Call(call) => {
-                        self.enable_nesting_for_call_expr(call);
-                      },
-                      // export const Index = function() {}
-                      Expr::Fn(FnExpr { function, .. }) => {
-                        self.enable_nesting_for_function(function);
-                      },
-                      _ => ()
-                    }
+                    self.enable_nesting_for_expr(&mut **init);
                   },
                   None => ()
                 }
@@ -723,24 +747,7 @@ impl VisitMut for ModuleMutVisitor {
           var_decl.decls.iter_mut().for_each(|decl| {
             match &mut decl.init {
               Some(init) => {
-                match &mut **init {
-                  Expr::Fn(FnExpr { function, .. }) => {
-                    // const Index = function () {}
-                    self.enable_nesting_for_function(function);
-                  },
-                  Expr::Arrow(ArrowExpr { body, .. }) => {
-                    // const Index = () => {}
-                    self.enable_nesting_for_arrow_function(body);
-                  },
-                  Expr::Call(call) => {
-                    // const Index = withStyle()(() => {})
-                    self.enable_nesting_for_call_expr(call);
-                  },
-                  _ => {}
-                  // expr => {
-                  //   self.enable_nesting_for_expr(expr)
-                  // }
-                }
+                self.enable_nesting_for_expr(&mut **init);
               },
               None => (),
             }

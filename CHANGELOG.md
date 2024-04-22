@@ -1,3 +1,12 @@
+## [0.0.58](https://github.com/NervJS/parse-css-to-stylesheet/compare/v0.0.57...v0.0.58) (2024-04-22)
+
+
+### Features
+
+* 支持empty选择器，支持解析createElement嵌套样式 ([38e6856](https://github.com/NervJS/parse-css-to-stylesheet/commit/38e6856e034b9260a05d34f2c792aa1a9283b85e))
+
+
+
 ## [0.0.57](https://github.com/NervJS/parse-css-to-stylesheet/compare/v0.0.56...v0.0.57) (2024-04-19)
 
 

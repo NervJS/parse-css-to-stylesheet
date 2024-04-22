@@ -484,11 +484,12 @@ impl ModuleMutVisitor {
         let arg = &mut stmt.arg;
         if let Some(expr_in_box) = arg {
           let is_return_jsx_like = match &mut **expr_in_box {
+            // JSX
             Expr::JSXElement(_) |
             Expr::JSXFragment(_) |
-            Expr::JSXMember(_) => {
-              true
-            },
+            Expr::JSXMember(_) => true,
+            // React.createElement
+            Expr::Call(call_expr) => check_is_jsx_callee(call_expr),
             _ => false
           };
           if is_return_jsx_like {
@@ -948,6 +949,26 @@ fn generate_stylesheet(fn_name: String, fn_data_name: String, style_object: Box<
   )
 }
 
+
+fn check_is_jsx_callee (call_expr: &CallExpr) -> bool {
+  if let Callee::Expr(expr) = &call_expr.callee {
+    if let Expr::Member(member) = &**expr {
+      if let MemberProp::Ident(ident) = &member.prop {
+        if ident.sym.to_string() == "createElement" {
+          return true
+        }
+      }
+    }
+    if let Expr::Ident(ident) = &**expr {
+      if ident.sym.to_string() == "createElement" {
+        return true
+      }
+    }
+  }
+
+  return false
+}
+
 pub enum EtsDirection {
   Row,
   Column,
@@ -978,25 +999,6 @@ impl<'i> JSXMutVisitor<'i> {
       platform,
       is_compile_mode: false
     }
-  }
-
-  fn check_is_jsx_callee (&self, call_expr: &CallExpr) -> bool {
-    if let Callee::Expr(expr) = &call_expr.callee {
-      if let Expr::Member(member) = &**expr {
-        if let MemberProp::Ident(ident) = &member.prop {
-          if ident.sym.to_string() == "createElement" {
-            return true
-          }
-        }
-      }
-      if let Expr::Ident(ident) = &**expr {
-        if ident.sym.to_string() == "createElement" {
-          return true
-        }
-      }
-    }
-
-    return false
   }
 
   fn get_jsx_element_or_callee_calss_value_and_dynamic_class_styles (&self, jsx_element_or_callee: &JSXElementOrJSXCallee) -> (Option<Expr>, bool) {
@@ -1362,7 +1364,7 @@ impl<'i> VisitMut for JSXMutVisitor<'i> {
   noop_visit_mut_type!();
 
   fn visit_mut_call_expr(&mut self, n: &mut CallExpr) {
-    if self.check_is_jsx_callee(n) {
+    if check_is_jsx_callee(n) {
     
       let span_key = SpanKey(n.span);
       if let Some(_) = self.jsx_record.borrow_mut().get(&span_key) {

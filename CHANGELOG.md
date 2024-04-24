@@ -1,3 +1,12 @@
+## [0.0.60](https://github.com/NervJS/parse-css-to-stylesheet/compare/v0.0.59...v0.0.60) (2024-04-24)
+
+
+### Features
+
+* 增加对复杂的createElement支持 ([d31dca1](https://github.com/NervJS/parse-css-to-stylesheet/commit/d31dca1603de1bb4d1ebfb90a0d65eeedb494514))
+
+
+
 ## [0.0.59](https://github.com/NervJS/parse-css-to-stylesheet/compare/v0.0.58...v0.0.59) (2024-04-23)
 
 

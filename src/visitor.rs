@@ -1042,155 +1042,6 @@ impl<'i> JSXMutVisitor<'i> {
     (class_attr_value, has_dynamic_class)
   }
 
-  // fn process_attribute_lit_value (&self, lit: &Lit, has_dynamic_class: bool) -> Option<Vec<StyleValueType>> {
-  //   match lit {
-  //     Lit::Str(str) => {
-  //       if !has_dynamic_class {
-  //         // 将 style 属性的值转换为对象形式
-  //         let mut properties = HashMap::new();
-  //         let style = str.value.to_string();
-  //         let style = style
-  //           .split(";")
-  //           .map(|s| s.to_owned())
-  //           .collect::<Vec<String>>();
-  //         for property in style.iter() {
-  //           let property = property
-  //             .split(":")
-  //             .map(|s| s.to_owned())
-  //             .collect::<Vec<String>>();
-  //           if property.len() == 2 {
-  //             let property_parsed = Property::parse_string(
-  //               PropertyId::from(property[0].as_str()),
-  //               property[1].as_str(),
-  //               ParserOptions::default(),
-  //             );
-  //             if property_parsed.is_ok() {
-  //               properties.insert(
-  //                 property[0].clone(),
-  //                 property_parsed.unwrap().into_owned(),
-  //               );
-  //             }
-  //           }
-  //         }
-  //         let parsed_properties = parse_style_properties(
-  //           &properties
-  //             .iter()
-  //             .map(|(key, value)| (key.to_owned(), value.clone()))
-  //             .collect::<Vec<_>>()
-  //         );
-
-  //         return Some(parsed_properties);
-  //       }
-  //     }
-  //     _ => {}
-  //   };
-
-  //   return None;
-  // }
-
-  // fn process_attribute_expr_value (&self, expr: &mut Expr, has_dynamic_class: bool) -> (Vec<PropOrSpread>, Vec<PropOrSpread>) {
-  //   // 静态的style属性
-  //   let mut static_props = vec![];
-  //   // 动态的style属性
-  //   let mut dynamic_properties = vec![];
-  //   match expr {
-  //     Expr::Object(lit) => {
-  //       if !has_dynamic_class {
-  //         let deque = VecDeque::from(lit.props.clone());
-  //         let mut temp_properties = HashMap::new();
-  //         for p in deque.iter() {
-  //           match p {
-  //             PropOrSpread::Prop(prop) => match &**prop {
-  //               Prop::KeyValue(key_value_prop) => {
-  //                 let value = match &*key_value_prop.value {
-  //                   Expr::Lit(lit) => match lit {
-  //                     Lit::Str(str) => str.value.to_string(),
-  //                     Lit::Num(num) => num.to_string(),
-  //                     _ => "".to_string()
-  //                   },
-  //                   _ => {
-  //                     dynamic_properties.push(p.clone());
-  //                     "".to_string()
-  //                   }
-  //                 };
-  //                 let name = match &key_value_prop.key {
-  //                   PropName::Ident(ident) => {
-  //                     Some(to_kebab_case(ident.sym.to_string().as_str()))
-  //                   }
-  //                   PropName::Str(str) => {
-  //                     Some(to_kebab_case(str.value.to_string().as_str()))
-  //                   }
-  //                   _ => None,
-  //                 };
-  //                 if let Some(name) = name {
-  //                   if value.ne("") {
-  //                     let property_id = PropertyId::from(name.as_str());
-  //                     let property = Property::parse_string(
-  //                       property_id,
-  //                       value.as_str(),
-  //                       ParserOptions::default(),
-  //                     );
-  //                     if property.is_ok() {
-  //                       temp_properties.insert(
-  //                         to_camel_case(name.as_str(), false),
-  //                         property.unwrap().into_owned(),
-  //                       );
-  //                     }
-  //                   }
-  //                 }
-  //               }
-  //               _ => {}
-  //             },
-  //             PropOrSpread::Spread(_) => {
-  //             }
-  //           }
-  //         }
-  //         let mut temp_props = vec![];
-
-  //         temp_props.extend(
-  //           temp_properties
-  //             .iter()
-  //             .map(|(key, value)| (key.to_string(), value.clone())),
-  //         );
-  //         let temp_props = parse_style_properties(&temp_props);
-
-  //         static_props = parse_style_values(temp_props, self.platform.clone());
-  //         static_props.sort_by(|a, b| {
-  //           let a = match a {
-  //             PropOrSpread::Prop(prop) => match &**prop {
-  //               Prop::KeyValue(key_value_prop) => match &key_value_prop.key {
-  //                 PropName::Ident(ident) => ident.sym.to_string(),
-  //                 _ => "".to_string(),
-  //               },
-  //               _ => "".to_string(),
-  //             },
-  //             _ => "".to_string(),
-  //           };
-  //           let b = match b {
-  //             PropOrSpread::Prop(prop) => match &**prop {
-  //               Prop::KeyValue(key_value_prop) => match &key_value_prop.key {
-  //                 PropName::Ident(ident) => ident.sym.to_string(),
-  //                 _ => "".to_string(),
-  //               },
-  //               _ => "".to_string(),
-  //             },
-  //             _ => "".to_string(),
-  //           };
-  //           a.cmp(&b)
-  //         });
-  //         lit.props.iter().for_each(|prop| {
-  //           if let PropOrSpread::Spread(_) = prop {
-  //             static_props.push(prop.clone())
-  //           }
-  //          });
-  //       }
-  //     }
-  //     _ => {
-  //     }
-  //   }
-
-  //   (static_props, dynamic_properties)
-  // }
 
   // 半编译模版注入
   // 1、识别静态style的值是否携带flexDirection、display
@@ -1348,6 +1199,112 @@ impl<'i> JSXMutVisitor<'i> {
   }
 }
 
+struct ObjectFinder {
+  class_attr_value: Option<Expr>,
+  set_stylesheet: bool
+}
+
+impl ObjectFinder {
+
+  fn new(expr: Option<Expr>, set_stylesheet: bool) -> Self {
+    ObjectFinder {
+      class_attr_value: expr,
+      set_stylesheet
+    }
+  }
+}
+
+impl ObjectFinder {
+  fn get_fun_call_expr (class_attr_value: Expr) -> Expr {
+    Expr::Call(CallExpr {
+      span: DUMMY_SP,
+      callee: Callee::Expr(Box::new(Expr::Ident(Ident::new(
+        CALC_STATIC_STYLE.into(),
+        DUMMY_SP,
+      )))),
+      args: vec![
+        ExprOrSpread::from(Box::new(Expr::Call(CallExpr {
+          span: DUMMY_SP,
+          callee: Callee::Expr(Box::new(Expr::Ident(Ident::new(
+            INNER_STYLE.into(),
+            DUMMY_SP,
+          )))),
+          type_args: None,
+          args: vec![]
+        }))),
+        ExprOrSpread::from(Box::new(class_attr_value)),
+      ],
+      type_args: None,
+    })
+  }
+
+  fn has_classname (object: ObjectLit) -> bool{
+    for prop in &object.props {
+      if let PropOrSpread::Prop(prop) = prop {
+          if let Prop::KeyValue(kv) = &**prop {
+              if let PropName::Ident(ref ident) = kv.key {
+                  let key = ident.sym.to_string();
+                  if key == "className" {
+                    return true
+                  }
+              }
+          }
+      }
+    }
+    return false
+  }
+}
+
+impl VisitMut for ObjectFinder {
+    fn visit_mut_object_lit(&mut self, object: &mut ObjectLit) {
+      if let Some(class_attr_value) = &self.class_attr_value {
+        if !self.set_stylesheet {
+          // 搜寻props下是否有classname
+          let obj = object.clone();
+          if ObjectFinder::has_classname(obj) {
+            let props = &mut object.props;
+            props.insert(
+              0,
+              PropOrSpread::Prop(Box::new(Prop::KeyValue(KeyValueProp {
+                key: PropName::Ident(Ident::new(HM_STYLE.into(), DUMMY_SP)),
+                value: Box::new(ObjectFinder::get_fun_call_expr(class_attr_value.clone())),
+              }))),
+            );
+          }
+          // 继续遍历AST
+          object.visit_mut_children_with(self);
+        } else {
+          let obj = object.clone();
+          if ObjectFinder::has_classname(obj) {
+            let props = &mut object.props;
+            props.insert(
+              0,
+              PropOrSpread::Prop(Box::new(Prop::KeyValue(KeyValueProp {
+                key: PropName::Ident(Ident::new("__styleSheet".into(), DUMMY_SP)),
+                value: Box::new(Expr::Object(ObjectLit {
+                  span: DUMMY_SP,
+                  props: vec![
+                    PropOrSpread::Prop(Box::new(Prop::KeyValue(KeyValueProp {
+                      key: PropName::Ident(Ident::new("key".into(), DUMMY_SP)),
+                      value: Box::new(class_attr_value.clone()),
+                    }))),
+                    PropOrSpread::Prop(Box::new(Prop::KeyValue(KeyValueProp {
+                      key: PropName::Ident(Ident::new("value".into(), DUMMY_SP)),
+                      value: Box::new(ObjectFinder::get_fun_call_expr(class_attr_value.clone())),
+                    }))),
+                  ],
+                })),
+              }))
+            ))
+          }
+        }
+      } else {
+        // 继续遍历AST
+        object.visit_mut_children_with(self);
+      }
+  }
+}
+
 impl<'i> VisitMut for JSXMutVisitor<'i> {
   noop_visit_mut_type!();
 
@@ -1359,28 +1316,6 @@ impl<'i> VisitMut for JSXMutVisitor<'i> {
         let jsx_element_or_callee = JSXElementOrJSXCallee::JSXCallee(&n);
         let (class_attr_value, _) = self.get_jsx_element_or_callee_calss_value_and_dynamic_class_styles(&jsx_element_or_callee);
         // 插入静态style
-        fn get_fun_call_expr (class_attr_value: Expr) -> Expr {
-          Expr::Call(CallExpr {
-            span: DUMMY_SP,
-            callee: Callee::Expr(Box::new(Expr::Ident(Ident::new(
-              CALC_STATIC_STYLE.into(),
-              DUMMY_SP,
-            )))),
-            args: vec![
-              ExprOrSpread::from(Box::new(Expr::Call(CallExpr {
-                span: DUMMY_SP,
-                callee: Callee::Expr(Box::new(Expr::Ident(Ident::new(
-                  INNER_STYLE.into(),
-                  DUMMY_SP,
-                )))),
-                type_args: None,
-                args: vec![]
-              }))),
-              ExprOrSpread::from(Box::new(class_attr_value)),
-            ],
-            type_args: None,
-          })
-        }
         let expr = n.args.get_mut(0);
         match expr {
           Some(expr_or_spread) => {
@@ -1388,74 +1323,23 @@ impl<'i> VisitMut for JSXMutVisitor<'i> {
               Expr::Lit(lit) => {
                 if let Lit::Str(_) = lit {
                   if let Some(attr) = n.args.get_mut(1) {
-                    if let Expr::Object(object) = &mut *attr.expr {
-                      let mut should_insert = false;
-                      if let Some(_) = &class_attr_value {
-                        should_insert = true
-                      }
-                      if should_insert {
-                        object.props.insert(
-                          0,
-                          PropOrSpread::Prop(Box::new(Prop::KeyValue(KeyValueProp {
-                            key: PropName::Ident(Ident::new(HM_STYLE.into(), DUMMY_SP)),
-                            value: Box::new(get_fun_call_expr(match class_attr_value {
-                                Some(value) => value.clone(),
-                                None => Expr::Lit(Lit::Null(Null { span: DUMMY_SP })),
-                            })),
-                          }))),
-                        )
-                      }
-                    }
+                    let mut finder = ObjectFinder::new(class_attr_value, false);
+                    (*attr.expr).visit_mut_children_with(&mut finder);
                   }
                 }
                },
               Expr::Ident(ident) => {
                 let name = ident.sym.to_string();
                 if let Some(attr) = n.args.get_mut(1) {
-                  if let Expr::Object(object) = &mut *attr.expr {
-                    if 
-                      (is_starts_with_uppercase(name.as_str()) && self.taro_components.contains(&name))
-                      || !is_starts_with_uppercase(name.as_str())
-                    {
-                      let mut should_insert = false;
-                      if let Some(_) = &class_attr_value {
-                        should_insert = true
-                      }
-                      if should_insert {
-                        object.props.insert(
-                          0,
-                          PropOrSpread::Prop(Box::new(Prop::KeyValue(KeyValueProp {
-                            key: PropName::Ident(Ident::new(HM_STYLE.into(), DUMMY_SP)),
-                            value: Box::new(get_fun_call_expr(match class_attr_value {
-                                Some(value) => value.clone(),
-                                None => Expr::Lit(Lit::Null(Null { span: DUMMY_SP })),
-                            })),
-                          }))),
-                        )
-                      }
-                    } else {
-                      if let Some(class_attr_value) = class_attr_value {
-                        object.props.insert(
-                          0,
-                          PropOrSpread::Prop(Box::new(Prop::KeyValue(KeyValueProp {
-                            key: PropName::Ident(Ident::new("__styleSheet".into(), DUMMY_SP)),
-                            value: Box::new(Expr::Object(ObjectLit {
-                              span: DUMMY_SP,
-                              props: vec![
-                                PropOrSpread::Prop(Box::new(Prop::KeyValue(KeyValueProp {
-                                  key: PropName::Ident(Ident::new("key".into(), DUMMY_SP)),
-                                  value: Box::new(class_attr_value.clone()),
-                                }))),
-                                PropOrSpread::Prop(Box::new(Prop::KeyValue(KeyValueProp {
-                                  key: PropName::Ident(Ident::new("value".into(), DUMMY_SP)),
-                                  value: Box::new(get_fun_call_expr(class_attr_value.clone())),
-                                }))),
-                              ],
-                            })),
-                          }))
-                        ))
-                      };
-                    }
+                  if (
+                    is_starts_with_uppercase(name.as_str()) && self.taro_components.contains(&name))
+                    || !is_starts_with_uppercase(name.as_str())
+                  {
+                    let mut finder = ObjectFinder::new(class_attr_value, false);
+                    (*attr.expr).visit_mut_children_with(&mut finder);
+                  } else {
+                    let mut finder = ObjectFinder::new(class_attr_value, true);
+                    (*attr.expr).visit_mut_children_with(&mut finder);
                   }
                 }
               

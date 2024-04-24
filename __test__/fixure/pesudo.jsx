@@ -1,8 +1,9 @@
 import { View, Text } from '@tarojs/components'
+import React from 'react'
 import './pesudo.scss'
 
 export default function Pesudo() {
-  return <View className='container'>
-    <View className='box'></View>
-  </View>
+  return React.createElement('Text', _object_spread_porops(_object_spread({}, rest), {
+    className: 'dasdsa'
+  }))
 }

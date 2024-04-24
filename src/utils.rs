@@ -3,7 +3,7 @@ use std::collections::HashMap;
 use html5ever::{namespace_url, ns, LocalName, QualName};
 use pcre2::bytes::Regex;
 // use lightningcss::values::number::CSSNumber;
-use swc_core::ecma::ast::{JSXMemberExpr, JSXObject, Expr, CallExpr, PropOrSpread, Prop, PropName};
+use swc_core::ecma::{ast::{ArrayLit, CallExpr, Expr, Function, JSXMemberExpr, JSXObject, ObjectLit, Prop, PropName, PropOrSpread}, visit::{Visit, VisitWith}};
 
 use crate::style_propetries::unit::Platform;
 
@@ -71,25 +71,67 @@ pub fn prefix_style_key(s: String, platform: Platform) -> String {
   }
 }
 
+struct ObjectVisitor {
+  pub attributes: HashMap<String, Box<Expr>>,
+}
+
+impl ObjectVisitor {
+  fn new() -> Self {
+      ObjectVisitor {
+          attributes: HashMap::new(),
+      }
+  }
+}
+
+impl Visit for ObjectVisitor {
+  fn visit_object_lit(&mut self, object: &ObjectLit) {
+      for prop in &object.props {
+          if let PropOrSpread::Prop(prop) = prop {
+              if let Prop::KeyValue(kv) = &**prop {
+                  if let PropName::Ident(ref ident) = kv.key {
+                      let key = ident.sym.to_string();
+                      // Clone the value to store in the attributes map
+                      let value = kv.value.clone();
+                      self.attributes.insert(key, value);
+                  }
+              }
+          }
+      }
+      // Continue traversing the AST
+      object.visit_children_with(self);
+  }
+
+  fn visit_call_expr(&mut self,n: &CallExpr) {
+      // 可以在这里添加特定的逻辑
+      n.args.iter().for_each(|arg| {
+        arg.expr.visit_with(self);
+      });
+  }
+
+  // 确保所有其他类型的节点也被遍历
+  fn visit_expr(&mut self, expr: &Expr) {
+    // 判断expr的类型
+    if let Expr::Object(obj) = &*expr {
+      self.visit_object_lit(obj);
+    } else {
+      expr.visit_children_with(self);
+    }
+
+  }
+  
+
+}
+
 pub fn get_callee_attributes (callee: &CallExpr) -> HashMap<String, Box<Expr>> {
   let mut attributes = HashMap::new();
 
   if let Some(arg) = callee.args.get(1) {
-    if let Expr::Object(object) = &*arg.expr {
-      for prop in object.props.iter() {
-        if let PropOrSpread::Prop(prop) = prop {
-          if let Prop::KeyValue(key_value_prop) = &**prop {
-            let name = match &key_value_prop.key {
-              PropName::Ident(ident) => ident.sym.to_string(),
-              PropName::Str(str) => str.value.to_string(),
-              _ => "".to_string(),
-            };
-            
-            attributes.insert(name, key_value_prop.value.clone());
-          }
-        }
-      }
-    }
+
+    let mut visitor = ObjectVisitor::new();
+    (&*arg.expr).visit_children_with(&mut visitor);
+
+ 
+    return visitor.attributes;
   }
 
   attributes

@@ -25,6 +25,15 @@ macro_rules! generate_expr_lit_num {
 
 
 #[macro_export]
+macro_rules! generate_expr_lit_bool {
+  ($var:expr) => {{
+    use swc_core::ecma::ast::*;
+    Expr::Lit(Lit::Bool(Bool { span: DUMMY_SP, value: $var }))
+  }};
+}
+
+
+#[macro_export]
 macro_rules! generate_expr_lit_calc {
   ($var:expr, $platform:expr) => {{
 

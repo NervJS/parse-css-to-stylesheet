@@ -1,3 +1,12 @@
+## [0.0.61](https://github.com/NervJS/parse-css-to-stylesheet/compare/v0.0.60...v0.0.61) (2024-04-26)
+
+
+### Features
+
+* 支持box-shadow ([eeecd38](https://github.com/NervJS/parse-css-to-stylesheet/commit/eeecd38b0d741ed009d4cf1e80be80c35ad082eb))
+
+
+
 ## [0.0.60](https://github.com/NervJS/parse-css-to-stylesheet/compare/v0.0.59...v0.0.60) (2024-04-24)
 
 

@@ -137,6 +137,7 @@ export function parse(
 | transform                  | translate、translateX、translateY、translateZ、translate2d、translate3d、scale、scaleX、scaleY、scale3d、rotate、rotateX、rotateY、rotate3d |    ✔️    |
 | transform-origin           | Length(top/center/bottom) Length(left/center/right)                                                                                         |    ✔️    |
 | animation                  | 仅支持 animation-name, animation-duration , animation-timing-function, animation-delay, animation-iteration-count， 暂不支持 style 设置     |    ✔️    |
+| box-shadow                 |                                                                                                                                             |    ✔️    |
 | content                    |                                                                                                                                             |    ✔️    |
 
 ⚠️ 注意：
@@ -230,6 +231,7 @@ export function parse(
 | :nth-child() | .intro:nth-child(2) | 选择 class="intro" 元素是其父级的第二个子元素 |    ✔️    |      |
 | :first-child | .intro:first-child  | 选择 class="intro" 元素是其父级的第一个子级   |    ✔️    |      |
 | :last-child  | .intro:last-child   | 选择 class="intro" 元素是其父级的最后一个子级 |    ✔️    |      |
+| :empty       | .intro:empty        | 选择 class="intro" 元素并且其没有子级         |    ✔️    |      |
 | :checked     | input:checked       | 选择每个选中的输入元素                        |    ❌    |      |
 | ...          |                     | 其他                                          |    ❌    |      |
 

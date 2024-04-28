@@ -144,7 +144,7 @@ export function parse(
 
 - `transform` 不允许连续出现 2 个同类型如：transform: translate(20px 20px) translate3d(10px, 30px, 30px)
 - `radial-linear`
-  - \<radial-extent>不支持,如（closest-side、closest-corner、farthest-side、farthest-corner）
+  - \<radial-extent>不支持, 如（closest-side、closest-corner、farthest-side、farthest-corner）
 - `display` 不支持**行内**
 - 定位不支持 **bottom** 和 **right**
 

@@ -1,6 +1,6 @@
 {
   "name": "@tarojs/parse-css-to-stylesheet",
-  "version": "0.0.64",
+  "version": "0.0.66",
   "main": "index.js",
   "types": "index.d.ts",
   "napi": {
@@ -11,10 +11,8 @@
         "aarch64-linux-android",
         "aarch64-unknown-linux-gnu",
         "aarch64-unknown-linux-musl",
-        "aarch64-pc-windows-msvc",
         "armv7-unknown-linux-gnueabihf",
         "x86_64-unknown-linux-musl",
-        "i686-pc-windows-msvc",
         "armv7-linux-androideabi",
         "universal-apple-darwin"
       ]

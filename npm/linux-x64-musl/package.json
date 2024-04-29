@@ -1,6 +1,6 @@
 {
   "name": "@tarojs/parse-css-to-stylesheet-linux-x64-musl",
-  "version": "0.0.63",
+  "version": "0.0.64",
   "os": [
     "linux"
   ],

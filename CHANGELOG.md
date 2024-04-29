@@ -1,3 +1,12 @@
+## [0.0.64](https://github.com/NervJS/parse-css-to-stylesheet/compare/v0.0.62...v0.0.64) (2024-04-29)
+
+
+### Bug Fixes
+
+* 修复box-shadow报错 ([9f88dd2](https://github.com/NervJS/parse-css-to-stylesheet/commit/9f88dd21e77544f18b4fa7f1522d15cc76686f86))
+
+
+
 ## [0.0.63](https://github.com/NervJS/parse-css-to-stylesheet/compare/v0.0.62...v0.0.63) (2024-04-28)
 
 

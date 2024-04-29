@@ -52,42 +52,41 @@ impl BoxShadow {
 
 impl ToExpr for BoxShadow {
     fn to_expr(&self) -> PropertyTuple {
+
+      let mut props = vec![];
+
+      if let Some(offset_x) = &self.offset_x {
+        props.push(("offsetX".to_string(), generate_expr_by_length!(offset_x, Platform::Harmony)));
+      }
+      if let Some(offset_y) =  &self.offset_y {
+        props.push(("offsetY".to_string(), generate_expr_by_length!(offset_y, Platform::Harmony)));
+      }
+      if let Some(blur_radius) = &self.blur_radius {
+        props.push(("radius".to_string(), generate_expr_by_length!(blur_radius, Platform::Harmony)));
+      }
+      if let Some(color) = &self.color {
+        props.push(("color".to_string(), generate_string_by_css_color!(color)));
+      }
+      if let Some(inset) = &self.inset {
+        props.push(("fill".to_string(), generate_expr_lit_bool!(*inset)));
+      }
+
+      let object_list_props = props.into_iter().map(|(a, b)| {
+        PropOrSpread::Prop(Box::new(Prop::KeyValue(
+          KeyValueProp {
+            key: generate_prop_name!(a),
+            value: Box::new(b),
+          }
+        )))
+      }).collect::<Vec<PropOrSpread>>();
+
+
+
       PropertyTuple::One(
         "boxShadow".to_string(),
         Expr::Object(ObjectLit {
           span: DUMMY_SP,
-          props: vec![
-            PropOrSpread::Prop(Box::new(Prop::KeyValue(
-              KeyValueProp {
-                key: generate_prop_name!("radius"),
-                value: Box::new(generate_expr_by_length!(self.offset_x.as_ref().unwrap(), Platform::Harmony)),
-              }
-            ))),
-            PropOrSpread::Prop(Box::new(Prop::KeyValue(
-              KeyValueProp {
-                key: generate_prop_name!("color"),
-                value: Box::new(generate_string_by_css_color!(self.color.as_ref().unwrap())),
-              }
-            ))),
-            PropOrSpread::Prop(Box::new(Prop::KeyValue(
-              KeyValueProp {
-                key: generate_prop_name!("offsetX"),
-                value: Box::new(generate_expr_by_length!(self.offset_x.as_ref().unwrap(), Platform::Harmony)),
-              }
-            ))),
-            PropOrSpread::Prop(Box::new(Prop::KeyValue(
-              KeyValueProp {
-                key: generate_prop_name!("offsetY"),
-                value: Box::new(generate_expr_by_length!(self.offset_y.as_ref().unwrap(), Platform::Harmony)),
-              }
-            ))),
-            PropOrSpread::Prop(Box::new(Prop::KeyValue(
-              KeyValueProp {
-                key: generate_prop_name!("fill"),
-                value: Box::new(generate_expr_lit_bool!(self.inset.unwrap())),
-              }
-            ))),
-          ]
+          props: object_list_props
         })
       )
     }

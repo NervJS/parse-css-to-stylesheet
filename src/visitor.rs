@@ -1295,6 +1295,13 @@ impl VisitMut for ObjectFinder {
                   ],
                 })),
               }))
+            ));
+            props.insert(
+              0,
+              PropOrSpread::Prop(Box::new(Prop::KeyValue(KeyValueProp {
+                key: PropName::Ident(Ident::new("__hmStyle".into(), DUMMY_SP)),
+                value: Box::new(ObjectFinder::get_fun_call_expr(class_attr_value.clone())),
+              }))
             ))
           }
         }
@@ -1455,6 +1462,14 @@ impl<'i> VisitMut for JSXMutVisitor<'i> {
                       }))),
                     ],
                   }))),
+                })),
+              }));
+              n.opening.attrs.push(JSXAttrOrSpread::JSXAttr(JSXAttr {
+                span: DUMMY_SP,
+                name: JSXAttrName::Ident(Ident::new("__hmStyle".into(), DUMMY_SP)),
+                value: Some(JSXAttrValue::JSXExprContainer(JSXExprContainer {
+                  span: DUMMY_SP,
+                  expr: JSXExpr::Expr(Box::new(get_fun_call_expr(class_attr_value.clone()))),
                 })),
               }));
             },

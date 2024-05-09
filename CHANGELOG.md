@@ -1,3 +1,12 @@
+## [0.0.68](https://github.com/NervJS/parse-css-to-stylesheet/compare/v0.0.67...v0.0.68) (2024-05-09)
+
+
+### Bug Fixes
+
+* 修复自定义组件taro无样式问题 ([423b642](https://github.com/NervJS/parse-css-to-stylesheet/commit/423b642e8a28816ca40643d36d8b4fb748214fcf))
+
+
+
 ## [0.0.67](https://github.com/NervJS/parse-css-to-stylesheet/compare/v0.0.66...v0.0.67) (2024-04-29)
 
 

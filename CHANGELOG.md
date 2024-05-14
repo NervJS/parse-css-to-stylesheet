@@ -1,3 +1,12 @@
+## [0.0.69](https://github.com/NervJS/parse-css-to-stylesheet/compare/v0.0.68...v0.0.69) (2024-05-14)
+
+
+### Features
+
+* 修改display，支持block的输出 ([7d1d995](https://github.com/NervJS/parse-css-to-stylesheet/commit/7d1d9950cee24e04e77bdbc5d6d2fe071f8a205a))
+
+
+
 ## [0.0.68](https://github.com/NervJS/parse-css-to-stylesheet/compare/v0.0.67...v0.0.68) (2024-05-09)
 
 

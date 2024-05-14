@@ -1,6 +1,6 @@
 
 
-use lightningcss::properties::{Property, display::{Display::{Keyword, Pair}, DisplayKeyword, DisplayInside}};
+use lightningcss::properties::{display::{Display::{Keyword, Pair}, DisplayInside, DisplayKeyword, DisplayOutside}, Property};
 
 use crate::{generate_expr_lit_str, generate_invalid_expr};
 
@@ -16,6 +16,7 @@ pub struct Display {
 pub enum EnumValue {
   None,
   Flex,
+  Block,
   Invalid,
 }
 
@@ -34,7 +35,11 @@ impl From<(String, &Property<'_>)> for Display {
               if let DisplayInside::Flex(_) = value.inside {
                 EnumValue::Flex
               } else {
-                EnumValue::Invalid
+                if let DisplayOutside::Block = value.outside {
+                  EnumValue::Block
+                } else {
+                  EnumValue::Invalid
+                }
               }
             }
           }
@@ -54,6 +59,7 @@ impl ToExpr for Display {
       match &self.value {
         EnumValue::None => generate_expr_lit_str!("none"),
         EnumValue::Flex => generate_expr_lit_str!("flex"),
+        EnumValue::Block => generate_expr_lit_str!("block"),
         EnumValue::Invalid => generate_invalid_expr!(),
       }
     )
@@ -65,6 +71,7 @@ impl ToExpr for Display {
       match &self.value {
         EnumValue::None => generate_expr_lit_str!("none"),
         EnumValue::Flex => generate_expr_lit_str!("flex"),
+        EnumValue::Block => generate_expr_lit_str!("block"),
         EnumValue::Invalid => generate_invalid_expr!(),
       }
     )

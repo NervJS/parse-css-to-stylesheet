@@ -7,32 +7,6 @@ use swc_core::ecma::{ast::{ArrayLit, CallExpr, Expr, Function, JSXMemberExpr, JS
 
 use crate::style_propetries::unit::Platform;
 
-pub fn recursion_jsx_member(expr: &JSXMemberExpr) -> String {
-  match &expr.obj {
-    JSXObject::JSXMemberExpr(expr) => {
-      format!(
-        "{}.{}",
-        recursion_jsx_member(expr),
-        expr.prop.sym.to_string()
-      )
-    }
-    JSXObject::Ident(ident) => {
-      format!("{}.{}", ident.sym.to_string(), expr.prop.sym.to_string())
-    }
-  }
-}
-
-pub fn create_qualname(str: &str) -> QualName {
-  QualName::new(None, ns!(), LocalName::from(str))
-}
-
-pub fn is_starts_with_uppercase(str: &str) -> bool {
-  match str.chars().next() {
-    Some(c) => c.is_uppercase(),
-    None => false,
-  }
-}
-
 pub fn to_camel_case(s: &str, is_first: bool) -> String {
   let mut result = String::new();
   let mut next_cap = if is_first { true } else { false };
@@ -47,94 +21,6 @@ pub fn to_camel_case(s: &str, is_first: bool) -> String {
     }
   }
   result
-}
-
-// pub fn to_kebab_case(s: &str) -> String {
-//   let mut result = String::new();
-//   for c in s.chars() {
-//     if c.is_uppercase() {
-//       result.push('-');
-//       result.extend(c.to_lowercase());
-//     } else {
-//       result.push(c);
-//     }
-//   }
-//   result
-// }
-
-pub fn prefix_style_key(s: String, platform: Platform) -> String {
-  match platform {
-    // Platform::Harmony => {
-    //   format!("{}{}", CONVERT_STYLE_PREFIX, s)
-    // },
-    _ => s.to_string()
-  }
-}
-
-struct ObjectVisitor {
-  pub attributes: HashMap<String, Box<Expr>>,
-}
-
-impl ObjectVisitor {
-  fn new() -> Self {
-      ObjectVisitor {
-          attributes: HashMap::new(),
-      }
-  }
-}
-
-impl Visit for ObjectVisitor {
-  fn visit_object_lit(&mut self, object: &ObjectLit) {
-      for prop in &object.props {
-          if let PropOrSpread::Prop(prop) = prop {
-              if let Prop::KeyValue(kv) = &**prop {
-                  if let PropName::Ident(ref ident) = kv.key {
-                      let key = ident.sym.to_string();
-                      // Clone the value to store in the attributes map
-                      let value = kv.value.clone();
-                      self.attributes.insert(key, value);
-                  }
-              }
-          }
-      }
-      // Continue traversing the AST
-      object.visit_children_with(self);
-  }
-
-  fn visit_call_expr(&mut self,n: &CallExpr) {
-      // 可以在这里添加特定的逻辑
-      n.args.iter().for_each(|arg| {
-        arg.expr.visit_with(self);
-      });
-  }
-
-  // 确保所有其他类型的节点也被遍历
-  fn visit_expr(&mut self, expr: &Expr) {
-    // 判断expr的类型
-    if let Expr::Object(obj) = &*expr {
-      self.visit_object_lit(obj);
-    } else {
-      expr.visit_children_with(self);
-    }
-
-  }
-  
-
-}
-
-pub fn get_callee_attributes (callee: &CallExpr) -> HashMap<String, Box<Expr>> {
-  let mut attributes = HashMap::new();
-
-  if let Some(arg) = callee.args.get(1) {
-
-    let mut visitor = ObjectVisitor::new();
-    (&*arg.expr).visit_children_with(&mut visitor);
-
- 
-    return visitor.attributes;
-  }
-
-  attributes
 }
 
 pub fn hex_to_argb(hex: &str) -> Result<u32, String> {

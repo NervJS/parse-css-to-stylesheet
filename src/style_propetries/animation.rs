@@ -133,9 +133,9 @@ impl ToExpr for Animation {
                   }))),                   
                   PropOrSpread::Prop(Box::new(Prop::KeyValue(KeyValueProp {
                     key: PropName::Str("event".into()),
-                    value: Box::new(Expr::Object(ObjectLit {
+                    value: Box::new(Expr::Array(ArrayLit {
                       span: DUMMY_SP,
-                      props: parse_style_values(item.declarations.clone(), Platform::Harmony)
+                      elems: parse_style_values(item.declarations.clone(), Platform::Harmony)
                     }))
                   })))
                 ]

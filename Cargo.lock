@@ -1136,6 +1136,7 @@ dependencies = [
  "regex",
  "selectors",
  "serde",
+ "serde_json",
  "smallvec",
  "style",
  "swc_core",

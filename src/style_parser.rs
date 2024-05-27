@@ -2,16 +2,14 @@ use std::{rc::Rc, cell::RefCell, convert::Infallible, collections::HashMap, hash
 
 use lightningcss::{declaration::DeclarationBlock, properties::Property, rules::{keyframes::KeyframeSelector, CssRule}, stylesheet::{ParserOptions, PrinterOptions, StyleSheet}, traits::ToCss, visit_types, visitor::{Visit, VisitTypes, Visitor}};
 
-use crate::{constants::SUPPORT_PSEUDO_KEYS, document::JSXDocument, style_propetries::{style_value_type::StyleValueType, unit::Platform}, utils::to_camel_case, visitor::SpanKey};
+use crate::{constants::SUPPORT_PSEUDO_KEYS, style_propetries::{style_value_type::StyleValueType, unit::Platform}, utils::to_camel_case, visitor::SpanKey};
 
 use super::parse_style_properties::parse_style_properties;
 
 pub type StyleValue = Vec<StyleValueType>;
-
-pub struct StyleData<'i> {
-  pub pesudo_style_record: Rc<RefCell<HashMap<SpanKey, Vec<(String, Vec<(String, Property<'i>)>)>>>>,
+#[derive(Debug)]
+pub struct StyleData {
   pub all_style: Rc<RefCell<HashMap<String, StyleValue>>>,
-  pub has_nesting: bool
 }
 
 pub struct KeyFramesData {
@@ -131,16 +129,14 @@ impl<'i> Visitor<'i> for StyleVisitor<'i> {
 pub struct StyleParser<'i> {
   pub all_style: Rc<RefCell<Vec<(String, Vec<StyleDeclaration<'i>>)>>>,
   pub keyframes: Rc<RefCell<HashMap<String, Vec<KeyFrameItem>>>>,
-  pub document: &'i JSXDocument,
   pub platform: Platform
 }
 
 impl<'i> StyleParser<'i> {
-  pub fn new(document: &'i JSXDocument, platform:Platform) -> Self {
+  pub fn new(platform:Platform) -> Self {
     StyleParser {
       all_style: Rc::new(RefCell::new(vec![])),
       keyframes: Rc::new(RefCell::new(HashMap::new())),
-      document,
       platform
     }
   }
@@ -151,31 +147,12 @@ impl<'i> StyleParser<'i> {
     stylesheet.visit(&mut style_visitor).unwrap();
   }
 
-  pub fn calc(&self) -> StyleData<'i> {
+  pub fn calc(&self) -> StyleData {
     // 遍历 style_record，计算每个节点的最终样式
     let mut all_style = self.all_style.borrow_mut();
-    let mut style_record = HashMap::new();
-    let mut pesudo_style_record = HashMap::new();
-    let mut css_variables = vec![];
-    // 是否含有嵌套选择器
-    let mut has_nesting = false;
-
     // final_all_style 转换为驼峰命名
     let mut final_all_style = vec![];
     self.calc_style_record(&mut all_style).iter_mut().for_each(|(selector, style_value)| {
-      // 判断是否含有伪类:root
-      if selector == ":root" {
-        css_variables = style_value.declaration.declarations.iter().map(|property| {
-          (
-            property
-              .property_id()
-              .to_css_string(PrinterOptions::default())
-              .unwrap(),
-            property.clone(),
-          )
-        }).collect::<Vec<(_, _)>>();
-        return;
-      }
       let properties = style_value.declaration.declarations.iter().map(|property| {
         (
           to_camel_case(
@@ -190,39 +167,8 @@ impl<'i> StyleParser<'i> {
         )
       })
       .collect::<Vec<(_, _)>>(); // Specify the lifetime of the tuple elements to match the input data
-      // 判断是否含有嵌套选择器
-      if selector.contains(" ") || selector.chars().filter(|&c| c == '.').count() > 1 {
-        has_nesting = true
-      }
       final_all_style.push((selector.to_owned(), properties));
     });
-
-    let mut pesudo_selector = None;
-    for (selector, style_value) in final_all_style.iter_mut() {
-      // 用于查询的选择器
-      let mut element_selector = selector.clone();
-      // 判断是否伪类(暂时支持鸿蒙)
-      if (SUPPORT_PSEUDO_KEYS.into_iter().any(|s| selector.contains(s))) && self.platform == Platform::Harmony {
-        let _selectors = selector.split(":").collect::<Vec<&str>>();
-        pesudo_selector = _selectors[1].parse::<String>().ok();
-        // 伪类需要把 : 之后的选择器去掉，只保留 : 之前的选择器，用于查询所属的element
-        element_selector = _selectors[0].to_string();
-      }
-
-      let elements = self.document.select(element_selector.as_str());
-      for element in elements {
-        match pesudo_selector {
-          Some(ref selector) => {
-            let declarations= pesudo_style_record.entry(element.span).or_insert(vec![]);
-            declarations.push((selector.clone(), style_value.clone()));
-          }
-          None => {
-            let declarations: &mut Vec<Vec<(String, Property<'_>)>> = style_record.entry(element.span).or_insert(vec![]);
-            declarations.push(style_value.clone());
-          }
-        }
-      }
-    }             
 
     // 进行样式解析优化，提前解析 ArkUI 的样式，减少运行时的计算
     let final_all_style = final_all_style
@@ -241,12 +187,8 @@ impl<'i> StyleParser<'i> {
     })
     .collect::<HashMap<_, _>>();
 
-    let final_pesudo_style_record = pesudo_style_record;
-
     StyleData {
-      pesudo_style_record: Rc::new(RefCell::new(final_pesudo_style_record)),
       all_style: Rc::new(RefCell::new(final_all_style)),
-      has_nesting
     }
   }
 

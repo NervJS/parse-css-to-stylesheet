@@ -292,20 +292,25 @@ pub fn parse_style_values(value: Vec<StyleValueType>, platform: Platform) -> Vec
     match prop {
       PropertyTuple::One(id, expr) => {
         if let Expr::Invalid(_) = expr { return }
-        index_map.insert(prefix_style_key(id, platform.clone()), Box::new(expr));
+        index_map.insert(id.clone(), Box::new(expr));
       }
       PropertyTuple::Array(prop_arr) => {
         prop_arr.into_iter().for_each(|(id, expr)| {
           if let Expr::Invalid(_) = expr { return }
-          index_map.insert(prefix_style_key(id, platform.clone()), Box::new(expr));
+          index_map.insert(id.clone(), Box::new(expr));
         })
       }
     }
   });
 
   index_map.into_iter().for_each(|(id, expr)| {
+    let id_num = id.clone() as u32;
     prop_or_spread.push(PropOrSpread::Prop(Box::new(Prop::KeyValue(KeyValueProp {
-      key: PropName::Ident(Ident::new(id.into(), DUMMY_SP)),
+      key: PropName::Num(Number {
+        span: DUMMY_SP,
+        value: id_num as f64,
+        raw: None
+      }),
       value: expr,
     }))))
   });

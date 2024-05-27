@@ -1,11 +1,8 @@
 use lightningcss::properties::{Property, text};
 
-use swc_core::ecma::ast::*;
-use swc_core::common::DUMMY_SP;
+use crate::{generate_expr_enum, style_propetries::style_property_enum};
 
-use crate::generate_expr_lit_str;
-
-use super::{traits::ToExpr, unit::PropertyTuple};
+use super::{style_property_type::CSSPropertyType, traits::ToExpr, unit::PropertyTuple};
 
 #[derive(Debug, Clone)]
 pub struct TextTransform {
@@ -24,35 +21,13 @@ pub enum EnumValue {
 impl ToExpr for TextTransform {
   fn to_expr(&self) -> PropertyTuple {
     PropertyTuple::One(
-      "textCase".to_string(),
-      Expr::Member(MemberExpr {
-        span: DUMMY_SP,
-        obj: Box::new(Expr::Ident(Ident::new("TextCase".into(), DUMMY_SP))),
-        prop: MemberProp::Ident(Ident {
-          span: DUMMY_SP,
-          sym: match self.value {
-            EnumValue::None => "Normal",
-            EnumValue::Lowercase => "Lowercase",
-            EnumValue::Uppercase => "UpperCase",
-            EnumValue::Capitalize => "Normal",
-          }
-          .into(),
-          optional: false,
-        }),
-      })
-      .into()
-    )
-  }
-
-  fn to_rn_expr(&self) -> PropertyTuple {
-    PropertyTuple::One(
-      self.id.to_string(),
-      generate_expr_lit_str!(match self.value {
-        EnumValue::None => "none",
-        EnumValue::Uppercase => "uppercase",
-        EnumValue::Lowercase => "lowercase",
-        EnumValue::Capitalize => "capitalize",
-      })
+      CSSPropertyType::TextTransform,
+      match self.value {
+        EnumValue::None => generate_expr_enum!(style_property_enum::TextCase::Normal),
+        EnumValue::Lowercase => generate_expr_enum!(style_property_enum::TextCase::LowerCase),
+        EnumValue::Uppercase => generate_expr_enum!(style_property_enum::TextCase::UpperCase),
+        EnumValue::Capitalize => generate_expr_enum!(style_property_enum::TextCase::Normal),
+      }
     )
   }
 }

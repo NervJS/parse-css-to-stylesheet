@@ -3,9 +3,9 @@ use std::vec;
 use lightningcss::{
   properties::Property, values::length::LengthPercentageOrAuto
 };
-use crate::{generate_expr_by_length_percentage, generate_expr_by_length_percentage_or_auto, generate_expr_lit_str, generate_invalid_expr, generate_tpl_expr, style_propetries::traits::ToExpr};
+use crate::{generate_expr_by_length_percentage, generate_expr_by_length_percentage_or_auto, generate_expr_lit_str, generate_invalid_expr, style_propetries::traits::ToExpr};
 
-use super::unit::{Platform, PropertyTuple};
+use super::{style_property_type::CSSPropertyType, unit::{Platform, PropertyTuple}};
 
 
 #[derive(Debug, Clone)]
@@ -34,42 +34,20 @@ impl ToExpr for MarginPadding {
   fn to_expr(&self) -> PropertyTuple {
     if self.top.is_none() || self.right.is_none() || self.bottom.is_none() || self.left.is_none() {
       return PropertyTuple::One(
-        self.id.clone(),
+        CSSPropertyType::Invaild,
         generate_invalid_expr!()
       )
     }
 
     // 判断self.id是否padding开头
     let is_padding = self.id.starts_with("padding");
-    let key_name = if is_padding { "padding" } else { "margin" };
     
     PropertyTuple::Array(vec![
-      (format!("{}Top", key_name), generate_expr_by_length_percentage_or_auto!(self.top.as_ref().unwrap(), Platform::Harmony)),
-      (format!("{}Right", key_name), generate_expr_by_length_percentage_or_auto!(self.right.as_ref().unwrap(), Platform::Harmony)),
-      (format!("{}Bottom", key_name), generate_expr_by_length_percentage_or_auto!(self.bottom.as_ref().unwrap(), Platform::Harmony)),
-      (format!("{}Left", key_name), generate_expr_by_length_percentage_or_auto!(self.left.as_ref().unwrap(), Platform::Harmony)),
+      (if is_padding { CSSPropertyType::PaddingTop } else { CSSPropertyType::MarginTop }, generate_expr_by_length_percentage_or_auto!(self.top.as_ref().unwrap(), Platform::Harmony)),
+      (if is_padding { CSSPropertyType::PaddingRight } else { CSSPropertyType::MarginRight }, generate_expr_by_length_percentage_or_auto!(self.right.as_ref().unwrap(), Platform::Harmony)),
+      (if is_padding { CSSPropertyType::PaddingBottom } else { CSSPropertyType::MarginBottom }, generate_expr_by_length_percentage_or_auto!(self.bottom.as_ref().unwrap(), Platform::Harmony)),
+      (if is_padding { CSSPropertyType::PaddingLeft } else { CSSPropertyType::MarginLeft }, generate_expr_by_length_percentage_or_auto!(self.left.as_ref().unwrap(), Platform::Harmony)),
     ])
-  }
-
-  fn to_rn_expr(&self) -> PropertyTuple {
-    if self.top.is_none() || self.right.is_none() || self.bottom.is_none() || self.left.is_none() {
-      return PropertyTuple::One(
-        self.id.clone(),
-        generate_invalid_expr!()
-      )
-    }
-    let margin_padding = vec![
-      generate_expr_by_length_percentage_or_auto!(self.top.as_ref().unwrap(), Platform::ReactNative), 
-      generate_expr_by_length_percentage_or_auto!(self.right.as_ref().unwrap(), Platform::ReactNative), 
-      generate_expr_by_length_percentage_or_auto!(self.bottom.as_ref().unwrap(), Platform::ReactNative), 
-      generate_expr_by_length_percentage_or_auto!(self.left.as_ref().unwrap(), Platform::ReactNative), 
-    ];
-
-    PropertyTuple::One(
-      self.id.clone(),
-      // 生成`${top} ${right} ${bottom} ${left}`
-      generate_tpl_expr!(margin_padding)
-    )    
   }
 }
 

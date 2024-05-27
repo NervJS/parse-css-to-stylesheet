@@ -1,11 +1,15 @@
-use lightningcss::{
-  properties::size::Size::LengthPercentage,
-  traits::ToCss
-};
+use crate::generate_size_property;
+use super::style_property_type::CSSPropertyType;
 
-use crate::{generate_expr_lit_str, generate_size_property};
-use super::unit::PropertyTuple;
-use super::{traits::ToExpr, unit::{generate_expr_by_length_value, Platform}};
+use lightningcss::properties::size::Size::LengthPercentage;
 
 // 生成property_name的value类型为 Size的属性
-generate_size_property![SizeProperty, Height, Width, MinWidth, MinHeight];
+
+// 使用宏生成 ColorProperty 结构体
+generate_size_property![
+  SizeProperty,
+    (CSSPropertyType::Height, Height),
+    (CSSPropertyType::Width, Width),
+    (CSSPropertyType::MinWidth, MinWidth),
+    (CSSPropertyType::MinHeight, MinHeight)
+];

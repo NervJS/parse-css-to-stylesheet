@@ -1,10 +1,10 @@
-use lightningcss::{properties::Property, values::{length::Length, color::CssColor}, traits::ToCss};
+use lightningcss::{properties::Property, values::{length::Length, color::CssColor}};
 
 use swc_core::ecma::ast::*;
 use swc_core::common::DUMMY_SP;
-use crate::{generate_expr_by_length, generate_expr_lit_bool, generate_prop_name, generate_string_by_css_color, style_propetries::traits::ToExpr};
+use crate::{generate_expr_by_length, generate_expr_lit_bool, generate_prop_name, generate_expr_lit_color, style_propetries::traits::ToExpr};
 
-use super::unit::PropertyTuple;
+use super::{style_property_type::CSSPropertyType, unit::PropertyTuple};
 
 
 #[derive(Debug, Clone)]
@@ -65,7 +65,7 @@ impl ToExpr for BoxShadow {
         props.push(("radius".to_string(), generate_expr_by_length!(blur_radius, Platform::Harmony)));
       }
       if let Some(color) = &self.color {
-        props.push(("color".to_string(), generate_string_by_css_color!(color)));
+        props.push(("color".to_string(), generate_expr_lit_color!(color)));
       }
       if let Some(inset) = &self.inset {
         props.push(("fill".to_string(), generate_expr_lit_bool!(*inset)));
@@ -83,37 +83,11 @@ impl ToExpr for BoxShadow {
 
 
       PropertyTuple::One(
-        "boxShadow".to_string(),
+        CSSPropertyType::BoxShadow,
         Expr::Object(ObjectLit {
           span: DUMMY_SP,
           props: object_list_props
         })
-      )
-    }
-
-    fn to_rn_expr(&self) -> PropertyTuple {
-      PropertyTuple::Array(
-        vec![
-          ("BoxShadowOffset".to_string(), Expr::Object(ObjectLit {
-            span: DUMMY_SP,
-            props: vec![
-              PropOrSpread::Prop(Box::new(Prop::KeyValue(
-                KeyValueProp {
-                  key: generate_prop_name!("width"),
-                  value: Box::new(generate_expr_by_length!(self.offset_x.as_ref().unwrap(), Platform::ReactNative)),
-                }
-              ))),
-              PropOrSpread::Prop(Box::new(Prop::KeyValue(
-                KeyValueProp {
-                  key: generate_prop_name!("height"),
-                  value: Box::new(generate_expr_by_length!(self.offset_y.as_ref().unwrap(), Platform::ReactNative)),
-                }
-              ))),
-            ],
-          })),
-          ("BoxShadowColor".to_string(), generate_string_by_css_color!(self.color.as_ref().unwrap())),
-          ("BoxShadowRadius".to_string(), generate_expr_by_length!(self.blur_radius.as_ref().unwrap(), Platform::ReactNative)),
-        ]
       )
     }
 }

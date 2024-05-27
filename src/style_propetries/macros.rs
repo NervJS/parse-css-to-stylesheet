@@ -32,6 +32,38 @@ macro_rules! generate_expr_lit_bool {
   }};
 }
 
+#[macro_export]
+macro_rules! generate_expr_enum {
+  ($var:expr) => {{
+    use swc_core::ecma::ast::*;
+    Expr::Lit(Lit::Num(Number::from(($var as u32) as f64)))
+  }};
+}
+
+#[macro_export]
+macro_rules! generate_expr_lit_color {
+  ($color:expr) => {{
+      use swc_core::ecma::ast::*;
+      use $crate::utils::{hex_to_argb};
+      use lightningcss::{
+        traits::ToCss
+      };
+      use $crate::style_propetries::unit::convert_color_keywords_to_hex;
+
+      let color_string = convert_color_keywords_to_hex($color.to_css_string(lightningcss::stylesheet::PrinterOptions {
+        minify: false,
+        targets: lightningcss::targets::Targets::default(),
+        ..lightningcss::stylesheet::PrinterOptions::default()
+      }).unwrap());
+
+      match hex_to_argb(&color_string) {
+        Ok(argb) => Expr::Lit(Lit::Num(Number::from(argb as f64))),
+        Err(hex_or_rgba) => Expr::Lit(Lit::Str(hex_or_rgba.clone().into())).into()
+      }
+      
+  }};
+}
+
 
 #[macro_export]
 macro_rules! generate_expr_lit_calc {
@@ -87,21 +119,6 @@ macro_rules! generate_expr_ident {
     use swc_core::ecma::ast::*;
     use swc_core::common::DUMMY_SP;
     Expr::Ident(Ident::new($var.into(), DUMMY_SP))
-  }};
-}
-
-#[macro_export]
-macro_rules! generate_string_by_css_color {
-  ($color:expr) => {{
-    use $crate::style_propetries::unit::convert_color_keywords_to_hex;
-    convert_color_keywords_to_hex($color.to_css_string(lightningcss::stylesheet::PrinterOptions {
-      minify: false,
-      targets: lightningcss::targets::Targets {
-        include: lightningcss::targets::Features::HexAlphaColors,
-        ..lightningcss::targets::Targets::default()
-      },
-      ..lightningcss::stylesheet::PrinterOptions::default()
-    }).unwrap()).into()
   }};
 }
 
@@ -180,7 +197,7 @@ macro_rules! generate_dimension_percentage {
 macro_rules! generate_expr_based_on_platform {
   ($platform:expr, $value:expr) => {
       match $platform {
-          Platform::ReactNative => $value.to_rn_expr().into(),
+          Platform::Harmony => $value.to_expr().into(),
           _ => $value.to_expr().into(),
       }
   };
@@ -190,29 +207,30 @@ macro_rules! generate_expr_based_on_platform {
 // 依赖 use swc_ecma_ast
 #[macro_export]
 macro_rules! generate_color_property {
-  ($class:ident, $( $property_name:ident ), *) => {
-    use $crate::utils::fix_rgba;
-
-    use swc_core::ecma::ast::*;
+  ($class:ident, $( ($property_enum:path, $property_value:ident) ),* ) => {
+    use super::{traits::ToExpr, unit::PropertyTuple};
+    use $crate::{generate_expr_lit_color, generate_invalid_expr};
+    use lightningcss::values::color::CssColor;
 
     #[derive(Debug, Clone)]
     pub struct $class {
       pub id: String,
-      pub value: String
+      pub value: Option<(super::style_property_type::CSSPropertyType, CssColor)>
     }
 
     impl ToExpr for $class {
       fn to_expr(&self) -> PropertyTuple {
-        PropertyTuple::One(
-          self.id.clone(),
-          Expr::Lit(Lit::Str(fix_rgba(self.value.clone()).into())).into()
-        )
-      }
-      fn to_rn_expr(&self) -> PropertyTuple {
-        PropertyTuple::One(
-          self.id.clone(),
-          Expr::Lit(Lit::Str(self.value.clone().into())).into()
-        )
+        if let Some(color) = &self.value {
+          PropertyTuple::One(
+            color.0,
+            generate_expr_lit_color!(&color.1)
+          )
+        } else {
+          PropertyTuple::One(
+            super::style_property_type::CSSPropertyType::Invaild,
+            generate_invalid_expr!()
+          )
+        }
       }
     }
 
@@ -222,19 +240,14 @@ macro_rules! generate_color_property {
           id: prop.0,
           value: match prop.1 {
             $(
-              lightningcss::properties::Property::$property_name(_) => {
-                use $crate::style_propetries::unit::convert_color_keywords_to_hex;
-                convert_color_keywords_to_hex(prop.1.value_to_css_string(lightningcss::stylesheet::PrinterOptions {
-                  minify: false,
-                  targets: lightningcss::targets::Targets {
-                    include: lightningcss::targets::Features::HexAlphaColors,
-                    ..lightningcss::targets::Targets::default()
-                  },
-                  ..lightningcss::stylesheet::PrinterOptions::default()
-                }).unwrap())
+              lightningcss::properties::Property::$property_value(val) => {
+                Some((
+                  $property_enum,
+                  val.clone()
+                ))
               }
             )*
-            _ => "".to_string()
+            _ => None
           }
         }
       }
@@ -246,35 +259,26 @@ macro_rules! generate_color_property {
 // 依赖：use swc_ecma_ast; use lightningcss
 #[macro_export]
 macro_rules! generate_number_property {
-  ($class:ident, $( $property_name:ident ), *) => {
+  ($class:ident, $( ($property_enum:path, $property_name:ident) ),* ) => {
 
     use swc_core::ecma::ast::*;
     use swc_core::common::DUMMY_SP;
+    use super::{traits::ToExpr, unit::PropertyTuple};
+
 
     #[derive(Debug, Clone)]
     pub struct $class {
       pub id: String,
-      pub value: lightningcss::values::number::CSSNumber
+      pub value: (super::style_property_type::CSSPropertyType, lightningcss::values::number::CSSNumber)
     }
 
     impl ToExpr for $class {
       fn to_expr(&self) -> PropertyTuple {
         PropertyTuple::One(
-          self.id.clone(),
+          self.value.0,
           Expr::Lit(Lit::Num(Number {
             span: DUMMY_SP,
-            value: self.value as f64,
-            raw: None,
-          }))
-          .into()
-        )
-      }
-      fn to_rn_expr(&self) -> PropertyTuple {
-        PropertyTuple::One(
-          self.id.clone(),
-          Expr::Lit(Lit::Num(Number {
-            span: DUMMY_SP,
-            value: self.value as f64,
+            value: self.value.1 as f64,
             raw: None,
           }))
           .into()
@@ -287,22 +291,28 @@ macro_rules! generate_number_property {
         match prop.1 {
           $(
             lightningcss::properties::Property::$property_name(value, _) => {
-              $class { id: 
-                prop.0, 
-                value: *value
+              $class { 
+                id: prop.0, 
+                value: (
+                  $property_enum,
+                  *value
+                )
               }
             }
           )*
           _ => $class {
             id: prop.0,
-            value: 0.0
+            value: (
+              CSSPropertyType::Invaild,
+              0.0
+            )
           }
         }
       }
     }
     
     impl $class {
-      pub fn from_value (prop: (String, f32)) -> Self {
+      pub fn from_value (prop: (String, (CSSPropertyType, f32))) -> Self {
         $class {
           id: prop.0,
           value: prop.1
@@ -317,14 +327,18 @@ macro_rules! generate_number_property {
 // 依赖：use swc_ecma_ast; use lightningcss
 #[macro_export]
 macro_rules! generate_length_value_property {
-  ($class:ident, $( $property_name:ident ), *) => {
+  ($class:ident, $( ($property_enum:path, $property_value:ident) ),* ) => {
 
-    use $crate::{generate_dimension_percentage, generate_expr_lit_calc};
+
+    use lightningcss::traits::ToCss;
+    use super::unit::PropertyTuple;
+    use super::{traits::ToExpr, unit::{generate_expr_by_length_value, Platform}};
+    use $crate::{generate_dimension_percentage, generate_expr_lit_calc, generate_expr_lit_str, generate_invalid_expr};
 
     #[derive(Debug, Clone)]
     pub struct $class {
       pub id: String,
-      pub value: EnumValue
+      pub value: (super::style_property_type::CSSPropertyType, EnumValue)
     }
 
     #[derive(Debug, Clone)]
@@ -338,24 +352,12 @@ macro_rules! generate_length_value_property {
     impl ToExpr for $class {
       fn to_expr(&self) -> PropertyTuple {
         PropertyTuple::One(
-          self.id.clone(),
-          match &self.value {
+          self.value.0,
+          match &self.value.1 {
             EnumValue::String(value) => generate_expr_lit_calc!(value, Platform::Harmony),
             EnumValue::LengthValue(length_value) => generate_expr_by_length_value(length_value, Platform::Harmony),
             EnumValue::Percentage(value) => generate_expr_lit_str!((value.0 * 100.0).to_string() + "%"),
             EnumValue::Auto => generate_invalid_expr!()   // harmony 是个非法制，固不会生效
-          }
-        )
-      }
-
-      fn to_rn_expr(&self) -> PropertyTuple {
-        PropertyTuple::One(
-          self.id.clone(),
-          match &self.value {
-            EnumValue::String(value) => generate_expr_lit_calc!(value, Platform::ReactNative),
-            EnumValue::LengthValue(length_value) => generate_expr_by_length_value(length_value, Platform::ReactNative),
-            EnumValue::Percentage(value) => generate_expr_lit_str!((value.0 * 100.0).to_string() + "%"),
-            EnumValue::Auto => generate_expr_lit_str!("auto")
           }
         )
       }
@@ -365,21 +367,27 @@ macro_rules! generate_length_value_property {
       fn from(prop: (String, &lightningcss::properties::Property<'_>)) -> Self {
         match prop.1 {
           $(
-            lightningcss::properties::Property::$property_name(value) => {
+            lightningcss::properties::Property::$property_value(value) => {
                $class {
                 id: prop.0,
-                value: match value {
-                  lightningcss::values::length::LengthPercentageOrAuto::Auto => EnumValue::Auto,
-                  lightningcss::values::length::LengthPercentageOrAuto::LengthPercentage(length_percentage) => {
-                    generate_dimension_percentage!(EnumValue, length_percentage)
-                  },
-                }
+                value: (
+                  $property_enum,
+                  match value {
+                    lightningcss::values::length::LengthPercentageOrAuto::Auto => EnumValue::Auto,
+                    lightningcss::values::length::LengthPercentageOrAuto::LengthPercentage(length_percentage) => {
+                      generate_dimension_percentage!(EnumValue, length_percentage)
+                    },
+                  }
+                )
               }
             }
           )*
           _ => $class {
             id: prop.0,
-            value: EnumValue::String("auto".to_string())
+            value: (
+              super::style_property_type::CSSPropertyType::Invaild,
+              EnumValue::String("auto".to_string())
+            )
           }
         }
       }
@@ -391,14 +399,20 @@ macro_rules! generate_length_value_property {
 // 依赖：use swc_ecma_ast; use lightningcss
 #[macro_export]
 macro_rules! generate_size_property {
-  ($class:ident, $( $property_name:ident ), *) => {
+  ($class:ident, $( ($property_enum:path, $property_value:ident) ),* ) => {
 
-    use $crate::generate_expr_lit_calc;
+    use lightningcss::{
+      traits::ToCss
+    };
+    
+    use $crate::{generate_expr_lit_str, generate_expr_lit_calc};
+    use super::unit::PropertyTuple;
+    use super::{traits::ToExpr, unit::{generate_expr_by_length_value, Platform}};
 
     #[derive(Debug, Clone)]
     pub struct $class {
       pub id: String,
-      pub value: EnumValue
+      pub value: (super::style_property_type::CSSPropertyType, EnumValue)
     }
 
     #[derive(Debug, Clone)]
@@ -412,8 +426,8 @@ macro_rules! generate_size_property {
     impl ToExpr for $class {
       fn to_expr(&self) -> PropertyTuple {
         PropertyTuple::One(
-          self.id.clone(),
-          match &self.value {
+          self.value.0.clone(),
+          match &self.value.1 {
             EnumValue::String(value) => generate_expr_lit_calc!(value, Platform::Harmony),
             EnumValue::LengthValue(length_value) => generate_expr_by_length_value(length_value, Platform::Harmony),
             EnumValue::Percentage(value) => generate_expr_lit_str!((value.0 * 100.0).to_string() + "%"),
@@ -422,42 +436,37 @@ macro_rules! generate_size_property {
         )
       }
 
-      fn to_rn_expr(&self) -> PropertyTuple {
-        PropertyTuple::One(
-          self.id.clone(),
-          match &self.value {
-            EnumValue::String(value) => generate_expr_lit_calc!(value, Platform::ReactNative),
-            EnumValue::LengthValue(length_value) => generate_expr_by_length_value(length_value, Platform::ReactNative),
-            EnumValue::Percentage(value) => generate_expr_lit_str!((value.0 * 100.0).to_string() + "%"),
-            EnumValue::Auto => generate_expr_lit_str!("auto")
-          }
-        )
-      }
     }
 
     impl From<(String, &lightningcss::properties::Property<'_>)> for $class {
       fn from(prop: (String, &lightningcss::properties::Property<'_>)) -> Self {
         match prop.1 {
           $(
-            lightningcss::properties::Property::$property_name(value) => {
+            lightningcss::properties::Property::$property_value(value) => {
               $class {
                 id: prop.0,
-                value: match value {
-                  LengthPercentage(length_percentage) => {
-                      match length_percentage {
-                        lightningcss::values::percentage::DimensionPercentage::Dimension(dimension) => EnumValue::LengthValue(dimension.clone()),
-                        lightningcss::values::percentage::DimensionPercentage::Percentage(percentage) => EnumValue::Percentage(percentage.clone()),
-                        lightningcss::values::percentage::DimensionPercentage::Calc(calc) => EnumValue::String(calc.to_css_string(lightningcss::stylesheet::PrinterOptions::default()).unwrap())
-                      }
-                  },
-                  _ => EnumValue::Auto
-                }
+                value: (
+                  $property_enum,
+                  match value {
+                    LengthPercentage(length_percentage) => {
+                        match length_percentage {
+                          lightningcss::values::percentage::DimensionPercentage::Dimension(dimension) => EnumValue::LengthValue(dimension.clone()),
+                          lightningcss::values::percentage::DimensionPercentage::Percentage(percentage) => EnumValue::Percentage(percentage.clone()),
+                          lightningcss::values::percentage::DimensionPercentage::Calc(calc) => EnumValue::String(calc.to_css_string(lightningcss::stylesheet::PrinterOptions::default()).unwrap())
+                        }
+                    },
+                    _ => EnumValue::Auto
+                  }
+                )
               }
             }
           )*
           _ =>  $class {
             id: prop.0,
-            value: EnumValue::String("auto".to_string())
+            value: (
+              super::style_property_type::CSSPropertyType::Invaild,
+              EnumValue::String("auto".to_string())
+            )
           }
         }
       }

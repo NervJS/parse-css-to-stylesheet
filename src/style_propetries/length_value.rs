@@ -1,9 +1,20 @@
-use lightningcss::traits::ToCss;
+use crate::generate_length_value_property;
 
-use crate::{generate_expr_lit_str, generate_length_value_property, generate_invalid_expr};
-use super::unit::PropertyTuple;
-use super::{traits::ToExpr, unit::{generate_expr_by_length_value, Platform}};
+use super::style_property_type::CSSPropertyType;
 
 // 生成property_name的value类型为 LengthValue的属性
-generate_length_value_property![LengthValueProperty, MarginTop, MarginBottom, MarginLeft, MarginRight, PaddingTop, PaddingBottom, PaddingLeft, PaddingRight, Left, Right, Top, Bottom];
-
+generate_length_value_property![
+  LengthValueProperty,
+  (CSSPropertyType::MarginTop, MarginTop),
+  (CSSPropertyType::MarginBottom, MarginBottom),
+  (CSSPropertyType::MarginLeft, MarginLeft),
+  (CSSPropertyType::MarginRight, MarginRight),
+  (CSSPropertyType::PaddingTop, PaddingTop),
+  (CSSPropertyType::PaddingBottom, PaddingBottom),
+  (CSSPropertyType::PaddingLeft, PaddingLeft),
+  (CSSPropertyType::PaddingRight, PaddingRight),
+  (CSSPropertyType::Left, Left),
+  (CSSPropertyType::Right, Right),
+  (CSSPropertyType::Top, Top),
+  (CSSPropertyType::Bottom, Bottom)
+];

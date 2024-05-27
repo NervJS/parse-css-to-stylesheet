@@ -7,9 +7,9 @@ use smallvec::SmallVec;
 use swc_core::ecma::ast::*;
 use swc_core::common::DUMMY_SP;
 
-use crate::{generate_expr_by_length_percentage_or_auto, generate_invalid_expr};
+use crate::{generate_expr_by_length_percentage_or_auto, generate_expr_enum, generate_invalid_expr, style_propetries::style_property_enum};
 
-use super::{traits::ToExpr, unit::{Platform, PropertyTuple}};
+use super::{style_property_type::CSSPropertyType, traits::ToExpr, unit::{Platform, PropertyTuple}};
 
 pub fn parse_background_size_item(size_item: &LNBackgroundSize) -> Option<ImageSize> {
   match size_item {
@@ -20,24 +20,6 @@ pub fn parse_background_size_item(size_item: &LNBackgroundSize) -> Option<ImageS
         width.clone(),
         height.clone()
       ))
-      // match width {
-      //   LengthPercentageOrAuto::Auto => match height {
-      //     LengthPercentageOrAuto::Auto => Some(ImageSize::Auto),
-      //     _ => None,
-      //   },
-      //   LengthPercentageOrAuto::LengthPercentage(x) => {
-      //     let x_str = x.to_css_string(PrinterOptions::default()).unwrap();
-      //     match height {
-      //       LengthPercentageOrAuto::LengthPercentage(y) => {
-      //         let y_str = y.to_css_string(PrinterOptions::default()).unwrap();
-      //         Some(ImageSize::ImageSizeWH(x_str, Some(y_str)))
-      //       },
-      //       LengthPercentageOrAuto::Auto => {
-      //           Some(ImageSize::ImageSizeWH(x_str, None))
-      //       }
-      //     }
-      //   },
-      // }
     }
   }
 }
@@ -58,6 +40,7 @@ pub fn parse_background_size(size: &SmallVec<[LNBackgroundSize; 1]>) -> Vec<Imag
 pub enum ImageSize {
   Cover,
   Contain,
+  Auto,
   ImageSizeWH(LengthPercentageOrAuto, LengthPercentageOrAuto),
 }
 
@@ -72,28 +55,10 @@ impl ToExpr for BackgroundSize {
    let expr = match self.value.get(0) {
       Some(image_size) => {
         match image_size {
-          ImageSize::Cover => Expr::Member(MemberExpr {
-            span: DUMMY_SP,
-            obj: Box::new(Expr::Ident(Ident::new("ImageSize".into(), DUMMY_SP))),
-            prop: MemberProp::Ident(Ident {
-              span: DUMMY_SP,
-              sym: "Cover".into(),
-              optional: false,
-            }),
-          })
-          .into(),
-          ImageSize::Contain => Expr::Member(MemberExpr {
-            span: DUMMY_SP,
-            obj: Box::new(Expr::Ident(Ident::new("ImageSize".into(), DUMMY_SP))),
-            prop: MemberProp::Ident(Ident {
-              span: DUMMY_SP,
-              sym: "Contain".into(),
-              optional: false,
-            }),
-          })
-          .into(),
+          ImageSize::Cover => generate_expr_enum!(style_property_enum::ImageSize::Cover),
+          ImageSize::Contain => generate_expr_enum!(style_property_enum::ImageSize::Contain),
+          ImageSize::Auto => generate_expr_enum!(style_property_enum::ImageSize::Auto),
           ImageSize::ImageSizeWH(width, height) => {
-            
             let props = vec![
               PropOrSpread::Prop(Box::new(Prop::KeyValue(KeyValueProp {
                 key: PropName::Ident(Ident::new("width".into(), DUMMY_SP)),
@@ -117,17 +82,11 @@ impl ToExpr for BackgroundSize {
       }
     };
     PropertyTuple::One(
-      "backgroundSize".to_string(),
+      CSSPropertyType::BackgroundSize,
       expr
     )
   }
 
-  fn to_rn_expr(&self) -> PropertyTuple {
-    PropertyTuple::One(
-      "backgroundSize".to_string(),
-      generate_invalid_expr!()
-    )
-  }
 }
 
 impl From<(String, &Property<'_>)> for BackgroundSize {

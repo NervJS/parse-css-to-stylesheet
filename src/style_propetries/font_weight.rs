@@ -1,11 +1,8 @@
 use lightningcss::properties::{Property, font};
 
-use swc_core::ecma::ast::*;
-use swc_core::common::DUMMY_SP;
+use crate::{generate_expr_enum, generate_expr_lit_num, style_propetries::{style_property_enum, traits::ToExpr}};
 
-use crate::{style_propetries::traits::ToExpr, generate_expr_lit_str, generate_expr_lit_num};
-
-use super::unit::PropertyTuple;
+use super::{style_property_type::CSSPropertyType, unit::PropertyTuple};
 
 
 #[derive(Debug, Clone)]
@@ -26,46 +23,19 @@ pub enum EnumValue {
 impl ToExpr for FontWeight {
   fn to_expr(&self) -> PropertyTuple {
     PropertyTuple::One(
-      self.id.to_string(),
+      CSSPropertyType::FontWeight,
       match &self.value {
+        EnumValue::Bold => generate_expr_enum!(style_property_enum::FontWeight::Bold),
+        EnumValue::Bolder => generate_expr_enum!(style_property_enum::FontWeight::Bolder),
+        EnumValue::Lighter => generate_expr_enum!(style_property_enum::FontWeight::Lighter),
+        EnumValue::Normal => generate_expr_enum!(style_property_enum::FontWeight::Normal),
         EnumValue::Number(num) => {
           generate_expr_lit_num!(*num as f64)
-        }
-        EnumValue::Bold | EnumValue::Bolder | EnumValue::Lighter | EnumValue::Normal => {
-          Expr::Member(MemberExpr {
-            span: DUMMY_SP,
-            obj: Box::new(Expr::Ident(Ident::new("FontWeight".into(), DUMMY_SP))),
-            prop: MemberProp::Ident(Ident {
-              span: DUMMY_SP,
-              sym: match self.value {
-                EnumValue::Bold => "Bold",
-                EnumValue::Bolder => "Bolder",
-                EnumValue::Lighter => "Lighter",
-                EnumValue::Normal => "Normal",
-                EnumValue::Number(_) => "",
-              }
-              .into(),
-              optional: false,
-            }),
-          })
-          .into()
         },
       }
     )
   }
 
-  fn to_rn_expr(&self) -> PropertyTuple {
-    PropertyTuple::One(
-      self.id.to_string(),
-      match &self.value {
-        EnumValue::Bold => generate_expr_lit_str!("bold"),
-        EnumValue::Bolder => generate_expr_lit_num!(900.0),
-        EnumValue::Lighter => generate_expr_lit_num!(100.0),
-        EnumValue::Normal => generate_expr_lit_str!("normal"),
-        EnumValue::Number(num) => generate_expr_lit_num!(*num as f64)
-      }
-    )
-  }
 }
 
 impl From<(String, &Property<'_>)> for FontWeight {

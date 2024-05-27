@@ -6,16 +6,13 @@ use lightningcss::properties::{
   Property,
 };
 
-use swc_core::ecma::ast::*;
-use swc_core::common::DUMMY_SP;
+use crate::{generate_expr_enum, style_propetries::style_property_enum};
 
-use crate::generate_expr_lit_str;
-
-use super::{traits::ToExpr, unit::PropertyTuple};
+use super::{style_property_type::CSSPropertyType, traits::ToExpr, unit::PropertyTuple};
 
 #[derive(Debug, Clone)]
 pub struct FlexAlign {
-  pub id: String,
+  pub id: CSSPropertyType,
   pub value: EnumValue
 }
 
@@ -33,7 +30,7 @@ pub enum EnumValue {
 impl From<(String, &Property<'_>)> for FlexAlign {
   fn from(prop: (String, &Property<'_>)) -> Self {
     FlexAlign {
-      id: prop.0,
+      id: if prop.0 == "justifyContent" { CSSPropertyType::JustifyContent } else { CSSPropertyType::AlignContent },
       value: match prop.1 {
         Property::JustifyContent(value, _) => match value {
           LNJustifyContent::ContentPosition { value, .. } => match value {
@@ -75,40 +72,16 @@ impl ToExpr for FlexAlign {
   // 转换成鸿蒙样式
   fn to_expr(&self) -> PropertyTuple {
     PropertyTuple::One (
-      self.id.to_string(),
-      Expr::Member(MemberExpr {
-        span: DUMMY_SP,
-        obj: Box::new(Expr::Ident(Ident::new("FlexAlign".into(), DUMMY_SP))),
-        prop: MemberProp::Ident(Ident {
-          span: DUMMY_SP,
-          sym: match self.value {
-            EnumValue::Start => "Start",
-            EnumValue::Center => "Center",
-            EnumValue::End => "End",
-            EnumValue::SpaceBetween => "SpaceBetween",
-            EnumValue::SpaceAround => "SpaceAround",
-            EnumValue::SpaceEvenly => "SpaceEvenly",
-          }
-          .into(),
-          optional: false,
-        }),
-      })
-      .into(),
-    )
-  }
-
-  // 转换成RN样式
-  fn to_rn_expr(&self) -> PropertyTuple {
-    PropertyTuple::One (
-      self.id.to_string(),
-      match &self.value {
-        EnumValue::Start => generate_expr_lit_str!("flex-start"),
-        EnumValue::Center => generate_expr_lit_str!("center"),
-        EnumValue::End => generate_expr_lit_str!("flex-end"),
-        EnumValue::SpaceBetween => generate_expr_lit_str!("space-between"),
-        EnumValue::SpaceAround => generate_expr_lit_str!("space-around"),
-        EnumValue::SpaceEvenly => generate_expr_lit_str!("space-evenly"),
+      self.id,
+      match self.value {
+        EnumValue::Start => generate_expr_enum!(style_property_enum::FlexAlign::Start),
+        EnumValue::Center => generate_expr_enum!(style_property_enum::FlexAlign::Center),
+        EnumValue::End => generate_expr_enum!(style_property_enum::FlexAlign::End),
+        EnumValue::SpaceBetween => generate_expr_enum!(style_property_enum::FlexAlign::SpaceBetween),
+        EnumValue::SpaceAround => generate_expr_enum!(style_property_enum::FlexAlign::SpaceAround),
+        EnumValue::SpaceEvenly => generate_expr_enum!(style_property_enum::FlexAlign::SpaceEvenly),
       }
     )
   }
+
 }

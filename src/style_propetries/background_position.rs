@@ -12,9 +12,9 @@ use smallvec::SmallVec;
 use swc_core::ecma::ast::*;
 use swc_core::common::DUMMY_SP;
 
-use crate::{generate_invalid_expr, style_propetries::traits::ToExpr};
+use crate::{generate_expr_enum, style_propetries::{style_property_enum, traits::ToExpr}};
 
-use super::unit::{generate_expr_with_css_input, Platform, PropertyTuple};
+use super::{style_property_type::CSSPropertyType, unit::{generate_expr_with_css_input, Platform, PropertyTuple}};
 
 pub fn parse_background_position_item(position: &LNBackgroundPosition) -> ImagePosition {
   match &position.x {
@@ -140,110 +140,23 @@ impl ToExpr for BackgroundPosition {
         .into(),
       })
       .into(),
-      ImagePosition::TopStart => Expr::Member(MemberExpr {
-        span: DUMMY_SP,
-        obj: Box::new(Expr::Ident(Ident::new("Alignment".into(), DUMMY_SP))),
-        prop: MemberProp::Ident(Ident {
-          span: DUMMY_SP,
-          sym: "TopStart".into(),
-          optional: false,
-        }),
-      })
-      .into(),
-      ImagePosition::Top => Expr::Member(MemberExpr {
-        span: DUMMY_SP,
-        obj: Box::new(Expr::Ident(Ident::new("Alignment".into(), DUMMY_SP))),
-        prop: MemberProp::Ident(Ident {
-          span: DUMMY_SP,
-          sym: "Top".into(),
-          optional: false,
-        }),
-      })
-      .into(),
-      ImagePosition::TopEnd => Expr::Member(MemberExpr {
-        span: DUMMY_SP,
-        obj: Box::new(Expr::Ident(Ident::new("Alignment".into(), DUMMY_SP))),
-        prop: MemberProp::Ident(Ident {
-          span: DUMMY_SP,
-          sym: "TopEnd".into(),
-          optional: false,
-        }),
-      })
-      .into(),
-      ImagePosition::Start => Expr::Member(MemberExpr {
-        span: DUMMY_SP,
-        obj: Box::new(Expr::Ident(Ident::new("Alignment".into(), DUMMY_SP))),
-        prop: MemberProp::Ident(Ident {
-          span: DUMMY_SP,
-          sym: "Start".into(),
-          optional: false,
-        }),
-      })
-      .into(),
-      ImagePosition::Center => Expr::Member(MemberExpr {
-        span: DUMMY_SP,
-        obj: Box::new(Expr::Ident(Ident::new("Alignment".into(), DUMMY_SP))),
-        prop: MemberProp::Ident(Ident {
-          span: DUMMY_SP,
-          sym: "Center".into(),
-          optional: false,
-        }),
-      })
-      .into(),
-      ImagePosition::End => Expr::Member(MemberExpr {
-        span: DUMMY_SP,
-        obj: Box::new(Expr::Ident(Ident::new("Alignment".into(), DUMMY_SP))),
-        prop: MemberProp::Ident(Ident {
-          span: DUMMY_SP,
-          sym: "End".into(),
-          optional: false,
-        }),
-      })
-      .into(),
-      ImagePosition::BottomStart => Expr::Member(MemberExpr {
-        span: DUMMY_SP,
-        obj: Box::new(Expr::Ident(Ident::new("Alignment".into(), DUMMY_SP))),
-        prop: MemberProp::Ident(Ident {
-          span: DUMMY_SP,
-          sym: "BottomStart".into(),
-          optional: false,
-        }),
-      })
-      .into(),
-      ImagePosition::Bottom => Expr::Member(MemberExpr {
-        span: DUMMY_SP,
-        obj: Box::new(Expr::Ident(Ident::new("Alignment".into(), DUMMY_SP))),
-        prop: MemberProp::Ident(Ident {
-          span: DUMMY_SP,
-          sym: "Bottom".into(),
-          optional: false,
-        }),
-      })
-      .into(),
-      ImagePosition::BottomEnd => Expr::Member(MemberExpr {
-        span: DUMMY_SP,
-        obj: Box::new(Expr::Ident(Ident::new("Alignment".into(), DUMMY_SP))),
-        prop: MemberProp::Ident(Ident {
-          span: DUMMY_SP,
-          sym: "BottomEnd".into(),
-          optional: false,
-        }),
-      })
-      .into(),
+      ImagePosition::TopStart => generate_expr_enum!(style_property_enum::Alignment::TopStart),
+      ImagePosition::Top => generate_expr_enum!(style_property_enum::Alignment::Top),
+      ImagePosition::TopEnd => generate_expr_enum!(style_property_enum::Alignment::TopEnd),
+      ImagePosition::Start => generate_expr_enum!(style_property_enum::Alignment::Start),
+      ImagePosition::Center => generate_expr_enum!(style_property_enum::Alignment::Center),
+      ImagePosition::End => generate_expr_enum!(style_property_enum::Alignment::End),
+      ImagePosition::BottomStart => generate_expr_enum!(style_property_enum::Alignment::BottomStart),
+      ImagePosition::Bottom => generate_expr_enum!(style_property_enum::Alignment::Bottom),
+      ImagePosition::BottomEnd => generate_expr_enum!(style_property_enum::Alignment::BottomEnd),
     };
     
     PropertyTuple::One(
-      "backgroundPosition".to_string(),
+      CSSPropertyType::BackgroundPosition,
       expr
     )
   }
 
-  fn to_rn_expr(&self) -> PropertyTuple{
-    PropertyTuple::One(
-      "backgroundPosition".to_string(),
-      generate_invalid_expr!()
-    )
-  }
 }
 
 impl From<(String, &Property<'_>)> for BackgroundPosition {

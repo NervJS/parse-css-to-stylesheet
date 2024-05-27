@@ -5,7 +5,7 @@ use lightningcss::{
 
 use crate::generate_invalid_expr;
 
-use super::{unit::{PropertyTuple, generate_expr_by_length_value, Platform}, traits::ToExpr};
+use super::{style_property_type::CSSPropertyType, traits::ToExpr, unit::{generate_expr_by_length_value, Platform, PropertyTuple}};
 
 
 #[derive(Debug, Clone)]
@@ -25,21 +25,10 @@ pub enum EnumValue {
 impl ToExpr for LetterSpacing {
   fn to_expr(&self) -> PropertyTuple {
     PropertyTuple::One(
-      self.id.to_string(),
+      CSSPropertyType::LetterSpacing,
       match &self.value {
         EnumValue::String(_) => generate_invalid_expr!(),
         EnumValue::LengthValue(length_value) => generate_expr_by_length_value(&length_value, Platform::Harmony),
-        EnumValue::Invalid => generate_invalid_expr!(),
-      }
-    )
-  }
-
-  fn to_rn_expr(&self) -> PropertyTuple {
-    PropertyTuple::One(
-      self.id.to_string(),
-      match &self.value {
-        EnumValue::String(_) => generate_invalid_expr!(),
-        EnumValue::LengthValue(length_value) => generate_expr_by_length_value(&length_value, Platform::ReactNative),
         EnumValue::Invalid => generate_invalid_expr!(),
       }
     )

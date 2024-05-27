@@ -1,11 +1,8 @@
 use lightningcss::properties::{Property, font};
 
-use swc_core::ecma::ast::*;
-use swc_core::common::DUMMY_SP;
+use crate::{generate_expr_enum, generate_invalid_expr, style_propetries::style_property_enum};
 
-use crate::{generate_expr_lit_str, generate_invalid_expr};
-
-use super::{traits::ToExpr, unit::PropertyTuple};
+use super::{style_property_type::CSSPropertyType, traits::ToExpr, unit::PropertyTuple};
 
 #[derive(Debug, Clone)]
 pub struct VerticalAlign {
@@ -29,43 +26,14 @@ pub enum EnumValue {
 impl ToExpr for VerticalAlign {
   fn to_expr(&self) -> PropertyTuple {
     PropertyTuple::One(
-      "verticalAlign".to_string(),
+      CSSPropertyType::VerticalAlign,
       {
         match self.value {
           EnumValue::Baseline | EnumValue::Sub | EnumValue::Super | EnumValue::TextTop | EnumValue::TextBottom | EnumValue::Invalid => generate_invalid_expr!(),
-          EnumValue::Middle | EnumValue::Top | EnumValue::Bottom => {
-            Expr::Member(MemberExpr {
-              span: DUMMY_SP,
-              obj: Box::new(Expr::Ident(Ident::new("Alignment".into(), DUMMY_SP))),
-              prop: MemberProp::Ident(Ident {
-                span: DUMMY_SP,
-                sym: match self.value {
-                  EnumValue::Middle => "Center",
-                  EnumValue::Top => "Top",
-                  EnumValue::Bottom => "Bottom",
-                  _ => ""
-                }.into(),
-                optional: false,
-              }),
-            })
-            .into()
-          }
+          EnumValue::Middle => generate_expr_enum!(style_property_enum::Alignment::Center),
+          EnumValue::Top => generate_expr_enum!(style_property_enum::Alignment::Top),
+          EnumValue::Bottom => generate_expr_enum!(style_property_enum::Alignment::Bottom),
         }
-      }
-    )
-  }
-
-  fn to_rn_expr(&self) -> PropertyTuple {
-    PropertyTuple::One(
-      "textAlignVertical".to_string(),
-      match self.value {
-        EnumValue::Baseline => generate_invalid_expr!(),
-        EnumValue::Sub => generate_invalid_expr!(),
-        EnumValue::Super => generate_invalid_expr!(),
-        EnumValue::TextTop | EnumValue::Top => generate_expr_lit_str!("top"),
-        EnumValue::TextBottom | EnumValue::Bottom => generate_expr_lit_str!("bottom"),
-        EnumValue::Middle => generate_expr_lit_str!("center"),
-        EnumValue::Invalid => generate_invalid_expr!(),
       }
     )
   }

@@ -3,7 +3,9 @@ use pcre2::bytes::Regex;
 
 use swc_core::ecma::ast::*;
 use swc_core::common::DUMMY_SP;
-use crate::{constants::{CONVERT_STYLE_PX_FN, RN_CONVERT_STYLE_PX_FN, RN_CONVERT_STYLE_VU_FN}, generate_expr_lit_num, generate_expr_lit_str, utils::fix_rgba};
+use crate::{constants::{CONVERT_STYLE_PX_FN, RN_CONVERT_STYLE_PX_FN, RN_CONVERT_STYLE_VU_FN}, generate_expr_lit_num, generate_expr_lit_str};
+
+use super::style_property_type::CSSPropertyType;
 
 #[derive(Debug, Clone, PartialEq)]
 pub enum Platform {
@@ -13,9 +15,9 @@ pub enum Platform {
 
 pub enum PropertyTuple {
   // 一对一属性：height: 100px 解析 => (height, "100px")
-  One(String, Expr),
+  One(CSSPropertyType, Expr),
   // 一对多属性：flex: 1 解析 => vec![(flexGrow, "1"), (flexShrink, "1"), (flexBasis, "0%")]
-  Array(Vec<(String, Expr)>)
+  Array(Vec<(CSSPropertyType, Expr)>)
 }
 
 // 根据长度单位生成对应的表达式
@@ -31,9 +33,7 @@ pub fn generate_expr_by_length_value(length_value: &LengthValue, platform: Platf
           args.push(generate_expr_lit_num!(*num as f64))
         },
         Platform::Harmony => {
-          handler = Some(CONVERT_STYLE_PX_FN.to_string());
-          args.push(generate_expr_lit_num!(*num as f64))
-          // return generate_expr_lit_str!(format!("{}lpx", num))
+          return generate_expr_lit_num!(*num as f64)
         }
       }
     },
@@ -44,8 +44,7 @@ pub fn generate_expr_by_length_value(length_value: &LengthValue, platform: Platf
           args.push(generate_expr_lit_num!((*num * 16.0) as f64))
         },
         Platform::Harmony => {
-          handler = Some(CONVERT_STYLE_PX_FN.to_string());
-          args.push(generate_expr_lit_num!((*num * 16.0) as f64))
+          return generate_expr_lit_num!((*num * 16.0) as f64)
         }
       }
     },
@@ -230,7 +229,7 @@ pub fn generate_expr_with_css_input(input: String, platform: Platform) -> Expr {
 // 处理将color关键字转换为hex
 // 参考颜色关键字：https://www.w3.org/TR/css-color-3/#svg-color
 pub fn convert_color_keywords_to_hex(color: String) -> String {
-  let c = match color.as_str() {
+  match color.as_str() {
     "aliceblue" => "#F0F8FF".to_string(),
     "antiquewhite" => "#FAEBD7".to_string(),
     "aqua" => "#00FFFF".to_string(),
@@ -380,7 +379,5 @@ pub fn convert_color_keywords_to_hex(color: String) -> String {
     "yellowgreen" => "#9ACD32".to_string(),
     "currentColor" => "".to_string(),
     _ => color
-  };
-
-  fix_rgba(c)
+  }
 }

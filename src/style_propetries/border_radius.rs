@@ -5,7 +5,7 @@ use lightningcss::{
 use swc_core::ecma::ast::Expr;
 use crate::{generate_expr_lit_str, generate_invalid_expr };
 
-use super::{traits::ToExpr, unit::{PropertyTuple, generate_expr_by_length_value, Platform}};
+use super::{style_property_type::CSSPropertyType, traits::ToExpr, unit::{generate_expr_by_length_value, Platform, PropertyTuple}};
 
 
 
@@ -85,54 +85,22 @@ impl From<(String, &Property<'_>)> for BorderRadius {
 
 impl ToExpr for BorderRadius {
     fn to_expr(&self) -> PropertyTuple {
-      let mut props: Vec<(String, Expr)> = vec![];
+      let mut props: Vec<(CSSPropertyType, Expr)> = vec![];
 
       if let Some(top) = &self.top_left {
-        props.push(("borderTopLeftRadius".to_string(), generate_expr_by_dimension_percentage!(top, Platform::Harmony)))
+        props.push((CSSPropertyType::BorderTopLeftRadius, generate_expr_by_dimension_percentage!(top, Platform::Harmony)))
       }
       if let Some(bottom) = &self.top_right {
-        props.push(("borderTopRightRadius".to_string(), generate_expr_by_dimension_percentage!(bottom, Platform::Harmony)))
+        props.push((CSSPropertyType::BorderTopRightRadius, generate_expr_by_dimension_percentage!(bottom, Platform::Harmony)))
       }
       if let Some(left) = &self.bottom_left {
-        props.push(("borderBottomLeftRadius".to_string(), generate_expr_by_dimension_percentage!(left, Platform::Harmony)))
+        props.push((CSSPropertyType::BorderBottomLeftRadius, generate_expr_by_dimension_percentage!(left, Platform::Harmony)))
       }
       if let Some(right) = &self.bottom_right {
-        props.push(("borderBottomRightRadius".to_string(), generate_expr_by_dimension_percentage!(right, Platform::Harmony)))
+        props.push((CSSPropertyType::BorderBottomRightRadius, generate_expr_by_dimension_percentage!(right, Platform::Harmony)))
       }
       PropertyTuple::Array(props)
     }
 
-    fn to_rn_expr(&self) -> PropertyTuple {
-      let prop_name = &self.id;
-
-      let mut is_same = false;
-      // 判断self.top、self.right、self.bottom、self.left是否一致
-      if self.top_left == self.top_right && self.top_right == self.bottom_left && self.bottom_left == self.bottom_right {
-        is_same = true;
-      }
-
-      if prop_name == "borderRadius" && is_same {
-        // border-radius
-        PropertyTuple::One(
-          prop_name.clone(), 
-          generate_expr_by_dimension_percentage!(self.top_left.as_ref().unwrap(), Platform::ReactNative)
-        )
-      } else {
-        let mut props: Vec<(String, Expr)> = vec![];
-        // 单个边框颜色
-        if let Some(top) = &self.top_left {
-          props.push(("borderTopLeftRadius".to_string(), generate_expr_by_dimension_percentage!(top, Platform::ReactNative)))
-        }
-        if let Some(bottom) = &self.top_right {
-          props.push(("borderTopRightRadius".to_string(), generate_expr_by_dimension_percentage!(bottom, Platform::ReactNative)))
-        }
-        if let Some(left) = &self.bottom_left {
-          props.push(("borderBottomLeftRadius".to_string(), generate_expr_by_dimension_percentage!(left, Platform::ReactNative)))
-        }
-        if let Some(right) = &self.bottom_right {
-          props.push(("borderBottomRightRadius".to_string(), generate_expr_by_dimension_percentage!(right, Platform::ReactNative)))
-        }
-        PropertyTuple::Array(props)
-      }
-    }
+    
 }

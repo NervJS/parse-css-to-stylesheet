@@ -2,9 +2,9 @@
 
 use lightningcss::properties::{display::{Display::{Keyword, Pair}, DisplayInside, DisplayKeyword, DisplayOutside}, Property};
 
-use crate::{generate_expr_lit_str, generate_invalid_expr};
+use crate::{generate_expr_enum, generate_expr_lit_str, generate_invalid_expr, style_propetries::style_property_enum};
 
-use super::{traits::ToExpr, unit::PropertyTuple};
+use super::{style_property_type::CSSPropertyType, traits::ToExpr, unit::PropertyTuple};
 
 #[derive(Debug, Clone)]
 pub struct Display {
@@ -29,7 +29,7 @@ impl From<(String, &Property<'_>)> for Display {
           match &value {
             Keyword(value) => match &value {
               DisplayKeyword::None => EnumValue::None,
-              _ => EnumValue::Invalid,
+              _ => EnumValue::Block,
             },
             Pair(value) => {
               if let DisplayInside::Flex(_) = value.inside {
@@ -38,7 +38,7 @@ impl From<(String, &Property<'_>)> for Display {
                 if let DisplayOutside::Block = value.outside {
                   EnumValue::Block
                 } else {
-                  EnumValue::Invalid
+                  EnumValue::Block
                 }
               }
             }
@@ -55,26 +55,15 @@ impl From<(String, &Property<'_>)> for Display {
 impl ToExpr for Display {
   fn to_expr(&self) -> PropertyTuple {
     PropertyTuple::One(
-      self.id.to_string(),
+      CSSPropertyType::Display,
       match &self.value {
-        EnumValue::None => generate_expr_lit_str!("none"),
-        EnumValue::Flex => generate_expr_lit_str!("flex"),
-        EnumValue::Block => generate_expr_lit_str!("block"),
+        EnumValue::None => generate_expr_enum!(style_property_enum::Display::None),
+        EnumValue::Flex => generate_expr_enum!(style_property_enum::Display::Flex),
+        EnumValue::Block => generate_expr_enum!(style_property_enum::Display::Block),
         EnumValue::Invalid => generate_invalid_expr!(),
       }
     )
   }
 
-  fn to_rn_expr(&self) -> PropertyTuple {
-    PropertyTuple::One(
-      self.id.to_string(),
-      match &self.value {
-        EnumValue::None => generate_expr_lit_str!("none"),
-        EnumValue::Flex => generate_expr_lit_str!("flex"),
-        EnumValue::Block => generate_expr_lit_str!("block"),
-        EnumValue::Invalid => generate_invalid_expr!(),
-      }
-    )
-  }
 }
 

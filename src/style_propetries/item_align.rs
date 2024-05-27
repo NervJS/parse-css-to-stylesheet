@@ -2,17 +2,15 @@ use lightningcss::properties::{
   align::AlignItems as LNAlignItems, align::AlignSelf as LNAlignSelf, align::BaselinePosition,
   align::SelfPosition, Property,
 };
-use swc_core::ecma::ast::*;
-use swc_core::common::DUMMY_SP;
 
-use crate::generate_expr_lit_str;
+use crate::{generate_expr_enum, generate_invalid_expr, style_propetries::style_property_enum};
 
-use super::{traits::ToExpr, unit::PropertyTuple};
+use super::{style_property_type::CSSPropertyType, traits::ToExpr, unit::PropertyTuple};
 
 
 #[derive(Debug, Clone)]
 pub struct ItemAlign {
-  pub id: String,
+  pub id: CSSPropertyType,
   pub value: EnumValue
 }
 
@@ -31,7 +29,7 @@ pub enum EnumValue {
 impl From<(String, &Property<'_>)> for ItemAlign {
   fn from(prop: (String, &Property<'_>)) -> Self {
     ItemAlign {
-      id: prop.0,
+      id: if prop.0 == "alignItems" { CSSPropertyType::AlignItems } else { CSSPropertyType::AlignSelf },
       value: match prop.1 {
         Property::AlignItems(value, _) => match value {
           LNAlignItems::Stretch => EnumValue::Stretch,
@@ -71,45 +69,17 @@ impl From<(String, &Property<'_>)> for ItemAlign {
 impl ToExpr for ItemAlign {
   fn to_expr(&self) -> PropertyTuple {
     PropertyTuple::One(
-      self.id.to_string(),
-      Expr::Member(MemberExpr {
-        span: DUMMY_SP,
-        obj: Box::new(Expr::Ident(Ident::new("ItemAlign".into(), DUMMY_SP))),
-        prop: MemberProp::Ident(Ident {
-          span: DUMMY_SP,
-          sym: match self.value {
-            EnumValue::Auto => "Auto",
-            EnumValue::Start => "Start",
-            EnumValue::Center => "Center",
-            EnumValue::End => "End",
-            EnumValue::Stretch => "Stretch",
-            EnumValue::Baseline => "Baseline",
-            EnumValue::Ignore => "",
-          }
-          .into(),
-          optional: false,
-        }),
-      })
-      .into()
+      self.id,
+      match &self.value {
+        EnumValue::Auto => generate_expr_enum!(style_property_enum::ItemAlign::Auto),
+        EnumValue::Start => generate_expr_enum!(style_property_enum::ItemAlign::Start),
+        EnumValue::Center => generate_expr_enum!(style_property_enum::ItemAlign::Center),
+        EnumValue::End => generate_expr_enum!(style_property_enum::ItemAlign::End),
+        EnumValue::Stretch => generate_expr_enum!(style_property_enum::ItemAlign::Stretch),
+        EnumValue::Baseline => generate_expr_enum!(style_property_enum::ItemAlign::Baseline),
+        EnumValue::Ignore => generate_invalid_expr!(),
+      }
     )
-  }
-
-  fn to_rn_expr(&self) -> PropertyTuple {
-    PropertyTuple::One(
-      self.id.to_string(),
-      generate_expr_lit_str!(
-        match self.value {
-          EnumValue::Auto => "auto",
-          EnumValue::Start => "flex-start",
-          EnumValue::Center => "center",
-          EnumValue::End => "flex-end",
-          EnumValue::Stretch => "stretch",
-          EnumValue::Baseline => "baseline",
-          _ => "",
-        }
-      )
-    )
-    
   }
 
 }

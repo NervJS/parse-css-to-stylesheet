@@ -1,11 +1,8 @@
 use lightningcss::properties::{Property, text};
 
-use swc_core::ecma::ast::*;
-use swc_core::common::DUMMY_SP;
+use crate::{generate_expr_enum, style_propetries::{style_property_enum, traits::ToExpr}};
 
-use crate::{style_propetries::traits::ToExpr, generate_expr_lit_str};
-
-use super::unit::PropertyTuple;
+use super::{style_property_type::CSSPropertyType, unit::PropertyTuple};
 
 
 #[derive(Debug, Clone)]
@@ -25,34 +22,12 @@ pub enum EnumValue {
 impl ToExpr for TextAlign {
   fn to_expr(&self) -> PropertyTuple {
     PropertyTuple::One(
-      self.id.to_string(),
-      Expr::Member(MemberExpr {
-        span: DUMMY_SP,
-        obj: Box::new(Expr::Ident(Ident::new("TextAlign".into(), DUMMY_SP))),
-        prop: MemberProp::Ident(Ident {
-          span: DUMMY_SP,
-          sym: match self.value {
-            EnumValue::Start => "Start",
-            EnumValue::Center => "Center",
-            EnumValue::End => "End",
-            EnumValue::Justify => "Start",
-          }
-          .into(),
-          optional: false,
-        }),
-      })
-      .into()
-    )
-  }
-
-  fn to_rn_expr(&self) -> PropertyTuple {
-    PropertyTuple::One(
-      self.id.to_string(),
-      match &self.value {
-        EnumValue::Start => generate_expr_lit_str!("left"),
-        EnumValue::Center => generate_expr_lit_str!("center"),
-        EnumValue::End => generate_expr_lit_str!("right"),
-        EnumValue::Justify => generate_expr_lit_str!("justify"),
+      CSSPropertyType::TextAlign,
+      match self.value {
+        EnumValue::Start => generate_expr_enum!(style_property_enum::TextAlign::Start),
+        EnumValue::Center => generate_expr_enum!(style_property_enum::TextAlign::Center),
+        EnumValue::End => generate_expr_enum!(style_property_enum::TextAlign::End),
+        EnumValue::Justify => generate_expr_enum!(style_property_enum::TextAlign::JUSTIFY),
       }
     )
   }

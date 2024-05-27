@@ -1,11 +1,8 @@
 use lightningcss::properties::{Property, font};
 
-use swc_core::ecma::ast::*;
-use swc_core::common::DUMMY_SP;
+use crate::{generate_expr_enum, style_propetries::style_property_enum};
 
-use crate::generate_expr_lit_str;
-
-use super::{traits::ToExpr, unit::PropertyTuple};
+use super::{style_property_type::CSSPropertyType, traits::ToExpr, unit::PropertyTuple};
 
 #[derive(Debug, Clone)]
 pub struct FontStyle {
@@ -22,31 +19,11 @@ pub enum EnumValue {
 impl ToExpr for FontStyle {
   fn to_expr(&self) -> PropertyTuple {
     PropertyTuple::One(
-      self.id.to_string(),
-      Expr::Member(MemberExpr {
-        span: DUMMY_SP,
-        obj: Box::new(Expr::Ident(Ident::new("FontStyle".into(), DUMMY_SP))),
-        prop: MemberProp::Ident(Ident {
-          span: DUMMY_SP,
-          sym: match self.value {
-            EnumValue::Italic => "Italic",
-            EnumValue::Normal => "Normal",
-          }
-          .into(),
-          optional: false,
-        }),
-      })
-      .into()
-    )
-  }
-
-  fn to_rn_expr(&self) -> PropertyTuple {
-    PropertyTuple::One(
-      self.id.to_string(),
-      generate_expr_lit_str!(match self.value {
-        EnumValue::Italic => "italic",
-        EnumValue::Normal => "normal",
-      })
+      CSSPropertyType::FontStyle,
+      match self.value {
+        EnumValue::Italic => generate_expr_enum!(style_property_enum::FontStyle::Italic),
+        EnumValue::Normal => generate_expr_enum!(style_property_enum::FontStyle::Normal),
+      }
     )
   }
 }

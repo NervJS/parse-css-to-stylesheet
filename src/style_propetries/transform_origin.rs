@@ -3,9 +3,9 @@ use lightningcss::{properties::Property, values::{length::LengthPercentage, posi
 use swc_core::ecma::ast::*;
 use swc_core::common::DUMMY_SP;
 
-use crate::{generate_expr_by_length_percentage, generate_expr_lit_str, generate_tpl_expr, style_propetries::traits::ToExpr};
+use crate::{generate_expr_by_length_percentage, generate_expr_lit_str, style_propetries::traits::ToExpr};
 
-use super::unit::{Platform, PropertyTuple};
+use super::{style_property_type::CSSPropertyType, unit::{Platform, PropertyTuple}};
 
 
 #[derive(Debug, Clone)]
@@ -58,27 +58,11 @@ impl ToExpr for TransformOrigin {
     });
 
     PropertyTuple::One(
-      "transformOrigin".to_string(),
+      CSSPropertyType::TransformOrigin,
       expr
     )
   }
 
-  fn to_rn_expr(&self) -> PropertyTuple {
-    let expr = generate_tpl_expr!(vec![
-      match &self.x {
-        EnumValue::String(value) => generate_expr_lit_str!(value.to_string()),
-        EnumValue::Length(value) => generate_expr_by_length_percentage!(value, Platform::ReactNative)
-      },
-      match &self.y {
-        EnumValue::String(value) => generate_expr_lit_str!(value.to_string()),
-        EnumValue::Length(value) => generate_expr_by_length_percentage!(value, Platform::ReactNative)
-      }
-    ]);
-    PropertyTuple::One(
-      "transformOrigin".to_string(),
-      expr
-    )
-  }
 }
 
 impl From<(String, &Property<'_>)> for TransformOrigin {

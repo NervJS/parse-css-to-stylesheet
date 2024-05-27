@@ -1,9 +1,11 @@
 pub mod style_value_type;
+pub mod style_property_type;
+pub mod style_property_enum;
 pub mod traits;
 pub mod macros;
 pub mod unit;
 pub mod normal;
-pub mod expr;
+// pub mod expr;
 pub mod length_value;
 pub mod size;
 pub mod max_size;
@@ -47,3 +49,5 @@ pub mod background;
 pub mod graident_properties;
 pub mod animation;
 pub mod box_shadow;
+pub mod position;
+pub mod visibility;

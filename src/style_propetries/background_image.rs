@@ -1,5 +1,5 @@
 use lightningcss::{
-  properties::Property, stylesheet::PrinterOptions, targets::{Features, Targets}, traits::ToCss, values::{
+  properties::Property, values::{
     angle::Angle,
     gradient::{ Gradient, GradientItem, LineDirection},
     image::Image,
@@ -12,9 +12,9 @@ use smallvec::SmallVec;
 use swc_core::ecma::ast::*;
 use swc_core::common::DUMMY_SP;
 
-use crate::{generate_expr_lit_num, generate_expr_lit_str, generate_invalid_expr};
+use crate::{generate_expr_lit_color, generate_expr_lit_num, generate_invalid_expr};
 
-use super::{graident_properties::{linear_gradient::{LinearGradientDirection, LinearGradientItem}, radial_gradient::{RadialGradientItem, RadialGradientPoint}}, traits::ToExpr, unit::{convert_color_keywords_to_hex, PropertyTuple}};
+use super::{graident_properties::{linear_gradient::{LinearGradientDirection, LinearGradientItem}, radial_gradient::{RadialGradientItem, RadialGradientPoint}}, style_property_type::CSSPropertyType, traits::ToExpr, unit::PropertyTuple};
 
 pub fn parse_background_image_item(image: &Image) -> Option<BackgroundImageKind> {
   match image {
@@ -36,17 +36,7 @@ pub fn parse_background_image_item(image: &Image) -> Option<BackgroundImageKind>
                   .clone()
                   .unwrap_or(DimensionPercentage::Percentage(Percentage(item_pecentage)));
                 color_stops.push((
-                  generate_expr_lit_str!(convert_color_keywords_to_hex(color_stop
-                    .color
-                    .to_css_string(PrinterOptions {
-                      minify: false,
-                      targets: Targets {
-                        include: Features::HexAlphaColors,
-                        ..Targets::default()
-                      },
-                      ..PrinterOptions::default()
-                    })
-                    .unwrap())),
+                  generate_expr_lit_color!(color_stop.color),
                   match &color_stop_position {
                     DimensionPercentage::Dimension(_) => generate_expr_lit_num!(0.0),
                     DimensionPercentage::Percentage(percentage) => {
@@ -131,17 +121,7 @@ pub fn parse_background_image_item(image: &Image) -> Option<BackgroundImageKind>
                   .clone()
                   .unwrap_or(DimensionPercentage::Percentage(Percentage(item_pecentage)));
                 color_stops.push((
-                  generate_expr_lit_str!(convert_color_keywords_to_hex(color_stop
-                    .color
-                    .to_css_string(PrinterOptions {
-                      minify: false,
-                      targets: Targets {
-                        include: Features::HexAlphaColors,
-                        ..Targets::default()
-                      },
-                      ..PrinterOptions::default()
-                    })
-                    .unwrap())),
+                  generate_expr_lit_color!(color_stop.color),
                   match &color_stop_position {
                     DimensionPercentage::Dimension(_) => generate_expr_lit_num!(0.0),
                     DimensionPercentage::Percentage(percentage) => {
@@ -221,17 +201,11 @@ impl ToExpr for BackgroundImage {
       _ => generate_invalid_expr!()
     };
     PropertyTuple::One(
-      "backgroundImage".to_string(),
+      CSSPropertyType::BackgroundImage,
       expr
     )
   }
 
-  fn to_rn_expr(&self) -> PropertyTuple {
-    PropertyTuple::One(
-      "backgroundImage".to_string(),
-      generate_invalid_expr!()
-    )
-  }
 }
 
 impl From<(String, &Property<'_>)> for BackgroundImage {

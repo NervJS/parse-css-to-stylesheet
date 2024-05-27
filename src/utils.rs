@@ -137,23 +137,30 @@ pub fn get_callee_attributes (callee: &CallExpr) -> HashMap<String, Box<Expr>> {
   attributes
 }
 
-pub fn fix_rgba(input: String) -> String {
-  // 定义匹配 rgba 格式的正则表达式
-  let re = Regex::new(r"rgba\((?P<r>\d+), (?P<g>\d+), (?P<b>\d+), (?P<a>\.\d+)\)").unwrap();
-  // let re = Regex::new(r"'(?P<title>[^']+)'\s+\((?P<year>\d{4})\)").unwrap();
-  let bytes: &[u8] = input.as_bytes();
-  for result in re.captures_iter(bytes) {
-    if let Ok(caps) = result {
-      if let Ok(a) = std::str::from_utf8(&caps["a"]) {
-        let r = std::str::from_utf8(&caps["r"]).unwrap();
-        let g = std::str::from_utf8(&caps["g"]).unwrap();
-        let b = std::str::from_utf8(&caps["b"]).unwrap();
-        let corrected_alpha = format!("0{:.6}", a);
-        return format!("rgba({}, {}, {}, {})", r, g, b, corrected_alpha)
-      }
-    }
-  }
-  input
+pub fn hex_to_argb(hex: &str) -> Result<u32, String> {
+  let hex = hex.trim_start_matches('#');
+  let hex = match hex.len() {
+      3 => {
+          // 转换简写形式，例如 #000 -> #FF000000
+          let r = hex.chars().nth(0).ok_or("0")?;
+          let g = hex.chars().nth(1).ok_or("0")?;
+          let b = hex.chars().nth(2).ok_or("0")?;
+          format!("{}{}{}{}{}{}FF", r, r, g, g, b, b)
+      },
+      6 => format!("{}FF", hex.to_string()),
+      8 => hex.to_string(),
+      _ => return Err(hex.into()),
+  };
+
+  // 解析 RGB 值
+  let r = u8::from_str_radix(&hex[0..2], 16).map_err(|e| e.to_string())?;
+  let g = u8::from_str_radix(&hex[2..4], 16).map_err(|e| e.to_string())?;
+  let b = u8::from_str_radix(&hex[4..6], 16).map_err(|e| e.to_string())?;
+  let a = u8::from_str_radix(&hex[6..8], 16).map_err(|e| e.to_string())?;
+
+  // 组合成 ARGB 格式，透明度为 0xFF
+  let argb = ((a as u32) << 24) | ((r as u32) << 16) | ((g as u32) << 8) | (b as u32);
+  Ok(argb)
 }
 
 #[derive(Debug, Clone)]

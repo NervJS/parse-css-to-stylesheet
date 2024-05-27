@@ -2,9 +2,9 @@ use lightningcss::properties::{Property, overflow};
 
 use swc_core::ecma::ast::*;
 use swc_core::common::DUMMY_SP;
-use crate::{generate_invalid_expr, style_propetries::traits::ToExpr};
+use crate::{generate_expr_enum, style_propetries::traits::ToExpr};
 
-use super::unit::PropertyTuple;
+use super::{style_property_type::CSSPropertyType, unit::PropertyTuple, style_property_enum};
 
 #[derive(Debug, Clone)]
 pub enum TextOverflow {
@@ -16,38 +16,23 @@ pub enum TextOverflow {
 impl ToExpr for TextOverflow {
   fn to_expr(&self) -> PropertyTuple {
     PropertyTuple::One(
-      "textOverflow".to_string(),
+      CSSPropertyType::TextOverflow,
       Expr::Object(ObjectLit {
         span: DUMMY_SP,
         props: vec![
           PropOrSpread::Prop(Box::new(Prop::KeyValue(KeyValueProp {
             key: PropName::Ident(Ident::new("overflow".into(), DUMMY_SP)),
-            value: Expr::Member(MemberExpr {
-              span: DUMMY_SP,
-              obj: Box::new(Expr::Ident(Ident::new("TextOverflow".into(), DUMMY_SP))),
-              prop: MemberProp::Ident(Ident {
-                span: DUMMY_SP,
-                sym: match self {
-                  TextOverflow::Clip => "Clip",
-                  TextOverflow::Ellipsis => "Ellipsis",
-                  TextOverflow::None => "None",
-                }
-                .into(),
-                optional: false,
-              }),
-            }).into()
+            value: match self {
+              TextOverflow::Clip => generate_expr_enum!(style_property_enum::TextOverflow::Clip),
+              TextOverflow::Ellipsis => generate_expr_enum!(style_property_enum::TextOverflow::Ellipsis),
+              TextOverflow::None => generate_expr_enum!(style_property_enum::TextOverflow::None),
+            }.into()
           }))),
         ],
       })
     )
   }
   
-  fn to_rn_expr(&self) -> PropertyTuple {
-    PropertyTuple::One(
-      "overflow".to_string(),
-      generate_invalid_expr!()
-    )
-  }
 }
 
 impl From<(String, &Property<'_>)> for TextOverflow {

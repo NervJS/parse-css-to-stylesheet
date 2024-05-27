@@ -5,7 +5,7 @@ use lightningcss::{
 
 use crate::{generate_dimension_percentage, generate_expr_lit_calc, generate_expr_lit_str, generate_invalid_expr};
 
-use super::{traits::ToExpr, unit::{generate_expr_by_length_value, Platform, PropertyTuple}};
+use super::{style_property_type::CSSPropertyType, traits::ToExpr, unit::{generate_expr_by_length_value, Platform, PropertyTuple}};
 
 
 #[derive(Debug, Clone)]
@@ -25,7 +25,7 @@ pub enum EnumValue {
 impl ToExpr for FontSize {
   fn to_expr(&self) -> PropertyTuple {
     PropertyTuple::One(
-      self.id.to_string(),
+      CSSPropertyType::FontSize,
       match &self.value {
         EnumValue::String(value) => generate_expr_lit_calc!(value, Platform::Harmony),
         EnumValue::LengthValue(length_value) => generate_expr_by_length_value(length_value, Platform::Harmony),
@@ -35,17 +35,6 @@ impl ToExpr for FontSize {
     )
   }
 
-  fn to_rn_expr(&self) -> PropertyTuple {
-    PropertyTuple::One(
-      self.id.to_string(),
-      match &self.value {
-        EnumValue::String(value) => generate_expr_lit_calc!(value, Platform::ReactNative),
-        EnumValue::LengthValue(length_value) => generate_expr_by_length_value(length_value, Platform::ReactNative),
-        EnumValue::Percentage(value) => generate_expr_lit_str!((value.0 * 100.0).to_string() + "%"),
-        EnumValue::Invalid => generate_invalid_expr!(),
-      }
-    )
-  }
 }
 
 impl From<(String, &Property<'_>)> for FontSize {

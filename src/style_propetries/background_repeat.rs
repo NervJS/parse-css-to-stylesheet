@@ -4,11 +4,10 @@ use lightningcss::properties::{
 };
 
 use swc_core::ecma::ast::*;
-use swc_core::common::DUMMY_SP;
 
-use crate::{generate_invalid_expr, style_propetries::traits::ToExpr};
+use crate::{generate_expr_enum, style_propetries::{style_property_enum, traits::ToExpr}};
 
-use super::unit::PropertyTuple;
+use super::{style_property_type::CSSPropertyType, unit::PropertyTuple};
 
 pub fn parse_background_repeat_item(value: &LNBackgroundRepeat) -> ImageRepeatItem {
   if value.x == BackgroundRepeatKeyword::Repeat && value.y == BackgroundRepeatKeyword::Repeat {
@@ -38,20 +37,12 @@ impl From<&LNBackgroundRepeat> for ImageRepeatItem {
 
 impl ImageRepeatItem {
   fn to_expr(&self) -> Expr {
-    Expr::Member(MemberExpr {
-      span: DUMMY_SP,
-      obj: Box::new(Expr::Ident(Ident::new("ImageRepeat".into(), DUMMY_SP))),
-      prop: MemberProp::Ident(Ident {
-        span: DUMMY_SP,
-        sym: match self {
-          Self::XY => "XY".into(),
-          Self::X => "X".into(),
-          Self::Y => "Y".into(),
-          Self::NoRepeat => "NoRepeat".into(),
-        },
-        optional: false,
-      }),
-    })
+    match &self {
+      Self::XY => generate_expr_enum!(style_property_enum::ImageRepeat::XY),
+      Self::X => generate_expr_enum!(style_property_enum::ImageRepeat::X),
+      Self::Y => generate_expr_enum!(style_property_enum::ImageRepeat::Y),
+      Self::NoRepeat => generate_expr_enum!(style_property_enum::ImageRepeat::NoRepeat),
+    }
   }
 }
 
@@ -82,16 +73,8 @@ impl From<(String, &Property<'_>)> for BackgroundRepeat {
 impl ToExpr for BackgroundRepeat {
   fn to_expr(&self) -> PropertyTuple {
     PropertyTuple::One(
-      "backgroundRepeat".to_string(),
+      CSSPropertyType::BackgroundRepeat,
       self.value.get(0).unwrap().to_expr(),
-    )
-  }
-
-  fn to_rn_expr(&self) -> PropertyTuple {
-    // RN暂不支持该属性
-    PropertyTuple::One(
-      "backgroundRepeat".to_string(),
-      generate_invalid_expr!(),
     )
   }
 }

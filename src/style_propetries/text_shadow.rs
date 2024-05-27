@@ -1,10 +1,10 @@
-use lightningcss::{properties::Property, values::{length::Length, color::CssColor}, traits::ToCss};
+use lightningcss::{properties::Property, values::{length::Length, color::CssColor}};
 
 use swc_core::ecma::ast::*;
 use swc_core::common::DUMMY_SP;
-use crate::{style_propetries::traits::ToExpr, generate_prop_name, generate_expr_by_length, generate_string_by_css_color};
+use crate::{style_propetries::traits::ToExpr, generate_prop_name, generate_expr_by_length, generate_expr_lit_color};
 
-use super::unit::PropertyTuple;
+use super::{style_property_type::CSSPropertyType, unit::PropertyTuple};
 
 
 #[derive(Debug, Clone)]
@@ -47,7 +47,7 @@ impl TextShadow {
 impl ToExpr for TextShadow {
     fn to_expr(&self) -> PropertyTuple {
       PropertyTuple::One(
-        "textShadow".to_string(),
+        CSSPropertyType::TextShadow,
         Expr::Object(ObjectLit {
           span: DUMMY_SP,
           props: vec![
@@ -60,7 +60,7 @@ impl ToExpr for TextShadow {
             PropOrSpread::Prop(Box::new(Prop::KeyValue(
               KeyValueProp {
                 key: generate_prop_name!("color"),
-                value: Box::new(generate_string_by_css_color!(self.color.as_ref().unwrap())),
+                value: Box::new(generate_expr_lit_color!(self.color.as_ref().unwrap())),
               }
             ))),
             PropOrSpread::Prop(Box::new(Prop::KeyValue(
@@ -77,32 +77,6 @@ impl ToExpr for TextShadow {
             ))),
           ]
         })
-      )
-    }
-
-    fn to_rn_expr(&self) -> PropertyTuple {
-      PropertyTuple::Array(
-        vec![
-          ("textShadowOffset".to_string(), Expr::Object(ObjectLit {
-            span: DUMMY_SP,
-            props: vec![
-              PropOrSpread::Prop(Box::new(Prop::KeyValue(
-                KeyValueProp {
-                  key: generate_prop_name!("width"),
-                  value: Box::new(generate_expr_by_length!(self.offset_x.as_ref().unwrap(), Platform::ReactNative)),
-                }
-              ))),
-              PropOrSpread::Prop(Box::new(Prop::KeyValue(
-                KeyValueProp {
-                  key: generate_prop_name!("height"),
-                  value: Box::new(generate_expr_by_length!(self.offset_y.as_ref().unwrap(), Platform::ReactNative)),
-                }
-              ))),
-            ],
-          })),
-          ("textShadowColor".to_string(), generate_string_by_css_color!(self.color.as_ref().unwrap())),
-          ("textShadowRadius".to_string(), generate_expr_by_length!(self.blur_radius.as_ref().unwrap(), Platform::ReactNative)),
-        ]
       )
     }
 }

@@ -4,9 +4,9 @@ use std::{cell::RefCell, collections::HashMap, rc::Rc};
 
 use lightningcss::{printer::PrinterOptions, properties::{animation, Property}, traits::ToCss, values::{easing::EasingFunction, time}};
 
-use crate::{generate_expr_lit_num, generate_expr_lit_str, generate_invalid_expr, style_parser::KeyFrameItem, visitor::parse_style_values};
+use crate::{generate_expr_lit_num, generate_expr_lit_str, style_parser::KeyFrameItem, visitor::parse_style_values};
 use swc_core::{common::DUMMY_SP, ecma::ast::*};
-use super::{traits::ToExpr, unit::{Platform, PropertyTuple}};
+use super::{style_property_type::CSSPropertyType, traits::ToExpr, unit::{Platform, PropertyTuple}};
 
 #[derive(Debug, Clone)]
 pub struct Animation {
@@ -102,16 +102,16 @@ impl ToExpr for Animation {
 
     let mut exprs = vec![];
     if let Some(delay) = self.animation_delay {
-      exprs.push(("animationDelay".to_string(), generate_expr_lit_num!((delay * 1000.0) as f64)))
+      exprs.push((CSSPropertyType::AnimationDelay, generate_expr_lit_num!((delay * 1000.0) as f64)))
     }
     if let Some(iteration) = self.animation_iteration {
-      exprs.push(("animationIterationCount".to_string(), generate_expr_lit_num!(iteration as f64)))
+      exprs.push((CSSPropertyType::AnimationIterationCount, generate_expr_lit_num!(iteration as f64)))
     }
     if let Some(duration) = self.animation_duration {
-      exprs.push(("animationDuration".to_string(), generate_expr_lit_num!((duration * 1000.0) as f64)))
+      exprs.push((CSSPropertyType::AnimationDuration, generate_expr_lit_num!((duration * 1000.0) as f64)))
     }
     if let Some(timeing_function) = &self.animation_timeing_function {
-      exprs.push(("animationTimeingFunction".to_string(), generate_expr_lit_str!(timeing_function.to_css_string(PrinterOptions::default()).unwrap())))
+      exprs.push((CSSPropertyType::AnimationTimingFunction, generate_expr_lit_str!(timeing_function.to_css_string(PrinterOptions::default()).unwrap())))
     }
     if let Some(name) = &self.animation_name {
       if let Some(keframes) = &self.keyframes {
@@ -119,7 +119,7 @@ impl ToExpr for Animation {
       let keyframe_map = keframes.borrow();
       if let Some(keyframe_items) = keyframe_map.get(name) {
         // animation-name: keyframes
-        exprs.push(("animationName".to_string(), Expr::Array(ArrayLit {
+        exprs.push((CSSPropertyType::AnimationName, Expr::Array(ArrayLit {
           span: DUMMY_SP,
           elems: keyframe_items.into_iter().map(|item| {
             return Some(ExprOrSpread {
@@ -144,72 +144,6 @@ impl ToExpr for Animation {
           }).collect::<Vec<Option<ExprOrSpread>>>()
         })))
         
-        // let mut mut_percentage = 0.0;
-        // return PropertyTuple::One(
-        //   "animation".to_string(),
-        //   Expr::Object(ObjectLit {
-        //     span: DUMMY_SP,
-        //     props: vec![
-        //       PropOrSpread::Prop(Box::new(Prop::KeyValue(KeyValueProp {
-        //         key: PropName::Str("params".into()),
-        //         value: Box::new(Expr::Object(ObjectLit {
-        //           span: DUMMY_SP,
-        //           props: vec![
-        //             PropOrSpread::Prop(Box::new(Prop::KeyValue(KeyValueProp {
-        //               key: PropName::Str("delay".into()),
-        //               value: Box::new(generate_expr_lit_num!((self.animation_delay * 1000.0) as f64))
-        //             }))),
-        //             PropOrSpread::Prop(Box::new(Prop::KeyValue(KeyValueProp {
-        //               key: PropName::Str("iterations".into()),
-        //               value: Box::new(generate_expr_lit_num!(self.animation_iteration as f64))
-        //             }))),
-        //             PropOrSpread::Prop(Box::new(Prop::KeyValue(KeyValueProp {
-        //               key: PropName::Str("duration".into()),
-        //               value: Box::new(generate_expr_lit_num!((self.animation_duration * 1000.0) as f64))
-        //             }))),
-        //           ]
-        //         }))
-        //       }))),
-        //       PropOrSpread::Prop(Box::new(Prop::KeyValue(KeyValueProp {
-        //         key: PropName::Str("keyframes".into()),
-        //         value: Box::new(Expr::Array(ArrayLit {
-        //           span: DUMMY_SP,
-        //           elems: keyframe_items.into_iter().map(|item| {
-        //             let item_duration = (item.percentage - mut_percentage) * self.animation_duration * 1000.0;
-        //             mut_percentage = item.percentage;
-        //             return Some(ExprOrSpread {
-        //               spread: None,
-        //               expr: Box::new(Expr::Object(ObjectLit {
-        //                 span: DUMMY_SP,
-        //                 props: vec![
-        //                   PropOrSpread::Prop(Box::new(Prop::KeyValue(KeyValueProp {
-        //                     key: PropName::Str("percentage".into()),
-        //                     value: Box::new(generate_expr_lit_num!(item.percentage as f64))
-        //                   }))),
-        //                   PropOrSpread::Prop(Box::new(Prop::KeyValue(KeyValueProp {
-        //                     key: PropName::Str("duration".into()),
-        //                     value: Box::new(generate_expr_lit_num!(item_duration as f64))
-        //                   }))),
-        //                   PropOrSpread::Prop(Box::new(Prop::KeyValue(KeyValueProp {
-        //                     key: PropName::Str("curve".into()),
-        //                     value: Box::new(generate_expr_lit_str!(self.animation_timeing_function.to_css_string(PrinterOptions::default()).unwrap()))
-        //                   }))),                        
-        //                   PropOrSpread::Prop(Box::new(Prop::KeyValue(KeyValueProp {
-        //                     key: PropName::Str("event".into()),
-        //                     value: Box::new(Expr::Object(ObjectLit {
-        //                       span: DUMMY_SP,
-        //                       props: parse_style_values(item.declarations.clone(), Platform::Harmony)
-        //                     }))
-        //                   })))
-        //                 ]
-        //               }))
-        //             })
-        //           }).collect::<Vec<Option<ExprOrSpread>>>()
-        //         }))
-        //       })))
-        //     ]
-        //   })
-        // )
       
         }
       }
@@ -218,11 +152,5 @@ impl ToExpr for Animation {
     PropertyTuple::Array(exprs)
   }
 
-  fn to_rn_expr(&self) -> PropertyTuple {
-    PropertyTuple::One(
-      self.id.to_string(),
-      generate_invalid_expr!()
-    )
-  }
 }
 

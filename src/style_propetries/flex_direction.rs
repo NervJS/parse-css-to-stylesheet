@@ -1,11 +1,8 @@
 use lightningcss::properties::{flex::FlexDirection as LNFlexDirection, Property};
 
-use swc_core::ecma::ast::*;
-use swc_core::common::DUMMY_SP;
+use crate::{generate_expr_enum, style_propetries::style_property_enum};
 
-use crate::generate_expr_lit_str;
-
-use super::{traits::ToExpr, unit::PropertyTuple};
+use super::{style_property_type::CSSPropertyType, traits::ToExpr, unit::PropertyTuple};
 
 #[derive(Debug, Clone)]
 pub struct FlexDirection {
@@ -42,35 +39,13 @@ impl From<(String, &Property<'_>)> for FlexDirection {
 impl ToExpr for FlexDirection {
   fn to_expr(&self) -> PropertyTuple {
     PropertyTuple::One(
-      self.id.to_string(),
-      Expr::Member(MemberExpr {
-        span: DUMMY_SP,
-        obj: Box::new(Expr::Ident(Ident::new("FlexDirection".into(), DUMMY_SP))),
-        prop: MemberProp::Ident(Ident {
-          span: DUMMY_SP,
-          sym: match self.value {
-            EnumValue::Row => "Row",
-            EnumValue::RowReverse => "RowReverse",
-            EnumValue::Column => "Column",
-            EnumValue::ColumnReverse => "ColumnReverse",
-          }
-          .into(),
-          optional: false,
-        }),
-      })
-      .into()
-    )
-  }
-
-  fn to_rn_expr(&self) -> PropertyTuple {
-    PropertyTuple::One(
-      self.id.to_string(),
-      generate_expr_lit_str!(match self.value {
-        EnumValue::Row => "row",
-        EnumValue::RowReverse => "row-reverse",
-        EnumValue::Column => "column",
-        EnumValue::ColumnReverse => "column-reverse",
-      })
+      CSSPropertyType::FlexDirection,
+      match self.value {
+        EnumValue::Row => generate_expr_enum!(style_property_enum::FlexDirection::Row),
+        EnumValue::RowReverse => generate_expr_enum!(style_property_enum::FlexDirection::RowReverse),
+        EnumValue::Column => generate_expr_enum!(style_property_enum::FlexDirection::Column),
+        EnumValue::ColumnReverse => generate_expr_enum!(style_property_enum::FlexDirection::ColumnReverse),
+      }
     )
   }
 }

@@ -2,7 +2,7 @@ use lightningcss::properties::{Property, border::BorderSideWidth};
 use swc_core::ecma::ast::Expr;
 use crate::{generate_expr_by_length, generate_invalid_expr };
 
-use super::{traits::ToExpr, unit::PropertyTuple};
+use super::{style_property_type::CSSPropertyType, traits::ToExpr, unit::PropertyTuple};
 
 
 #[macro_export]
@@ -91,53 +91,19 @@ impl From<(String, &Property<'_>)> for BorderWidth {
 
 impl ToExpr for BorderWidth {
     fn to_expr(&self) -> PropertyTuple {
-      let mut props: Vec<(String, Expr)> = vec![];
+      let mut props: Vec<(CSSPropertyType, Expr)> = vec![];
       if let Some(top) = &self.top {
-        props.push(("borderTopWidth".to_string(), generate_expr_by_border_side_width!(top, Platform::Harmony)))
+        props.push((CSSPropertyType::BorderTopWidth, generate_expr_by_border_side_width!(top, Platform::Harmony)))
       }
       if let Some(bottom) = &self.bottom {
-        props.push(("borderBottomWidth".to_string(), generate_expr_by_border_side_width!(bottom, Platform::Harmony)))
+        props.push((CSSPropertyType::BorderBottomWidth, generate_expr_by_border_side_width!(bottom, Platform::Harmony)))
       }
       if let Some(left) = &self.left {
-        props.push(("borderLeftWidth".to_string(), generate_expr_by_border_side_width!(left, Platform::Harmony)))
+        props.push((CSSPropertyType::BorderLeftWidth, generate_expr_by_border_side_width!(left, Platform::Harmony)))
       }
       if let Some(right) = &self.right {
-        props.push(("borderRightWidth".to_string(), generate_expr_by_border_side_width!(right, Platform::Harmony)))
+        props.push((CSSPropertyType::BorderRightWidth, generate_expr_by_border_side_width!(right, Platform::Harmony)))
       }
       PropertyTuple::Array(props)
-    }
-
-    fn to_rn_expr(&self) -> PropertyTuple {
-      let prop_name = &self.id;
-
-      let mut is_same = false;
-      // 判断self.top、self.right、self.bottom、self.left是否一致
-      if self.top == self.right && self.right == self.bottom && self.bottom == self.left {
-        is_same = true;
-      }
-
-      if prop_name == "borderWidth" && is_same {
-        // border-width
-        PropertyTuple::One(
-          prop_name.clone(), 
-          generate_expr_by_border_side_width!(self.top.as_ref().unwrap(), Platform::ReactNative)
-        )
-      } else {
-        let mut props: Vec<(String, Expr)> = vec![];
-        // 单个边框颜色
-        if let Some(top) = &self.top {
-          props.push(("borderTopWidth".to_string(), generate_expr_by_border_side_width!(top, Platform::ReactNative)))
-        }
-        if let Some(bottom) = &self.bottom {
-          props.push(("borderBottomWidth".to_string(), generate_expr_by_border_side_width!(bottom, Platform::ReactNative)))
-        }
-        if let Some(left) = &self.left {
-          props.push(("borderLeftWidth".to_string(), generate_expr_by_border_side_width!(left, Platform::ReactNative)))
-        }
-        if let Some(right) = &self.right {
-          props.push(("borderRightWidth".to_string(), generate_expr_by_border_side_width!(right, Platform::ReactNative)))
-        }
-        PropertyTuple::Array(props)
-      }
     }
 }

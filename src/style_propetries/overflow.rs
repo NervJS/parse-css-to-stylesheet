@@ -2,9 +2,9 @@ use lightningcss::properties::{
   Property, overflow::OverflowKeyword
 };
 
-use crate::{generate_expr_lit_str, generate_invalid_expr};
+use crate::{generate_expr_enum, generate_invalid_expr, style_propetries::style_property_enum};
 
-use super::{traits::ToExpr, unit::PropertyTuple};
+use super::{style_property_type::CSSPropertyType, traits::ToExpr, unit::PropertyTuple};
 
 
 #[derive(Debug, Clone)]
@@ -44,26 +44,13 @@ impl From<(String, &Property<'_>)> for Overflow {
 impl ToExpr for Overflow {
   fn to_expr(&self) -> PropertyTuple {
     PropertyTuple::One(
-      self.id.to_string(),
+      CSSPropertyType::Overflow,
       match &self.value {
-        EnumValue::Hidden => generate_expr_lit_str!("hidden"),
-        EnumValue::Visible => generate_expr_lit_str!("visible"),
-        EnumValue::Scroll => generate_expr_lit_str!("scroll"),
+        EnumValue::Hidden => generate_expr_enum!(style_property_enum::Overflow::Hidden),
+        EnumValue::Visible => generate_expr_enum!(style_property_enum::Overflow::Visible),
+        EnumValue::Scroll => generate_expr_enum!(style_property_enum::Overflow::Scroll),
         EnumValue::Invalid => generate_invalid_expr!(),
       }
     )
   }
-
-  fn to_rn_expr(&self) -> PropertyTuple {
-    PropertyTuple::One(
-      self.id.to_string(),
-      match &self.value {
-        EnumValue::Hidden => generate_expr_lit_str!("hidden"),
-        EnumValue::Visible => generate_expr_lit_str!("visible"),
-        EnumValue::Scroll => generate_expr_lit_str!("scroll"),
-        EnumValue::Invalid => generate_invalid_expr!(),
-      }
-    )
-  }
-
 }

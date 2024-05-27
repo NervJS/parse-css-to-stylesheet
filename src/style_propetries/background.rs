@@ -10,7 +10,7 @@ use smallvec::SmallVec;
 use crate::{generate_expr_lit_str, generate_invalid_expr};
 
 use super::{
-  background_image::{parse_background_image_item, BackgroundImage}, background_position::{parse_background_position_item, BackgroundPosition}, background_repeat::{parse_background_repeat_item, BackgroundRepeat}, background_size::{parse_background_size_item, BackgroundSize}, traits::ToExpr, unit::{convert_color_keywords_to_hex, PropertyTuple}
+  background_image::{parse_background_image_item, BackgroundImage}, background_position::{parse_background_position_item, BackgroundPosition}, background_repeat::{parse_background_repeat_item, BackgroundRepeat}, background_size::{parse_background_size_item, BackgroundSize}, style_property_type::CSSPropertyType, traits::ToExpr, unit::{convert_color_keywords_to_hex, PropertyTuple}
 };
 
 fn parse_background(background: &SmallVec<[LNBackground<'_>; 1]>) -> Background {
@@ -117,24 +117,24 @@ impl ToExpr for Background {
     if let Some(image) = &self.image {
       match image.to_expr() {
         PropertyTuple::One(_, val) => {
-          props.push(("backgroundImage".to_string(), val));
+          props.push((CSSPropertyType::BackgroundImage, val));
 
           // 只有存在image的时候才加
           if let Some(size) = &self.size {
             match size.to_expr() {
-              PropertyTuple::One(_, val) => props.push(("backgroundSize".to_string(), val)),
+              PropertyTuple::One(_, val) => props.push((CSSPropertyType::BackgroundSize, val)),
               _ => {}
             }
           }
           if let Some(position) = &self.position {
             match position.to_expr() {
-              PropertyTuple::One(_, val) => props.push(("backgroundPosition".to_string(), val)),
+              PropertyTuple::One(_, val) => props.push((CSSPropertyType::Position, val)),
               _ => {}
             }
           }
           if let Some(repeat) = &self.repeat {
             match repeat.to_expr() {
-              PropertyTuple::One(_, val) => props.push(("backgroundRepeat".to_string(), val)),
+              PropertyTuple::One(_, val) => props.push((CSSPropertyType::BackgroundRepeat, val)),
               _ => {}
             }
           }
@@ -144,15 +144,9 @@ impl ToExpr for Background {
     }
     
     if let Some(color) = &self.color {
-      props.push(("backgroundColor".to_string(), generate_expr_lit_str!(color.to_string())));
+      props.push((CSSPropertyType::BackgroundColor, generate_expr_lit_str!(color.to_string())));
     }
     PropertyTuple::Array(props)
   }
 
-  fn to_rn_expr(&self) -> PropertyTuple {
-    PropertyTuple::One(
-      "background".to_string(),
-      generate_invalid_expr!()
-    )
-  }
 }

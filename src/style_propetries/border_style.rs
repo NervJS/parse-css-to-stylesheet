@@ -1,37 +1,20 @@
 use lightningcss::properties::{Property, border::LineStyle};
 
-
 use swc_core::ecma::ast::*;
-use swc_core::common::DUMMY_SP;
 
 use crate::generate_invalid_expr;
 
-use super::{traits::ToExpr, unit::{PropertyTuple, Platform}};
+use super::{style_property_type::CSSPropertyType, traits::ToExpr, unit::PropertyTuple};
 
 #[macro_export]
 macro_rules! generate_expr_by_line_style {
-  ($val:expr, $platform:expr) => {{
-    use $crate::{generate_invalid_expr, generate_expr_lit_str};
+  ($val:expr) => {{
+    use $crate::{generate_invalid_expr, generate_expr_enum, style_propetries::style_property_enum};
     use lightningcss::properties::border::LineStyle;
     match $val {
-      LineStyle::Dotted => {
-        match $platform {
-          Platform::ReactNative => generate_expr_lit_str!("dotted"),
-          Platform::Harmony => get_expr_by_val("Dotted")
-        }
-      },
-      LineStyle::Dashed => {
-        match $platform {
-          Platform::ReactNative => generate_expr_lit_str!("dashed"),
-          Platform::Harmony => get_expr_by_val("Dashed")
-        }
-      }
-      LineStyle::Solid => {
-        match $platform {
-          Platform::ReactNative => generate_expr_lit_str!("solid"),
-          Platform::Harmony => get_expr_by_val("Solid")
-        }
-      }
+      LineStyle::Dotted => generate_expr_enum!(style_property_enum::BorderStyle::Dotted),
+      LineStyle::Dashed => generate_expr_enum!(style_property_enum::BorderStyle::Dashed),
+      LineStyle::Solid => generate_expr_enum!(style_property_enum::BorderStyle::Solid),
       _ => generate_invalid_expr!()
   }
   }};
@@ -109,62 +92,20 @@ impl From<(String, &Property<'_>)> for BorderStyle {
 
 impl ToExpr for BorderStyle {
     fn to_expr(&self) -> PropertyTuple {
-      let mut props: Vec<(String, Expr)> = vec![];
+      let mut props: Vec<(CSSPropertyType, Expr)> = vec![];
       if let Some(top) = &self.top {
-        props.push(("borderTopStyle".to_string(), generate_expr_by_line_style!(top, Platform::Harmony)))
+        props.push((CSSPropertyType::BorderTopStyle, generate_expr_by_line_style!(top)))
       }
       if let Some(bottom) = &self.bottom {
-        props.push(("borderBottomStyle".to_string(), generate_expr_by_line_style!(bottom, Platform::Harmony)))
+        props.push((CSSPropertyType::BorderBottomStyle, generate_expr_by_line_style!(bottom)))
       }
       if let Some(left) = &self.left {
-        props.push(("borderLeftStyle".to_string(), generate_expr_by_line_style!(left, Platform::Harmony)))
+        props.push((CSSPropertyType::BorderLeftStyle, generate_expr_by_line_style!(left)))
       }
       if let Some(right) = &self.right {
-        props.push(("borderRightStyle".to_string(), generate_expr_by_line_style!(right, Platform::Harmony)))
+        props.push((CSSPropertyType::BorderBottomStyle, generate_expr_by_line_style!(right)))
       }
       PropertyTuple::Array(props)
     }
-
-    fn to_rn_expr(&self) -> PropertyTuple {
-      let prop_name = &self.id;
-
-
-      if prop_name == "borderStyle" {
-        // border-width
-        PropertyTuple::One(
-          prop_name.clone(), 
-          generate_expr_by_line_style!(self.top.as_ref().unwrap(), Platform::ReactNative)
-        )
-      } else {
-        let mut props: Vec<(String, Expr)> = vec![];
-        // 单个边框颜色
-        if let Some(top) = &self.top {
-          props.push(("borderStyle".to_string(), generate_expr_by_line_style!(top, Platform::ReactNative)))
-        }
-        if let Some(bottom) = &self.bottom {
-          props.push(("borderStyle".to_string(), generate_expr_by_line_style!(bottom, Platform::ReactNative)))
-        }
-        if let Some(left) = &self.left {
-          props.push(("borderStyle".to_string(), generate_expr_by_line_style!(left, Platform::ReactNative)))
-        }
-        if let Some(right) = &self.right {
-          props.push(("borderStyle".to_string(), generate_expr_by_line_style!(right, Platform::ReactNative)))
-        }
-        PropertyTuple::Array(props)
-      }
-    }
-}
-
-
-pub fn get_expr_by_val(val: &str) -> Expr {
-  Expr::Member(MemberExpr {
-    span: DUMMY_SP,
-    obj: Box::new(Expr::Ident(Ident::new("BorderStyle".into(), DUMMY_SP))),
-    prop: MemberProp::Ident(Ident {
-      span: DUMMY_SP,
-      sym: val.into(),
-      optional: false,
-    }),
-  })
-  .into()
+    
 }

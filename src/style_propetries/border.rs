@@ -1,50 +1,10 @@
-use lightningcss::{
-  properties::Property,
-  traits::ToCss
-};
+use lightningcss::properties::Property;
 
-use swc_core::common::DUMMY_SP;
 use swc_core::ecma::ast::*;
-use swc_core::atoms::Atom;
-use crate::{generate_expr_lit_str, generate_expr_by_length, generate_invalid_expr, generate_expr_by_border_side_width, generate_expr_by_line_style, style_propetries::unit::Platform, generate_string_by_css_color };
+use crate::{generate_expr_by_length, generate_invalid_expr, generate_expr_by_border_side_width, generate_expr_by_line_style, generate_expr_lit_color };
 
-use super::{traits::ToExpr, unit::PropertyTuple, border_color::BorderColor, border_style::{BorderStyle, get_expr_by_val}, border_width::BorderWidth};
+use super::{border_color::BorderColor, border_style::BorderStyle, border_width::BorderWidth, style_property_type::CSSPropertyType, traits::ToExpr, unit::PropertyTuple};
 
-
-macro_rules! generate_tpl_expr {
-    ($props: expr) => {
-      Expr::Tpl(Tpl {
-        span: DUMMY_SP,
-        exprs: $props,
-        quasis: vec![
-          TplElement {
-            span: DUMMY_SP,
-            tail: false,
-            cooked: None,
-            raw: Atom::from("").into(),
-          },
-          TplElement {
-            span: DUMMY_SP,
-            tail: false,
-            cooked: Some(" ".into()),
-            raw: Atom::from(" ").into(),
-          },
-          TplElement {
-            span: DUMMY_SP,
-            tail: false,
-            cooked: Some(" ".into()),
-            raw: Atom::from(" ").into(),
-          },
-          TplElement {
-            span: DUMMY_SP,
-            tail: true,
-            cooked: None,
-            raw: Atom::from("").into(),
-          }
-        ]
-      })
-    };
-}
 
 #[derive(Debug, Clone)]
 pub struct Border {
@@ -144,102 +104,49 @@ impl From<(String, &Property<'_>)> for Border {
 impl ToExpr for Border {
     fn to_expr(&self) -> PropertyTuple {
       let prop_name = &self.id;
-      let mut props: Vec<(String, Expr)> = vec![];
+      let mut props: Vec<(CSSPropertyType, Expr)> = vec![];
       if self.width.is_none() || self.style.is_none() || self.color.is_none() {
-        return PropertyTuple::One(prop_name.to_owned(), generate_invalid_expr!());
+        return PropertyTuple::One(CSSPropertyType::Invaild, generate_invalid_expr!());
       }
       match prop_name.as_str() {
         "border" => {
-          vec!["borderTopWidth", "borderRightWidth", "borderBottomWidth", "borderLeftWidth"].iter().for_each(|item| {
-            props.push((item.to_string(), generate_expr_by_border_side_width!(self.width.clone().unwrap().top.unwrap(), Platform::Harmony)));
+          vec![CSSPropertyType::BorderTopWidth, CSSPropertyType::BorderRightWidth, CSSPropertyType::BorderBottomWidth, CSSPropertyType::BorderLeftWidth].iter().for_each(|item| {
+            props.push((*item, generate_expr_by_border_side_width!(self.width.clone().unwrap().top.unwrap(), Platform::Harmony)));
           });
-          vec!["borderTopStyle", "borderRightStyle", "borderBottomStyle", "borderLeftStyle"].iter().for_each(|item| {
-            props.push((item.to_string(), generate_expr_by_line_style!(self.style.clone().unwrap().top.unwrap(), Platform::Harmony)));
+          vec![CSSPropertyType::BorderTopStyle, CSSPropertyType::BorderRightStyle, CSSPropertyType::BorderBottomStyle, CSSPropertyType::BorderLeftStyle].iter().for_each(|item| {
+            props.push((*item, generate_expr_by_line_style!(self.style.clone().unwrap().top.unwrap())));
           });
-          vec!["borderTopColor", "borderRightColor", "borderBottomColor", "borderLeftColor"].iter().for_each(|item| {
-            props.push((item.to_string(), generate_string_by_css_color!(self.color.clone().unwrap().top.unwrap())));
+          vec![CSSPropertyType::BorderTopColor, CSSPropertyType::BorderRightColor, CSSPropertyType::BorderBottomColor, CSSPropertyType::BorderLeftColor].iter().for_each(|item| {
+            props.push((*item, generate_expr_lit_color!(self.color.clone().unwrap().top.unwrap())));
           });
           PropertyTuple::Array(props)
         },
         "borderTop"  => {
-          props.push(("borderTopWidth".to_string(), generate_expr_by_border_side_width!(self.width.clone().unwrap().top.unwrap(), Platform::Harmony)));
-          props.push(("borderTopStyle".to_string(), generate_expr_by_line_style!(self.style.clone().unwrap().top.unwrap(), Platform::Harmony)));
-          props.push(("borderTopColor".to_string(), generate_string_by_css_color!(self.color.clone().unwrap().top.unwrap())));
+          props.push((CSSPropertyType::BorderTopWidth, generate_expr_by_border_side_width!(self.width.clone().unwrap().top.unwrap(), Platform::Harmony)));
+          props.push((CSSPropertyType::BorderTopStyle, generate_expr_by_line_style!(self.style.clone().unwrap().top.unwrap())));
+          props.push((CSSPropertyType::BorderTopColor, generate_expr_lit_color!(self.color.clone().unwrap().top.unwrap())));
           PropertyTuple::Array(props)
         },
         "borderRight" => {
-          props.push(("borderRightWidth".to_string(), generate_expr_by_border_side_width!(self.width.clone().unwrap().right.unwrap(), Platform::Harmony)));
-          props.push(("borderRightStyle".to_string(), generate_expr_by_line_style!(self.style.clone().unwrap().right.unwrap(), Platform::Harmony)));
-          props.push(("borderRightColor".to_string(), generate_string_by_css_color!(self.color.clone().unwrap().right.unwrap())));
+          props.push((CSSPropertyType::BorderRightWidth, generate_expr_by_border_side_width!(self.width.clone().unwrap().right.unwrap(), Platform::Harmony)));
+          props.push((CSSPropertyType::BorderRightStyle, generate_expr_by_line_style!(self.style.clone().unwrap().right.unwrap())));
+          props.push((CSSPropertyType::BorderRightColor, generate_expr_lit_color!(self.color.clone().unwrap().right.unwrap())));
           PropertyTuple::Array(props)
         },
         "borderBottom" => {
-          props.push(("borderBottomWidth".to_string(), generate_expr_by_border_side_width!(self.width.clone().unwrap().bottom.unwrap(), Platform::Harmony)));
-          props.push(("borderBottomStyle".to_string(), generate_expr_by_line_style!(self.style.clone().unwrap().bottom.unwrap(), Platform::Harmony)));
-          props.push(("borderBottomColor".to_string(), generate_string_by_css_color!(self.color.clone().unwrap().bottom.unwrap())));
+          props.push((CSSPropertyType::BorderBottomWidth, generate_expr_by_border_side_width!(self.width.clone().unwrap().bottom.unwrap(), Platform::Harmony)));
+          props.push((CSSPropertyType::BorderBottomStyle, generate_expr_by_line_style!(self.style.clone().unwrap().bottom.unwrap())));
+          props.push((CSSPropertyType::BorderBottomColor, generate_expr_lit_color!(self.color.clone().unwrap().bottom.unwrap())));
           PropertyTuple::Array(props)
         },
         "borderLeft" => {
-          props.push(("borderLeftWidth".to_string(), generate_expr_by_border_side_width!(self.width.clone().unwrap().left.unwrap(), Platform::Harmony)));
-          props.push(("borderLeftStyle".to_string(), generate_expr_by_line_style!(self.style.clone().unwrap().left.unwrap(), Platform::Harmony)));
-          props.push(("borderLeftColor".to_string(), generate_string_by_css_color!(self.color.clone().unwrap().left.unwrap())));
+          props.push((CSSPropertyType::BorderLeftWidth, generate_expr_by_border_side_width!(self.width.clone().unwrap().left.unwrap(), Platform::Harmony)));
+          props.push((CSSPropertyType::BorderLeftStyle, generate_expr_by_line_style!(self.style.clone().unwrap().left.unwrap())));
+          props.push((CSSPropertyType::BorderLeftColor, generate_expr_lit_color!(self.color.clone().unwrap().left.unwrap())));
           PropertyTuple::Array(props)
         },
-        _ => PropertyTuple::One(prop_name.to_owned(), generate_invalid_expr!())
+        _ => PropertyTuple::One(CSSPropertyType::Invaild, generate_invalid_expr!())
       }
     }
 
-    fn to_rn_expr(&self) -> PropertyTuple {
-      let prop_name = &self.id;
-      let mut props: Vec<Box<Expr>> = vec![];
-      if self.width.is_none() || self.style.is_none() || self.color.is_none() {
-        return PropertyTuple::One(prop_name.to_owned(), generate_invalid_expr!());
-      }
-      match prop_name.as_str() {
-        "border" | "borderTop"  => {
-          props.push(Box::new(generate_expr_by_border_side_width!(self.width.clone().unwrap().top.unwrap(), Platform::ReactNative)));
-          props.push(Box::new(generate_expr_by_line_style!(self.style.clone().unwrap().top.unwrap(), Platform::ReactNative)));
-          props.push(Box::new(generate_string_by_css_color!(self.color.clone().unwrap().top.unwrap())));
-          let tpl = generate_tpl_expr!(props);
-          PropertyTuple::One(
-            self.id.clone(),
-            tpl
-          )
-        },
-        "borderRight" => {
-          props.push(Box::new(generate_expr_by_border_side_width!(self.width.clone().unwrap().right.unwrap(), Platform::ReactNative)));
-          props.push(Box::new(generate_expr_by_line_style!(self.style.clone().unwrap().right.unwrap(), Platform::ReactNative)));
-          props.push(Box::new(generate_string_by_css_color!(self.color.clone().unwrap().right.unwrap())));
-          let tpl = generate_tpl_expr!(props);
-          PropertyTuple::One(
-            self.id.clone(),
-            tpl
-          )
-        },
-        "borderBottom" => {
-          props.push(Box::new(generate_expr_by_border_side_width!(self.width.clone().unwrap().bottom.unwrap(), Platform::ReactNative)));
-          props.push(Box::new(generate_expr_by_line_style!(self.style.clone().unwrap().bottom.unwrap(), Platform::ReactNative)));
-          props.push(Box::new(generate_string_by_css_color!(self.color.clone().unwrap().bottom.unwrap())));
-          let tpl = generate_tpl_expr!(props);
-          PropertyTuple::One(
-            self.id.clone(),
-            tpl
-          )
-        },
-        "borderLeft" => {
-          props.push(Box::new(generate_expr_by_border_side_width!(self.width.clone().unwrap().left.unwrap(), Platform::ReactNative)));
-          props.push(Box::new(generate_expr_by_line_style!(self.style.clone().unwrap().left.unwrap(), Platform::ReactNative)));
-          props.push(Box::new(generate_string_by_css_color!(self.color.clone().unwrap().left.unwrap())));
-          let tpl = generate_tpl_expr!(props);
-          PropertyTuple::One(
-            self.id.clone(),
-            tpl
-          )
-        },
-        _ => PropertyTuple::One(
-          self.id.clone(),
-          generate_invalid_expr!()
-        )
-      }
-    }
 }

@@ -2,7 +2,7 @@ use lightningcss::properties::{Property, align::GapValue};
 
 use crate::{generate_expr_by_length_percentage, generate_expr_lit_num, generate_expr_lit_str};
 
-use super::{traits::ToExpr, unit::{Platform, PropertyTuple}};
+use super::{style_property_type::CSSPropertyType, traits::ToExpr, unit::{Platform, PropertyTuple}};
 
 
 macro_rules! generate_expr_gap {
@@ -26,46 +26,19 @@ impl ToExpr for Gap {
     let mut expr = vec![];
     if let Some(row) = &self.row {
       expr.push((
-        "rowGap".to_string(),
+        CSSPropertyType::RowGap,
         generate_expr_gap!(row, Platform::Harmony)
       ));
     }
     if let Some(column) = &self.column {
       expr.push((
-        "columnGap".to_string(),
+        CSSPropertyType::ColumnGap,
         generate_expr_gap!(column, Platform::Harmony)
       ));
     }
     PropertyTuple::Array(expr)
   }
 
-  fn to_rn_expr(&self) -> PropertyTuple {
-    let mut expr = vec![];
-
-    if self.id == "gap" && self.row == self.column {
-      expr.push((
-        "gap".to_string(),
-        generate_expr_gap!(self.row.as_ref().unwrap(), Platform::ReactNative)
-      ))
-    } else {
-      if let Some(row) = &self.row {
-        expr.push((
-          "rowGap".to_string(),
-          generate_expr_gap!(row, Platform::ReactNative)
-        ))
-      }
-      if let Some(column) = &self.column {
-        expr.push((
-          "columnGap".to_string(),
-          generate_expr_gap!(column, Platform::ReactNative)
-        ))
-      }
-    }
-
-    PropertyTuple::Array(
-      expr
-    )
-  }
 }
 
 

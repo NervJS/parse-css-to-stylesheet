@@ -1,8 +1,8 @@
 use lightningcss::properties::Property;
 
-use crate::{generate_invalid_expr, generate_tpl_expr};
+use crate::generate_invalid_expr;
 
-use super::{flex_basis::FlexBasis, number::NumberProperty, traits::ToExpr, unit::PropertyTuple};
+use super::{flex_basis::FlexBasis, number::NumberProperty, style_property_type::CSSPropertyType, traits::ToExpr, unit::PropertyTuple};
 
 
 
@@ -24,53 +24,26 @@ impl ToExpr for Flex {
     let mut props = vec![];
     if let Some(value) = &self.value {
       match value.basis.to_expr() {
-        PropertyTuple::One(_, val) => props.push(("flexBasis".to_string(), val)),
+        PropertyTuple::One(_, val) => props.push((CSSPropertyType::FlexBasis, val)),
         _ => {}
       };
       match value.grow.to_expr() {
-        PropertyTuple::One(_, val) => props.push(("flexGrow".to_string(), val)),
+        PropertyTuple::One(_, val) => props.push((CSSPropertyType::FlexGrow, val)),
         _ => {}
       };
       match value.shrink.to_expr() {
-        PropertyTuple::One(_, val) => props.push(("flexShrink".to_string(), val)),
+        PropertyTuple::One(_, val) => props.push((CSSPropertyType::FlexShrink, val)),
         _ => {}
       };
       PropertyTuple::Array(props)
     } else {
       PropertyTuple::One(
-        "flex".to_string(),
+        CSSPropertyType::Invaild,
         generate_invalid_expr!()
       )
     }
   }
 
-  fn to_rn_expr(&self) -> PropertyTuple {
-    let mut props = vec![];
-
-    if let Some(value) = &self.value {
-      match value.grow.to_rn_expr() {
-        PropertyTuple::One(_, val) => props.push(val),
-        _ => {}
-      };
-      match value.shrink.to_rn_expr() {
-        PropertyTuple::One(_, val) => props.push(val),
-        _ => {}
-      };
-      match value.basis.to_rn_expr() {
-        PropertyTuple::One(_, val) => props.push(val),
-        _ => {}
-      };
-      PropertyTuple::One(
-        "flex".to_string(),
-        generate_tpl_expr!(props)
-      )
-    } else {
-      PropertyTuple::One(
-        "flex".to_string(),
-        generate_invalid_expr!()
-      )
-    }
-  }
 }
 
 impl From<(String, &Property<'_>)> for Flex {
@@ -82,8 +55,8 @@ impl From<(String, &Property<'_>)> for Flex {
           id: prop.0,
           value: Some(FlexValue {
             basis: FlexBasis::from_value(("flexBasis".to_string(), flex.basis.clone())),
-            grow: NumberProperty::from_value(("flexGrow".to_string(), flex.grow)),
-            shrink: NumberProperty::from_value(("flexShrink".to_string(),flex.shrink))
+            grow: NumberProperty::from_value(("flexGrow".to_string(), (CSSPropertyType::FlexGrow, flex.grow))),
+            shrink: NumberProperty::from_value(("flexShrink".to_string(), (CSSPropertyType::FlexShrink, flex.shrink)))
           })
         }
       },

@@ -2,9 +2,9 @@ use lightningcss::{properties::{Property, text}, traits::ToCss, stylesheet::Prin
 
 use swc_core::ecma::ast::*;
 use swc_core::common::DUMMY_SP;
-use crate::{style_propetries::traits::ToExpr, generate_invalid_expr, generate_expr_lit_str, generate_prop_name};
+use crate::{generate_expr_enum, generate_expr_lit_str, generate_prop_name, style_propetries::{style_property_enum, traits::ToExpr}};
 
-use super::unit::{convert_color_keywords_to_hex, PropertyTuple};
+use super::{style_property_type::CSSPropertyType, unit::{convert_color_keywords_to_hex, PropertyTuple}};
 
 
 #[derive(Debug, Clone)]
@@ -40,22 +40,12 @@ impl ToExpr for TextDecoration {
     if let Some(line) = &self.line {
       props.push(PropOrSpread::Prop(Box::new(Prop::KeyValue(KeyValueProp {
         key: generate_prop_name!("type"),
-        value: Expr::Member(MemberExpr {
-          span: DUMMY_SP,
-          obj: Box::new(Expr::Ident(Ident::new("TextDecorationType".into(), DUMMY_SP))),
-          prop: MemberProp::Ident(Ident {
-            span: DUMMY_SP,
-            sym: match line {
-              TextDecorationLine::Underline => "Underline",
-              TextDecorationLine::LineThrough => "LineThrough",
-              TextDecorationLine::Overline => "Overline",
-              _ => "None",
-            }
-            .into(),
-            optional: false,
-          }),
-        })
-        .into(),
+        value: match line {
+          TextDecorationLine::Underline => generate_expr_enum!(style_property_enum::TextDecorationLine::Underline),
+          TextDecorationLine::LineThrough => generate_expr_enum!(style_property_enum::TextDecorationLine::LineThrough),
+          TextDecorationLine::Overline => generate_expr_enum!(style_property_enum::TextDecorationLine::Overline),
+          _ => generate_expr_enum!(style_property_enum::TextDecorationLine::None),
+        }.into()
       }))));
     }
 
@@ -67,47 +57,12 @@ impl ToExpr for TextDecoration {
     }
 
     PropertyTuple::One(
-      self.id.to_string(),
+      CSSPropertyType::TextDecoration,
       Expr::Object(ObjectLit {
         span: DUMMY_SP,
         props: props
       })
     )
-  }
-
-  fn to_rn_expr(&self) -> PropertyTuple {
-    let mut props: Vec<(String, Expr)> = vec![];
-
-    if let Some(line) = &self.line {
-      props.push(
-        ("textDecorationLine".to_string(),
-        match line {
-          TextDecorationLine::Underline => generate_expr_lit_str!("underline"),
-          TextDecorationLine::LineThrough => generate_expr_lit_str!("line-through"),
-          TextDecorationLine::Overline => generate_invalid_expr!(),
-          TextDecorationLine::None => generate_expr_lit_str!("none")
-        })
-      )
-    };
-    if let Some(style) = &self.style {
-      props.push(
-        ("textDecorationStyle".to_string(),
-        match &style {
-          TextDecorationStyle::Solid => generate_expr_lit_str!("solid"),
-          TextDecorationStyle::Double => generate_expr_lit_str!("double"),
-          TextDecorationStyle::Dotted => generate_expr_lit_str!("dotted"),
-          TextDecorationStyle::Dashed => generate_expr_lit_str!("dashed"),
-          TextDecorationStyle::Wavy => generate_expr_lit_str!("wavy"),
-        })
-      )
-    };
-    if let Some(color) = &self.color {
-      props.push(
-        ("textDecorationColor".to_string(),
-        generate_expr_lit_str!(color.0.clone()))
-      )
-    }
-    PropertyTuple::Array(props)
   }
 }
 

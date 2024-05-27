@@ -6,7 +6,7 @@ use lightningcss::{
 
 use crate::{style_propetries::traits::ToExpr, generate_dimension_percentage, generate_invalid_expr};
 
-use super::unit::{generate_expr_by_length_value, Platform, PropertyTuple};
+use super::{style_property_type::CSSPropertyType, unit::{generate_expr_by_length_value, Platform, PropertyTuple}};
 
 
 #[derive(Debug, Clone)]
@@ -27,22 +27,10 @@ pub enum EnumValue {
 impl ToExpr for LineHeight {
   fn to_expr(&self) -> PropertyTuple {
     PropertyTuple::One(
-      self.id.to_string(),
+      CSSPropertyType::LineHeight,
       match &self.value {
         EnumValue::String(_) => generate_invalid_expr!(),
         EnumValue::LengthValue(length_value) => generate_expr_by_length_value(&length_value, Platform::Harmony),
-        EnumValue::Percentage(_) => generate_invalid_expr!(),
-        EnumValue::Invalid => generate_invalid_expr!(),
-      }
-    )
-  }
-
-  fn to_rn_expr(&self) -> PropertyTuple {
-    PropertyTuple::One(
-      self.id.to_string(),
-      match &self.value {
-        EnumValue::String(_) => generate_invalid_expr!(),
-        EnumValue::LengthValue(length_value) => generate_expr_by_length_value(&length_value, Platform::ReactNative),
         EnumValue::Percentage(_) => generate_invalid_expr!(),
         EnumValue::Invalid => generate_invalid_expr!(),
       }

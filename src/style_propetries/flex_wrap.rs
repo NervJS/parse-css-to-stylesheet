@@ -1,10 +1,8 @@
 use lightningcss::properties::{flex::FlexWrap as LNFlexWrap, Property};
 
-use swc_core::ecma::ast::*;
-use swc_core::common::DUMMY_SP;
-use crate::{style_propetries::traits::ToExpr, generate_expr_lit_str};
+use crate::{generate_expr_enum, style_propetries::{style_property_enum, traits::ToExpr}};
 
-use super::unit::PropertyTuple;
+use super::{style_property_type::CSSPropertyType, unit::PropertyTuple};
 
 
 #[derive(Debug, Clone)]
@@ -39,33 +37,13 @@ impl From<(String, &Property<'_>)> for FlexWrap {
 impl ToExpr for FlexWrap {
   fn to_expr(&self) -> PropertyTuple {
     PropertyTuple::One(
-      self.id.to_string(),
-      Expr::Member(MemberExpr {
-        span: DUMMY_SP,
-        obj: Box::new(Expr::Ident(Ident::new("FlexWrap".into(), DUMMY_SP))),
-        prop: MemberProp::Ident(Ident {
-          span: DUMMY_SP,
-          sym: match self.value {
-            EnumValue::Wrap => "Wrap",
-            EnumValue::WrapReverse => "WrapReverse",
-            EnumValue::NoWrap => "NoWrap",
-          }
-          .into(),
-          optional: false,
-        }),
-      })
-      .into()
-    )
-  }
-
-  fn to_rn_expr(&self) -> PropertyTuple {
-    PropertyTuple::One(
-      self.id.to_string(),
-      match &self.value {
-        EnumValue::Wrap => generate_expr_lit_str!("wrap"),
-        EnumValue::WrapReverse => generate_expr_lit_str!("wrap-reverse"),
-        EnumValue::NoWrap => generate_expr_lit_str!("nowrap"),
+      CSSPropertyType::FlexWrap,
+      match self.value {
+        EnumValue::Wrap => generate_expr_enum!(style_property_enum::FlexWrap::Wrap),
+        EnumValue::WrapReverse => generate_expr_enum!(style_property_enum::FlexWrap::WrapReverse),
+        EnumValue::NoWrap => generate_expr_enum!(style_property_enum::FlexWrap::NoWrap),
       }
     )
   }
+
 }

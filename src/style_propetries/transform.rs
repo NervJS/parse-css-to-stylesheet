@@ -6,7 +6,7 @@ use swc_core::ecma::ast::*;
 
 use crate::style_propetries::traits::ToExpr;
 
-use super::{transform_properties::{matrix::Matrix, rotate::Rotate, scale::Scale, skew::Skew, translate::Translate}, unit::PropertyTuple};
+use super::{style_property_type::CSSPropertyType, transform_properties::{matrix::Matrix, rotate::Rotate, scale::Scale, skew::Skew, translate::Translate}, unit::PropertyTuple};
 
 
 #[derive(Debug, Clone)]
@@ -45,49 +45,12 @@ impl ToExpr for Transform {
         }
       });
       PropertyTuple::One(
-          "transform".to_string(),
-          Expr::Object(ObjectLit {
-            span: Default::default(),
-            props:props,
-          })
-        )
-    }
-
-    fn to_rn_expr(&self) -> PropertyTuple {
-        let mut props = vec![];
-        self.value.iter().for_each(|item| {
-          match item {
-            Matrix4::Translates(value) => {
-              props.extend(value.to_rn_expr());
-            },
-            Matrix4::Rotates(value) => {
-              props.extend(value.to_rn_expr());
-            }
-            Matrix4::Scales(value) => {
-              props.extend(value.to_rn_expr());
-            }
-            Matrix4::Skew(value) => {
-              props.extend(value.to_rn_expr());
-            }
-            Matrix4::Matrix(value) => {
-              props.extend(value.to_rn_expr());
-            }
-          }
-        });
-        PropertyTuple::One(
-          "transform".to_string(),
-          Expr::Array(ArrayLit {
-            span: Default::default(),
-            elems: props.into_iter().map(Some).map(
-              |item| {
-                Some(ExprOrSpread {
-                  spread: None,
-                  expr: Box::new(item.unwrap()),
-                })
-              }
-            ).collect::<Vec<_>>(),
-          })
-        )
+        CSSPropertyType::Transform,
+        Expr::Object(ObjectLit {
+          span: Default::default(),
+          props:props,
+        })
+      )
     }
 }
 

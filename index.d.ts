@@ -9,4 +9,4 @@ export interface ParseOptions {
 export interface ParseResult {
   code: string
 }
-export function parse(component: string, styles: Array<string>, options: ParseOptions): ParseResult
+export function parse(styles: Array<string>, options: ParseOptions): ParseResult

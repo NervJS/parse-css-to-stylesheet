@@ -29,7 +29,7 @@ impl JsonWriter {
                         value: Box::new(Expr::Lit(Lit::Str(selector.clone().into()))),
                     }))),
                     PropOrSpread::Prop(Box::new(Prop::KeyValue(KeyValueProp {
-                        key: PropName::Ident(Ident::new("declarations".into(), DUMMY_SP)),
+                        key: PropName::Ident(Ident::new("value".into(), DUMMY_SP)),
                         value: Box::new(Expr::Array(ArrayLit {
                             span: DUMMY_SP,
                             elems: parse_style_values(prop_or_spreads.clone(), Platform::Harmony)

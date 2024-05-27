@@ -22,7 +22,6 @@ mod style_parser;
 mod parse_style_properties;
 mod json_writer;
 
-// component: jsx的code string
 // styles: css的code string
 // platform_string: "ReactNative" | "Harmony"
 
@@ -38,7 +37,7 @@ pub struct ParseResult {
 }
 
 #[napi]
-pub fn parse(component: String, styles: Vec<String>, options: ParseOptions) -> ParseResult {
+pub fn parse(styles: Vec<String>, options: ParseOptions) -> ParseResult {
 
   let platform = match options.platform_string.as_str() {
     "ReactNative" => Platform::ReactNative,

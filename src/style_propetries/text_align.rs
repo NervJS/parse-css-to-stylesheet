@@ -24,10 +24,10 @@ impl ToExpr for TextAlign {
     PropertyTuple::One(
       CSSPropertyType::TextAlign,
       match self.value {
-        EnumValue::Start => generate_expr_enum!(style_property_enum::TextAlign::Start),
-        EnumValue::Center => generate_expr_enum!(style_property_enum::TextAlign::Center),
-        EnumValue::End => generate_expr_enum!(style_property_enum::TextAlign::End),
-        EnumValue::Justify => generate_expr_enum!(style_property_enum::TextAlign::JUSTIFY),
+        EnumValue::Start => generate_expr_enum!(style_property_enum::ArkUI_TextAlignment::ARKUI_TEXT_ALIGNMENT_START),
+        EnumValue::Center => generate_expr_enum!(style_property_enum::ArkUI_TextAlignment::ARKUI_TEXT_ALIGNMENT_CENTER),
+        EnumValue::End => generate_expr_enum!(style_property_enum::ArkUI_TextAlignment::ARKUI_TEXT_ALIGNMENT_END),
+        EnumValue::Justify => generate_expr_enum!(style_property_enum::ArkUI_TextAlignment::ARKUI_TEXT_ALIGNMENT_JUSTIFY),
       }
     )
   }

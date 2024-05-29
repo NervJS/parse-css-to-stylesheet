@@ -2,7 +2,7 @@ use std::{rc::Rc, cell::RefCell, convert::Infallible, collections::HashMap, hash
 
 use lightningcss::{declaration::DeclarationBlock, properties::Property, rules::{keyframes::KeyframeSelector, CssRule}, stylesheet::{ParserOptions, PrinterOptions, StyleSheet}, traits::ToCss, visit_types, visitor::{Visit, VisitTypes, Visitor}};
 
-use crate::{constants::SUPPORT_PSEUDO_KEYS, style_propetries::{style_value_type::StyleValueType, unit::Platform}, utils::to_camel_case, visitor::SpanKey};
+use crate::{style_propetries::{style_value_type::StyleValueType, unit::Platform}, utils::to_camel_case};
 
 use super::parse_style_properties::parse_style_properties;
 

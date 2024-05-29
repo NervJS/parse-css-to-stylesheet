@@ -44,8 +44,8 @@ impl ToExpr for Visibility {
     PropertyTuple::One(
       CSSPropertyType::Display,
       match &self.value {
-        EnumValue::Visible => generate_expr_enum!(style_property_enum::Visibility::Visible),
-        EnumValue::Hidden => generate_expr_enum!(style_property_enum::Visibility::Hidden),
+        EnumValue::Visible => generate_expr_enum!(style_property_enum::ArkUI_Visibility::ARKUI_VISIBILITY_VISIBLE),
+        EnumValue::Hidden => generate_expr_enum!(style_property_enum::ArkUI_Visibility::ARKUI_VISIBILITY_HIDDEN),
         EnumValue::Invalid => generate_invalid_expr!(),
       }
     )

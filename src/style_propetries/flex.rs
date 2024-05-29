@@ -38,7 +38,7 @@ impl ToExpr for Flex {
       PropertyTuple::Array(props)
     } else {
       PropertyTuple::One(
-        CSSPropertyType::Invaild,
+        CSSPropertyType::Invalid,
         generate_invalid_expr!()
       )
     }

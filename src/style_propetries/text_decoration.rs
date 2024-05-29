@@ -1,10 +1,10 @@
-use lightningcss::{properties::{Property, text}, traits::ToCss, stylesheet::PrinterOptions, targets::{Targets, Features}};
+use lightningcss::{properties::{text, Property}, stylesheet::PrinterOptions, targets::{Features, Targets}, traits::ToCss, values::color::CssColor};
 
 use swc_core::ecma::ast::*;
 use swc_core::common::DUMMY_SP;
-use crate::{generate_expr_enum, generate_expr_lit_str, generate_prop_name, style_propetries::{style_property_enum, traits::ToExpr}};
+use crate::{generate_expr_enum, generate_expr_lit_color, generate_prop_name, style_propetries::{style_property_enum, traits::ToExpr}};
 
-use super::{style_property_type::CSSPropertyType, unit::{convert_color_keywords_to_hex, PropertyTuple}};
+use super::{style_property_type::CSSPropertyType, unit::PropertyTuple};
 
 
 #[derive(Debug, Clone)]
@@ -31,7 +31,7 @@ pub enum TextDecorationStyle {
   Wavy
 }
 #[derive(Debug, Clone)]
-pub struct TextDecorationColor(String);
+pub struct TextDecorationColor(CssColor);
 
 impl ToExpr for TextDecoration {
   fn to_expr(&self) -> PropertyTuple {
@@ -41,10 +41,10 @@ impl ToExpr for TextDecoration {
       props.push(PropOrSpread::Prop(Box::new(Prop::KeyValue(KeyValueProp {
         key: generate_prop_name!("type"),
         value: match line {
-          TextDecorationLine::Underline => generate_expr_enum!(style_property_enum::TextDecorationLine::Underline),
-          TextDecorationLine::LineThrough => generate_expr_enum!(style_property_enum::TextDecorationLine::LineThrough),
-          TextDecorationLine::Overline => generate_expr_enum!(style_property_enum::TextDecorationLine::Overline),
-          _ => generate_expr_enum!(style_property_enum::TextDecorationLine::None),
+          TextDecorationLine::Underline => generate_expr_enum!(style_property_enum::ArkUI_TextDecorationType::ARKUI_TEXT_DECORATION_TYPE_UNDERLINE),
+          TextDecorationLine::LineThrough => generate_expr_enum!(style_property_enum::ArkUI_TextDecorationType::ARKUI_TEXT_DECORATION_TYPE_LINE_THROUGH),
+          TextDecorationLine::Overline => generate_expr_enum!(style_property_enum::ArkUI_TextDecorationType::ARKUI_TEXT_DECORATION_TYPE_OVERLINE),
+          _ => generate_expr_enum!(style_property_enum::ArkUI_TextDecorationType::ARKUI_TEXT_DECORATION_TYPE_NONE),
         }.into()
       }))));
     }
@@ -52,7 +52,7 @@ impl ToExpr for TextDecoration {
     if let Some(color) = &self.color {
       props.push(PropOrSpread::Prop(Box::new(Prop::KeyValue(KeyValueProp {
         key: generate_prop_name!("color"),
-        value: generate_expr_lit_str!(color.0.clone()).into()
+        value: generate_expr_lit_color!(color.0.clone()).into()
       }))));
     }
 
@@ -86,7 +86,6 @@ impl From<(String, &Property<'_>)> for TextDecoration {
         let color_string = value.color.to_css_string(PrinterOptions {
           minify: false,
           targets: Targets {
-            include: Features::HexAlphaColors,
             ..Targets::default()
           },
           ..PrinterOptions::default()
@@ -97,7 +96,7 @@ impl From<(String, &Property<'_>)> for TextDecoration {
           if c == "currentColor" {
             color = None
           } else {
-            color = Some(TextDecorationColor(convert_color_keywords_to_hex(c)));
+            color = Some(TextDecorationColor(value.color.clone()));
           }
         } else {
           color = None
@@ -153,7 +152,7 @@ impl From<(String, &Property<'_>)> for TextDecoration {
           if c == "currentColor" {
             color = None
           } else {
-            color = Some(TextDecorationColor(convert_color_keywords_to_hex(c)));
+            color = Some(TextDecorationColor(value.clone()));
           }
         } else {
           color = None

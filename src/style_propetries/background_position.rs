@@ -140,15 +140,15 @@ impl ToExpr for BackgroundPosition {
         .into(),
       })
       .into(),
-      ImagePosition::TopStart => generate_expr_enum!(style_property_enum::Alignment::TopStart),
-      ImagePosition::Top => generate_expr_enum!(style_property_enum::Alignment::Top),
-      ImagePosition::TopEnd => generate_expr_enum!(style_property_enum::Alignment::TopEnd),
-      ImagePosition::Start => generate_expr_enum!(style_property_enum::Alignment::Start),
-      ImagePosition::Center => generate_expr_enum!(style_property_enum::Alignment::Center),
-      ImagePosition::End => generate_expr_enum!(style_property_enum::Alignment::End),
-      ImagePosition::BottomStart => generate_expr_enum!(style_property_enum::Alignment::BottomStart),
-      ImagePosition::Bottom => generate_expr_enum!(style_property_enum::Alignment::Bottom),
-      ImagePosition::BottomEnd => generate_expr_enum!(style_property_enum::Alignment::BottomEnd),
+      ImagePosition::TopStart => generate_expr_enum!(style_property_enum::ArkUI_Alignment::ARKUI_ALIGNMENT_TOP_START),
+      ImagePosition::Top => generate_expr_enum!(style_property_enum::ArkUI_Alignment::ARKUI_ALIGNMENT_TOP),
+      ImagePosition::TopEnd => generate_expr_enum!(style_property_enum::ArkUI_Alignment::ARKUI_ALIGNMENT_TOP_END),
+      ImagePosition::Start => generate_expr_enum!(style_property_enum::ArkUI_Alignment::ARKUI_ALIGNMENT_START),
+      ImagePosition::Center => generate_expr_enum!(style_property_enum::ArkUI_Alignment::ARKUI_ALIGNMENT_CENTER),
+      ImagePosition::End => generate_expr_enum!(style_property_enum::ArkUI_Alignment::ARKUI_ALIGNMENT_END),
+      ImagePosition::BottomStart => generate_expr_enum!(style_property_enum::ArkUI_Alignment::ARKUI_ALIGNMENT_BOTTOM_START),
+      ImagePosition::Bottom => generate_expr_enum!(style_property_enum::ArkUI_Alignment::ARKUI_ALIGNMENT_BOTTOM),
+      ImagePosition::BottomEnd => generate_expr_enum!(style_property_enum::ArkUI_Alignment::ARKUI_ALIGNMENT_BOTTOM_END),
     };
     
     PropertyTuple::One(

@@ -106,7 +106,7 @@ impl ToExpr for Border {
       let prop_name = &self.id;
       let mut props: Vec<(CSSPropertyType, Expr)> = vec![];
       if self.width.is_none() || self.style.is_none() || self.color.is_none() {
-        return PropertyTuple::One(CSSPropertyType::Invaild, generate_invalid_expr!());
+        return PropertyTuple::One(CSSPropertyType::Invalid, generate_invalid_expr!());
       }
       match prop_name.as_str() {
         "border" => {
@@ -145,7 +145,7 @@ impl ToExpr for Border {
           props.push((CSSPropertyType::BorderLeftColor, generate_expr_lit_color!(self.color.clone().unwrap().left.unwrap())));
           PropertyTuple::Array(props)
         },
-        _ => PropertyTuple::One(CSSPropertyType::Invaild, generate_invalid_expr!())
+        _ => PropertyTuple::One(CSSPropertyType::Invalid, generate_invalid_expr!())
       }
     }
 

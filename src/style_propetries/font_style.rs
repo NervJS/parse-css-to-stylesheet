@@ -21,8 +21,8 @@ impl ToExpr for FontStyle {
     PropertyTuple::One(
       CSSPropertyType::FontStyle,
       match self.value {
-        EnumValue::Italic => generate_expr_enum!(style_property_enum::FontStyle::Italic),
-        EnumValue::Normal => generate_expr_enum!(style_property_enum::FontStyle::Normal),
+        EnumValue::Italic => generate_expr_enum!(style_property_enum::ArkUI_FontStyle::ARKUI_FONT_STYLE_ITALIC),
+        EnumValue::Normal => generate_expr_enum!(style_property_enum::ArkUI_FontStyle::ARKUI_FONT_STYLE_NORMAL),
       }
     )
   }

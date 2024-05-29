@@ -30,9 +30,9 @@ impl ToExpr for VerticalAlign {
       {
         match self.value {
           EnumValue::Baseline | EnumValue::Sub | EnumValue::Super | EnumValue::TextTop | EnumValue::TextBottom | EnumValue::Invalid => generate_invalid_expr!(),
-          EnumValue::Middle => generate_expr_enum!(style_property_enum::Alignment::Center),
-          EnumValue::Top => generate_expr_enum!(style_property_enum::Alignment::Top),
-          EnumValue::Bottom => generate_expr_enum!(style_property_enum::Alignment::Bottom),
+          EnumValue::Middle => generate_expr_enum!(style_property_enum::ArkUI_Alignment::ARKUI_ALIGNMENT_CENTER),
+          EnumValue::Top => generate_expr_enum!(style_property_enum::ArkUI_Alignment::ARKUI_ALIGNMENT_TOP),
+          EnumValue::Bottom => generate_expr_enum!(style_property_enum::ArkUI_Alignment::ARKUI_ALIGNMENT_BOTTOM),
         }
       }
     )

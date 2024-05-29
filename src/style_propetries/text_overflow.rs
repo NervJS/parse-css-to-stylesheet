@@ -23,9 +23,9 @@ impl ToExpr for TextOverflow {
           PropOrSpread::Prop(Box::new(Prop::KeyValue(KeyValueProp {
             key: PropName::Ident(Ident::new("overflow".into(), DUMMY_SP)),
             value: match self {
-              TextOverflow::Clip => generate_expr_enum!(style_property_enum::TextOverflow::Clip),
-              TextOverflow::Ellipsis => generate_expr_enum!(style_property_enum::TextOverflow::Ellipsis),
-              TextOverflow::None => generate_expr_enum!(style_property_enum::TextOverflow::None),
+              TextOverflow::Clip => generate_expr_enum!(style_property_enum::ArkUI_TextOverflow::ARKUI_TEXT_OVERFLOW_CLIP),
+              TextOverflow::Ellipsis => generate_expr_enum!(style_property_enum::ArkUI_TextOverflow::ARKUI_TEXT_OVERFLOW_ELLIPSIS),
+              TextOverflow::None => generate_expr_enum!(style_property_enum::ArkUI_TextOverflow::ARKUI_TEXT_OVERFLOW_NONE),
             }.into()
           }))),
         ],

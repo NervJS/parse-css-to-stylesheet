@@ -23,10 +23,10 @@ impl ToExpr for TextTransform {
     PropertyTuple::One(
       CSSPropertyType::TextTransform,
       match self.value {
-        EnumValue::None => generate_expr_enum!(style_property_enum::TextCase::Normal),
-        EnumValue::Lowercase => generate_expr_enum!(style_property_enum::TextCase::LowerCase),
-        EnumValue::Uppercase => generate_expr_enum!(style_property_enum::TextCase::UpperCase),
-        EnumValue::Capitalize => generate_expr_enum!(style_property_enum::TextCase::Normal),
+        EnumValue::None => generate_expr_enum!(style_property_enum::ArkUI_TextCase::ARKUI_TEXT_CASE_NORMAL),
+        EnumValue::Lowercase => generate_expr_enum!(style_property_enum::ArkUI_TextCase::ARKUI_TEXT_CASE_LOWER),
+        EnumValue::Uppercase => generate_expr_enum!(style_property_enum::ArkUI_TextCase::ARKUI_TEXT_CASE_UPPER),
+        EnumValue::Capitalize => generate_expr_enum!(style_property_enum::ArkUI_TextCase::ARKUI_TEXT_CASE_NORMAL),
       }
     )
   }

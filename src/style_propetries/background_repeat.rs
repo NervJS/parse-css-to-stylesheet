@@ -38,10 +38,10 @@ impl From<&LNBackgroundRepeat> for ImageRepeatItem {
 impl ImageRepeatItem {
   fn to_expr(&self) -> Expr {
     match &self {
-      Self::XY => generate_expr_enum!(style_property_enum::ImageRepeat::XY),
-      Self::X => generate_expr_enum!(style_property_enum::ImageRepeat::X),
-      Self::Y => generate_expr_enum!(style_property_enum::ImageRepeat::Y),
-      Self::NoRepeat => generate_expr_enum!(style_property_enum::ImageRepeat::NoRepeat),
+      Self::XY => generate_expr_enum!(style_property_enum::ArkUI_ImageRepeat::ARKUI_IMAGE_REPEAT_XY),
+      Self::X => generate_expr_enum!(style_property_enum::ArkUI_ImageRepeat::ARKUI_IMAGE_REPEAT_X),
+      Self::Y => generate_expr_enum!(style_property_enum::ArkUI_ImageRepeat::ARKUI_IMAGE_REPEAT_Y),
+      Self::NoRepeat => generate_expr_enum!(style_property_enum::ArkUI_ImageRepeat::ARKUI_IMAGE_REPEAT_NONE),
     }
   }
 }

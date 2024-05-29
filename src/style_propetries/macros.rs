@@ -69,47 +69,50 @@ macro_rules! generate_expr_lit_color {
 macro_rules! generate_expr_lit_calc {
   ($var:expr, $platform:expr) => {{
 
-    use swc_core::ecma::ast::*;
-    use swc_core::{
-      common::DUMMY_SP,
-      atoms::Atom
-    };
+    use $crate::generate_expr_lit_str;
+    generate_expr_lit_str!($var.clone())
 
-    use $crate::constants::{CONVERT_STYLE_PX_FN, RN_CONVERT_STYLE_PX_FN, RN_CONVERT_STYLE_VU_FN};
+    // use swc_core::ecma::ast::*;
+    // use swc_core::{
+    //   common::DUMMY_SP,
+    //   atoms::Atom
+    // };
 
-    let re = regex::Regex::new(r#"(\d+(?:px|vw|vh))"#).unwrap();
-    let result = re.replace_all($var.as_str(), |caps: &regex::Captures| {
-        let value = &caps[1];
-        let unit = &value[value.len() - 2..];
-        let parsed_value: i32 = value[..value.len() - 2].parse().unwrap();
-        if $platform == Platform::Harmony {
-          if unit == "px" {
-            // return format!("{}lpx", parsed_value);
-            return format!("${{{}({}, 'px')}}", CONVERT_STYLE_PX_FN, parsed_value);
-          } else {
-            return format!("${{{}({}, '{}')}}", CONVERT_STYLE_PX_FN, parsed_value, unit);
-          }
-        } else {
-          if unit == "px" {
-            return format!("${{{}({}, 'px')}}", RN_CONVERT_STYLE_PX_FN, parsed_value);
-          } else {
-            return format!("${{{}({}, '{}')}}", RN_CONVERT_STYLE_VU_FN, parsed_value, unit);
-          }
-        }
-    });
+    // use $crate::constants::{CONVERT_STYLE_PX_FN, RN_CONVERT_STYLE_PX_FN, RN_CONVERT_STYLE_VU_FN};
+
+    // let re = regex::Regex::new(r#"(\d+(?:px|vw|vh))"#).unwrap();
+    // let result = re.replace_all($var.as_str(), |caps: &regex::Captures| {
+    //     let value = &caps[1];
+    //     let unit = &value[value.len() - 2..];
+    //     let parsed_value: i32 = value[..value.len() - 2].parse().unwrap();
+    //     if $platform == Platform::Harmony {
+    //       if unit == "px" {
+    //         // return format!("{}lpx", parsed_value);
+    //         return format!("${{{}({}, 'px')}}", CONVERT_STYLE_PX_FN, parsed_value);
+    //       } else {
+    //         return format!("${{{}({}, '{}')}}", CONVERT_STYLE_PX_FN, parsed_value, unit);
+    //       }
+    //     } else {
+    //       if unit == "px" {
+    //         return format!("${{{}({}, 'px')}}", RN_CONVERT_STYLE_PX_FN, parsed_value);
+    //       } else {
+    //         return format!("${{{}({}, '{}')}}", RN_CONVERT_STYLE_VU_FN, parsed_value, unit);
+    //       }
+    //     }
+    // });
     
-    Expr::Tpl(Tpl {
-      span: DUMMY_SP,
-      exprs: vec![],
-      quasis: vec![
-        TplElement {
-          span: DUMMY_SP,
-          tail: false,
-          cooked: None,
-          raw: Atom::from(result).into(),
-        }
-      ],
-    })
+    // Expr::Tpl(Tpl {
+    //   span: DUMMY_SP,
+    //   exprs: vec![],
+    //   quasis: vec![
+    //     TplElement {
+    //       span: DUMMY_SP,
+    //       tail: false,
+    //       cooked: None,
+    //       raw: Atom::from(result).into(),
+    //     }
+    //   ],
+    // })
   }};
 }
 
@@ -227,7 +230,7 @@ macro_rules! generate_color_property {
           )
         } else {
           PropertyTuple::One(
-            super::style_property_type::CSSPropertyType::Invaild,
+            super::style_property_type::CSSPropertyType::Invalid,
             generate_invalid_expr!()
           )
         }
@@ -303,7 +306,7 @@ macro_rules! generate_number_property {
           _ => $class {
             id: prop.0,
             value: (
-              CSSPropertyType::Invaild,
+              CSSPropertyType::Invalid,
               0.0
             )
           }
@@ -385,7 +388,7 @@ macro_rules! generate_length_value_property {
           _ => $class {
             id: prop.0,
             value: (
-              super::style_property_type::CSSPropertyType::Invaild,
+              super::style_property_type::CSSPropertyType::Invalid,
               EnumValue::String("auto".to_string())
             )
           }
@@ -464,7 +467,7 @@ macro_rules! generate_size_property {
           _ =>  $class {
             id: prop.0,
             value: (
-              super::style_property_type::CSSPropertyType::Invaild,
+              super::style_property_type::CSSPropertyType::Invalid,
               EnumValue::String("auto".to_string())
             )
           }

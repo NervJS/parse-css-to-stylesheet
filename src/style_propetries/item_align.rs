@@ -71,12 +71,12 @@ impl ToExpr for ItemAlign {
     PropertyTuple::One(
       self.id,
       match &self.value {
-        EnumValue::Auto => generate_expr_enum!(style_property_enum::ItemAlign::Auto),
-        EnumValue::Start => generate_expr_enum!(style_property_enum::ItemAlign::Start),
-        EnumValue::Center => generate_expr_enum!(style_property_enum::ItemAlign::Center),
-        EnumValue::End => generate_expr_enum!(style_property_enum::ItemAlign::End),
-        EnumValue::Stretch => generate_expr_enum!(style_property_enum::ItemAlign::Stretch),
-        EnumValue::Baseline => generate_expr_enum!(style_property_enum::ItemAlign::Baseline),
+        EnumValue::Auto => generate_expr_enum!(style_property_enum::ArkUI_ItemAlignment::ARKUI_ITEM_ALIGNMENT_AUTO),
+        EnumValue::Start => generate_expr_enum!(style_property_enum::ArkUI_ItemAlignment::ARKUI_ITEM_ALIGNMENT_START),
+        EnumValue::Center => generate_expr_enum!(style_property_enum::ArkUI_ItemAlignment::ARKUI_ITEM_ALIGNMENT_CENTER),
+        EnumValue::End => generate_expr_enum!(style_property_enum::ArkUI_ItemAlignment::ARKUI_ITEM_ALIGNMENT_END),
+        EnumValue::Stretch => generate_expr_enum!(style_property_enum::ArkUI_ItemAlignment::ARKUI_ITEM_ALIGNMENT_STRETCH),
+        EnumValue::Baseline => generate_expr_enum!(style_property_enum::ArkUI_ItemAlignment::ARKUI_ITEM_ALIGNMENT_BASELINE),
         EnumValue::Ignore => generate_invalid_expr!(),
       }
     )

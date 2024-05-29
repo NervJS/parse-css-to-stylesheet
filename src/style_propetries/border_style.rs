@@ -12,9 +12,9 @@ macro_rules! generate_expr_by_line_style {
     use $crate::{generate_invalid_expr, generate_expr_enum, style_propetries::style_property_enum};
     use lightningcss::properties::border::LineStyle;
     match $val {
-      LineStyle::Dotted => generate_expr_enum!(style_property_enum::BorderStyle::Dotted),
-      LineStyle::Dashed => generate_expr_enum!(style_property_enum::BorderStyle::Dashed),
-      LineStyle::Solid => generate_expr_enum!(style_property_enum::BorderStyle::Solid),
+      LineStyle::Dotted => generate_expr_enum!(style_property_enum::ArkUI_BorderStyle::ARKUI_BORDER_STYLE_DOTTED),
+      LineStyle::Dashed => generate_expr_enum!(style_property_enum::ArkUI_BorderStyle::ARKUI_BORDER_STYLE_DASHED),
+      LineStyle::Solid => generate_expr_enum!(style_property_enum::ArkUI_BorderStyle::ARKUI_BORDER_STYLE_SOLID),
       _ => generate_invalid_expr!()
   }
   }};

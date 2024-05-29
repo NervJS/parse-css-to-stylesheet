@@ -7,7 +7,7 @@ use lightningcss::{
 };
 use smallvec::SmallVec;
 
-use crate::{generate_expr_lit_str, generate_invalid_expr};
+use crate::{generate_expr_lit_color, generate_expr_lit_str, generate_invalid_expr};
 
 use super::{
   background_image::{parse_background_image_item, BackgroundImage}, background_position::{parse_background_position_item, BackgroundPosition}, background_repeat::{parse_background_repeat_item, BackgroundRepeat}, background_size::{parse_background_size_item, BackgroundSize}, style_property_type::CSSPropertyType, traits::ToExpr, unit::{convert_color_keywords_to_hex, PropertyTuple}
@@ -30,21 +30,7 @@ fn parse_background(background: &SmallVec<[LNBackground<'_>; 1]>) -> Background 
     }
     background_repeat.push(parse_background_repeat_item(&item.repeat));
     if item.color != CssColor::default() {
-      background_color = Some(
-        convert_color_keywords_to_hex(
-          item
-            .color
-            .to_css_string(PrinterOptions {
-              minify: false,
-              targets: Targets {
-                include: Features::HexAlphaColors,
-                ..Targets::default()
-              },
-              ..PrinterOptions::default()
-            })
-            .unwrap()
-        ),
-      );
+      background_color = Some(item.color.clone());
     }
   }
   let mut bg = Background::new();
@@ -84,7 +70,7 @@ pub struct Background {
   pub size: Option<BackgroundSize>,
   pub position: Option<BackgroundPosition>,
   pub repeat: Option<BackgroundRepeat>,
-  pub color: Option<String>
+  pub color: Option<CssColor>
 }
 
 impl Background {
@@ -144,7 +130,7 @@ impl ToExpr for Background {
     }
     
     if let Some(color) = &self.color {
-      props.push((CSSPropertyType::BackgroundColor, generate_expr_lit_str!(color.to_string())));
+      props.push((CSSPropertyType::BackgroundColor, generate_expr_lit_color!(color)));
     }
     PropertyTuple::Array(props)
   }

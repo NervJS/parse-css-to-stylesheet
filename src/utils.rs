@@ -5,7 +5,7 @@ use pcre2::bytes::Regex;
 // use lightningcss::values::number::CSSNumber;
 use swc_core::ecma::{ast::{ArrayLit, CallExpr, Expr, Function, JSXMemberExpr, JSXObject, ObjectLit, Prop, PropName, PropOrSpread}, visit::{Visit, VisitWith}};
 
-use crate::style_propetries::unit::Platform;
+use crate::{constants::SelectorType, style_propetries::unit::Platform};
 
 pub fn to_camel_case(s: &str, is_first: bool) -> String {
   let mut result = String::new();
@@ -33,7 +33,15 @@ pub fn hex_to_argb(hex: &str) -> Result<u32, String> {
           let b = hex.chars().nth(2).ok_or("0")?;
           format!("{}{}{}{}{}{}FF", r, r, g, g, b, b)
       },
-      6 => format!("{}FF", hex.to_string()),
+      4 => {
+          // 转换简写形式，例如 #000 -> #FF000000
+          let r = hex.chars().nth(0).ok_or("0")?;
+          let g: char = hex.chars().nth(1).ok_or("0")?;
+          let b = hex.chars().nth(2).ok_or("0")?;
+          let a: char = hex.chars().nth(3).ok_or("ff")?;
+          format!("{}{}{}{}{}{}{}{}", r, r, g, g, b, b, a, a)
+      }
+      6 => format!("{}ff", hex.to_string()),
       8 => hex.to_string(),
       _ => return Err(hex.into()),
   };
@@ -49,8 +57,9 @@ pub fn hex_to_argb(hex: &str) -> Result<u32, String> {
   Ok(argb)
 }
 
-#[derive(Debug, Clone)]
+#[derive(Debug, Clone, PartialEq, Eq, Hash)]
 pub enum TSelector {
+  Selector(SelectorType),
   String(String),
   Array(Vec<String>),
 }
@@ -62,20 +71,22 @@ pub fn split_selector(selector: &str) -> Vec<TSelector> {
     let mut buffer = String::new();
 
     for c in selector.chars() {
-        if c == ' ' || c == '>' || c == '+' || c == '~' {
+        if c == ' ' || c == '>' {
             if !current_word.is_empty() {
                 result.push(split_classes(current_word.as_str()));
                 current_word.clear();
             }
             buffer.push(c);
-            if buffer == " > " || buffer == " + " || buffer == " ~ " {
-                result.push(TSelector::String(buffer.clone()));
+            if buffer == " > " {
+                // 子选择器
+                result.push(TSelector::Selector(SelectorType::Parent));
                 buffer.clear();
             }
         } else {
             current_word.push(c);
             if buffer == ' '.to_string() {
-              result.push(TSelector::String(buffer.clone()));
+              // 后代选择器
+              result.push(TSelector::Selector(SelectorType::Ancestor));
               buffer.clear();
             }
         }
@@ -88,6 +99,8 @@ pub fn split_selector(selector: &str) -> Vec<TSelector> {
     if !buffer.is_empty() {
         result.push(TSelector::String(buffer.clone()));
     }
+
+    result.reverse();
 
     result
 }

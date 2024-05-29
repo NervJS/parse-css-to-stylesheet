@@ -41,10 +41,10 @@ impl ToExpr for FlexDirection {
     PropertyTuple::One(
       CSSPropertyType::FlexDirection,
       match self.value {
-        EnumValue::Row => generate_expr_enum!(style_property_enum::FlexDirection::Row),
-        EnumValue::RowReverse => generate_expr_enum!(style_property_enum::FlexDirection::RowReverse),
-        EnumValue::Column => generate_expr_enum!(style_property_enum::FlexDirection::Column),
-        EnumValue::ColumnReverse => generate_expr_enum!(style_property_enum::FlexDirection::ColumnReverse),
+        EnumValue::Row => generate_expr_enum!(style_property_enum::ArkUI_FlexDirection::ARKUI_FLEX_DIRECTION_ROW),
+        EnumValue::RowReverse => generate_expr_enum!(style_property_enum::ArkUI_FlexDirection::ARKUI_FLEX_DIRECTION_ROW_REVERSE),
+        EnumValue::Column => generate_expr_enum!(style_property_enum::ArkUI_FlexDirection::ARKUI_FLEX_DIRECTION_COLUMN),
+        EnumValue::ColumnReverse => generate_expr_enum!(style_property_enum::ArkUI_FlexDirection::ARKUI_FLEX_DIRECTION_COLUMN_REVERSE),
       }
     )
   }

@@ -1,15 +1,11 @@
 #![deny(clippy::all)]
 
-use std::{cell::RefCell, rc::Rc};
 use serde::Deserialize;
 
 use style_parser::StyleParser;
+use json_writer::JsonWriter;
 use style_propetries::unit::Platform;
 
-use swc_core::{
-  ecma::codegen::{text_writer::JsWriter, Emitter},
-  common::{comments::SingleThreadedComments, sync::Lrc, SourceMap}
-};
 
 #[macro_use]
 extern crate napi_derive;
@@ -51,8 +47,10 @@ pub fn parse(styles: Vec<String>, options: ParseOptions) -> ParseResult {
   style_parser.parse(&css);
   let style_data = style_parser.calc();
 
+  // 解析过滤器
+
   // 输出成JSON格式
-  let style_map = json_writer::JsonWriter::new(style_data.all_style.borrow().clone());
+  let style_map = JsonWriter::new(style_data.all_style.borrow().clone());
 
   ParseResult {
     code: style_map.to_json()

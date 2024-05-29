@@ -56,9 +56,10 @@ pub fn generate_expr_by_length_value(length_value: &LengthValue, platform: Platf
           args.push(generate_expr_lit_str!("vh"));
         },
         Platform::Harmony => {
-          handler = Some(CONVERT_STYLE_PX_FN.to_string());
-          args.push(generate_expr_lit_num!(*num as f64));
-          args.push(generate_expr_lit_str!("vh"));
+          return generate_expr_lit_str!(format!("{}vh", num))
+          // handler = Some(CONVERT_STYLE_PX_FN.to_string());
+          // args.push(generate_expr_lit_num!(*num as f64));
+          // args.push(generate_expr_lit_str!("vh"));
         }
       }
     },
@@ -70,9 +71,10 @@ pub fn generate_expr_by_length_value(length_value: &LengthValue, platform: Platf
           args.push(generate_expr_lit_str!("vw"));
         },
         Platform::Harmony => {
-          handler = Some(CONVERT_STYLE_PX_FN.to_string());
-          args.push(generate_expr_lit_num!(*num as f64));
-          args.push(generate_expr_lit_str!("vw"));
+          return generate_expr_lit_str!(format!("{}vw", num))
+          // handler = Some(CONVERT_STYLE_PX_FN.to_string());
+          // args.push(generate_expr_lit_num!(*num as f64));
+          // args.push(generate_expr_lit_str!("vw"));
         }
       }
     },
@@ -83,9 +85,10 @@ pub fn generate_expr_by_length_value(length_value: &LengthValue, platform: Platf
           args.push(generate_expr_lit_num!(*num as f64))
         },
         Platform::Harmony => {
-          handler = Some(CONVERT_STYLE_PX_FN.to_string());
-          args.push(generate_expr_lit_num!(*num as f64));
-          args.push(generate_expr_lit_str!("vmin"));
+          return generate_expr_lit_str!(format!("{}vmin", num))
+          // handler = Some(CONVERT_STYLE_PX_FN.to_string());
+          // args.push(generate_expr_lit_num!(*num as f64));
+          // args.push(generate_expr_lit_str!("vmin"));
         }
       }
     },
@@ -96,9 +99,10 @@ pub fn generate_expr_by_length_value(length_value: &LengthValue, platform: Platf
           args.push(generate_expr_lit_num!(*num as f64))
         },
         Platform::Harmony => {
-          handler = Some(CONVERT_STYLE_PX_FN.to_string());
-          args.push(generate_expr_lit_num!(*num as f64));
-          args.push(generate_expr_lit_str!("vmax"));
+          return generate_expr_lit_str!(format!("{}vmax", num))
+          // handler = Some(CONVERT_STYLE_PX_FN.to_string());
+          // args.push(generate_expr_lit_num!(*num as f64));
+          // args.push(generate_expr_lit_str!("vmax"));
         }
       }
     },
@@ -110,9 +114,10 @@ pub fn generate_expr_by_length_value(length_value: &LengthValue, platform: Platf
           args.push(generate_expr_lit_str!("PX"));
         },
         Platform::Harmony => {
-          handler = Some(CONVERT_STYLE_PX_FN.to_string());
-          args.push(generate_expr_lit_num!(*num as f64));
-          args.push(generate_expr_lit_str!("PX"));
+          return generate_expr_lit_str!(format!("{}px", num))
+          // handler = Some(CONVERT_STYLE_PX_FN.to_string());
+          // args.push(generate_expr_lit_num!(*num as f64));
+          // args.push(generate_expr_lit_str!("PX"));
         }
       }
     }

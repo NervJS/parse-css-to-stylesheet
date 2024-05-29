@@ -39,9 +39,9 @@ impl ToExpr for FlexWrap {
     PropertyTuple::One(
       CSSPropertyType::FlexWrap,
       match self.value {
-        EnumValue::Wrap => generate_expr_enum!(style_property_enum::FlexWrap::Wrap),
-        EnumValue::WrapReverse => generate_expr_enum!(style_property_enum::FlexWrap::WrapReverse),
-        EnumValue::NoWrap => generate_expr_enum!(style_property_enum::FlexWrap::NoWrap),
+        EnumValue::Wrap => generate_expr_enum!(style_property_enum::ArkUI_FlexWrap::ARKUI_FLEX_WRAP_WRAP),
+        EnumValue::WrapReverse => generate_expr_enum!(style_property_enum::ArkUI_FlexWrap::ARKUI_FLEX_WRAP_WRAP_REVERSE),
+        EnumValue::NoWrap => generate_expr_enum!(style_property_enum::ArkUI_FlexWrap::ARKUI_FLEX_WRAP_NO_WRAP),
       }
     )
   }

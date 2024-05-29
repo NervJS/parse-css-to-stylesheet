@@ -55,9 +55,9 @@ impl ToExpr for BackgroundSize {
    let expr = match self.value.get(0) {
       Some(image_size) => {
         match image_size {
-          ImageSize::Cover => generate_expr_enum!(style_property_enum::ImageSize::Cover),
-          ImageSize::Contain => generate_expr_enum!(style_property_enum::ImageSize::Contain),
-          ImageSize::Auto => generate_expr_enum!(style_property_enum::ImageSize::Auto),
+          ImageSize::Cover => generate_expr_enum!(style_property_enum::ArkUI_ImageSize::ARKUI_IMAGE_SIZE_COVER),
+          ImageSize::Contain => generate_expr_enum!(style_property_enum::ArkUI_ImageSize::ARKUI_IMAGE_SIZE_CONTAIN),
+          ImageSize::Auto => generate_expr_enum!(style_property_enum::ArkUI_ImageSize::ARKUI_IMAGE_SIZE_AUTO),
           ImageSize::ImageSizeWH(width, height) => {
             let props = vec![
               PropOrSpread::Prop(Box::new(Prop::KeyValue(KeyValueProp {

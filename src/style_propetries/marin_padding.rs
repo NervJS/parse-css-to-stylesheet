@@ -34,7 +34,7 @@ impl ToExpr for MarginPadding {
   fn to_expr(&self) -> PropertyTuple {
     if self.top.is_none() || self.right.is_none() || self.bottom.is_none() || self.left.is_none() {
       return PropertyTuple::One(
-        CSSPropertyType::Invaild,
+        CSSPropertyType::Invalid,
         generate_invalid_expr!()
       )
     }

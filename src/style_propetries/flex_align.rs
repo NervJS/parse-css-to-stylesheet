@@ -74,12 +74,12 @@ impl ToExpr for FlexAlign {
     PropertyTuple::One (
       self.id,
       match self.value {
-        EnumValue::Start => generate_expr_enum!(style_property_enum::FlexAlign::Start),
-        EnumValue::Center => generate_expr_enum!(style_property_enum::FlexAlign::Center),
-        EnumValue::End => generate_expr_enum!(style_property_enum::FlexAlign::End),
-        EnumValue::SpaceBetween => generate_expr_enum!(style_property_enum::FlexAlign::SpaceBetween),
-        EnumValue::SpaceAround => generate_expr_enum!(style_property_enum::FlexAlign::SpaceAround),
-        EnumValue::SpaceEvenly => generate_expr_enum!(style_property_enum::FlexAlign::SpaceEvenly),
+        EnumValue::Start => generate_expr_enum!(style_property_enum::ArkUI_FlexAlignment::ARKUI_FLEX_ALIGNMENT_START),
+        EnumValue::Center => generate_expr_enum!(style_property_enum::ArkUI_FlexAlignment::ARKUI_FLEX_ALIGNMENT_CENTER),
+        EnumValue::End => generate_expr_enum!(style_property_enum::ArkUI_FlexAlignment::ARKUI_FLEX_ALIGNMENT_END),
+        EnumValue::SpaceBetween => generate_expr_enum!(style_property_enum::ArkUI_FlexAlignment::ARKUI_FLEX_ALIGNMENT_SPACE_BETWEEN),
+        EnumValue::SpaceAround => generate_expr_enum!(style_property_enum::ArkUI_FlexAlignment::ARKUI_FLEX_ALIGNMENT_SPACE_AROUND),
+        EnumValue::SpaceEvenly => generate_expr_enum!(style_property_enum::ArkUI_FlexAlignment::ARKUI_FLEX_ALIGNMENT_SPACE_EVENLY),
       }
     )
   }

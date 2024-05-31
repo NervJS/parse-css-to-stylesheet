@@ -2,7 +2,7 @@ use swc_core::ecma::ast::*;
 use swc_core::common::DUMMY_SP;
 
 use crate::generate_expr_lit_num;
-
+use crate::{generate_expr_enum, style_propetries::transform_properties::ETransformType};
 
 
 #[derive(Debug, Clone)]
@@ -46,6 +46,40 @@ impl Matrix {
       m32: 0.0,
       m33: 1.0,
     }
+  }
+
+  pub fn to_vec(&self) -> Vec<f32> {
+    vec![
+        self.m00, self.m01, self.m02, self.m03,
+        self.m10, self.m11, self.m12, self.m13,
+        self.m20, self.m21, self.m22, self.m23,
+        self.m30, self.m31, self.m32, self.m33,
+    ]
+}
+
+  pub fn to_expr_or_spread(&self) -> Option<ExprOrSpread> {
+    let mut props = vec![];
+
+    props.push(PropOrSpread::Prop(Box::new(Prop::KeyValue(KeyValueProp {
+        key: PropName::Ident(Ident::new("type".into(), DUMMY_SP)),
+        value: Box::new(generate_expr_enum!(ETransformType::Matrix))
+    }))));
+
+    props.push(PropOrSpread::Prop(Box::new(Prop::KeyValue(KeyValueProp {
+        key: PropName::Ident(Ident::new("matrix".into(), DUMMY_SP)),
+        value: Box::new(Expr::Array(ArrayLit {
+          span: Default::default(),
+          elems: self.to_vec().iter().map(|x| Some(generate_expr_lit_num!(Into::<f64>::into(*x)).into())).collect(),
+        }))
+    }))));
+
+    Some(ExprOrSpread {
+      spread: None,
+      expr: Box::new(Expr::Object(ObjectLit {
+          span: Default::default(),
+          props: props
+      }))
+  })
   }
   
   // pub fn to_expr(&self) -> Vec<Expr> {

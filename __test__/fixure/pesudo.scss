@@ -1,3 +1,46 @@
-.hello {
-	font-weight: bold;
+.styletest {
+	width: 100px;
+	height: 100px;
+	background-color: #0F0;
+	overflow: hidden;
+	position: relative;
+	left: 10px;
+	top: 10px;
+	z-index: 10;
+	border-width: 5px;
+	border-top-style: solid;
+	border-right-style: dashed;
+	border-bottom-style: dotted;
+	border-left-style: dotted;
+	border-top-color: #FF00FF;
+	border-right-color: #0000FF;
+	border-bottom-color: #00FFF0;
+	border-left-color: #FFeeee;
+	background-size: 100px 100px;
+	background-image: linear-gradient(to right, red,orange,yellow,green,blue,indigo,violet); ;
+	background-position: 50px 50px;
+	transform-origin: 100% 50px;
+}
+
+.texttest {
+	font-family: 'Courier New', Courier, monospace;
+	font-size: 100px;
+}
+
+.container {
+	width: 750px;
+	height: 750px;
+	background-color: #0f0;
+	
+}
+
+.container .box {
+	background-color: #f00;
+}
+
+.box {
+	width: 375px;
+	height: 375px;
+	background-color: #00f;
+	margin-top: 10px;
 }

@@ -51,3 +51,4 @@ pub mod animation;
 pub mod box_shadow;
 pub mod position;
 pub mod visibility;
+pub mod opacity;

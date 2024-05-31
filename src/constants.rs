@@ -13,6 +13,7 @@ pub const RN_CONVERT_STYLE_VU_FN: &'static str = "scaleVu2dp";
 #[repr(u32)] 
 #[derive(Hash, PartialEq, Eq, Debug, Clone)]
 pub enum Pseudo {
+  None,
   Before,
   After,
   FirstChild,
@@ -25,12 +26,13 @@ impl Pseudo {
   // 将 SelectorType 枚举值转换为 f64
   pub fn to_f64(self) -> f64 {
     (match &self {
-        Pseudo::Before => 0,
-        Pseudo::After => 1,
-        Pseudo::FirstChild => 2,
-        Pseudo::LastChild => 3,
-        Pseudo::NthChild(_) => 4,
-        Pseudo::Empty => 5,
+        Pseudo::None => 0,
+        Pseudo::Before => 1,
+        Pseudo::After => 2,
+        Pseudo::FirstChild => 3,
+        Pseudo::LastChild => 4,
+        Pseudo::NthChild(_) => 5,
+        Pseudo::Empty => 6,
     }) as f64
   }
 }
@@ -42,6 +44,7 @@ pub enum SelectorType {
   Subject,
   Parent,
   Ancestor,
+  Multiple,
 }
 
 impl SelectorType {

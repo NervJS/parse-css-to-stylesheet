@@ -2,7 +2,8 @@
 use swc_core::ecma::ast::*;
 use swc_core::common::DUMMY_SP;
 
-use crate::generate_expr_lit_num;
+use crate::{generate_expr_enum, generate_expr_lit_num};
+use crate::style_propetries::style_property_enum;
 
 
 #[derive(Debug, Clone)]
@@ -66,28 +67,18 @@ impl LinearGradientItem {
     if let Some(derection) = &self.derection {
       props.push(PropOrSpread::Prop(Box::new(Prop::KeyValue(KeyValueProp {
         key: PropName::Ident(Ident::new("direction".into(), DUMMY_SP)),
-        value: Expr::Member(MemberExpr {
-          span: DUMMY_SP,
-          obj: Box::new(Expr::Ident(Ident::new(
-            "GradientDirection".into(),
-            DUMMY_SP,
-          ))),
-          prop: MemberProp::Computed(ComputedPropName {
-            span: DUMMY_SP,
-            expr: Expr::Lit(Lit::Str(Str::from(match derection {
-              LinearGradientDirection::Left => "Left",
-              LinearGradientDirection::Right => "Right",
-              LinearGradientDirection::Top => "Top",
-              LinearGradientDirection::Bottom => "Bottom",
-              LinearGradientDirection::LeftTop => "LeftTop",
-              LinearGradientDirection::LeftBottom => "LeftBottom",
-              LinearGradientDirection::RightTop => "RightTop",
-              LinearGradientDirection::RightBottom => "RightBottom",
-            })))
-            .into(),
-          }),
-        })
-        .into(),
+        value: generate_expr_enum!(
+          match derection {
+            LinearGradientDirection::Left => style_property_enum::ArkUI_LinearGradientDirection::ARKUI_LINEAR_GRADIENT_DIRECTION_LEFT,
+            LinearGradientDirection::Right => style_property_enum::ArkUI_LinearGradientDirection::ARKUI_LINEAR_GRADIENT_DIRECTION_RIGHT,
+            LinearGradientDirection::Top => style_property_enum::ArkUI_LinearGradientDirection::ARKUI_LINEAR_GRADIENT_DIRECTION_TOP,
+            LinearGradientDirection::Bottom => style_property_enum::ArkUI_LinearGradientDirection::ARKUI_LINEAR_GRADIENT_DIRECTION_BOTTOM,
+            LinearGradientDirection::LeftTop => style_property_enum::ArkUI_LinearGradientDirection::ARKUI_LINEAR_GRADIENT_DIRECTION_LEFT_TOP,
+            LinearGradientDirection::LeftBottom => style_property_enum::ArkUI_LinearGradientDirection::ARKUI_LINEAR_GRADIENT_DIRECTION_LEFT_BOTTOM,
+            LinearGradientDirection::RightTop => style_property_enum::ArkUI_LinearGradientDirection::ARKUI_LINEAR_GRADIENT_DIRECTION_RIGHT_TOP,
+            LinearGradientDirection::RightBottom => style_property_enum::ArkUI_LinearGradientDirection::ARKUI_LINEAR_GRADIENT_DIRECTION_RIGHT_BOTTOM,
+          }
+        ).into()
       }))));
     }
     Expr::Object(ObjectLit {

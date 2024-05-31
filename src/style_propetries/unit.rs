@@ -158,73 +158,25 @@ pub fn generate_expr_with_css_input(input: String, platform: Platform) -> Expr {
       };
       if let Ok(input_str) = input_str {
         if let Ok(number) = input_str.parse::<f64>() {
-
-          let mut args: Vec<Expr> = vec![];
-          let mut handler: Option<String> = None;
-    
           match unit {
             "vw" | "vh" | "vmin" | "vmax" => {
-              handler = match platform {
-                Platform::ReactNative => Some(RN_CONVERT_STYLE_VU_FN.to_string()),
-                Platform::Harmony => Some(CONVERT_STYLE_PX_FN.to_string())
-              };
-              args.push(generate_expr_lit_num!(number));
-              args.push(generate_expr_lit_str!(unit));
+              return generate_expr_lit_str!(format!("{}{}", number, unit))
             },
             "px" => {
-              handler = match platform {
-                Platform::ReactNative => Some(RN_CONVERT_STYLE_PX_FN.to_string()),
-                Platform::Harmony => Some(CONVERT_STYLE_PX_FN.to_string())
-                // Platform::Harmony => {
-                //   return generate_expr_lit_str!(format!("{}lpx", number))
-                // }
-              };
-              args.push(generate_expr_lit_num!(number));
+              return generate_expr_lit_num!(number)
             },
             "rem" => {
-              handler = match platform {
-                Platform::ReactNative => Some(RN_CONVERT_STYLE_PX_FN.to_string()),
-                Platform::Harmony => Some(CONVERT_STYLE_PX_FN.to_string())
-              };
-              args.push(generate_expr_lit_num!(number * 16.0));
+              return generate_expr_lit_num!(number * 16.0)
             },
             "pX" | "PX" | "Px" => {
-              handler = match platform {
-                Platform::ReactNative => Some(RN_CONVERT_STYLE_VU_FN.to_string()),
-                Platform::Harmony => Some(CONVERT_STYLE_PX_FN.to_string())
-              };
-              args.push(generate_expr_lit_num!(number));
-              args.push(generate_expr_lit_str!("PX"));
+              return generate_expr_lit_str!(format!("{}px", number))
+            },
+            _ => {
             }
-            _ => {}
-          }
-    
-          // 替换原始字符串
-          if let Some(handler_name) = handler {
-            return Expr::Call(CallExpr {
-              span: DUMMY_SP,
-              callee: Callee::Expr(Box::new(Expr::Ident(Ident::new(
-                handler_name.into(),
-                DUMMY_SP
-              )))),
-              args: args.into_iter().map(|arg| ExprOrSpread {
-                spread: None,
-                expr: Box::new(arg),
-              }).collect(),
-              type_args: None,
-            })
-          }
+          };
         } 
       }
     }
-
-    
-  }
-  
-  
-  // 如果匹配到为纯数字，直接返回数字
-  if let Ok(number) = input.parse::<f64>() {
-    return Expr::Lit(Lit::Num(Number::from(number)));
   }
   // 如果没有匹配到，则返回原始字符串
   Expr::Lit(Lit::Str(input.into()))

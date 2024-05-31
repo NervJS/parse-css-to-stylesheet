@@ -103,7 +103,7 @@ impl ToExpr for BorderStyle {
         props.push((CSSPropertyType::BorderLeftStyle, generate_expr_by_line_style!(left)))
       }
       if let Some(right) = &self.right {
-        props.push((CSSPropertyType::BorderBottomStyle, generate_expr_by_line_style!(right)))
+        props.push((CSSPropertyType::BorderRightStyle, generate_expr_by_line_style!(right)))
       }
       PropertyTuple::Array(props)
     }

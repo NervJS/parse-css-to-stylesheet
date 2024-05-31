@@ -236,6 +236,33 @@ pub enum ArkUI_TextCase {
   ARKUI_TEXT_CASE_UPPER,
 }
 
+
+#[repr(u32)] 
+#[derive(Hash, PartialEq, Eq, Debug, Clone, Copy)]
+#[allow(non_camel_case_types)]
+pub enum ArkUI_LinearGradientDirection {
+  /** From right to left. */
+  ARKUI_LINEAR_GRADIENT_DIRECTION_LEFT = 0,
+  /** From bottom to top. */
+  ARKUI_LINEAR_GRADIENT_DIRECTION_TOP,
+  /** From left to right. */
+  ARKUI_LINEAR_GRADIENT_DIRECTION_RIGHT,
+  /** From top to bottom. */
+  ARKUI_LINEAR_GRADIENT_DIRECTION_BOTTOM,
+  /** From lower right to upper left. */
+  ARKUI_LINEAR_GRADIENT_DIRECTION_LEFT_TOP,
+  /** From upper right to lower left. */
+  ARKUI_LINEAR_GRADIENT_DIRECTION_LEFT_BOTTOM,
+  /** From lower left to upper right. */
+  ARKUI_LINEAR_GRADIENT_DIRECTION_RIGHT_TOP,
+  /** From upper left to lower right. */
+  ARKUI_LINEAR_GRADIENT_DIRECTION_RIGHT_BOTTOM,
+  /** No gradient. */
+  ARKUI_LINEAR_GRADIENT_DIRECTION_NONE,
+  /** Custom direction. */
+  ARKUI_LINEAR_GRADIENT_DIRECTION_CUSTOM,
+}
+
 #[repr(u32)] 
 #[derive(Hash, PartialEq, Eq, Debug, Clone, Copy)]
 #[allow(non_camel_case_types)]

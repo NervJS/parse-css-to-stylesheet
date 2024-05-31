@@ -4,7 +4,7 @@ use lightningcss::{properties::{custom::TokenOrValue, Property}, stylesheet::Pri
 use swc_core::{common::DUMMY_SP, ecma::{ast::{self}, utils::quote_ident}};
 use swc_core::ecma::ast::*;
 
-use crate::{style_parser::KeyFrameItem, style_propetries::{animation::Animation, aspect_ratio::AspectRatio, background::Background, background_image::BackgroundImage, background_position::BackgroundPosition, background_repeat::BackgroundRepeat, background_size::BackgroundSize, border::Border, border_color::BorderColor, border_radius::BorderRadius, border_style::BorderStyle, border_width::BorderWidth, box_shadow::BoxShadow, color::ColorProperty, display::Display, flex::Flex, flex_align::FlexAlign, flex_basis::FlexBasis, flex_direction::FlexDirection, flex_wrap::FlexWrap, font_size::FontSize, font_style::FontStyle, font_weight::FontWeight, gap::Gap, item_align::ItemAlign, length_value::LengthValueProperty, letter_spacing::LetterSpacing, line_height::LineHeight, marin_padding::MarginPadding, max_size::MaxSizeProperty, normal::Normal, number::NumberProperty, overflow::Overflow, position::Position, size::SizeProperty, style_property_type::CSSPropertyType, style_value_type::StyleValueType, text_align::TextAlign, text_decoration::TextDecoration, text_overflow::TextOverflow, text_shadow::TextShadow, text_transform::TextTransform, transform::Transform, transform_origin::TransformOrigin, vertical_align::VerticalAlign, visibility::Visibility}};
+use crate::{style_parser::KeyFrameItem, style_propetries::{animation::Animation, aspect_ratio::AspectRatio, background::Background, background_image::BackgroundImage, background_position::BackgroundPosition, background_repeat::BackgroundRepeat, background_size::BackgroundSize, border::Border, border_color::BorderColor, border_radius::BorderRadius, border_style::BorderStyle, border_width::BorderWidth, box_shadow::BoxShadow, color::ColorProperty, display::Display, flex::Flex, flex_align::FlexAlign, flex_basis::FlexBasis, flex_direction::FlexDirection, flex_wrap::FlexWrap, font_size::FontSize, font_style::FontStyle, font_weight::FontWeight, gap::Gap, item_align::ItemAlign, length_value::LengthValueProperty, letter_spacing::LetterSpacing, line_height::LineHeight, marin_padding::MarginPadding, max_size::MaxSizeProperty, normal::Normal, number::NumberProperty, opacity::Opacity, overflow::Overflow, position::Position, size::SizeProperty, style_property_type::CSSPropertyType, style_value_type::StyleValueType, text_align::TextAlign, text_decoration::TextDecoration, text_overflow::TextOverflow, text_shadow::TextShadow, text_transform::TextTransform, transform::Transform, transform_origin::TransformOrigin, vertical_align::VerticalAlign, visibility::Visibility}};
 
 pub fn parse_style_properties(properties: &Vec<(String, Property)>, keyframes_map: Option<Rc<RefCell<HashMap<String, Vec<KeyFrameItem>>>>>) -> Vec<StyleValueType> {
   let mut final_properties = vec![];
@@ -220,6 +220,9 @@ pub fn parse_style_properties(properties: &Vec<(String, Property)>, keyframes_ma
           }
           "visibility" => {
             final_properties.push(StyleValueType::Visibility(Visibility::from((id.to_string(), value))));
+          }
+          "opacity" => {
+            final_properties.push(StyleValueType::Opacity(Opacity::from((id.to_string(), value))));
           }
           "content" => {
             // 判断content内容是否是空字符串

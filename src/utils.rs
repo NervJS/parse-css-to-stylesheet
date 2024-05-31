@@ -3,7 +3,7 @@ use std::collections::HashMap;
 use html5ever::{namespace_url, ns, LocalName, QualName};
 use pcre2::bytes::Regex;
 // use lightningcss::values::number::CSSNumber;
-use swc_core::ecma::{ast::{ArrayLit, CallExpr, Expr, Function, JSXMemberExpr, JSXObject, ObjectLit, Prop, PropName, PropOrSpread}, visit::{Visit, VisitWith}};
+use swc_core::ecma::{ast::{ArrayLit, CallExpr, Expr, Function, JSXMemberExpr, JSXObject, ObjectLit, Prop, PropName, PropOrSpread, TsArrayType}, visit::{Visit, VisitWith}};
 
 use crate::{constants::SelectorType, style_propetries::unit::Platform};
 
@@ -73,7 +73,22 @@ pub fn split_selector(selector: &str) -> Vec<TSelector> {
     for c in selector.chars() {
         if c == ' ' || c == '>' {
             if !current_word.is_empty() {
-                result.push(split_classes(current_word.as_str()));
+                let split_selector = split_classes(current_word.as_str());
+                match split_selector {
+                    TSelector::Selector(_) => {},
+                    TSelector::String(selector) => {
+                      result.push(TSelector::String(selector));
+                    },
+                    TSelector::Array(selectors) => {
+                      let length = selectors.len();
+                      for (index, selector) in selectors.iter().enumerate() {
+                        result.push(TSelector::String(selector.clone()));
+                        if index != length - 1 {
+                          result.push(TSelector::Selector(SelectorType::Multiple))
+                        }
+                      }
+                    },
+                }
                 current_word.clear();
             }
             buffer.push(c);
@@ -93,7 +108,22 @@ pub fn split_selector(selector: &str) -> Vec<TSelector> {
     }
 
     if !current_word.is_empty() {
-        result.push(split_classes(current_word.as_str()));
+        let split_selector = split_classes(current_word.as_str());
+          match split_selector {
+              TSelector::Selector(_) => {},
+              TSelector::String(selector) => {
+                result.push(TSelector::String(selector));
+              },
+              TSelector::Array(selectors) => {
+                let length = selectors.len();
+                for (index, selector) in selectors.iter().enumerate() {
+                  result.push(TSelector::String(selector.clone()));
+                  if index != length - 1 {
+                    result.push(TSelector::Selector(SelectorType::Multiple))
+                  }
+                }
+              },
+          }
     }
 
     if !buffer.is_empty() {

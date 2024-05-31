@@ -1,9 +1,9 @@
 use std::{borrow::Borrow, vec};
 
+use crate::{generate_expr_enum, style_propetries::transform_properties::ETransformType};
 use lightningcss::{printer::PrinterOptions, traits::ToCss, values::
     angle::Angle
-  }
-;
+  };
 use swc_core::ecma::ast::*;
 use swc_core::{
   atoms::Atom,
@@ -66,6 +66,43 @@ impl Rotate {
       })
       .into(),
     })))
+  }
+
+  pub fn to_expr_or_spread(&self) -> Option<ExprOrSpread> {
+      let mut props = vec![];
+
+      [("x", &self.x), ("y", &self.y), ("z", &self.z), ("z", &self.rotate)].into_iter().for_each(|item| {
+          if let (name, Some(value)) = item.borrow() {
+              props.push(
+                  PropOrSpread::Prop(Box::new(Prop::KeyValue(KeyValueProp {
+                      key: PropName::Ident(Ident::new(Atom::new(*name), DUMMY_SP)),
+                      value: Box::new(generate_expr_lit_num!(*value as f64))
+                  })))
+              )
+          }
+      });
+
+      if let Angle::Deg(angle) = self.angle {
+          props.push(
+              PropOrSpread::Prop(Box::new(Prop::KeyValue(KeyValueProp {
+                  key: PropName::Ident(Ident::new("angle".into(), DUMMY_SP)),
+                  value: Box::new(generate_expr_lit_num!(angle as f64))
+              })))
+          );
+      }
+
+      props.push(PropOrSpread::Prop(Box::new(Prop::KeyValue(KeyValueProp {
+          key: PropName::Ident(Ident::new("type".into(), DUMMY_SP)),
+          value: Box::new(generate_expr_enum!(ETransformType::Rotate))
+      }))));
+
+      Some(ExprOrSpread {
+          spread: None,
+          expr: Box::new(Expr::Object(ObjectLit {
+              span: Default::default(),
+              props: props
+          }))
+      })
   }
 
   pub fn to_rn_expr(&self) -> Vec<Expr> {

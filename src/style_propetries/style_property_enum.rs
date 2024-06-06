@@ -128,6 +128,38 @@ pub enum ArkUI_FontStyle {
 #[repr(u32)] 
 #[derive(Hash, PartialEq, Eq, Debug, Clone, Copy)]
 #[allow(non_camel_case_types)]
+pub enum  ArkUI_AnimationCurve {
+  /** The animation speed keeps unchanged. */
+  ARKUI_CURVE_LINEAR = 0,
+  /** The animation starts slowly, accelerates, and then slows down towards the end. */
+  ARKUI_CURVE_EASE,
+  /** The animation starts at a low speed and then picks up speed until the end. */
+  ARKUI_CURVE_EASE_IN,
+  /** The animation ends at a low speed. */
+  ARKUI_CURVE_EASE_OUT,
+  /** The animation starts and ends at a low speed. */
+  ARKUI_CURVE_EASE_IN_OUT,
+  /** The animation uses the standard curve */
+  ARKUI_CURVE_FAST_OUT_SLOW_IN,
+  /** The animation uses the deceleration curve. */
+  ARKUI_CURVE_LINEAR_OUT_SLOW_IN,
+  /** The animation uses the acceleration curve. */
+  ARKUI_CURVE_FAST_OUT_LINEAR_IN,
+  /** The animation uses the extreme deceleration curve. */
+  ARKUI_CURVE_EXTREME_DECELERATION,
+  /** The animation uses the sharp curve. */
+  ARKUI_CURVE_SHARP,
+  /** The animation uses the rhythm curve. */
+  ARKUI_CURVE_RHYTHM,
+  /** The animation uses the smooth curve. */
+  ARKUI_CURVE_SMOOTH,
+  /** The animation uses the friction curve */
+  ARKUI_CURVE_FRICTION,
+}
+
+#[repr(u32)] 
+#[derive(Hash, PartialEq, Eq, Debug, Clone, Copy)]
+#[allow(non_camel_case_types)]
 pub enum ArkUI_FontWeight {
   /** 100 */
   ARKUI_FONT_WEIGHT_W100 = 0,

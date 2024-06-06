@@ -4,10 +4,16 @@ use std::{cell::RefCell, collections::HashMap, rc::Rc};
 
 use lightningcss::{printer::PrinterOptions, properties::{animation, Property}, traits::ToCss, values::{easing::EasingFunction, time}};
 
-use crate::{generate_expr_lit_num, generate_expr_lit_str, style_parser::KeyFrameItem, visitor::parse_style_values};
+use crate::{generate_expr_lit_num, generate_expr_enum, generate_expr_lit_str, style_parser::KeyFrameItem, style_propetries::style_property_enum, visitor::parse_style_values};
 use swc_core::{common::DUMMY_SP, ecma::ast::*};
 use super::{style_property_type::CSSPropertyType, traits::ToExpr, unit::{Platform, PropertyTuple}};
 
+
+#[derive(Debug, Clone)]
+pub enum AnimationTimingFunction {
+  AnimationCurve(style_property_enum::ArkUI_AnimationCurve),
+  EasingFunction(EasingFunction),
+}
 #[derive(Debug, Clone)]
 pub struct Animation {
   pub id: String,
@@ -16,7 +22,7 @@ pub struct Animation {
   pub animation_duration: Option<f32>,
   pub animation_delay: Option<f32>,
   pub animation_iteration: Option<f32>,
-  pub animation_timeing_function: Option<EasingFunction>
+  pub animation_timeing_function: Option<AnimationTimingFunction>
 }
 
 impl From<(String, &Property<'_>, Option<Rc<RefCell<HashMap<String, Vec<KeyFrameItem>>>>>)> for Animation {
@@ -26,7 +32,7 @@ impl From<(String, &Property<'_>, Option<Rc<RefCell<HashMap<String, Vec<KeyFrame
     let mut animation_duration =  None; // 0.0
     let mut animation_delay =  None; // 0.0
     let mut animation_iteration =  None; // 1.0
-    let mut animation_timeing_function = None; // EasingFunction::Ease
+    let mut animation_timeing_function: Option<AnimationTimingFunction> = None; // EasingFunction::Ease
     
     match value.1 {
       // Property::AnimationName(_, _) => todo!(),
@@ -53,7 +59,16 @@ impl From<(String, &Property<'_>, Option<Rc<RefCell<HashMap<String, Vec<KeyFrame
             animation::AnimationIterationCount::Infinite => -1.0,
           });
 
-          animation_timeing_function = Some(animation.timing_function.clone());
+          animation_timeing_function = Some(match animation.timing_function {
+            EasingFunction::Linear => AnimationTimingFunction::AnimationCurve(style_property_enum::ArkUI_AnimationCurve::ARKUI_CURVE_LINEAR),
+            EasingFunction::Ease =>AnimationTimingFunction::AnimationCurve( style_property_enum::ArkUI_AnimationCurve::ARKUI_CURVE_EASE),
+            EasingFunction::EaseIn => AnimationTimingFunction::AnimationCurve( style_property_enum::ArkUI_AnimationCurve::ARKUI_CURVE_EASE_IN ),
+            EasingFunction::EaseOut =>AnimationTimingFunction::AnimationCurve ( style_property_enum::ArkUI_AnimationCurve::ARKUI_CURVE_EASE_OUT ),
+            EasingFunction::EaseInOut =>AnimationTimingFunction::AnimationCurve ( style_property_enum::ArkUI_AnimationCurve::ARKUI_CURVE_EASE_IN_OUT ),
+
+            _ => AnimationTimingFunction::EasingFunction(animation.timing_function.clone())
+          });
+
         });
       },
       Property::AnimationDelay(delay, _) => {
@@ -78,7 +93,14 @@ impl From<(String, &Property<'_>, Option<Rc<RefCell<HashMap<String, Vec<KeyFrame
         animation_name = Some(name.to_css_string(PrinterOptions::default()).unwrap())
       },
       Property::AnimationTimingFunction(timing_function, _) => {
-        animation_timeing_function = Some(timing_function.get(0).unwrap().clone());
+        animation_timeing_function = Some(match timing_function.get(0).unwrap() {
+          EasingFunction::Linear => AnimationTimingFunction::AnimationCurve(style_property_enum::ArkUI_AnimationCurve::ARKUI_CURVE_LINEAR),
+          EasingFunction::Ease =>AnimationTimingFunction::AnimationCurve( style_property_enum::ArkUI_AnimationCurve::ARKUI_CURVE_EASE),
+          EasingFunction::EaseIn => AnimationTimingFunction::AnimationCurve( style_property_enum::ArkUI_AnimationCurve::ARKUI_CURVE_EASE_IN ),
+          EasingFunction::EaseOut =>AnimationTimingFunction::AnimationCurve ( style_property_enum::ArkUI_AnimationCurve::ARKUI_CURVE_EASE_OUT ),
+          EasingFunction::EaseInOut =>AnimationTimingFunction::AnimationCurve ( style_property_enum::ArkUI_AnimationCurve::ARKUI_CURVE_EASE_IN_OUT ),
+          _ => AnimationTimingFunction::EasingFunction(timing_function.get(0).unwrap().clone())
+        });
       },
       _ => {}
     }
@@ -111,7 +133,15 @@ impl ToExpr for Animation {
       exprs.push((CSSPropertyType::AnimationDuration, generate_expr_lit_num!((duration * 1000.0) as f64)))
     }
     if let Some(timeing_function) = &self.animation_timeing_function {
-      exprs.push((CSSPropertyType::AnimationTimingFunction, generate_expr_lit_str!(timeing_function.to_css_string(PrinterOptions::default()).unwrap())))
+      match timeing_function {
+        AnimationTimingFunction::AnimationCurve(timeing_function) => {
+          exprs.push((CSSPropertyType::AnimationTimingFunction, generate_expr_enum!(*timeing_function)))
+        },
+        AnimationTimingFunction::EasingFunction(timeing_function) => {
+          exprs.push((CSSPropertyType::AnimationTimingFunction, generate_expr_lit_str!(timeing_function.to_css_string(PrinterOptions::default()).unwrap())))
+        }
+      }
+
     }
     if let Some(name) = &self.animation_name {
       if let Some(keframes) = &self.keyframes {

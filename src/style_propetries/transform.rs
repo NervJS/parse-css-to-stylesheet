@@ -25,35 +25,38 @@ pub struct Transform {
 }
 
 impl ToExpr for Transform {
-    fn to_expr(&self) -> PropertyTuple {
-      let mut props = vec![];
-      self.value.iter().for_each(|item| {
-        match item {
-          Matrix4::Translates(value) => {
-            props.push(value.to_expr());
-          },
-          Matrix4::Rotates(value) => {
-            props.push(value.to_expr());
-          }
-          Matrix4::Scales(value) => {
-            props.push(value.to_expr());
-          }
-          // Matrix4::Matrix(value) => {
-          //   props.extend(value.to_expr());
-          // },
-          _ => {}
-        }
-      });
-      PropertyTuple::One(
-        CSSPropertyType::Transform,
-        Expr::Object(ObjectLit {
-          span: Default::default(),
-          props:props,
-        })
-      )
-    }
-}
+  fn to_expr(&self) -> PropertyTuple {
+    let mut props= vec![];
+    self.value.iter().for_each(|item| {
+      match item {
+        Matrix4::Translates(value) => {
 
+          props.push(value.to_expr_or_spread());
+        }
+        Matrix4::Rotates(value) => {
+          props.push(value.to_expr_or_spread());
+        }
+        Matrix4::Scales(value) => {
+          props.push(value.to_expr_or_spread());
+        }
+        Matrix4::Skew(value) => {
+          props.push(value.to_expr_or_spread());
+        }
+        Matrix4::Matrix(value) => {
+          props.push(value.to_expr_or_spread());
+        }
+      }
+    });
+    PropertyTuple::One(
+      CSSPropertyType::Transform,
+      Expr::Array(ArrayLit {
+        span: Default::default(),
+        elems: props,
+      }),
+    )
+
+  }
+}
 
 impl From<(String, &Property<'_>)> for Transform {
   fn from(prop: (String, &Property<'_>)) -> Self {
@@ -204,9 +207,10 @@ impl From<(String, &Property<'_>)> for Transform {
         }
       }
     }
+    // println!("transform form {:?}", transform);
     Transform {
       id: prop.0,
-      value: transform
+      value: transform,
     }
   }
 }

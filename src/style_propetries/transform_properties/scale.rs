@@ -6,7 +6,7 @@ use swc_core::{
   atoms::Atom,
   common::DUMMY_SP
 };
-
+use crate::{generate_expr_enum, style_propetries::transform_properties::ETransformType};
 use crate::{generate_expr_lit_num, utils::to_camel_case};
 
 
@@ -55,6 +55,39 @@ impl Scale {
       })
       .into(),
     })))
+  }
+
+  pub fn to_expr_or_spread(&self) -> Option<ExprOrSpread> {
+      let mut props = vec![];
+
+      [("x", &self.x), ("y", &self.y), ("z", &self.z)].into_iter().for_each(|item| {
+          if let (name, Some(side)) = item.borrow() {
+              match &side {
+                  NumberOrPercentage::Number(value) => {
+                      props.push(
+                          PropOrSpread::Prop(Box::new(Prop::KeyValue(KeyValueProp {
+                              key: PropName::Ident(Ident::new(Atom::new(*name), DUMMY_SP)),
+                              value: Box::new(generate_expr_lit_num!(*value as f64))
+                          })))
+                      );
+                  },
+                  _ => {}
+              }
+          }
+      });
+
+      props.push(PropOrSpread::Prop(Box::new(Prop::KeyValue(KeyValueProp {
+          key: PropName::Ident(Ident::new("type".into(), DUMMY_SP)),
+          value: Box::new(generate_expr_enum!(ETransformType::Scale))
+      }))));
+
+      Some(ExprOrSpread {
+          spread: None,
+          expr: Box::new(Expr::Object(ObjectLit {
+              span: Default::default(),
+              props: props
+          }))
+      })
   }
 
   pub fn to_rn_expr(&self) -> Vec<Expr> {

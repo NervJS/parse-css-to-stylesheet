@@ -46,7 +46,7 @@ impl From<(String, &Property<'_>)> for Position {
 impl ToExpr for Position {
   fn to_expr(&self) -> PropertyTuple {
     PropertyTuple::One(
-      CSSPropertyType::Display,
+      CSSPropertyType::Position,
       match &self.value {
         EnumValue::Static => generate_expr_enum!(style_property_enum::Position::Static),
         EnumValue::Relative => generate_expr_enum!(style_property_enum::Position::Relative),

@@ -275,6 +275,22 @@ pub enum ArkUI_Visibility {
   ARKUI_VISIBILITY_NONE,
 }
 
+#[repr(u32)] 
+#[derive(Hash, PartialEq, Eq, Debug, Clone, Copy)]
+#[allow(non_camel_case_types)]
+pub enum ArkUI_WordBreak {
+  /** Word breaks can occur between any two characters for Chinese, Japanese, and Korean (CJK) text, but can occur
+   *  only at a space character for non-CJK text (such as English). */
+   ARKUI_WORD_BREAK_NORMAL = 0,
+   /** Word breaks can occur between any two characters for non-CJK text. CJK text behavior is the same as for
+    *  <b>NORMAL</b>. */
+   ARKUI_WORD_BREAK_BREAK_ALL,
+   /** This option has the same effect as <b>BREAK_ALL</b> for non-CJK text, except that if it preferentially wraps
+    *  lines at appropriate characters (for example, spaces) whenever possible.
+       CJK text behavior is the same as for <b>NORMAL</b>. */
+   ARKUI_WORD_BREAK_BREAK_WORD,
+}
+
 
 #[repr(u32)] 
 #[derive(Hash, PartialEq, Eq, Debug, Clone, Copy)]

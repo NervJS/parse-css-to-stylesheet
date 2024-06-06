@@ -52,3 +52,4 @@ pub mod box_shadow;
 pub mod position;
 pub mod visibility;
 pub mod opacity;
+pub mod word_break;

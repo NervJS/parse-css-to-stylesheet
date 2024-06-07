@@ -60,11 +60,11 @@ impl From<(String, &Property<'_>, Option<Rc<RefCell<HashMap<String, Vec<KeyFrame
           });
 
           animation_timeing_function = Some(match animation.timing_function {
-            EasingFunction::Linear => AnimationTimingFunction::AnimationCurve(style_property_enum::ArkUI_AnimationCurve::ARKUI_CURVE_LINEAR),
-            EasingFunction::Ease =>AnimationTimingFunction::AnimationCurve( style_property_enum::ArkUI_AnimationCurve::ARKUI_CURVE_EASE),
-            EasingFunction::EaseIn => AnimationTimingFunction::AnimationCurve( style_property_enum::ArkUI_AnimationCurve::ARKUI_CURVE_EASE_IN ),
-            EasingFunction::EaseOut =>AnimationTimingFunction::AnimationCurve ( style_property_enum::ArkUI_AnimationCurve::ARKUI_CURVE_EASE_OUT ),
-            EasingFunction::EaseInOut =>AnimationTimingFunction::AnimationCurve ( style_property_enum::ArkUI_AnimationCurve::ARKUI_CURVE_EASE_IN_OUT ),
+            // EasingFunction::Linear => AnimationTimingFunction::AnimationCurve(style_property_enum::ArkUI_AnimationCurve::ARKUI_CURVE_LINEAR),
+            // EasingFunction::Ease =>AnimationTimingFunction::AnimationCurve( style_property_enum::ArkUI_AnimationCurve::ARKUI_CURVE_EASE),
+            // EasingFunction::EaseIn => AnimationTimingFunction::AnimationCurve( style_property_enum::ArkUI_AnimationCurve::ARKUI_CURVE_EASE_IN ),
+            // EasingFunction::EaseOut =>AnimationTimingFunction::AnimationCurve ( style_property_enum::ArkUI_AnimationCurve::ARKUI_CURVE_EASE_OUT ),
+            // EasingFunction::EaseInOut =>AnimationTimingFunction::AnimationCurve ( style_property_enum::ArkUI_AnimationCurve::ARKUI_CURVE_EASE_IN_OUT ),
 
             _ => AnimationTimingFunction::EasingFunction(animation.timing_function.clone())
           });
@@ -94,11 +94,11 @@ impl From<(String, &Property<'_>, Option<Rc<RefCell<HashMap<String, Vec<KeyFrame
       },
       Property::AnimationTimingFunction(timing_function, _) => {
         animation_timeing_function = Some(match timing_function.get(0).unwrap() {
-          EasingFunction::Linear => AnimationTimingFunction::AnimationCurve(style_property_enum::ArkUI_AnimationCurve::ARKUI_CURVE_LINEAR),
-          EasingFunction::Ease =>AnimationTimingFunction::AnimationCurve( style_property_enum::ArkUI_AnimationCurve::ARKUI_CURVE_EASE),
-          EasingFunction::EaseIn => AnimationTimingFunction::AnimationCurve( style_property_enum::ArkUI_AnimationCurve::ARKUI_CURVE_EASE_IN ),
-          EasingFunction::EaseOut =>AnimationTimingFunction::AnimationCurve ( style_property_enum::ArkUI_AnimationCurve::ARKUI_CURVE_EASE_OUT ),
-          EasingFunction::EaseInOut =>AnimationTimingFunction::AnimationCurve ( style_property_enum::ArkUI_AnimationCurve::ARKUI_CURVE_EASE_IN_OUT ),
+          // EasingFunction::Linear => AnimationTimingFunction::AnimationCurve(style_property_enum::ArkUI_AnimationCurve::ARKUI_CURVE_LINEAR),
+          // EasingFunction::Ease =>AnimationTimingFunction::AnimationCurve( style_property_enum::ArkUI_AnimationCurve::ARKUI_CURVE_EASE),
+          // EasingFunction::EaseIn => AnimationTimingFunction::AnimationCurve( style_property_enum::ArkUI_AnimationCurve::ARKUI_CURVE_EASE_IN ),
+          // EasingFunction::EaseOut =>AnimationTimingFunction::AnimationCurve ( style_property_enum::ArkUI_AnimationCurve::ARKUI_CURVE_EASE_OUT ),
+          // EasingFunction::EaseInOut =>AnimationTimingFunction::AnimationCurve ( style_property_enum::ArkUI_AnimationCurve::ARKUI_CURVE_EASE_IN_OUT ),
           _ => AnimationTimingFunction::EasingFunction(timing_function.get(0).unwrap().clone())
         });
       },

@@ -2,7 +2,7 @@
 
 use std::{cell::RefCell, collections::HashMap, rc::Rc};
 
-use lightningcss::{printer::PrinterOptions, properties::{animation, Property}, traits::ToCss, values::{easing::EasingFunction, time}};
+use lightningcss::{printer::PrinterOptions, properties::{animation::{self, AnimationFillMode}, Property}, traits::ToCss, values::{easing::EasingFunction,  time}};
 
 use crate::{generate_expr_lit_num, generate_expr_enum, generate_expr_lit_str, style_parser::KeyFrameItem, style_propetries::style_property_enum, visitor::parse_style_values};
 use swc_core::{common::DUMMY_SP, ecma::ast::*};
@@ -22,7 +22,7 @@ pub struct Animation {
   pub animation_duration: Option<f32>,
   pub animation_delay: Option<f32>,
   pub animation_iteration: Option<f32>,
-  pub animation_fill_mode: Option<style_property_enum::ArkUI_AnimationFillMode>,
+  pub animation_fill_mode: Option<AnimationFillMode>,
   pub animation_timeing_function: Option<AnimationTimingFunction>
 }
 
@@ -33,7 +33,7 @@ impl From<(String, &Property<'_>, Option<Rc<RefCell<HashMap<String, Vec<KeyFrame
     let mut animation_duration =  None; // 0.0
     let mut animation_delay =  None; // 0.0
     let mut animation_iteration =  None; // 1.0
-    let mut animation_fill_mode = None;
+    let mut animation_fill_mode: Option<AnimationFillMode> = None;
     let mut animation_timeing_function: Option<AnimationTimingFunction> = None; // EasingFunction::Ease
     
     match value.1 {
@@ -61,12 +61,13 @@ impl From<(String, &Property<'_>, Option<Rc<RefCell<HashMap<String, Vec<KeyFrame
             animation::AnimationIterationCount::Infinite => -1.0,
           });
 
-          animation_fill_mode = Some(match animation.fill_mode {
-            animation::AnimationFillMode::Forwards => style_property_enum::ArkUI_AnimationFillMode::ARKUI_ANIMATION_FILL_MODE_FORWARDS,
-            animation::AnimationFillMode::Backwards => style_property_enum::ArkUI_AnimationFillMode::ARKUI_ANIMATION_FILL_MODE_BACKWARDS,
-            animation::AnimationFillMode::Both => style_property_enum::ArkUI_AnimationFillMode::ARKUI_ANIMATION_FILL_MODE_BOTH,
-            animation::AnimationFillMode::None => style_property_enum::ArkUI_AnimationFillMode::ARKUI_ANIMATION_FILL_MODE_NONE,
-          });
+          // animation_fill_mode = Some(match animation.fill_mode {
+          //   animation::AnimationFillMode::Forwards => style_property_enum::ArkUI_AnimationFillMode::ARKUI_ANIMATION_FILL_MODE_FORWARDS,
+          //   animation::AnimationFillMode::Backwards => style_property_enum::ArkUI_AnimationFillMode::ARKUI_ANIMATION_FILL_MODE_BACKWARDS,
+          //   animation::AnimationFillMode::Both => style_property_enum::ArkUI_AnimationFillMode::ARKUI_ANIMATION_FILL_MODE_BOTH,
+          //   animation::AnimationFillMode::None => style_property_enum::ArkUI_AnimationFillMode::ARKUI_ANIMATION_FILL_MODE_NONE,
+          // });
+          animation_fill_mode = Some(animation.fill_mode.clone());
 
           animation_timeing_function = Some(match animation.timing_function {
             // EasingFunction::Linear => AnimationTimingFunction::AnimationCurve(style_property_enum::ArkUI_AnimationCurve::ARKUI_CURVE_LINEAR),
@@ -143,7 +144,8 @@ impl ToExpr for Animation {
       exprs.push((CSSPropertyType::AnimationDuration, generate_expr_lit_num!((duration * 1000.0) as f64)))
     }
     if let Some(fill_mode) = &self.animation_fill_mode {
-      exprs.push((CSSPropertyType::AnimationFillMode, generate_expr_enum!(*fill_mode)));
+      // exprs.push((CSSPropertyType::AnimationFillMode, generate_expr_enum!(*fill_mode)));
+      exprs.push((CSSPropertyType::AnimationFillMode, generate_expr_lit_str!(fill_mode.to_css_string(PrinterOptions::default()).unwrap())));
     }
     if let Some(timeing_function) = &self.animation_timeing_function {
       match timeing_function {

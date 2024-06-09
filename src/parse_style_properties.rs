@@ -241,7 +241,7 @@ pub fn parse_style_properties(properties: &Vec<(String, Property)>, keyframes_ma
               final_properties.push(StyleValueType::Animation(Animation::from((id.to_string(), value, Some(keyframes_map.clone())))))
             }
           }
-          "animationDelay" | "animationDuration" | "animationIterationCount" | "animationTimingFunction" => {
+          "animationDelay" | "animationDuration" | "animationIterationCount" | "animationTimingFunction" | "animationFillMode" => {
             final_properties.push(StyleValueType::Animation(Animation::from((id.to_string(), value, None))))
           }
           "zIndex" => {

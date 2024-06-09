@@ -22,6 +22,7 @@ pub struct Animation {
   pub animation_duration: Option<f32>,
   pub animation_delay: Option<f32>,
   pub animation_iteration: Option<f32>,
+  pub animation_fill_mode: Option<style_property_enum::ArkUI_AnimationFillMode>,
   pub animation_timeing_function: Option<AnimationTimingFunction>
 }
 
@@ -32,6 +33,7 @@ impl From<(String, &Property<'_>, Option<Rc<RefCell<HashMap<String, Vec<KeyFrame
     let mut animation_duration =  None; // 0.0
     let mut animation_delay =  None; // 0.0
     let mut animation_iteration =  None; // 1.0
+    let mut animation_fill_mode = None;
     let mut animation_timeing_function: Option<AnimationTimingFunction> = None; // EasingFunction::Ease
     
     match value.1 {
@@ -57,6 +59,13 @@ impl From<(String, &Property<'_>, Option<Rc<RefCell<HashMap<String, Vec<KeyFrame
           animation_iteration = Some(match animation.iteration_count {
             animation::AnimationIterationCount::Number(num) => num,
             animation::AnimationIterationCount::Infinite => -1.0,
+          });
+
+          animation_fill_mode = Some(match animation.fill_mode {
+            animation::AnimationFillMode::Forwards => style_property_enum::ArkUI_AnimationFillMode::ARKUI_ANIMATION_FILL_MODE_FORWARDS,
+            animation::AnimationFillMode::Backwards => style_property_enum::ArkUI_AnimationFillMode::ARKUI_ANIMATION_FILL_MODE_BACKWARDS,
+            animation::AnimationFillMode::Both => style_property_enum::ArkUI_AnimationFillMode::ARKUI_ANIMATION_FILL_MODE_BOTH,
+            animation::AnimationFillMode::None => style_property_enum::ArkUI_AnimationFillMode::ARKUI_ANIMATION_FILL_MODE_NONE,
           });
 
           animation_timeing_function = Some(match animation.timing_function {
@@ -111,6 +120,7 @@ impl From<(String, &Property<'_>, Option<Rc<RefCell<HashMap<String, Vec<KeyFrame
       animation_name,
       animation_duration,
       animation_delay,
+      animation_fill_mode,
       animation_iteration,
       animation_timeing_function
     }
@@ -131,6 +141,9 @@ impl ToExpr for Animation {
     }
     if let Some(duration) = self.animation_duration {
       exprs.push((CSSPropertyType::AnimationDuration, generate_expr_lit_num!((duration * 1000.0) as f64)))
+    }
+    if let Some(fill_mode) = &self.animation_fill_mode {
+      exprs.push((CSSPropertyType::AnimationFillMode, generate_expr_enum!(*fill_mode)));
     }
     if let Some(timeing_function) = &self.animation_timeing_function {
       match timeing_function {

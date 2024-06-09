@@ -84,4 +84,5 @@ pub enum CSSPropertyType {
     Content = 79,
     WordBreak = 80,
     WebkitLineLamp = 81,
+    AnimationFillMode = 82
 }

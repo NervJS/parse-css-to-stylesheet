@@ -54,8 +54,6 @@ pub fn parse_style_properties(properties: &Vec<(String, Property)>, keyframes_ma
       continue;
     }
 
-    println!("id: {:?}", id);
-    println!("value: {:?}", value);
     
     let property_name = id.as_str();
     match property_name {
@@ -259,6 +257,6 @@ pub fn parse_style_properties(properties: &Vec<(String, Property)>, keyframes_ma
           }
         }
 }
-  println!("final_properties: {:?}", final_properties);
+
   final_properties
 }

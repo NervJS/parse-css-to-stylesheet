@@ -246,7 +246,7 @@ pub fn parse_style_properties(properties: &Vec<(String, Property)>, keyframes_ma
             final_properties.push(StyleValueType::Normal(Normal::new(CSSPropertyType::ZIndex, value.value_to_css_string(PrinterOptions::default()).unwrap())));
           }
           "WebkitLineClamp" => {
-            final_properties.push(StyleValueType::Normal(Normal::new(CSSPropertyType::WebkitLineLamp, value.value_to_css_string(PrinterOptions::default()).unwrap())));
+            final_properties.push(StyleValueType::Normal(Normal::new(CSSPropertyType::WebkitLineClamp, value.value_to_css_string(PrinterOptions::default()).unwrap())));
           }
           "wordBreak" => {
             final_properties.push(StyleValueType::WordBreak(WordBreak::from(( id.to_string(), value ))))

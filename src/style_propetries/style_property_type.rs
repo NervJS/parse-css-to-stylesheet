@@ -83,6 +83,6 @@ pub enum CSSPropertyType {
     AnimationIterationCount = 78,
     Content = 79,
     WordBreak = 80,
-    WebkitLineLamp = 81,
+    WebkitLineClamp = 81,
     AnimationFillMode = 82
 }

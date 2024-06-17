@@ -1,6 +1,6 @@
 {
   "name": "@tarojs/parse-css-to-stylesheet-linux-arm-gnueabihf",
-  "version": "0.0.69",
+  "version": "1.0.0",
   "os": [
     "linux"
   ],

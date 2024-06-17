@@ -1,3 +1,32 @@
+# [1.0.0](https://github.com/NervJS/parse-css-to-stylesheet/compare/v0.0.69...v1.0.0) (2024-06-17)
+
+
+### Bug Fixes
+
+* 修复poistion的枚举错误问题 ([5700315](https://github.com/NervJS/parse-css-to-stylesheet/commit/570031538ad6257e4b53522d6c3a731349b21f70))
+
+
+### Features
+
+* 把fill mode解析成string ([e01ae73](https://github.com/NervJS/parse-css-to-stylesheet/commit/e01ae7329dd7858cda93a0f5000e8863045e3cc1))
+* 更新 ([82a8f69](https://github.com/NervJS/parse-css-to-stylesheet/commit/82a8f69c25d5ce196b9ef135e39c9ae01ab2d28d))
+* 关闭animation的枚举值解析 ([30e7792](https://github.com/NervJS/parse-css-to-stylesheet/commit/30e77927310a5384e9e1f7fd23bc3c45d4f1b67b))
+* 解析单个的fill mode ([eaa995e](https://github.com/NervJS/parse-css-to-stylesheet/commit/eaa995e6e2ec183cb23dd9b3dcb412a1dbc6d1f5))
+* 解析timingFunction ([f5f17ba](https://github.com/NervJS/parse-css-to-stylesheet/commit/f5f17ba30b2825d068566e09b05fb053f4f12fc6))
+* 去掉打印 ([cc5f9a2](https://github.com/NervJS/parse-css-to-stylesheet/commit/cc5f9a2244e255e5aef9b6c92f198aac391eb8e1))
+* 属性枚举化 ([67810ef](https://github.com/NervJS/parse-css-to-stylesheet/commit/67810ef4c5a875834670be8dfb03b9109abaea05))
+* 添加animation fill mode ([a9f56f6](https://github.com/NervJS/parse-css-to-stylesheet/commit/a9f56f61c373dee57bddfc81d8abf41de1dd6524))
+* 完成枚举化改造 ([7044391](https://github.com/NervJS/parse-css-to-stylesheet/commit/7044391384c7ac82d179d2c3d1f4cc7ed6c423b2))
+* 完成word_break ([a3ca5e7](https://github.com/NervJS/parse-css-to-stylesheet/commit/a3ca5e77e20966da0815424af86dc1b368a87b6f))
+* 修改 ([f021b1a](https://github.com/NervJS/parse-css-to-stylesheet/commit/f021b1a38b425a7baf370daed83bad22b48b64d4))
+* 修改textoverflow ([358c3e2](https://github.com/NervJS/parse-css-to-stylesheet/commit/358c3e2c9b875053c385be5b350156508d4c696b))
+* 增加部分伪类的枚举 ([493a427](https://github.com/NervJS/parse-css-to-stylesheet/commit/493a427f56c2955b19d3cf51d731ef5f45b3045b))
+* 重构代码输出 ([65c7b32](https://github.com/NervJS/parse-css-to-stylesheet/commit/65c7b32a5784a94921b37e584a87016759c4b826))
+* capi ([7a73ef7](https://github.com/NervJS/parse-css-to-stylesheet/commit/7a73ef7ca8f3335ebb3c29d2ebc630b27ad455b8))
+* transform ([e5903da](https://github.com/NervJS/parse-css-to-stylesheet/commit/e5903da91e39f727d1b2d459d5a2ecfb19bd2861))
+
+
+
 ## [0.0.69](https://github.com/NervJS/parse-css-to-stylesheet/compare/v0.0.68...v0.0.69) (2024-05-14)
 
 

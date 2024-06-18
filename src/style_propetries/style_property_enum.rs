@@ -333,6 +333,24 @@ pub enum ArkUI_WordBreak {
 
 #[repr(u32)]
 #[derive(Hash, PartialEq, Eq, Debug, Clone, Copy)]
+#[allow(non_camel_case_types)]
+pub enum PlaceholderVerticalAlignment {
+    /** Offset At Baseline */
+    ALIGNMENT_OFFSET_AT_BASELINE = 0,
+    /** Above Baseline */
+    ALIGNMENT_ABOVE_BASELINE,
+    /** Below Baseline */
+    ALIGNMENT_BELOW_BASELINE,
+    /** Top of Row Box */
+    ALIGNMENT_TOP_OF_ROW_BOX,
+    /** Bottom of Row Box */
+    ALIGNMENT_BOTTOM_OF_ROW_BOX,
+    /** Center of Row Box */
+    ALIGNMENT_CENTER_OF_ROW_BOX,
+}
+
+#[repr(u32)]
+#[derive(Hash, PartialEq, Eq, Debug, Clone, Copy)]
 pub enum Overflow {
     Visible = 0,
     Hidden,

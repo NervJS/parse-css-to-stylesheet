@@ -1,3 +1,12 @@
+## [1.0.1](https://github.com/NervJS/parse-css-to-stylesheet/compare/v1.0.0...v1.0.1) (2024-06-18)
+
+
+### Bug Fixes
+
+* 修改vertical-align的映射 ([9bc3735](https://github.com/NervJS/parse-css-to-stylesheet/commit/9bc37353b0fcc80c10eeaa0ca33720ac8262f337))
+
+
+
 # [1.0.0](https://github.com/NervJS/parse-css-to-stylesheet/compare/v0.0.69...v1.0.0) (2024-06-17)
 
 

@@ -17,19 +17,11 @@ impl ToExpr for TextOverflow {
   fn to_expr(&self) -> PropertyTuple {
     PropertyTuple::One(
       CSSPropertyType::TextOverflow,
-      Expr::Object(ObjectLit {
-        span: DUMMY_SP,
-        props: vec![
-          PropOrSpread::Prop(Box::new(Prop::KeyValue(KeyValueProp {
-            key: PropName::Ident(Ident::new("overflow".into(), DUMMY_SP)),
-            value: match self {
-              TextOverflow::Clip => generate_expr_enum!(style_property_enum::ArkUI_TextOverflow::ARKUI_TEXT_OVERFLOW_CLIP),
-              TextOverflow::Ellipsis => generate_expr_enum!(style_property_enum::ArkUI_TextOverflow::ARKUI_TEXT_OVERFLOW_ELLIPSIS),
-              TextOverflow::None => generate_expr_enum!(style_property_enum::ArkUI_TextOverflow::ARKUI_TEXT_OVERFLOW_NONE),
-            }.into()
-          }))),
-        ],
-      })
+      match self {
+        TextOverflow::Clip => generate_expr_enum!(style_property_enum::ArkUI_TextOverflow::ARKUI_TEXT_OVERFLOW_CLIP),
+        TextOverflow::Ellipsis => generate_expr_enum!(style_property_enum::ArkUI_TextOverflow::ARKUI_TEXT_OVERFLOW_ELLIPSIS),
+        TextOverflow::None => generate_expr_enum!(style_property_enum::ArkUI_TextOverflow::ARKUI_TEXT_OVERFLOW_NONE),
+      }.into()
     )
   }
   

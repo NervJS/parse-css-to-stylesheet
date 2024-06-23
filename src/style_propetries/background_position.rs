@@ -124,37 +124,41 @@ pub struct BackgroundPosition {
 
 impl ToExpr for BackgroundPosition {
   fn to_expr(&self) -> PropertyTuple {
-    let expr = match self.value.get(0).unwrap() {
-      ImagePosition::ImagePositionXY(x, y) => Expr::Object(ObjectLit {
-        span: DUMMY_SP,
-        props: vec![
-          PropOrSpread::Prop(Box::new(Prop::KeyValue(KeyValueProp {
-            key: PropName::Ident(Ident::new("x".into(), DUMMY_SP)),
-            value: generate_expr_with_css_input(x.to_string(), Platform::Harmony).into(),
-          }))),
-          PropOrSpread::Prop(Box::new(Prop::KeyValue(KeyValueProp {
-            key: PropName::Ident(Ident::new("y".into(), DUMMY_SP)),
-            value: generate_expr_with_css_input(y.to_string(), Platform::Harmony).into(),
-          }))),
-        ]
-        .into(),
-      })
-      .into(),
-      ImagePosition::TopStart => generate_expr_enum!(style_property_enum::ArkUI_Alignment::ARKUI_ALIGNMENT_TOP_START),
-      ImagePosition::Top => generate_expr_enum!(style_property_enum::ArkUI_Alignment::ARKUI_ALIGNMENT_TOP),
-      ImagePosition::TopEnd => generate_expr_enum!(style_property_enum::ArkUI_Alignment::ARKUI_ALIGNMENT_TOP_END),
-      ImagePosition::Start => generate_expr_enum!(style_property_enum::ArkUI_Alignment::ARKUI_ALIGNMENT_START),
-      ImagePosition::Center => generate_expr_enum!(style_property_enum::ArkUI_Alignment::ARKUI_ALIGNMENT_CENTER),
-      ImagePosition::End => generate_expr_enum!(style_property_enum::ArkUI_Alignment::ARKUI_ALIGNMENT_END),
-      ImagePosition::BottomStart => generate_expr_enum!(style_property_enum::ArkUI_Alignment::ARKUI_ALIGNMENT_BOTTOM_START),
-      ImagePosition::Bottom => generate_expr_enum!(style_property_enum::ArkUI_Alignment::ARKUI_ALIGNMENT_BOTTOM),
-      ImagePosition::BottomEnd => generate_expr_enum!(style_property_enum::ArkUI_Alignment::ARKUI_ALIGNMENT_BOTTOM_END),
+    let property_tuple = match self.value.get(0).unwrap() {
+      ImagePosition::ImagePositionXY(x, y) => {
+        PropertyTuple::Array(vec![
+          (CSSPropertyType::BackgroundPositionX, generate_expr_with_css_input(x.to_string(), Platform::Harmony).into()),
+          (CSSPropertyType::BackgroundPositionY, generate_expr_with_css_input(y.to_string(), Platform::Harmony).into())
+        ])
+      },
+      position => {
+        let expr = match position {
+          ImagePosition::TopStart => generate_expr_enum!(style_property_enum::ArkUI_Alignment::ARKUI_ALIGNMENT_TOP_START),
+          ImagePosition::Top => generate_expr_enum!(style_property_enum::ArkUI_Alignment::ARKUI_ALIGNMENT_TOP),
+          ImagePosition::TopEnd => generate_expr_enum!(style_property_enum::ArkUI_Alignment::ARKUI_ALIGNMENT_TOP_END),
+          ImagePosition::Start => generate_expr_enum!(style_property_enum::ArkUI_Alignment::ARKUI_ALIGNMENT_START),
+          ImagePosition::Center => generate_expr_enum!(style_property_enum::ArkUI_Alignment::ARKUI_ALIGNMENT_CENTER),
+          ImagePosition::End => generate_expr_enum!(style_property_enum::ArkUI_Alignment::ARKUI_ALIGNMENT_END),
+          ImagePosition::BottomStart => generate_expr_enum!(style_property_enum::ArkUI_Alignment::ARKUI_ALIGNMENT_BOTTOM_START),
+          ImagePosition::Bottom => generate_expr_enum!(style_property_enum::ArkUI_Alignment::ARKUI_ALIGNMENT_BOTTOM),
+          ImagePosition::BottomEnd => generate_expr_enum!(style_property_enum::ArkUI_Alignment::ARKUI_ALIGNMENT_BOTTOM_END),
+          _ => unreachable!(),
+        };
+
+        PropertyTuple::One(
+          CSSPropertyType::BackgroundPosition,
+          expr
+        )
+      },
+
     };
     
-    PropertyTuple::One(
-      CSSPropertyType::BackgroundPosition,
-      expr
-    )
+    property_tuple
+    
+    // PropertyTuple::One(
+    //   CSSPropertyType::BackgroundPosition,
+    //   expr
+    // )
   }
 
 }

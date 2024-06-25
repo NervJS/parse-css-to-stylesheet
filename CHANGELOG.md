@@ -1,3 +1,14 @@
+## [1.0.2](https://github.com/NervJS/parse-css-to-stylesheet/compare/v1.0.1...v1.0.2) (2024-06-25)
+
+
+### Features
+
+* transition的enum ([961c89f](https://github.com/NervJS/parse-css-to-stylesheet/commit/961c89f85e986c2702145ccbad632cc2ab2bd59e))
+* 去掉xyz的引号 ([fa4d75a](https://github.com/NervJS/parse-css-to-stylesheet/commit/fa4d75a63b8ba49b828a22860f1beeb05b00687c))
+* 把background-position拆成background-positionx，background-positiony ([c450d8f](https://github.com/NervJS/parse-css-to-stylesheet/commit/c450d8fe13806892295a2919f0c0506fed6d9d7c))
+
+
+
 ## [1.0.1](https://github.com/NervJS/parse-css-to-stylesheet/compare/v1.0.0...v1.0.1) (2024-06-18)
 
 

@@ -47,7 +47,7 @@ impl Translate {
     if let Some(z) = &self.z {
       match z {
         Length::Value(val) => props.push(PropOrSpread::Prop(Box::new(Prop::KeyValue(KeyValueProp {
-          key: PropName::Ident(Ident::new(stringify!("z").into(), DUMMY_SP)),
+          key: PropName::Ident(Ident::new(stringify!(z).into(), DUMMY_SP)),
           value: Box::new(generate_expr_by_length_value(&val, Platform::Harmony))
         })))),
         _ => {}
@@ -84,7 +84,7 @@ impl Translate {
     if let Some(z) = &self.z {
       match z {
         Length::Value(val) => props.push(PropOrSpread::Prop(Box::new(Prop::KeyValue(KeyValueProp {
-          key: PropName::Ident(Ident::new(stringify!("z").into(), DUMMY_SP)),
+          key: PropName::Ident(Ident::new(stringify!(z).into(), DUMMY_SP)),
           value: Box::new(generate_expr_by_length_value(&val, Platform::Harmony))
         })))),
         _ => {}

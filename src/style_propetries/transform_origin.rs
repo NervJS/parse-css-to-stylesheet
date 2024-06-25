@@ -37,7 +37,7 @@ impl ToExpr for TransformOrigin {
       span: DUMMY_SP,
       props: vec![
         PropOrSpread::Prop(Box::new(Prop::KeyValue(KeyValueProp {
-          key: PropName::Ident(Ident::new(stringify!("x").into(), DUMMY_SP)),
+          key: PropName::Ident(Ident::new(stringify!(x).into(), DUMMY_SP)),
           value: Box::new(
             match &self.x {
               EnumValue::String(value) => generate_expr_lit_str!(value.to_string()),
@@ -46,7 +46,7 @@ impl ToExpr for TransformOrigin {
           ),
         }))),
         PropOrSpread::Prop(Box::new(Prop::KeyValue(KeyValueProp {
-          key: PropName::Ident(Ident::new(stringify!("y").into(), DUMMY_SP)),
+          key: PropName::Ident(Ident::new(stringify!(y).into(), DUMMY_SP)),
           value: Box::new(
             match &self.y {
               EnumValue::String(value) => generate_expr_lit_str!(value.to_string()),

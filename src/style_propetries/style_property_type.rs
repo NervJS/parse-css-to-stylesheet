@@ -87,4 +87,9 @@ pub enum CSSPropertyType {
     AnimationFillMode = 82,
     BackgroundPositionX = 83,
     BackgroundPositionY = 84,
+    transition = 85,
+    transitionProperty = 86,
+    transitionDuration = 87,
+    transitionTimingFunction = 88,
+    transitionDelay = 89
 }

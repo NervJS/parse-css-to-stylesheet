@@ -1,3 +1,12 @@
+## [1.0.3](https://github.com/NervJS/parse-css-to-stylesheet/compare/v1.0.2...v1.0.3) (2024-06-25)
+
+
+### Bug Fixes
+
+* 修改enum变量名 ([aae2850](https://github.com/NervJS/parse-css-to-stylesheet/commit/aae28501ba30f918e2e1fe38efe57bfb26d1b8a8))
+
+
+
 ## [1.0.2](https://github.com/NervJS/parse-css-to-stylesheet/compare/v1.0.1...v1.0.2) (2024-06-25)
 
 

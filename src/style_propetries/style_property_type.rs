@@ -91,5 +91,6 @@ pub enum CSSPropertyType {
     transitionProperty = 86,
     transitionDuration = 87,
     transitionTimingFunction = 88,
-    transitionDelay = 89
+    transitionDelay = 89,
+    WhiteSpace = 90,
 }

@@ -374,3 +374,11 @@ pub enum Position {
     Fixed,
     Sticky,
 }
+
+
+#[repr(u32)]
+#[derive(Hash, PartialEq, Eq, Debug, Clone, Copy)]
+pub enum WhiteSpace {
+    NoWrap = 0,
+    Wrap,
+}

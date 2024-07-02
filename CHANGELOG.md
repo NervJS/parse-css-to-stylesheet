@@ -1,3 +1,12 @@
+## [1.0.4](https://github.com/NervJS/parse-css-to-stylesheet/compare/v1.0.3...v1.0.4) (2024-07-02)
+
+
+### Features
+
+* 增加white-space ([bdef88b](https://github.com/NervJS/parse-css-to-stylesheet/commit/bdef88b24c984257e2e6e2d0e75f1f0c7dd23d0c))
+
+
+
 ## [1.0.3](https://github.com/NervJS/parse-css-to-stylesheet/compare/v1.0.2...v1.0.3) (2024-06-25)
 
 

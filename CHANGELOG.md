@@ -1,3 +1,12 @@
+## [1.0.5](https://github.com/NervJS/parse-css-to-stylesheet/compare/v1.0.4...v1.0.5) (2024-07-03)
+
+
+### Features
+
+* 拆分text-decoration ([ee55b97](https://github.com/NervJS/parse-css-to-stylesheet/commit/ee55b970f22777f1981aa8f16b73a499c1ce048f))
+
+
+
 ## [1.0.4](https://github.com/NervJS/parse-css-to-stylesheet/compare/v1.0.3...v1.0.4) (2024-07-02)
 
 

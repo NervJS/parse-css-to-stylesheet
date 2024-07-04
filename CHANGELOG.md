@@ -1,3 +1,12 @@
+## [1.0.6](https://github.com/NervJS/parse-css-to-stylesheet/compare/v1.0.5...v1.0.6) (2024-07-04)
+
+
+### Features
+
+* background枚举变成百分比 ([bb34cb3](https://github.com/NervJS/parse-css-to-stylesheet/commit/bb34cb32149cbb9fd450c20b0f77d5abed2ec5ab))
+
+
+
 ## [1.0.5](https://github.com/NervJS/parse-css-to-stylesheet/compare/v1.0.4...v1.0.5) (2024-07-03)
 
 

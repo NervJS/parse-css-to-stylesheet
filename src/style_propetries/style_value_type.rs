@@ -1,6 +1,7 @@
+
 use crate::generate_expr_based_on_platform;
 
-use super::{animation::Animation, aspect_ratio::AspectRatio, background::Background, background_image::BackgroundImage, background_position::BackgroundPosition, background_repeat::BackgroundRepeat, background_size::BackgroundSize, border::Border, border_color::BorderColor, border_radius::BorderRadius, border_style::BorderStyle, border_width::BorderWidth, box_shadow::BoxShadow, color::ColorProperty, display::Display, flex::Flex, flex_align::FlexAlign, flex_basis::FlexBasis, flex_direction::FlexDirection, flex_wrap::FlexWrap, font_size::FontSize, font_style::FontStyle, font_weight::FontWeight, gap::Gap, item_align::ItemAlign, length_value::LengthValueProperty, letter_spacing::LetterSpacing, line_height::LineHeight, marin_padding::MarginPadding, max_size::MaxSizeProperty, normal::Normal, number::NumberProperty, opacity::Opacity, overflow::Overflow, position::Position, size::SizeProperty, text_align::TextAlign, text_decoration::TextDecoration, text_overflow::TextOverflow, text_shadow::TextShadow, text_transform::TextTransform, traits::{ToExpr, ToStyleValue}, transform::Transform, transform_origin::TransformOrigin, unit::{Platform, PropertyTuple}, vertical_align::VerticalAlign, visibility::Visibility, word_break::WordBreak};
+use super::{animation::Animation, transition::Transition, aspect_ratio::AspectRatio, background::Background, background_image::BackgroundImage, background_position::BackgroundPosition, background_repeat::BackgroundRepeat, background_size::BackgroundSize, border::Border, border_color::BorderColor, border_radius::BorderRadius, border_style::BorderStyle, border_width::BorderWidth, box_shadow::BoxShadow, color::ColorProperty, display::Display, flex::Flex, flex_align::FlexAlign, flex_basis::FlexBasis, flex_direction::FlexDirection, flex_wrap::FlexWrap, font_size::FontSize, font_style::FontStyle, font_weight::FontWeight, gap::Gap, item_align::ItemAlign, length_value::LengthValueProperty, letter_spacing::LetterSpacing, line_height::LineHeight, marin_padding::MarginPadding, max_size::MaxSizeProperty, normal::Normal, number::NumberProperty, opacity::Opacity, overflow::Overflow, position::Position, size::SizeProperty, text_align::TextAlign, text_decoration::TextDecoration, text_overflow::TextOverflow, text_shadow::TextShadow, text_transform::TextTransform, traits::{ToExpr, ToStyleValue}, transform::Transform, transform_origin::TransformOrigin, unit::{Platform, PropertyTuple}, vertical_align::VerticalAlign, visibility::Visibility, word_break::WordBreak};
 
 
 #[derive(Debug, Clone)]
@@ -47,6 +48,7 @@ pub enum StyleValueType {
   BackgroundImage(BackgroundImage),
   Background(Background),
   Animation(Animation),
+  Transition(Transition),
   BoxShadow(BoxShadow),
   Position(Position),
   Visibility(Visibility),
@@ -181,6 +183,9 @@ impl ToStyleValue for StyleValueType {
         generate_expr_based_on_platform!(platform, value)
       }
       StyleValueType::Animation(value) => {
+        generate_expr_based_on_platform!(platform, value)
+      }
+      StyleValueType::Transition(value) => {
         generate_expr_based_on_platform!(platform, value)
       }
       StyleValueType::BoxShadow(value) => {

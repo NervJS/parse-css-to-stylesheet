@@ -4,10 +4,13 @@
 }
 
 @keyframes name {	
-	from{
-		width:10px;
+	0% {
+		width: 10px;
 	}	
-	to {
+	30% {
 		width: 100px
 	}
+    100% {
+        width: 50px
+    }
 }

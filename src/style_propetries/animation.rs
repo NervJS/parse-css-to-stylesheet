@@ -49,12 +49,12 @@ impl From<(String, &Property<'_>, Option<Rc<RefCell<HashMap<String, Vec<KeyFrame
         animation_list.into_iter().for_each(|animation| {
           animation_name = Some(animation.name.to_css_string(PrinterOptions::default()).unwrap());
           animation_duration = Some(match animation.duration {
-            time::Time::Seconds(s) => s,
-            time::Time::Milliseconds(m) => m * 60.0,
+            time::Time::Seconds(s) => s * 1000.0,
+            time::Time::Milliseconds(m) => m,
           });
           animation_delay = Some(match animation.delay {
-            time::Time::Seconds(s) => s,
-            time::Time::Milliseconds(m) => m * 60.0,
+            time::Time::Seconds(s) => s * 1000.0,
+            time::Time::Milliseconds(m) => m,
           });
           animation_iteration = Some(match animation.iteration_count {
             animation::AnimationIterationCount::Number(num) => num,
@@ -83,14 +83,14 @@ impl From<(String, &Property<'_>, Option<Rc<RefCell<HashMap<String, Vec<KeyFrame
       },
       Property::AnimationDelay(delay, _) => {
         animation_delay = Some(match delay.get(0).unwrap() {
-          time::Time::Seconds(s) => *s,
-          time::Time::Milliseconds(m) => m * 60.0,
+          time::Time::Seconds(s) => *s * 1000.0,
+          time::Time::Milliseconds(m) => *m,
         });
       },
       Property::AnimationDuration(duration, _) => {
         animation_duration = Some(match duration.get(0).unwrap() {
-          time::Time::Seconds(s) => *s,
-          time::Time::Milliseconds(m) => m * 60.0,
+          time::Time::Seconds(s) => *s * 1000.0,
+          time::Time::Milliseconds(m) => *m,
         })
       },
       Property::AnimationIterationCount(iteration, _) => {
@@ -135,13 +135,13 @@ impl ToExpr for Animation {
 
     let mut exprs = vec![];
     if let Some(delay) = self.animation_delay {
-      exprs.push((CSSPropertyType::AnimationDelay, generate_expr_lit_num!((delay * 1000.0) as f64)))
+      exprs.push((CSSPropertyType::AnimationDelay, generate_expr_lit_num!(delay as f64)))
     }
     if let Some(iteration) = self.animation_iteration {
       exprs.push((CSSPropertyType::AnimationIterationCount, generate_expr_lit_num!(iteration as f64)))
     }
     if let Some(duration) = self.animation_duration {
-      exprs.push((CSSPropertyType::AnimationDuration, generate_expr_lit_num!((duration * 1000.0) as f64)))
+      exprs.push((CSSPropertyType::AnimationDuration, generate_expr_lit_num!(duration as f64)))
     }
     if let Some(fill_mode) = &self.animation_fill_mode {
       // exprs.push((CSSPropertyType::AnimationFillMode, generate_expr_enum!(*fill_mode)));
@@ -164,7 +164,8 @@ impl ToExpr for Animation {
       let keyframe_map = keframes.borrow();
       if let Some(keyframe_items) = keyframe_map.get(name) {
         // animation-name: keyframes
-        exprs.push((CSSPropertyType::AnimationName, Expr::Array(ArrayLit {
+        exprs.push((CSSPropertyType::AnimationName, generate_expr_lit_str!(name.clone())));
+        exprs.push((CSSPropertyType::AnimationKeyFrames, Expr::Array(ArrayLit {
           span: DUMMY_SP,
           elems: keyframe_items.into_iter().map(|item| {
             return Some(ExprOrSpread {

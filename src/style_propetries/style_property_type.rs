@@ -76,7 +76,7 @@ pub enum CSSPropertyType {
     Opacity = 71,
     Transform = 72,
     TransformOrigin = 73,
-    AnimationName = 74,
+    AnimationKeyFrames = 74,
     AnimationDuration = 75,
     AnimationTimingFunction = 76,
     AnimationDelay = 77,
@@ -87,9 +87,10 @@ pub enum CSSPropertyType {
     AnimationFillMode = 82,
     BackgroundPositionX = 83,
     BackgroundPositionY = 84,
-    transition = 85,
-    transitionProperty = 86,
-    transitionDuration = 87,
-    transitionTimingFunction = 88,
-    transitionDelay = 89
+    Transition = 85,
+    TransitionProperty = 86,
+    TransitionDuration = 87,
+    TransitionTimingFunction = 88,
+    TransitionDelay = 89,
+    AnimationName = 90
 }

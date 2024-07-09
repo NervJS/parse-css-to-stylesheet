@@ -1,16 +1,19 @@
 .styletest {
-
-	animation: name 1s linear 2s infinite forwards;
+    border-radius: 10% 20px 30px 40px;
+    animation: name 1s;
+    transition: border-radius 1s;
 }
 
 @keyframes name {	
 	0% {
 		width: 10px;
+        border-radius:10% 20px 30px 40px;
 	}	
 	30% {
-		width: 100px
+		width: 100px;
 	}
     100% {
-        width: 50px
+        width: 50px;
+        border-radius:50% 5px 10px 10px;
     }
 }

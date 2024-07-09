@@ -27,7 +27,7 @@ pub struct Transition {
 pub fn convert_property_to_cssty(property_id:&PropertyId) -> CSSPropertyType {
   let mut ret_type:CSSPropertyType = CSSPropertyType::Invalid;
   ret_type = match property_id {
-    //PropertyId::Position => CSSPropertyType::Position,
+    PropertyId::Position => CSSPropertyType::Position,
     PropertyId::Left => CSSPropertyType::Left,
     PropertyId::Right => CSSPropertyType::Right,
     PropertyId::Top => CSSPropertyType::Top,
@@ -36,31 +36,31 @@ pub fn convert_property_to_cssty(property_id:&PropertyId) -> CSSPropertyType {
     PropertyId::Height => CSSPropertyType::Height,
     PropertyId::Width => CSSPropertyType::Width,
 
-    //PropertyId::BorderWidth => CSSPropertyType::BorderWidth,
+    PropertyId::BorderWidth => CSSPropertyType::BorderWidth,
     PropertyId::BorderTopWidth => CSSPropertyType::BorderTopWidth,
     PropertyId::BorderLeftWidth => CSSPropertyType::BorderLeftWidth,
     PropertyId::BorderRightWidth => CSSPropertyType::BorderRightWidth,
     PropertyId::BorderBottomWidth => CSSPropertyType::BorderBottomWidth,
 
-    //PropertyId::BorderColor => CSSPropertyType::BorderColor,
+    PropertyId::BorderColor => CSSPropertyType::BorderColor,
     PropertyId::BorderTopColor => CSSPropertyType::BorderTopColor,
     PropertyId::BorderLeftColor => CSSPropertyType::BorderLeftColor,
     PropertyId::BorderRightColor => CSSPropertyType::BorderRightColor,
     PropertyId::BorderBottomColor => CSSPropertyType::BorderBottomColor,
 
-    //PropertyId::Margin => CSSPropertyType::Margin,
+    PropertyId::Margin => CSSPropertyType::Margin,
     PropertyId::MarginLeft => CSSPropertyType::MarginLeft,
     PropertyId::MarginRight => CSSPropertyType::MarginRight,
     PropertyId::MarginTop => CSSPropertyType::MarginTop,
     PropertyId::MarginBottom => CSSPropertyType::MarginBottom,
 
-    //PropertyId::Padding => CSSPropertyType::Padding,
+    PropertyId::Padding => CSSPropertyType::Padding,
     PropertyId::PaddingLeft => CSSPropertyType::PaddingLeft,
     PropertyId::PaddingRight => CSSPropertyType::PaddingRight,
     PropertyId::PaddingTop => CSSPropertyType::PaddingTop,
     PropertyId::PaddingBottom => CSSPropertyType::PaddingBottom,
 
-    //PropertyId::BorderRadius => CSSPropertyType::BorderRadius,
+    PropertyId::BorderRadius(_) => CSSPropertyType::BorderRadius,
     PropertyId::BorderTopLeftRadius(_) => CSSPropertyType::BorderTopLeftRadius,
     PropertyId::BorderTopRightRadius(_) => CSSPropertyType::BorderTopRightRadius,
     PropertyId::BorderBottomLeftRadius(_) => CSSPropertyType::BorderBottomLeftRadius,

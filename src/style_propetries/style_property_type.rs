@@ -92,5 +92,10 @@ pub enum CSSPropertyType {
     TransitionDuration = 87,
     TransitionTimingFunction = 88,
     TransitionDelay = 89,
-    AnimationName = 90
+    AnimationName = 95,
+    BorderWidth = 96,
+    BorderColor = 97,
+    Margin = 98,
+    Padding = 99,
+    BorderRadius = 100,
 }

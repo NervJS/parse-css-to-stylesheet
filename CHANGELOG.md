@@ -1,3 +1,12 @@
+## [1.0.7](https://github.com/NervJS/parse-css-to-stylesheet/compare/v1.0.6...v1.0.7) (2024-07-09)
+
+
+### Features
+
+* transition解析 ([e718001](https://github.com/NervJS/parse-css-to-stylesheet/commit/e718001efbf94384370e86f5e92ba2fa73b807fb))
+
+
+
 ## [1.0.6](https://github.com/NervJS/parse-css-to-stylesheet/compare/v1.0.5...v1.0.6) (2024-07-04)
 
 

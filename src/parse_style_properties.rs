@@ -56,7 +56,6 @@ pub fn parse_style_properties(properties: &Vec<(String, Property)>, keyframes_ma
 
     
     let property_name = id.as_str();
-    print!("name={}", property_name);
     match property_name {
           // 基础样式
           "alignContent" => {

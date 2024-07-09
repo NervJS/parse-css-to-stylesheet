@@ -159,7 +159,7 @@ pub enum ArkUI_AnimationCurve {
 #[allow(non_camel_case_types)]
 pub enum ArkUI_AnimationFillMode {
     // 动画未执行时不会将任何样式应用于目标，动画播放完成之后恢复初始默认状态。
-    ARKUI_ANIMATION_FILL_MODE_NONE = 0 ,
+    ARKUI_ANIMATION_FILL_MODE_NONE = 0,
     // 目标将保留动画执行期间最后一个关键帧的状态。
     ARKUI_ANIMATION_FILL_MODE_FORWARDS,
     // 动画将在应用于目标时立即应用第一个关键帧中定义的值，并在delay期间保留此值。
@@ -254,6 +254,22 @@ pub enum ArkUI_TextDecorationType {
 #[repr(u32)]
 #[derive(Hash, PartialEq, Eq, Debug, Clone, Copy)]
 #[allow(non_camel_case_types)]
+pub enum ArkUI_TextDecorationStyle {
+    /** Single solid line. */
+    ARKUI_TEXT_DECORATION_STYLE_SOLID = 0,
+    /** Double solid line. */
+    ARKUI_TEXT_DECORATION_STYLE_DOUBLE,
+    /** Dotted line. */
+    ARKUI_TEXT_DECORATION_STYLE_DOTTED,
+    /** Dashed line. */
+    ARKUI_TEXT_DECORATION_STYLE_DASHED,
+    /** Wavy line. */
+    ARKUI_TEXT_DECORATION_STYLE_WAVY,
+}
+
+#[repr(u32)]
+#[derive(Hash, PartialEq, Eq, Debug, Clone, Copy)]
+#[allow(non_camel_case_types)]
 pub enum ArkUI_TextOverflow {
     /** Extra-long text is not clipped. */
     ARKUI_TEXT_OVERFLOW_NONE = 0,
@@ -333,6 +349,24 @@ pub enum ArkUI_WordBreak {
 
 #[repr(u32)]
 #[derive(Hash, PartialEq, Eq, Debug, Clone, Copy)]
+#[allow(non_camel_case_types)]
+pub enum PlaceholderVerticalAlignment {
+    /** Offset At Baseline */
+    ALIGNMENT_OFFSET_AT_BASELINE = 0,
+    /** Above Baseline */
+    ALIGNMENT_ABOVE_BASELINE,
+    /** Below Baseline */
+    ALIGNMENT_BELOW_BASELINE,
+    /** Top of Row Box */
+    ALIGNMENT_TOP_OF_ROW_BOX,
+    /** Bottom of Row Box */
+    ALIGNMENT_BOTTOM_OF_ROW_BOX,
+    /** Center of Row Box */
+    ALIGNMENT_CENTER_OF_ROW_BOX,
+}
+
+#[repr(u32)]
+#[derive(Hash, PartialEq, Eq, Debug, Clone, Copy)]
 pub enum Overflow {
     Visible = 0,
     Hidden,
@@ -355,4 +389,12 @@ pub enum Position {
     Absolute,
     Fixed,
     Sticky,
+}
+
+
+#[repr(u32)]
+#[derive(Hash, PartialEq, Eq, Debug, Clone, Copy)]
+pub enum WhiteSpace {
+    NoWrap = 0,
+    Wrap,
 }

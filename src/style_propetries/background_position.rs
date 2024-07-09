@@ -131,25 +131,42 @@ impl ToExpr for BackgroundPosition {
           (CSSPropertyType::BackgroundPositionY, generate_expr_with_css_input(y.to_string(), Platform::Harmony).into())
         ])
       },
-      position => {
-        let expr = match position {
-          ImagePosition::TopStart => generate_expr_enum!(style_property_enum::ArkUI_Alignment::ARKUI_ALIGNMENT_TOP_START),
-          ImagePosition::Top => generate_expr_enum!(style_property_enum::ArkUI_Alignment::ARKUI_ALIGNMENT_TOP),
-          ImagePosition::TopEnd => generate_expr_enum!(style_property_enum::ArkUI_Alignment::ARKUI_ALIGNMENT_TOP_END),
-          ImagePosition::Start => generate_expr_enum!(style_property_enum::ArkUI_Alignment::ARKUI_ALIGNMENT_START),
-          ImagePosition::Center => generate_expr_enum!(style_property_enum::ArkUI_Alignment::ARKUI_ALIGNMENT_CENTER),
-          ImagePosition::End => generate_expr_enum!(style_property_enum::ArkUI_Alignment::ARKUI_ALIGNMENT_END),
-          ImagePosition::BottomStart => generate_expr_enum!(style_property_enum::ArkUI_Alignment::ARKUI_ALIGNMENT_BOTTOM_START),
-          ImagePosition::Bottom => generate_expr_enum!(style_property_enum::ArkUI_Alignment::ARKUI_ALIGNMENT_BOTTOM),
-          ImagePosition::BottomEnd => generate_expr_enum!(style_property_enum::ArkUI_Alignment::ARKUI_ALIGNMENT_BOTTOM_END),
-          _ => unreachable!(),
-        };
-
-        PropertyTuple::One(
-          CSSPropertyType::BackgroundPosition,
-          expr
-        )
-      },
+      ImagePosition::TopStart => PropertyTuple::Array(vec![
+        (CSSPropertyType::BackgroundPositionX, generate_expr_with_css_input("0%".to_string(), Platform::Harmony).into()),
+        (CSSPropertyType::BackgroundPositionY, generate_expr_with_css_input("0%".to_string(), Platform::Harmony).into())
+      ]),
+      ImagePosition::Top => PropertyTuple::Array(vec![
+        (CSSPropertyType::BackgroundPositionX, generate_expr_with_css_input("50%".to_string(), Platform::Harmony).into()),
+        (CSSPropertyType::BackgroundPositionY, generate_expr_with_css_input("0%".to_string(), Platform::Harmony).into())
+      ]),
+      ImagePosition::TopEnd => PropertyTuple::Array(vec![
+        (CSSPropertyType::BackgroundPositionX, generate_expr_with_css_input("100%".to_string(), Platform::Harmony).into()),
+        (CSSPropertyType::BackgroundPositionY, generate_expr_with_css_input("0%".to_string(), Platform::Harmony).into())
+      ]),
+      ImagePosition::Start => PropertyTuple::Array(vec![
+        (CSSPropertyType::BackgroundPositionX, generate_expr_with_css_input("0%".to_string(), Platform::Harmony).into()),
+        (CSSPropertyType::BackgroundPositionY, generate_expr_with_css_input("50%".to_string(), Platform::Harmony).into())
+      ]),
+      ImagePosition::Center => PropertyTuple::Array(vec![
+        (CSSPropertyType::BackgroundPositionX, generate_expr_with_css_input("50%".to_string(), Platform::Harmony).into()),
+        (CSSPropertyType::BackgroundPositionY, generate_expr_with_css_input("50%".to_string(), Platform::Harmony).into())
+      ]),
+      ImagePosition::End => PropertyTuple::Array(vec![
+        (CSSPropertyType::BackgroundPositionX, generate_expr_with_css_input("100%".to_string(), Platform::Harmony).into()),
+        (CSSPropertyType::BackgroundPositionY, generate_expr_with_css_input("50%".to_string(), Platform::Harmony).into())
+      ]),
+      ImagePosition::BottomStart => PropertyTuple::Array(vec![
+        (CSSPropertyType::BackgroundPositionX, generate_expr_with_css_input("0%".to_string(), Platform::Harmony).into()),
+        (CSSPropertyType::BackgroundPositionY, generate_expr_with_css_input("100%".to_string(), Platform::Harmony).into())
+      ]),
+      ImagePosition::Bottom => PropertyTuple::Array(vec![
+        (CSSPropertyType::BackgroundPositionX, generate_expr_with_css_input("50%".to_string(), Platform::Harmony).into()),
+        (CSSPropertyType::BackgroundPositionY, generate_expr_with_css_input("100%".to_string(), Platform::Harmony).into())
+      ]),
+      ImagePosition::BottomEnd => PropertyTuple::Array(vec![
+        (CSSPropertyType::BackgroundPositionX, generate_expr_with_css_input("100%".to_string(), Platform::Harmony).into()),
+        (CSSPropertyType::BackgroundPositionY, generate_expr_with_css_input("100%".to_string(), Platform::Harmony).into())
+      ]),
 
     };
     

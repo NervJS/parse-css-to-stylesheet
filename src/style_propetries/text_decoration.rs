@@ -35,34 +35,43 @@ pub struct TextDecorationColor(CssColor);
 
 impl ToExpr for TextDecoration {
   fn to_expr(&self) -> PropertyTuple {
-    let mut props = vec![];
+    let mut props: Vec<(CSSPropertyType, Expr)> = vec![];
 
     if let Some(line) = &self.line {
-      props.push(PropOrSpread::Prop(Box::new(Prop::KeyValue(KeyValueProp {
-        key: generate_prop_name!("type"),
-        value: match line {
+      props.push((
+        CSSPropertyType::TextDecorationLine,
+        match line {
           TextDecorationLine::Underline => generate_expr_enum!(style_property_enum::ArkUI_TextDecorationType::ARKUI_TEXT_DECORATION_TYPE_UNDERLINE),
           TextDecorationLine::LineThrough => generate_expr_enum!(style_property_enum::ArkUI_TextDecorationType::ARKUI_TEXT_DECORATION_TYPE_LINE_THROUGH),
           TextDecorationLine::Overline => generate_expr_enum!(style_property_enum::ArkUI_TextDecorationType::ARKUI_TEXT_DECORATION_TYPE_OVERLINE),
           _ => generate_expr_enum!(style_property_enum::ArkUI_TextDecorationType::ARKUI_TEXT_DECORATION_TYPE_NONE),
-        }.into()
-      }))));
+        }
+      ));
     }
 
     if let Some(color) = &self.color {
-      props.push(PropOrSpread::Prop(Box::new(Prop::KeyValue(KeyValueProp {
-        key: generate_prop_name!("color"),
-        value: generate_expr_lit_color!(color.0.clone()).into()
-      }))));
+      props.push((
+        CSSPropertyType::TextDecorationColor,
+        generate_expr_lit_color!(color.0.clone())
+      ));
+     
     }
 
-    PropertyTuple::One(
-      CSSPropertyType::TextDecoration,
-      Expr::Object(ObjectLit {
-        span: DUMMY_SP,
-        props: props
-      })
-    )
+    if let Some(style) = &self.style {
+      props.push((
+        CSSPropertyType::TextDecorationStyle,
+        match style {
+          TextDecorationStyle::Solid => generate_expr_enum!(style_property_enum::ArkUI_TextDecorationStyle::ARKUI_TEXT_DECORATION_STYLE_SOLID),
+          TextDecorationStyle::Double => generate_expr_enum!(style_property_enum::ArkUI_TextDecorationStyle::ARKUI_TEXT_DECORATION_STYLE_DOUBLE),
+          TextDecorationStyle::Dotted => generate_expr_enum!(style_property_enum::ArkUI_TextDecorationStyle::ARKUI_TEXT_DECORATION_STYLE_DOTTED),
+          TextDecorationStyle::Dashed => generate_expr_enum!(style_property_enum::ArkUI_TextDecorationStyle::ARKUI_TEXT_DECORATION_STYLE_DASHED),
+          TextDecorationStyle::Wavy => generate_expr_enum!(style_property_enum::ArkUI_TextDecorationStyle::ARKUI_TEXT_DECORATION_STYLE_WAVY),
+        }
+      ));
+     
+    }
+
+    PropertyTuple::Array(props)
   }
 }
 

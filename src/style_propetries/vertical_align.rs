@@ -29,10 +29,13 @@ impl ToExpr for VerticalAlign {
       CSSPropertyType::VerticalAlign,
       {
         match self.value {
-          EnumValue::Baseline | EnumValue::Sub | EnumValue::Super | EnumValue::TextTop | EnumValue::TextBottom | EnumValue::Invalid => generate_invalid_expr!(),
-          EnumValue::Middle => generate_expr_enum!(style_property_enum::ArkUI_Alignment::ARKUI_ALIGNMENT_CENTER),
-          EnumValue::Top => generate_expr_enum!(style_property_enum::ArkUI_Alignment::ARKUI_ALIGNMENT_TOP),
-          EnumValue::Bottom => generate_expr_enum!(style_property_enum::ArkUI_Alignment::ARKUI_ALIGNMENT_BOTTOM),
+          EnumValue::Baseline => generate_expr_enum!(style_property_enum::PlaceholderVerticalAlignment::ALIGNMENT_OFFSET_AT_BASELINE),
+          EnumValue::TextTop => generate_expr_enum!(style_property_enum::PlaceholderVerticalAlignment::ALIGNMENT_ABOVE_BASELINE),
+          EnumValue::TextBottom => generate_expr_enum!(style_property_enum::PlaceholderVerticalAlignment::ALIGNMENT_BELOW_BASELINE),
+          EnumValue::Middle => generate_expr_enum!(style_property_enum::PlaceholderVerticalAlignment::ALIGNMENT_CENTER_OF_ROW_BOX),
+          EnumValue::Top => generate_expr_enum!(style_property_enum::PlaceholderVerticalAlignment::ALIGNMENT_TOP_OF_ROW_BOX),
+          EnumValue::Bottom => generate_expr_enum!(style_property_enum::PlaceholderVerticalAlignment::ALIGNMENT_BOTTOM_OF_ROW_BOX),
+          EnumValue::Sub | EnumValue::Super| EnumValue::Invalid => generate_invalid_expr!(),
         }
       }
     )

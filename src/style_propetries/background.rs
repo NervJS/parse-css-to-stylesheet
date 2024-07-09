@@ -114,7 +114,7 @@ impl ToExpr for Background {
           }
           if let Some(position) = &self.position {
             match position.to_expr() {
-              PropertyTuple::One(_, val) => props.push((CSSPropertyType::Position, val)),
+              PropertyTuple::One(_, val) => props.push((CSSPropertyType::BackgroundPosition, val)),
               _ => {}
             }
           }

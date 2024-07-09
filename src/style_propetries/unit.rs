@@ -145,7 +145,7 @@ pub fn generate_expr_by_length_value(length_value: &LengthValue, platform: Platf
 
 pub fn generate_expr_with_css_input(input: String, platform: Platform) -> Expr {
   // 定义匹配 '16px' 的正则表达式
-  let re = Regex::new(r"(-?(?P<num>\d+(\.\d*)?|\.\d+))(?P<unit>(px)|(vw)|(vh)|(pX)|(PX)|(Px))").unwrap();
+  let re = Regex::new(r"(-?(?P<num>\d+(\.\d*)?|\.\d+))(?P<unit>(%|px|vw|vh|pX|PX|Px)?)").unwrap();
   let bytes = input.as_bytes();
   // 使用正则表达式进行匹配
   if let Ok(caps) = re.captures(bytes) {
@@ -171,7 +171,12 @@ pub fn generate_expr_with_css_input(input: String, platform: Platform) -> Expr {
             "pX" | "PX" | "Px" => {
               return generate_expr_lit_str!(format!("{}px", number))
             },
+            "%" => {
+              return generate_expr_lit_str!(format!("{}%", number))
+            }
             _ => {
+              // 如果没有单位，则认为是纯数字，返回 Expr::Num
+              return generate_expr_lit_num!(number);
             }
           };
         } 

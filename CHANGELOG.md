@@ -1,3 +1,12 @@
+## [1.0.8](https://github.com/NervJS/parse-css-to-stylesheet/compare/v1.0.7...v1.0.8) (2024-07-10)
+
+
+### Bug Fixes
+
+* 修复background无法解析复合的background-position ([5501f95](https://github.com/NervJS/parse-css-to-stylesheet/commit/5501f95dd3ce659c4c4bc5b65272b622a6825234))
+
+
+
 ## [1.0.7](https://github.com/NervJS/parse-css-to-stylesheet/compare/v1.0.6...v1.0.7) (2024-07-09)
 
 

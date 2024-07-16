@@ -1,5 +1,6 @@
 
 use std::collections::HashMap;
+use indexmap::IndexMap;
 use serde_json::Value;
 use swc_core::common::DUMMY_SP;
 use swc_core::ecma::ast::*;
@@ -12,12 +13,12 @@ use crate::utils;
 use crate::visitor::parse_style_values;
 
 pub struct JsonWriter {
-    styles: HashMap<String, Vec<StyleValueType>>,
+    styles: IndexMap<String, Vec<StyleValueType>>,
 }
 
 impl JsonWriter {
 
-    pub fn new(styles: HashMap<String, Vec<StyleValueType>>) -> Self {
+    pub fn new(styles: IndexMap<String, Vec<StyleValueType>>) -> Self {
         Self { styles }
     }
 

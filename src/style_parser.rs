@@ -1,5 +1,6 @@
-use std::{rc::Rc, cell::RefCell, convert::Infallible, collections::HashMap, hash::Hash};
+use std::{cell::RefCell, collections::HashMap, convert::Infallible, hash::Hash, rc::Rc};
 
+use indexmap::IndexMap;
 use lightningcss::{declaration::DeclarationBlock, properties::Property, rules::{keyframes::KeyframeSelector, CssRule}, stylesheet::{ParserOptions, PrinterOptions, StyleSheet}, traits::ToCss, visit_types, visitor::{Visit, VisitTypes, Visitor}};
 
 use crate::{style_propetries::{style_value_type::StyleValueType, unit::Platform}, utils::to_camel_case};
@@ -9,7 +10,7 @@ use super::parse_style_properties::parse_style_properties;
 pub type StyleValue = Vec<StyleValueType>;
 #[derive(Debug)]
 pub struct StyleData {
-  pub all_style: Rc<RefCell<HashMap<String, StyleValue>>>,
+  pub all_style: Rc<RefCell<IndexMap<String, StyleValue>>>,
 }
 
 pub struct KeyFramesData {
@@ -185,7 +186,7 @@ impl<'i> StyleParser<'i> {
         ),
       )
     })
-    .collect::<HashMap<_, _>>();
+    .collect::<IndexMap<_, _>>();
 
     StyleData {
       all_style: Rc::new(RefCell::new(final_all_style)),

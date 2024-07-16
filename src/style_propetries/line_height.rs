@@ -49,7 +49,6 @@ impl From<(String, &Property<'_>)> for LineHeight {
             id: prop.0,
             value: match prop.1 {
                 Property::LineHeight(value) => {
-                    println!("line-height: {:?}", value);
                     match value {
                         font::LineHeight::Length(val) => {
                             generate_dimension_percentage!(EnumValue, val)

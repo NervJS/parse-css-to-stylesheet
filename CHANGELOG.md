@@ -1,3 +1,17 @@
+## [1.0.9](https://github.com/NervJS/parse-css-to-stylesheet/compare/v1.0.8...v1.0.9) (2024-07-16)
+
+
+### Bug Fixes
+
+* 修复visibility解析成display的bug ([21564cf](https://github.com/NervJS/parse-css-to-stylesheet/commit/21564cff375dc5fdb42496bf5afdf023347853af))
+
+
+### Features
+
+* line_height把数字转成百分比 ([ce8303f](https://github.com/NervJS/parse-css-to-stylesheet/commit/ce8303f5ea321ceeeffecdaa95b397e8966a0ed5))
+
+
+
 ## [1.0.8](https://github.com/NervJS/parse-css-to-stylesheet/compare/v1.0.7...v1.0.8) (2024-07-10)
 
 

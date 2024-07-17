@@ -1,3 +1,12 @@
+## [1.0.12](https://github.com/NervJS/parse-css-to-stylesheet/compare/v1.0.11...v1.0.12) (2024-07-17)
+
+
+### Features
+
+* 增加对env的解析 ([c860d55](https://github.com/NervJS/parse-css-to-stylesheet/commit/c860d5583a8fd8ec3652b8f8453772fc89f06d1e))
+
+
+
 ## [1.0.11](https://github.com/NervJS/parse-css-to-stylesheet/compare/v1.0.10...v1.0.11) (2024-07-17)
 
 

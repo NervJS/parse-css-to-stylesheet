@@ -1,13 +1,10 @@
 use lightningcss::{
     properties::{ background::Background as LNBackground, Property },
-    stylesheet::PrinterOptions,
-    targets::{ Features, Targets },
-    traits::ToCss,
     values::color::CssColor,
 };
 use smallvec::SmallVec;
 
-use crate::{ generate_expr_lit_color, generate_expr_lit_str, generate_invalid_expr };
+use crate::generate_expr_lit_color;
 
 use super::{
     background_image::{ parse_background_image_item, BackgroundImage },
@@ -16,7 +13,7 @@ use super::{
     background_size::{ parse_background_size_item, BackgroundSize },
     style_property_type::CSSPropertyType,
     traits::ToExpr,
-    unit::{ convert_color_keywords_to_hex, PropertyTuple },
+    unit::PropertyTuple,
 };
 
 fn parse_background(background: &SmallVec<[LNBackground<'_>; 1]>) -> Background {

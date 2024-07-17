@@ -50,7 +50,6 @@ impl<'i> StyleVisitor<'i> {
 // 收集所有的样式到 all_style 中，以元祖的形式存在 (selector, vec[declaration1, declaration2, ...])
 impl<'i> Visitor<'i> for StyleVisitor<'i> {
   type Error = Infallible;
-  const TYPES: VisitTypes = visit_types!(RULES);
 
   fn visit_rule(&mut self, rule: &mut CssRule<'i>) -> Result<(), Self::Error> {
     match rule {
@@ -125,20 +124,23 @@ impl<'i> Visitor<'i> for StyleVisitor<'i> {
     }
     Ok(())
   }
+  
+  fn visit_types(&self) -> VisitTypes {
+       visit_types!(RULES)
+  }
+  
 }
 
 pub struct StyleParser<'i> {
   pub all_style: Rc<RefCell<Vec<(String, Vec<StyleDeclaration<'i>>)>>>,
   pub keyframes: Rc<RefCell<HashMap<String, Vec<KeyFrameItem>>>>,
-  pub platform: Platform
 }
 
 impl<'i> StyleParser<'i> {
-  pub fn new(platform:Platform) -> Self {
+  pub fn new(_: Platform) -> Self {
     StyleParser {
       all_style: Rc::new(RefCell::new(vec![])),
       keyframes: Rc::new(RefCell::new(HashMap::new())),
-      platform
     }
   }
 

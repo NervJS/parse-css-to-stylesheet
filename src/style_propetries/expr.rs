@@ -1,25 +1,24 @@
-// use swc_core::ecma::ast;
+use swc_core::ecma::ast;
 
-// use super::{traits::ToExpr, unit::PropertyTuple};
-
-
-
-// #[derive(Debug, Clone)]
-// pub struct Expr(String, ast::Expr);
-
-// impl Expr {
-//   pub fn new(id: String, value: ast::Expr) -> Self {
-//     Self(id, value)
-//   }
-// }
+use super::{style_property_type::CSSPropertyType, traits::ToExpr, unit::PropertyTuple};
 
 
-// impl ToExpr for Expr {
-//   fn to_expr(&self) -> PropertyTuple {
-//     PropertyTuple::One(
-//       self.0.clone(),
-//       self.1.clone()
-//     )
-//   }
-// }
 
+#[derive(Debug, Clone)]
+pub struct Expr(CSSPropertyType, ast::Expr);
+
+impl Expr {
+  pub fn new(id: CSSPropertyType, value: ast::Expr) -> Self {
+    Self(id, value)
+  }
+}
+
+
+impl ToExpr for Expr {
+  fn to_expr(&self) -> PropertyTuple {
+    PropertyTuple::One(
+      self.0,
+      self.1.clone()
+    )
+  }
+}

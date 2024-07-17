@@ -4,7 +4,7 @@ use lightningcss::{properties::{custom::TokenOrValue, Property}, stylesheet::Pri
 use swc_core::{common::DUMMY_SP, ecma::{ast::{self}, utils::quote_ident}};
 use swc_core::ecma::ast::*;
 
-use crate::{style_parser::KeyFrameItem, style_propetries::{animation::Animation, transition::Transition, aspect_ratio::AspectRatio, background::Background, background_image::BackgroundImage, background_position::BackgroundPosition, background_repeat::BackgroundRepeat, background_size::BackgroundSize, border::Border, border_color::BorderColor, border_radius::BorderRadius, border_style::BorderStyle, border_width::BorderWidth, box_shadow::BoxShadow, color::ColorProperty, display::Display, flex::Flex, flex_align::FlexAlign, flex_basis::FlexBasis, flex_direction::FlexDirection, flex_wrap::FlexWrap, font_size::FontSize, font_style::FontStyle, font_weight::FontWeight, gap::Gap, item_align::ItemAlign, length_value::LengthValueProperty, letter_spacing::LetterSpacing, line_height::LineHeight, marin_padding::MarginPadding, max_size::MaxSizeProperty, normal::Normal, number::NumberProperty, opacity::Opacity, overflow::Overflow, position::Position, size::SizeProperty, style_property_type::CSSPropertyType, style_value_type::StyleValueType, text_align::TextAlign, text_decoration::TextDecoration, text_overflow::TextOverflow, text_shadow::TextShadow, text_transform::TextTransform, transform::Transform, transform_origin::TransformOrigin, vertical_align::VerticalAlign, visibility::Visibility, white_space::WhiteSpace, word_break::WordBreak}};
+use crate::{generate_expr_lit_str, style_parser::KeyFrameItem, style_propetries::{animation::Animation, aspect_ratio::AspectRatio, background::Background, background_image::BackgroundImage, background_position::BackgroundPosition, background_repeat::BackgroundRepeat, background_size::BackgroundSize, border::Border, border_color::BorderColor, border_radius::BorderRadius, border_style::BorderStyle, border_width::BorderWidth, box_shadow::BoxShadow, color::ColorProperty, display::Display, expr::Expr, flex::Flex, flex_align::FlexAlign, flex_basis::FlexBasis, flex_direction::FlexDirection, flex_wrap::FlexWrap, font_size::FontSize, font_style::FontStyle, font_weight::FontWeight, gap::Gap, item_align::ItemAlign, length_value::LengthValueProperty, letter_spacing::LetterSpacing, line_height::LineHeight, marin_padding::MarginPadding, max_size::MaxSizeProperty, normal::Normal, number::NumberProperty, opacity::Opacity, overflow::Overflow, position::Position, size::SizeProperty, style_property_type::{string_to_css_property_type, CSSPropertyType}, style_value_type::StyleValueType, text_align::TextAlign, text_decoration::TextDecoration, text_overflow::TextOverflow, text_shadow::TextShadow, text_transform::TextTransform, transform::Transform, transform_origin::TransformOrigin, transition::Transition, unit::{generate_expr_by_length_value, Platform}, vertical_align::VerticalAlign, visibility::Visibility, white_space::WhiteSpace, word_break::WordBreak}};
 
 pub fn parse_style_properties(properties: &Vec<(String, Property)>, keyframes_map: Option<Rc<RefCell<HashMap<String, Vec<KeyFrameItem>>>>>) -> Vec<StyleValueType> {
   let mut final_properties = vec![];
@@ -16,33 +16,11 @@ pub fn parse_style_properties(properties: &Vec<(String, Property)>, keyframes_ma
         unparsed.value.0.iter().for_each(|item| {
           match item {
             TokenOrValue::Env(env) => {
-              // is_env = true;
-              // let mut args = vec![
-              //   ExprOrSpread {
-              //     spread: None,
-              //     expr: Box::new(ast::Expr::Lit(Lit::Str(env.name.to_css_string(PrinterOptions::default()).unwrap().into())))
-              //   }
-              // ];
-              // // env.name.to_css_string(PrinterOptions::default()).unwrap()))
-              // if env.fallback.is_some() {
-              //   let fallback = env.fallback.as_ref().unwrap().0.get(0);
-              //   if let Some(token) = fallback {
-              //     if let TokenOrValue::Length(length) = token {
-              //       args.push(
-              //         ExprOrSpread {
-              //           spread: None,
-              //           expr: Box::new(generate_expr_by_length_value(length, Platform::Harmony))
-              //         }
-              //       )
-              //     }
-              //   }
-              // }
-              // final_properties.push(StyleValueType::Expr(Expr::new(id.to_string(), ast::Expr::Call(CallExpr {
-              //   span: DUMMY_SP,
-              //   callee: Callee::Expr(Box::new(ast::Expr::Ident(quote_ident!(ENV_FUN)))),
-              //   args: args,
-              //   type_args: None
-              // }))));
+              is_env = true;
+              let env_result = value.value_to_css_string(PrinterOptions::default());
+              if (env_result.is_ok()) {
+                final_properties.push(StyleValueType::Expr(Expr::new(string_to_css_property_type(id), generate_expr_lit_str!(env_result.unwrap().to_string()))));
+              }
             },
             _ => {}
           }

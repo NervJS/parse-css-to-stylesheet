@@ -1,13 +1,12 @@
 use lightningcss::{
-    properties::{ background::Background as LNBackground, Property },
-    values::color::CssColor,
+    printer::PrinterOptions, properties::{ background::Background as LNBackground, Property }, traits::ToCss, values::color::CssColor
 };
 use smallvec::SmallVec;
 
 use crate::generate_expr_lit_color;
 
 use super::{
-    background_image::{ parse_background_image_item, BackgroundImage },
+    background_image::{ parse_background_image_item, BackgroundImage, BackgroundImageKind },
     background_position::{ parse_background_position_item, BackgroundPosition },
     background_repeat::{ parse_background_repeat_item, BackgroundRepeat },
     background_size::{ parse_background_size_item, BackgroundSize },
@@ -33,6 +32,12 @@ fn parse_background(background: &SmallVec<[LNBackground<'_>; 1]>) -> Background 
         }
         background_repeat.push(parse_background_repeat_item(&item.repeat));
         if item.color != CssColor::default() {
+            background_color = Some(item.color.clone());
+        }
+        
+        if item.to_css_string(PrinterOptions::default()).unwrap() == "none" {
+            // 如果是none，就清空所有的值
+            background_image = vec![BackgroundImageKind::String("".to_string())];
             background_color = Some(item.color.clone());
         }
     }

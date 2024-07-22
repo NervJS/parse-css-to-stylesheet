@@ -1,5 +1,4 @@
-use lightningcss::properties::Property;
-
+use lightningcss::{printer::PrinterOptions, properties::{border::{self, BorderSideWidth}, Property}, traits::ToCss, values::{color, length}};
 use swc_core::ecma::ast::*;
 use crate::{generate_expr_by_length, generate_invalid_expr, generate_expr_by_border_side_width, generate_expr_by_line_style, generate_expr_lit_color };
 
@@ -38,6 +37,21 @@ impl From<(String, &Property<'_>)> for Border {
           color: Some(color),
           width: Some(width),
         };
+
+        if value.to_css_string(PrinterOptions::default()).unwrap() == "none" {
+          let mut style = BorderStyle::new("borderStyle".to_string());
+          style.set_all(border::LineStyle::Solid);
+          let mut color = BorderColor::new("borderColor".to_string());
+          color.set_all(color::CssColor::default());
+          let mut width = BorderWidth::new("borderWidth".to_string());
+          width.set_all(BorderSideWidth::Length(length::Length::Value(length::LengthValue::Px(0.0))));
+          border = Border {
+            id: prop.0.clone(),
+            style: Some(style),
+            color: Some(color),
+            width: Some(width),
+          };
+        }
       }
       Property::BorderTop(value) => {
         let mut style = BorderStyle::new("borderTopStyle".to_string());

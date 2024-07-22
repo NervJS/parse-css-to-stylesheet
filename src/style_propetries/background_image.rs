@@ -149,7 +149,10 @@ pub fn parse_background_image_item(image: &Image) -> Option<BackgroundImageKind>
         Gradient::RepeatingConic(_) => None,
         Gradient::WebKitGradient(_) => None,
       }
-    }
+    },
+    Image::None => {
+      Some(BackgroundImageKind::String("".to_string()))
+    },
     _ => None,
   }
 }

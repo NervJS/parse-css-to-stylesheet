@@ -1,3 +1,12 @@
+## [1.0.13](https://github.com/NervJS/parse-css-to-stylesheet/compare/v1.0.12...v1.0.13) (2024-07-22)
+
+
+### Bug Fixes
+
+* 修复webkit适配错误，background:none\border:none解析异常 ([75c5b2e](https://github.com/NervJS/parse-css-to-stylesheet/commit/75c5b2ea91898a937bd240a669109381a51a3cdd))
+
+
+
 ## [1.0.12](https://github.com/NervJS/parse-css-to-stylesheet/compare/v1.0.11...v1.0.12) (2024-07-17)
 
 

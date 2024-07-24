@@ -42,7 +42,7 @@ impl From<(String, &Property<'_>)> for Visibility {
 impl ToExpr for Visibility {
   fn to_expr(&self) -> PropertyTuple {
     PropertyTuple::One(
-      CSSPropertyType::Display,
+      CSSPropertyType::Visibility,
       match &self.value {
         EnumValue::Visible => generate_expr_enum!(style_property_enum::ArkUI_Visibility::ARKUI_VISIBILITY_VISIBLE),
         EnumValue::Hidden => generate_expr_enum!(style_property_enum::ArkUI_Visibility::ARKUI_VISIBILITY_HIDDEN),

@@ -7,6 +7,12 @@ use swc_core::ecma::{ast::{ArrayLit, CallExpr, Expr, Function, JSXMemberExpr, JS
 
 use crate::{constants::SelectorType, style_propetries::unit::Platform};
 
+pub fn lowercase_first(s: &mut str) {
+  if let Some(c) = s.get_mut(0..1) {
+      c.make_ascii_lowercase();
+  }
+}
+
 pub fn to_camel_case(s: &str, is_first: bool) -> String {
   let mut result = String::new();
   let mut next_cap = if is_first { true } else { false };

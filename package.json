@@ -1,6 +1,6 @@
 {
   "name": "@tarojs/parse-css-to-stylesheet",
-  "version": "1.0.8",
+  "version": "1.0.13",
   "main": "index.js",
   "types": "index.d.ts",
   "napi": {
@@ -47,6 +47,7 @@
     "universal": "napi universal",
     "format": "run-p format:source format:rs",
     "format:rs": "cargo fmt",
+    "run:rs": "cargo run",
     "format:source": "prettier . -w",
     "version": "napi version  && conventional-changelog -p angular -i CHANGELOG.md -s && git add CHANGELOG.md"
   },

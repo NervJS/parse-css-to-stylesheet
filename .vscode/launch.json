@@ -1,17 +1,42 @@
 {
-  "version": "0.2.0",
-  "configurations": [
-      {
-          "name": "Debug Rust",
-          "type": "lldb",
-          "request": "launch",
-          "program": "/Users/zhuminghui2/.nvm/versions/node/v16.20.2/bin/node",
-          "cwd": "${workspaceFolder}",
-            "args": [
-                "${workspaceFolder}/__test__/index.js"
-            ],
-          "MIMode": "lldb",
-          "preLaunchTask": "npm: build:debug",
-      }
-  ]
+    "version": "0.2.0",
+    "configurations": [
+        {
+            "type": "lldb",
+            "request": "launch",
+            "name": "Debug executable 'parse-css-to-stylesheet'",
+            "cargo": {
+                "args": [
+                    "build",
+                    "--bin=parse-css-to-stylesheet",
+                    "--package=parse-css-to-stylesheet"
+                ],
+                "filter": {
+                    "name": "parse-css-to-stylesheet",
+                    "kind": "bin"
+                }
+            },
+            "args": [],
+            "cwd": "${workspaceFolder}"
+        },
+        {
+            "type": "lldb",
+            "request": "launch",
+            "name": "Debug unit tests in executable 'parse-css-to-stylesheet'",
+            "cargo": {
+                "args": [
+                    "test",
+                    "--no-run",
+                    "--bin=parse-css-to-stylesheet",
+                    "--package=parse-css-to-stylesheet"
+                ],
+                "filter": {
+                    "name": "parse-css-to-stylesheet",
+                    "kind": "bin"
+                }
+            },
+            "args": [],
+            "cwd": "${workspaceFolder}"
+        }
+    ]
 }

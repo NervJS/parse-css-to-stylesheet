@@ -2,7 +2,7 @@
 
 use std::{cell::RefCell, collections::HashMap, rc::Rc};
 
-use lightningcss::{printer::PrinterOptions, properties::{animation::{self, AnimationFillMode}, Property}, traits::ToCss, values::{easing::{self, EasingFunction},  time}};
+use lightningcss::{printer::PrinterOptions, properties::{animation::{self, AnimationFillMode}, Property}, traits::ToCss, values::{easing::{EasingFunction},  time}};
 
 use crate::{generate_expr_lit_num, generate_expr_enum, generate_expr_lit_str, style_parser::KeyFrameItem, style_propetries::style_property_enum, visitor::parse_style_values};
 use swc_core::{common::DUMMY_SP, ecma::ast::*};
@@ -22,11 +22,10 @@ pub struct AnimationMulti {
   pub animation_iterations: Vec<f32>,
   pub animation_fill_modes: Vec<AnimationFillMode>,
   pub animation_timeing_functions: Vec<AnimationTimingFunction>,
-  pub keyframes: Option<Rc<RefCell<HashMap<String, Vec<KeyFrameItem>>>>>,
 }
 
-impl From<(String, &Property<'_>, Option<Rc<RefCell<HashMap<String, Vec<KeyFrameItem>>>>>)> for AnimationMulti {
-  fn from(value: (String, &Property<'_>, Option<Rc<RefCell<HashMap<String, Vec<KeyFrameItem>>>>>)) -> Self {
+impl From<(String, &Property<'_>)> for AnimationMulti {
+  fn from(value: (String, &Property<'_>)) -> Self {
 
     let mut animation_names: Vec<String> = vec![];
     let mut animation_durations: Vec<f32> =  vec![]; // 0.0
@@ -141,7 +140,6 @@ impl From<(String, &Property<'_>, Option<Rc<RefCell<HashMap<String, Vec<KeyFrame
     }
     
     AnimationMulti {
-      keyframes: value.2.clone(),
       animation_names,
       animation_durations,
       animation_delays,
@@ -157,57 +155,19 @@ impl From<(String, &Property<'_>, Option<Rc<RefCell<HashMap<String, Vec<KeyFrame
 impl ToExpr for AnimationMulti {
   fn to_expr(&self) -> PropertyTuple {
     let mut exprs: Vec<(CSSPropertyType, Expr)> = vec![];
-    if !self.animation_names.is_empty() && !self.keyframes.is_none() {
-        let mut arr_names: Vec<Option<ExprOrSpread>> = vec![];
-        let mut arr_keyframes: Vec<Option<ExprOrSpread>> = vec![];
-        let keyframe_map = self.keyframes.as_ref().unwrap().borrow();
-        for name in &self.animation_names {
-            arr_names.push(
-                Some(ExprOrSpread{
-                    spread: None,
-                    expr: Box::new(generate_expr_lit_str!(name.to_string()))
-            }));
-
-            let mut arr_keyframe_items:Vec<Option<ExprOrSpread>> = vec![];
-            if let Some(keyframe_items) = keyframe_map.get(name) {
-                for keyframe_item in keyframe_items {
-                    arr_keyframe_items.push(Some(ExprOrSpread{
-                        spread: None,
-                        expr: Box::new(Expr::Object(ObjectLit{
-                            span: DUMMY_SP,
-                            props: vec![
-                                PropOrSpread::Prop(Box::new(Prop::KeyValue(KeyValueProp{
-                                    key: PropName::Str("percentage".into()),
-                                    value: Box::new(generate_expr_lit_num!(keyframe_item.percentage as f64))
-                                }))),
-                                PropOrSpread::Prop(Box::new(Prop::KeyValue(KeyValueProp{
-                                    key: PropName::Str("event".into()),
-                                    value: Box::new(Expr::Array(ArrayLit{
-                                        span: DUMMY_SP,
-                                        elems: parse_style_values(keyframe_item.declarations.clone(), Platform::Harmony)
-                                    }))
-                                })))
-                            ]
-                        }))
-                    }));
-                }
-            }
-            arr_keyframes.push(Some(ExprOrSpread{
-                spread: None,
-                expr: Box::new(Expr::Array(ArrayLit{
-                    span: DUMMY_SP,
-                    elems: arr_keyframe_items
-                }))
-            }));
-        }
-        exprs.push((
-            CSSPropertyType::AnimationName,
-            Expr::Array(ArrayLit { span: DUMMY_SP, elems: arr_names.clone() })
-        ));
-        exprs.push((
-            CSSPropertyType::AnimationKeyFrames,
-            Expr::Array(ArrayLit { span: DUMMY_SP, elems: arr_keyframes.clone() })
-        ));
+    if !self.animation_names.is_empty() {
+      let mut arr_names: Vec<Option<ExprOrSpread>> = vec![];
+      for name in &self.animation_names {
+        arr_names.push(
+          Some(ExprOrSpread{
+              spread: None,
+              expr: Box::new(generate_expr_lit_str!(name.to_string()))
+        }));
+      }
+      exprs.push((
+        CSSPropertyType::AnimationName,
+        Expr::Array(ArrayLit { span: DUMMY_SP, elems: arr_names.clone() })
+      ));
     }
 
     if !self.animation_durations.is_empty() {

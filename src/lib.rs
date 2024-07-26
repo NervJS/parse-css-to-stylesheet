@@ -50,7 +50,11 @@ pub fn parse(styles: Vec<String>, options: ParseOptions) -> ParseResult {
   // 解析过滤器
 
   // 输出成JSON格式
-  let style_map = JsonWriter::new(style_data.all_style.borrow().clone());
+  let style_map = JsonWriter::new(
+    style_data.all_style.borrow().clone(),
+    style_data.all_keyframes.borrow().clone(),
+    style_data.all_medias.borrow().clone()
+  );
 
   ParseResult {
     code: style_map.to_json()

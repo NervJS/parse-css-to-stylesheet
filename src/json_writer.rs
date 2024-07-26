@@ -1,5 +1,4 @@
 
-use std::collections::HashMap;
 use indexmap::IndexMap;
 use serde_json::Value;
 use swc_core::common::DUMMY_SP;
@@ -9,21 +8,26 @@ use crate::constants::{Pseudo, SUPPORT_PSEUDO_KEYS};
 use crate::style_propetries::style_value_type::StyleValueType;
 
 use crate::style_propetries::unit::Platform;
-use crate::utils;
+use crate::{generate_expr_lit_num, generate_expr_lit_str, utils};
 use crate::visitor::parse_style_values;
+use crate::style_parser::KeyFrameItem;
+use crate::style_propetries::style_media::StyleMedia;
 
 pub struct JsonWriter {
-    styles: IndexMap<String, Vec<StyleValueType>>,
+    styles: IndexMap<(u32, String), Vec<StyleValueType>>,
+    keyframes: IndexMap<(u32, String), Vec<KeyFrameItem>>,
+    medias: Vec<StyleMedia>,
 }
 
 impl JsonWriter {
 
-    pub fn new(styles: IndexMap<String, Vec<StyleValueType>>) -> Self {
-        Self { styles }
+    pub fn new(styles: IndexMap<(u32, String), Vec<StyleValueType>>, keyframes: IndexMap<(u32, String), Vec<KeyFrameItem>>,
+        medias: Vec<StyleMedia>) -> Self {
+        Self { styles ,keyframes,medias }
     }
 
     pub fn to_json(&self) -> String {
-        let elems: Vec<Expr> = self.styles.iter().filter_map(|(selector, prop_or_spreads)| Some({
+        let elems: Vec<Expr> = self.styles.iter().filter_map(|((media_index,selector), prop_or_spreads)| Some({
             // 识别伪类
             let mut new_selector = selector.clone();
             let mut pseudo_key = String::new();
@@ -38,6 +42,10 @@ impl JsonWriter {
 
             let nesting_selector = utils::split_selector(&new_selector);
             let mut lit_props = vec![
+                PropOrSpread::Prop(Box::new(Prop::KeyValue(KeyValueProp{
+                    key: PropName::Ident(Ident::new("media".into(), DUMMY_SP)),
+                    value: Box::new(Expr::Lit(Lit::Num(Number::from(*media_index as f64)))),
+                }))),
                 PropOrSpread::Prop(Box::new(Prop::KeyValue(KeyValueProp {
                     key: PropName::Ident(Ident::new("selector".into(), DUMMY_SP)),
                     value: Box::new(
@@ -129,6 +137,41 @@ impl JsonWriter {
             })
         })).collect();
 
+        // keyframes
+        let keyframe_elems: Vec<Expr> = self.keyframes.iter().map(|((media_index, name), keyframe)| {
+            let keyframe_items: Vec<Expr> = keyframe.iter().map(|keyframe_item|{
+                Expr::Object(ObjectLit{
+                    span: DUMMY_SP,
+                    props: keyframe_item.to_expr(),
+                })
+            }).collect();
+
+            let lit_keyframe = vec![
+                PropOrSpread::Prop(Box::new(Prop::KeyValue(KeyValueProp{
+                    key: PropName::Ident(Ident::new("name".into(), DUMMY_SP)),
+                    value: Box::new(generate_expr_lit_str!(name.clone()))
+                }))),
+                PropOrSpread::Prop(Box::new(Prop::KeyValue(KeyValueProp{
+                    key: PropName::Ident(Ident::new("media".into(), DUMMY_SP)),
+                    value: Box::new(generate_expr_lit_num!(*media_index as f64)),
+                }))),
+                PropOrSpread::Prop(Box::new(Prop::KeyValue(KeyValueProp{
+                    key: PropName::Ident(Ident::new("keyframe".into(), DUMMY_SP)),
+                    value: Box::new(Expr::Array(ArrayLit {
+                        span: DUMMY_SP,
+                        elems: keyframe_items.into_iter().map(|expr| Some(ExprOrSpread {
+                            spread: None,
+                            expr: Box::new(expr),
+                        })).collect()
+                    }))
+                }))),
+            ];
+            Expr::Object(ObjectLit{
+                span: DUMMY_SP,
+                props: lit_keyframe
+            })
+        }).collect();
+
         let json_value = expr_to_json(&Expr::Object(ObjectLit {
             span: DUMMY_SP,
             props: vec![
@@ -140,6 +183,31 @@ impl JsonWriter {
                             spread: None,
                             expr: Box::new(expr),
                         })).collect()
+                    })),
+                }))),
+                PropOrSpread::Prop(Box::new(Prop::KeyValue(KeyValueProp {
+                    key: PropName::Ident(Ident::new("keyframes".into(), DUMMY_SP)),
+                    value: Box::new(Expr::Array(ArrayLit {
+                        span: DUMMY_SP,
+                        elems: keyframe_elems.into_iter().map(|expr| Some(ExprOrSpread {
+                            spread: None,
+                            expr: Box::new(expr),
+                        })).collect()
+                    })),
+                }))),
+                PropOrSpread::Prop(Box::new(Prop::KeyValue(KeyValueProp {
+                    key: PropName::Ident(Ident::new("medias".into(), DUMMY_SP)),
+                    value: Box::new(Expr::Array(ArrayLit {
+                        span: DUMMY_SP,
+                        elems: self.medias.iter().map(|media|{
+                            Some(ExprOrSpread{
+                                spread:None,
+                                expr: Box::new(Expr::Object(ObjectLit{
+                                    span: DUMMY_SP,
+                                    props: media.clone().to_expr()
+                                }))
+                            })
+                        }).collect()
                     })),
                 })))
             ],

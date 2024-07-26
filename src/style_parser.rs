@@ -1,16 +1,21 @@
-use std::{cell::RefCell, collections::HashMap, convert::Infallible, hash::Hash, rc::Rc};
+use std::{cell::RefCell, convert::Infallible, rc::Rc};
 
 use indexmap::IndexMap;
 use lightningcss::{declaration::DeclarationBlock, properties::Property, rules::{keyframes::KeyframeSelector, CssRule}, stylesheet::{ParserOptions, PrinterOptions, StyleSheet}, traits::ToCss, visit_types, visitor::{Visit, VisitTypes, Visitor}};
-
+use swc_core::ecma::ast::*;
+use swc_core::common::DUMMY_SP;
 use crate::{style_propetries::{style_value_type::StyleValueType, unit::Platform}, utils::to_camel_case};
-
+use crate::visitor::parse_style_values;
 use super::parse_style_properties::parse_style_properties;
+
+use crate::style_propetries::style_media::StyleMedia;
 
 pub type StyleValue = Vec<StyleValueType>;
 #[derive(Debug)]
 pub struct StyleData {
-  pub all_style: Rc<RefCell<IndexMap<String, StyleValue>>>,
+  pub all_style: Rc<RefCell<IndexMap<(u32,String), StyleValue>>>,
+  pub all_keyframes: Rc<RefCell<IndexMap<(u32, String), Vec<KeyFrameItem>>>>,
+  pub all_medias: Rc<RefCell<Vec<StyleMedia>>>,
 }
 
 pub struct KeyFramesData {
@@ -18,12 +23,29 @@ pub struct KeyFramesData {
   pub keyframes: Vec<KeyFrameItem>
 }
 
-#[derive(Debug)]
+#[derive(Debug, Clone)]
 pub struct KeyFrameItem {
   pub percentage: f32,
   pub declarations: Vec<StyleValueType>
 }
-
+impl KeyFrameItem {
+  pub fn to_expr(&self)->Vec<PropOrSpread>{
+    let arr_keyframe_items = vec![
+      PropOrSpread::Prop(Box::new(Prop::KeyValue(KeyValueProp{
+        key: PropName::Ident(Ident::new("percent".into(), DUMMY_SP)),
+        value: Box::new(Expr::Lit(Lit::Num(Number::from(self.percentage as f64)))),
+      }))),
+      PropOrSpread::Prop(Box::new(Prop::KeyValue(KeyValueProp{
+        key: PropName::Str("event".into()),
+        value: Box::new(Expr::Array(ArrayLit{
+            span: DUMMY_SP,
+            elems: parse_style_values(self.declarations.clone(), Platform::Harmony)
+        }))
+      })))
+    ];
+    return arr_keyframe_items;
+  }
+}
 #[derive(Debug, Clone)]
 pub struct StyleDeclaration<'i> {
   pub specificity: u32,
@@ -31,18 +53,24 @@ pub struct StyleDeclaration<'i> {
 }
 
 struct StyleVisitor<'i> {
-  all_style: Rc<RefCell<Vec<(String, Vec<StyleDeclaration<'i>>)>>>,
-  keyframes: Rc<RefCell<HashMap<String, Vec<KeyFrameItem>>>>,
+  all_style: Rc<RefCell<Vec<(u32, String, Vec<StyleDeclaration<'i>>)>>>,
+  keyframes: Rc<RefCell<Vec<(u32, String, Vec<KeyFrameItem>)>>>,
+  medias: Rc<RefCell<Vec<StyleMedia>>>,
+  media_index : u32,
 }
 
 impl<'i> StyleVisitor<'i> {
   pub fn new(
-    all_style: Rc<RefCell<Vec<(String, Vec<StyleDeclaration<'i>>)>>>,
-    keyframes: Rc<RefCell<HashMap<String, Vec<KeyFrameItem>>>>,
+    all_style: Rc<RefCell<Vec<(u32, String, Vec<StyleDeclaration<'i>>)>>>,
+    keyframes: Rc<RefCell<Vec<(u32, String, Vec<KeyFrameItem>)>>>,
+    medias: Rc<RefCell<Vec<StyleMedia>>>,
+    media_index: u32
   ) -> Self {
     StyleVisitor {
       all_style,
-      keyframes
+      keyframes,
+      medias,
+      media_index
     }
   }
 }
@@ -60,14 +88,15 @@ impl<'i> Visitor<'i> for StyleVisitor<'i> {
         for index in 0..selectors.len() {
           let selector = selectors[index].trim().to_string();
           let mut all_style = self.all_style.borrow_mut();
-          let decorations = all_style.iter_mut().find(|(id, _)| id == &selector);
-          if let Some((_, declarations)) = decorations {
+          let decorations = all_style.iter_mut().find(|(media_idx, id, _)| id == &selector&&media_idx==&self.media_index);
+          if let Some((_, _, declarations)) = decorations {
             declarations.push(StyleDeclaration {
               specificity: style.selectors.0.get(index).unwrap().specificity(),
               declaration: style.declarations.clone(),
             });
           } else {
             all_style.push((
+              self.media_index,
               selector.clone(),
               vec![StyleDeclaration {
                 specificity: style.selectors.0.get(index).unwrap().specificity(),
@@ -76,6 +105,18 @@ impl<'i> Visitor<'i> for StyleVisitor<'i> {
             ));
           }
         }
+      }
+      // media
+      CssRule::Media(media) =>{
+        //let mut medias = self.medias.borrow_mut();
+        let media_id = self.medias.borrow_mut().len() as u32 + 1;
+        let mut media_data = StyleMedia { media_id, conditions: vec![] };
+        media_data.parse(&media.query.media_queries);
+
+        self.medias.borrow_mut().push(media_data);
+        self.media_index = self.medias.borrow_mut().len() as u32;
+        let _ = self.visit_rule_list(&mut media.rules);
+        self.media_index = 0;
       }
       // 动画收集
       CssRule::Keyframes(keyframes_rule) => {
@@ -107,7 +148,7 @@ impl<'i> Visitor<'i> for StyleVisitor<'i> {
                 KeyframeSelector::From => 0.0,
                 KeyframeSelector::To => 1.0,
               },
-              declarations: parse_style_properties(&properties, None)
+              declarations: parse_style_properties(&properties)
             };
 
             keyframe_data.keyframes.push(keyframe_item)
@@ -118,7 +159,7 @@ impl<'i> Visitor<'i> for StyleVisitor<'i> {
         keyframe_data.keyframes.sort_by(|a, b| a.percentage.partial_cmp(&b.percentage).unwrap());
 
         let mut keyframes = self.keyframes.borrow_mut();
-        keyframes.insert(keyframe_data.name, keyframe_data.keyframes);
+        keyframes.push((self.media_index, keyframe_data.name, keyframe_data.keyframes));
       }
       _ => {}
     }
@@ -128,34 +169,38 @@ impl<'i> Visitor<'i> for StyleVisitor<'i> {
   fn visit_types(&self) -> VisitTypes {
        visit_types!(RULES)
   }
-  
+
 }
 
 pub struct StyleParser<'i> {
-  pub all_style: Rc<RefCell<Vec<(String, Vec<StyleDeclaration<'i>>)>>>,
-  pub keyframes: Rc<RefCell<HashMap<String, Vec<KeyFrameItem>>>>,
+  pub all_style: Rc<RefCell<Vec<(u32, String, Vec<StyleDeclaration<'i>>)>>>,
+  pub all_keyframes: Rc<RefCell<Vec<(u32, String, Vec<KeyFrameItem>)>>>,
+  pub all_medias: Rc<RefCell<Vec<StyleMedia>>>,
 }
 
 impl<'i> StyleParser<'i> {
   pub fn new(_: Platform) -> Self {
     StyleParser {
       all_style: Rc::new(RefCell::new(vec![])),
-      keyframes: Rc::new(RefCell::new(HashMap::new())),
+      all_keyframes: Rc::new(RefCell::new(vec![])),
+      all_medias: Rc::new(RefCell::new(vec![])),
     }
   }
 
   pub fn parse(&mut self, css: &'i str) {
     let mut stylesheet = StyleSheet::parse(css, ParserOptions::default()).expect("解析样式失败");
-    let mut style_visitor = StyleVisitor::new(Rc::clone(&self.all_style), Rc::clone(&self.keyframes));
+    let mut style_visitor = StyleVisitor::new(Rc::clone(&self.all_style), Rc::clone(&self.all_keyframes), Rc::clone(&self.all_medias), 0);
     stylesheet.visit(&mut style_visitor).unwrap();
   }
 
   pub fn calc(&self) -> StyleData {
     // 遍历 style_record，计算每个节点的最终样式
-    let mut all_style = self.all_style.borrow_mut();
+    //let mut all_style = self.all_style.borrow_mut();
     // final_all_style 转换为驼峰命名
     let mut final_all_style = vec![];
-    self.calc_style_record(&mut all_style).iter_mut().for_each(|(selector, style_value)| {
+    //self.calc_style_record(&mut all_style).iter_mut().for_each(|(media_index, selector, style_value)| {
+    let mut binding = self.calc_style_record();
+    binding.iter_mut().for_each(|(media_index, selector, style_value)| {
       let properties = style_value.declaration.declarations.iter().map(|property| {
         (
           to_camel_case(
@@ -170,40 +215,47 @@ impl<'i> StyleParser<'i> {
         )
       })
       .collect::<Vec<(_, _)>>(); // Specify the lifetime of the tuple elements to match the input data
-      final_all_style.push((selector.to_owned(), properties));
+      final_all_style.push((media_index,selector.to_owned(), properties));
     });
 
     // 进行样式解析优化，提前解析 ArkUI 的样式，减少运行时的计算
     let final_all_style = final_all_style
     .iter_mut()
-    .map(|(selector, properties)| {
+    .map(|(media_index, selector, properties)| {
       (
-        selector.to_owned(),
+        (media_index.to_owned(), selector.to_owned()),
         parse_style_properties(
           &properties
             .iter()
             .map(|(k, v)| (k.to_owned(), v.clone()))
-            .collect::<Vec<_>>(),
-          Some(self.keyframes.clone())
+            .collect::<Vec<_>>()
         ),
       )
     })
-    .collect::<IndexMap<_, _>>();
+    .collect::<IndexMap<(_, _), _>>();
 
-    StyleData {
+    let final_all_keyframes = self.all_keyframes.borrow_mut().iter_mut().map(|(media_index, name, keyframe)|{
+      ((media_index.to_owned(),name.to_owned()),keyframe.to_vec())
+    }).collect::<IndexMap<(_, _), _>>();
+
+    return StyleData {
       all_style: Rc::new(RefCell::new(final_all_style)),
+      all_keyframes: Rc::new(RefCell::new(final_all_keyframes)),
+      all_medias: self.all_medias.clone()
     }
+
   }
 
   // 合并相同类型的 style，比如 .a { color: red } .a { color: blue } => .a { color: blue }，并且 !important 的优先级高于普通的
-  fn calc_style_record<T: Hash + Eq + Clone>(
+  fn calc_style_record(
     &self,
-    style_record: &mut Vec<(T, Vec<StyleDeclaration<'i>>)>,
-  ) -> Vec<(T, StyleDeclaration<'i>)> {
+    //style_record: &mut Vec<(u32, T, Vec<StyleDeclaration<'i>>)>,
+  ) -> Vec<(u32, String, StyleDeclaration<'i>)> {
+    let mut style_record = self.all_style.borrow_mut();
     // 创建一个新的向量 final_style_record，用于存储最终的样式记录
     let mut final_style_record = vec![];
     // 对输入的 style_record 中的每个元素进行迭代
-    for (id, declarations) in style_record.iter_mut() {
+    for (media_index, id, declarations) in style_record.iter_mut() {
        // 对每个 declarations 中的 StyleDeclaration 进行按 specificity 排序
       declarations.sort_by(|a: &StyleDeclaration<'_>, b| a.specificity.cmp(&b.specificity));
       let mut final_properties: Vec<Property<'i>> = Vec::new();
@@ -236,6 +288,7 @@ impl<'i> StyleParser<'i> {
         }
       }
       final_style_record.push((
+        media_index.to_owned(),
         (*id).clone(),
         StyleDeclaration {
           specificity: 0,

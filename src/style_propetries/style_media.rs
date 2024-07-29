@@ -23,7 +23,6 @@ pub enum StyleMediaFeatureID {
     DeviceHeight = 7,
     DeviceAspectRatio = 8,
     Resolution = 9,
-    Hover = 10
 }
 
 #[derive(Debug, Clone)]
@@ -300,10 +299,12 @@ impl StyleMedia {
                 return Some(MediaValueType::Number(*value as i64));
             },
             MediaFeatureValue::Resolution(value) => {
-                return Some(MediaValueType::String(match value.to_css_string(PrinterOptions::default()){
-                    Ok(str) => {str},
-                    Err(_) => {"".to_string()},
-                }));
+                let num = match value {
+                    lightningcss::values::resolution::Resolution::Dpi(val) => *val/96.0,
+                    lightningcss::values::resolution::Resolution::Dpcm(val) => *val/37.7953,
+                    lightningcss::values::resolution::Resolution::Dppx(val) => *val,
+                };
+                return Some(MediaValueType::Float(num as f64));
             },
             MediaFeatureValue::Ratio(value) => {
                 return Some(MediaValueType::Float((value.0/value.1) as f64));
@@ -330,7 +331,6 @@ impl StyleMedia {
                     MediaFeatureId::DeviceHeight => {return StyleMediaFeatureID::DeviceHeight}
                     MediaFeatureId::DeviceAspectRatio => {return StyleMediaFeatureID::DeviceAspectRatio}
                     MediaFeatureId::Resolution => {return StyleMediaFeatureID::Resolution}
-                    MediaFeatureId::Hover => {return StyleMediaFeatureID::Hover}
                     _ => {return StyleMediaFeatureID::Invalid}
                 }
             },

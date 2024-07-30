@@ -1,3 +1,14 @@
+## [1.0.14](https://github.com/NervJS/parse-css-to-stylesheet/compare/v1.0.13...v1.0.14) (2024-07-30)
+
+
+### Features
+
+* 加入媒体查询 ([f3c7ab2](https://github.com/NervJS/parse-css-to-stylesheet/commit/f3c7ab227c7144d11a23ae20f118b39d6a30a194))
+* 将媒体查询下Resolution单位🙆统一 ([c225926](https://github.com/NervJS/parse-css-to-stylesheet/commit/c225926614c7ab3c82ec6018d27907d2b11eb284))
+* css支持多animation ([21bc8a9](https://github.com/NervJS/parse-css-to-stylesheet/commit/21bc8a92b94b94f043ba98563411dc4d348af75d))
+
+
+
 ## [1.0.13](https://github.com/NervJS/parse-css-to-stylesheet/compare/v1.0.12...v1.0.13) (2024-07-22)
 
 

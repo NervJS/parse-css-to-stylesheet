@@ -1,3 +1,12 @@
+## [1.0.15](https://github.com/NervJS/parse-css-to-stylesheet/compare/v1.0.14...v1.0.15) (2024-07-30)
+
+
+### Features
+
+* 修改resolution为dpi的单位 ([e16092e](https://github.com/NervJS/parse-css-to-stylesheet/commit/e16092e7a6006f9a4ebcec8e46913a6d5cad4fc3))
+
+
+
 ## [1.0.14](https://github.com/NervJS/parse-css-to-stylesheet/compare/v1.0.13...v1.0.14) (2024-07-30)
 
 

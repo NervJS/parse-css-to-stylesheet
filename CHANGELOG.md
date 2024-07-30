@@ -1,3 +1,12 @@
+## [1.0.16](https://github.com/NervJS/parse-css-to-stylesheet/compare/v1.0.15...v1.0.16) (2024-07-30)
+
+
+### Bug Fixes
+
+* 修复测试案例 ([7615133](https://github.com/NervJS/parse-css-to-stylesheet/commit/76151336ce95fda182cdc2ffe1f0422ec5877f8d))
+
+
+
 ## [1.0.15](https://github.com/NervJS/parse-css-to-stylesheet/compare/v1.0.14...v1.0.15) (2024-07-30)
 
 

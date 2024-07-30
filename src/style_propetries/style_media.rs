@@ -300,9 +300,9 @@ impl StyleMedia {
             },
             MediaFeatureValue::Resolution(value) => {
                 let num = match value {
-                    lightningcss::values::resolution::Resolution::Dpi(val) => *val/96.0,
-                    lightningcss::values::resolution::Resolution::Dpcm(val) => *val/37.7953,
-                    lightningcss::values::resolution::Resolution::Dppx(val) => *val,
+                    lightningcss::values::resolution::Resolution::Dpi(val) => *val,
+                    lightningcss::values::resolution::Resolution::Dpcm(val) => *val * 96.0 / 37.7953,
+                    lightningcss::values::resolution::Resolution::Dppx(val) => *val * 96.0,
                 };
                 return Some(MediaValueType::Float(num as f64));
             },

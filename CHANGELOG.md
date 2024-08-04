@@ -1,3 +1,12 @@
+## [1.0.17](https://github.com/NervJS/parse-css-to-stylesheet/compare/v1.0.16...v1.0.17) (2024-08-04)
+
+
+### Features
+
+* 增加 box-orient 解析 && display 增加 -webkit-box 解析 ([fd8fa60](https://github.com/NervJS/parse-css-to-stylesheet/commit/fd8fa60ef4a838bbff4a2fc310d71a8da72a490f))
+
+
+
 ## [1.0.16](https://github.com/NervJS/parse-css-to-stylesheet/compare/v1.0.15...v1.0.16) (2024-07-30)
 
 

@@ -2,7 +2,7 @@
 
 use lightningcss::properties::{display::{Display::{Keyword, Pair}, DisplayInside, DisplayKeyword, DisplayOutside}, Property};
 
-use crate::{generate_expr_enum, generate_expr_lit_str, generate_invalid_expr, style_propetries::style_property_enum};
+use crate::{generate_expr_enum, generate_invalid_expr, style_propetries::style_property_enum};
 
 use super::{style_property_type::CSSPropertyType, traits::ToExpr, unit::PropertyTuple};
 
@@ -18,6 +18,7 @@ pub enum EnumValue {
   Flex,
   Block,
   Invalid,
+  Box
 }
 
 impl From<(String, &Property<'_>)> for Display {
@@ -34,6 +35,8 @@ impl From<(String, &Property<'_>)> for Display {
             Pair(value) => {
               if let DisplayInside::Flex(_) = value.inside {
                 EnumValue::Flex
+              } else if let DisplayInside::Box(_) = value.inside {
+                EnumValue::Box
               } else {
                 if let DisplayOutside::Block = value.outside {
                   EnumValue::Block
@@ -60,6 +63,7 @@ impl ToExpr for Display {
         EnumValue::None => generate_expr_enum!(style_property_enum::Display::None),
         EnumValue::Flex => generate_expr_enum!(style_property_enum::Display::Flex),
         EnumValue::Block => generate_expr_enum!(style_property_enum::Display::Block),
+        EnumValue::Box => generate_expr_enum!(style_property_enum::Display::Box),
         EnumValue::Invalid => generate_invalid_expr!(),
       }
     )

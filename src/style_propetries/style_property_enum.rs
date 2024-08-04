@@ -379,6 +379,7 @@ pub enum Display {
     None = 0,
     Block,
     Flex,
+    Box,
 }
 
 #[repr(u32)]
@@ -397,4 +398,13 @@ pub enum Position {
 pub enum WhiteSpace {
     NoWrap = 0,
     Wrap,
+}
+
+#[repr(u32)]
+#[derive(Hash, PartialEq, Eq, Debug, Clone, Copy)]
+pub enum BoxOrient {
+    Horizontal = 0,
+    Vertical,
+    InlineAxis,
+    BlockAxis,
 }

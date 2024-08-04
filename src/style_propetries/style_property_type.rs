@@ -103,6 +103,7 @@ pub enum CSSPropertyType {
     Margin = 98,
     Padding = 99,
     BorderRadius = 100,
+    BoxOrient = 101,
 }
 
 pub fn string_to_css_property_type(property: &str) -> CSSPropertyType {
@@ -207,6 +208,7 @@ pub fn string_to_css_property_type(property: &str) -> CSSPropertyType {
         "margin" => CSSPropertyType::Margin,
         "padding" => CSSPropertyType::Padding,
         "borderRadius" => CSSPropertyType::BorderRadius,
+        "boxOrient" => CSSPropertyType::BoxOrient,
         _ => CSSPropertyType::Invalid,
     }
 }

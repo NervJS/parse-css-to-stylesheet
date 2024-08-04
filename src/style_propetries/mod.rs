@@ -56,4 +56,5 @@ pub mod visibility;
 pub mod opacity;
 pub mod word_break;
 pub mod white_space;
+pub mod box_orient;
 pub mod style_media;

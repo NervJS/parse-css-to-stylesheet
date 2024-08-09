@@ -1,52 +1,47 @@
-use lightningcss::{values::length::LengthValue, traits::ToCss, stylesheet::PrinterOptions};
+use lightningcss::{stylesheet::PrinterOptions, traits::ToCss, values::length::LengthValue};
 use pcre2::bytes::Regex;
 
-use swc_core::ecma::ast::*;
+use crate::{
+  constants::{CONVERT_STYLE_PX_FN, RN_CONVERT_STYLE_PX_FN, RN_CONVERT_STYLE_VU_FN},
+  generate_expr_lit_num, generate_expr_lit_str,
+};
 use swc_core::common::DUMMY_SP;
-use crate::{constants::{CONVERT_STYLE_PX_FN, RN_CONVERT_STYLE_PX_FN, RN_CONVERT_STYLE_VU_FN}, generate_expr_lit_num, generate_expr_lit_str};
+use swc_core::ecma::ast::*;
 
 use super::style_property_type::CSSPropertyType;
 
 #[derive(Debug, Clone, PartialEq)]
 pub enum Platform {
   ReactNative,
-  Harmony
+  Harmony,
 }
 
 pub enum PropertyTuple {
   // 一对一属性：height: 100px 解析 => (height, "100px")
   One(CSSPropertyType, Expr),
   // 一对多属性：flex: 1 解析 => vec![(flexGrow, "1"), (flexShrink, "1"), (flexBasis, "0%")]
-  Array(Vec<(CSSPropertyType, Expr)>)
+  Array(Vec<(CSSPropertyType, Expr)>),
 }
 
 // 根据长度单位生成对应的表达式
 pub fn generate_expr_by_length_value(length_value: &LengthValue, platform: Platform) -> Expr {
   let mut args: Vec<Expr> = vec![];
   let mut handler: Option<String> = None;
-  
+
   match length_value {
-    LengthValue::Px(num,) => {
-      match platform {
-        Platform::ReactNative => {
-          handler = Some(RN_CONVERT_STYLE_PX_FN.to_string());
-          args.push(generate_expr_lit_num!(*num as f64))
-        },
-        Platform::Harmony => {
-          return generate_expr_lit_num!(*num as f64)
-        }
+    LengthValue::Px(num) => match platform {
+      Platform::ReactNative => {
+        handler = Some(RN_CONVERT_STYLE_PX_FN.to_string());
+        args.push(generate_expr_lit_num!(*num as f64))
       }
+      Platform::Harmony => return generate_expr_lit_num!(*num as f64),
     },
-    LengthValue::Rem(num) => {
-      match platform {
-        Platform::ReactNative => {
-          handler = Some(RN_CONVERT_STYLE_PX_FN.to_string());
-          args.push(generate_expr_lit_num!((*num * 16.0) as f64))
-        },
-        Platform::Harmony => {
-          return generate_expr_lit_num!((*num * 16.0) as f64)
-        }
+    LengthValue::Rem(num) => match platform {
+      Platform::ReactNative => {
+        handler = Some(RN_CONVERT_STYLE_PX_FN.to_string());
+        args.push(generate_expr_lit_num!((*num * 16.0) as f64))
       }
+      Platform::Harmony => return generate_expr_lit_num!((*num * 16.0) as f64),
     },
     LengthValue::Vh(num) => {
       match platform {
@@ -54,67 +49,67 @@ pub fn generate_expr_by_length_value(length_value: &LengthValue, platform: Platf
           handler = Some(RN_CONVERT_STYLE_VU_FN.to_string());
           args.push(generate_expr_lit_num!(*num as f64));
           args.push(generate_expr_lit_str!("vh"));
-        },
+        }
         Platform::Harmony => {
-          return generate_expr_lit_str!(format!("{}vh", num))
+          return generate_expr_lit_str!(format!("{}vh", num));
           // handler = Some(CONVERT_STYLE_PX_FN.to_string());
           // args.push(generate_expr_lit_num!(*num as f64));
           // args.push(generate_expr_lit_str!("vh"));
         }
       }
-    },
+    }
     LengthValue::Vw(num) => {
       match platform {
         Platform::ReactNative => {
           handler = Some(RN_CONVERT_STYLE_VU_FN.to_string());
           args.push(generate_expr_lit_num!(*num as f64));
           args.push(generate_expr_lit_str!("vw"));
-        },
+        }
         Platform::Harmony => {
-          return generate_expr_lit_str!(format!("{}vw", num))
+          return generate_expr_lit_str!(format!("{}vw", num));
           // handler = Some(CONVERT_STYLE_PX_FN.to_string());
           // args.push(generate_expr_lit_num!(*num as f64));
           // args.push(generate_expr_lit_str!("vw"));
         }
       }
-    },
+    }
     LengthValue::Vmin(num) => {
       match platform {
         Platform::ReactNative => {
           handler = Some(RN_CONVERT_STYLE_VU_FN.to_string());
           args.push(generate_expr_lit_num!(*num as f64))
-        },
+        }
         Platform::Harmony => {
-          return generate_expr_lit_str!(format!("{}vmin", num))
+          return generate_expr_lit_str!(format!("{}vmin", num));
           // handler = Some(CONVERT_STYLE_PX_FN.to_string());
           // args.push(generate_expr_lit_num!(*num as f64));
           // args.push(generate_expr_lit_str!("vmin"));
         }
       }
-    },
+    }
     LengthValue::Vmax(num) => {
       match platform {
         Platform::ReactNative => {
           handler = Some(RN_CONVERT_STYLE_VU_FN.to_string());
           args.push(generate_expr_lit_num!(*num as f64))
-        },
+        }
         Platform::Harmony => {
-          return generate_expr_lit_str!(format!("{}vmax", num))
+          return generate_expr_lit_str!(format!("{}vmax", num));
           // handler = Some(CONVERT_STYLE_PX_FN.to_string());
           // args.push(generate_expr_lit_num!(*num as f64));
           // args.push(generate_expr_lit_str!("vmax"));
         }
       }
-    },
+    }
     LengthValue::Ch(num) => {
       match platform {
         Platform::ReactNative => {
           handler = Some(RN_CONVERT_STYLE_VU_FN.to_string());
           args.push(generate_expr_lit_num!(*num as f64));
           args.push(generate_expr_lit_str!("PX"));
-        },
+        }
         Platform::Harmony => {
-          return generate_expr_lit_str!(format!("{}px", num))
+          return generate_expr_lit_str!(format!("{}px", num));
           // handler = Some(CONVERT_STYLE_PX_FN.to_string());
           // args.push(generate_expr_lit_num!(*num as f64));
           // args.push(generate_expr_lit_str!("PX"));
@@ -129,19 +124,23 @@ pub fn generate_expr_by_length_value(length_value: &LengthValue, platform: Platf
       span: DUMMY_SP,
       callee: Callee::Expr(Box::new(Expr::Ident(Ident::new(
         handler_name.into(),
-        DUMMY_SP
+        DUMMY_SP,
       )))),
-      args: args.into_iter().map(|arg| ExprOrSpread {
-        spread: None,
-        expr: Box::new(arg),
-      }).collect(),
+      args: args
+        .into_iter()
+        .map(|arg| ExprOrSpread {
+          spread: None,
+          expr: Box::new(arg),
+        })
+        .collect(),
       type_args: None,
     })
   } else {
-    generate_expr_lit_str!(length_value.to_css_string(PrinterOptions::default()).unwrap())
+    generate_expr_lit_str!(length_value
+      .to_css_string(PrinterOptions::default())
+      .unwrap())
   }
 }
-
 
 pub fn generate_expr_with_css_input(input: String, platform: Platform) -> Expr {
   // 定义匹配 '16px' 的正则表达式
@@ -151,7 +150,7 @@ pub fn generate_expr_with_css_input(input: String, platform: Platform) -> Expr {
   if let Ok(caps) = re.captures(bytes) {
     if let Some(caps) = caps {
       // 提取匹配到的数字部分
-      let input_str =  std::str::from_utf8(&caps["num"]);
+      let input_str = std::str::from_utf8(&caps["num"]);
       let unit = match std::str::from_utf8(&caps["unit"]) {
         Ok(s) => s,
         Err(_) => "vp",
@@ -161,32 +160,23 @@ pub fn generate_expr_with_css_input(input: String, platform: Platform) -> Expr {
           match unit {
             "vw" | "vh" | "vmin" | "vmax" => {
               return generate_expr_lit_str!(format!("{}{}", number, unit))
-            },
-            "px" => {
-              return generate_expr_lit_num!(number)
-            },
-            "rem" => {
-              return generate_expr_lit_num!(number * 16.0)
-            },
-            "pX" | "PX" | "Px" => {
-              return generate_expr_lit_str!(format!("{}px", number))
-            },
-            "%" => {
-              return generate_expr_lit_str!(format!("{}%", number))
             }
+            "px" => return generate_expr_lit_num!(number),
+            "rem" => return generate_expr_lit_num!(number * 16.0),
+            "pX" | "PX" | "Px" => return generate_expr_lit_str!(format!("{}px", number)),
+            "%" => return generate_expr_lit_str!(format!("{}%", number)),
             _ => {
               // 如果没有单位，则认为是纯数字，返回 Expr::Num
               return generate_expr_lit_num!(number);
             }
           };
-        } 
+        }
       }
     }
   }
   // 如果没有匹配到，则返回原始字符串
   Expr::Lit(Lit::Str(input.into()))
 }
-
 
 // 处理将color关键字转换为hex
 // 参考颜色关键字：https://www.w3.org/TR/css-color-3/#svg-color
@@ -247,7 +237,7 @@ pub fn convert_color_keywords_to_hex(color: String) -> String {
     "goldenrod" => "#DAA520".to_string(),
     "gray" => "#808080".to_string(),
     "green" => "#008000".to_string(),
-    "greenyellow" => "#ADFF2F".to_string(), 
+    "greenyellow" => "#ADFF2F".to_string(),
     "grey" => "#808080".to_string(),
     "honeydew" => "#F0FFF0".to_string(),
     "hotpink" => "#FF69B4".to_string(),
@@ -340,6 +330,6 @@ pub fn convert_color_keywords_to_hex(color: String) -> String {
     "yellow" => "#FFFF00".to_string(),
     "yellowgreen" => "#9ACD32".to_string(),
     "currentColor" => "".to_string(),
-    _ => color
+    _ => color,
   }
 }

@@ -2,8 +2,6 @@ use swc_core::ecma::ast;
 
 use super::{style_property_type::CSSPropertyType, traits::ToExpr, unit::PropertyTuple};
 
-
-
 #[derive(Debug, Clone)]
 pub struct Expr(CSSPropertyType, ast::Expr);
 
@@ -13,12 +11,8 @@ impl Expr {
   }
 }
 
-
 impl ToExpr for Expr {
   fn to_expr(&self) -> PropertyTuple {
-    PropertyTuple::One(
-      self.0,
-      self.1.clone()
-    )
+    PropertyTuple::One(self.0, self.1.clone())
   }
 }

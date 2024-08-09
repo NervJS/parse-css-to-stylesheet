@@ -7,13 +7,11 @@ use crate::{generate_expr_enum, generate_invalid_expr, style_propetries::style_p
 
 use super::{style_property_type::CSSPropertyType, traits::ToExpr, unit::PropertyTuple};
 
-
 #[derive(Debug, Clone)]
 pub struct ItemAlign {
   pub id: CSSPropertyType,
-  pub value: EnumValue
+  pub value: EnumValue,
 }
-
 
 #[derive(Debug, Clone, PartialEq)]
 pub enum EnumValue {
@@ -29,7 +27,11 @@ pub enum EnumValue {
 impl From<(String, &Property<'_>)> for ItemAlign {
   fn from(prop: (String, &Property<'_>)) -> Self {
     ItemAlign {
-      id: if prop.0 == "alignItems" { CSSPropertyType::AlignItems } else { CSSPropertyType::AlignSelf },
+      id: if prop.0 == "alignItems" {
+        CSSPropertyType::AlignItems
+      } else {
+        CSSPropertyType::AlignSelf
+      },
       value: match prop.1 {
         Property::AlignItems(value, _) => match value {
           LNAlignItems::Stretch => EnumValue::Stretch,
@@ -61,7 +63,7 @@ impl From<(String, &Property<'_>)> for ItemAlign {
           _ => EnumValue::Auto,
         },
         _ => EnumValue::Auto,
-      }
+      },
     }
   }
 }
@@ -71,15 +73,26 @@ impl ToExpr for ItemAlign {
     PropertyTuple::One(
       self.id,
       match &self.value {
-        EnumValue::Auto => generate_expr_enum!(style_property_enum::ArkUI_ItemAlignment::ARKUI_ITEM_ALIGNMENT_AUTO),
-        EnumValue::Start => generate_expr_enum!(style_property_enum::ArkUI_ItemAlignment::ARKUI_ITEM_ALIGNMENT_START),
-        EnumValue::Center => generate_expr_enum!(style_property_enum::ArkUI_ItemAlignment::ARKUI_ITEM_ALIGNMENT_CENTER),
-        EnumValue::End => generate_expr_enum!(style_property_enum::ArkUI_ItemAlignment::ARKUI_ITEM_ALIGNMENT_END),
-        EnumValue::Stretch => generate_expr_enum!(style_property_enum::ArkUI_ItemAlignment::ARKUI_ITEM_ALIGNMENT_STRETCH),
-        EnumValue::Baseline => generate_expr_enum!(style_property_enum::ArkUI_ItemAlignment::ARKUI_ITEM_ALIGNMENT_BASELINE),
+        EnumValue::Auto => {
+          generate_expr_enum!(style_property_enum::ArkUI_ItemAlignment::ARKUI_ITEM_ALIGNMENT_AUTO)
+        }
+        EnumValue::Start => {
+          generate_expr_enum!(style_property_enum::ArkUI_ItemAlignment::ARKUI_ITEM_ALIGNMENT_START)
+        }
+        EnumValue::Center => {
+          generate_expr_enum!(style_property_enum::ArkUI_ItemAlignment::ARKUI_ITEM_ALIGNMENT_CENTER)
+        }
+        EnumValue::End => {
+          generate_expr_enum!(style_property_enum::ArkUI_ItemAlignment::ARKUI_ITEM_ALIGNMENT_END)
+        }
+        EnumValue::Stretch => generate_expr_enum!(
+          style_property_enum::ArkUI_ItemAlignment::ARKUI_ITEM_ALIGNMENT_STRETCH
+        ),
+        EnumValue::Baseline => generate_expr_enum!(
+          style_property_enum::ArkUI_ItemAlignment::ARKUI_ITEM_ALIGNMENT_BASELINE
+        ),
         EnumValue::Ignore => generate_invalid_expr!(),
-      }
+      },
     )
   }
-
 }

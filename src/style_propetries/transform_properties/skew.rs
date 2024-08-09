@@ -14,13 +14,9 @@ pub struct Skew {
   pub y: Option<Angle>,
 }
 
-
 impl Skew {
   pub fn new() -> Self {
-    Skew {
-      x: None,
-      y: None,
-    }
+    Skew { x: None, y: None }
   }
 
   pub fn to_expr_or_spread(&self) -> Option<ExprOrSpread> {
@@ -54,19 +50,24 @@ impl Skew {
   }
   pub fn to_rn_expr(&self) -> Vec<Expr> {
     let mut props = vec![];
-    [("x", &self.x), ("y", &self.y)].into_iter().for_each(|item| {
-      if let (name, Some(side)) = item.borrow() {
-        props.push(
-          Expr::Object(ObjectLit {
+    [("x", &self.x), ("y", &self.y)]
+      .into_iter()
+      .for_each(|item| {
+        if let (name, Some(side)) = item.borrow() {
+          props.push(Expr::Object(ObjectLit {
             span: DUMMY_SP,
             props: vec![PropOrSpread::Prop(Box::new(Prop::KeyValue(KeyValueProp {
-              key: PropName::Ident(Ident::new(to_camel_case(format!("{}{}", "skew-", name).as_str(), false).into(), DUMMY_SP)),
-              value: Box::new(generate_expr_lit_str!(side.to_css_string(PrinterOptions::default()).unwrap()))
-            })))]
-          })
-        )
-      }
-    });
+              key: PropName::Ident(Ident::new(
+                to_camel_case(format!("{}{}", "skew-", name).as_str(), false).into(),
+                DUMMY_SP,
+              )),
+              value: Box::new(generate_expr_lit_str!(side
+                .to_css_string(PrinterOptions::default())
+                .unwrap())),
+            })))],
+          }))
+        }
+      });
     props
   }
 }

@@ -1,17 +1,11 @@
 use std::{borrow::Borrow, vec};
 
 use crate::{generate_expr_enum, style_propetries::transform_properties::ETransformType};
-use lightningcss::{printer::PrinterOptions, traits::ToCss, values::
-    angle::Angle
-  };
+use lightningcss::{printer::PrinterOptions, traits::ToCss, values::angle::Angle};
 use swc_core::ecma::ast::*;
-use swc_core::{
-  atoms::Atom,
-  common::DUMMY_SP
-};
+use swc_core::{atoms::Atom, common::DUMMY_SP};
 
 use crate::{generate_expr_lit_num, generate_expr_lit_str, utils::to_camel_case};
-
 
 #[derive(Debug, Clone)]
 pub struct Rotate {
@@ -21,7 +15,6 @@ pub struct Rotate {
   pub rotate: Option<f32>,
   pub angle: Angle,
 }
-
 
 impl Rotate {
   pub fn new() -> Self {
@@ -35,27 +28,29 @@ impl Rotate {
   }
 
   pub fn to_expr(&self) -> PropOrSpread {
-
     let mut props = vec![];
 
-    [("x", &self.x), ("y", &self.y), ("z", &self.z), ("z", &self.rotate)].into_iter().for_each(|item| {
+    [
+      ("x", &self.x),
+      ("y", &self.y),
+      ("z", &self.z),
+      ("z", &self.rotate),
+    ]
+    .into_iter()
+    .for_each(|item| {
       if let (name, Some(value)) = item.borrow() {
-        props.push(
-          PropOrSpread::Prop(Box::new(Prop::KeyValue(KeyValueProp {
-            key: PropName::Ident(Ident::new(Atom::new(*name), DUMMY_SP)),
-            value: Box::new(generate_expr_lit_num!(*value as f64))
-          })))
-        )
+        props.push(PropOrSpread::Prop(Box::new(Prop::KeyValue(KeyValueProp {
+          key: PropName::Ident(Ident::new(Atom::new(*name), DUMMY_SP)),
+          value: Box::new(generate_expr_lit_num!(*value as f64)),
+        }))))
       }
     });
 
     if let Angle::Deg(angle) = self.angle {
-      props.push(
-        PropOrSpread::Prop(Box::new(Prop::KeyValue(KeyValueProp {
-          key: PropName::Ident(Ident::new("angle".into(), DUMMY_SP)),
-          value: Box::new(generate_expr_lit_num!(angle as f64))
-        })))
-      );
+      props.push(PropOrSpread::Prop(Box::new(Prop::KeyValue(KeyValueProp {
+        key: PropName::Ident(Ident::new("angle".into(), DUMMY_SP)),
+        value: Box::new(generate_expr_lit_num!(angle as f64)),
+      }))));
     }
 
     PropOrSpread::Prop(Box::new(Prop::KeyValue(KeyValueProp {
@@ -69,55 +64,69 @@ impl Rotate {
   }
 
   pub fn to_expr_or_spread(&self) -> Option<ExprOrSpread> {
-      let mut props = vec![];
+    let mut props = vec![];
 
-      [("x", &self.x), ("y", &self.y), ("z", &self.z), ("z", &self.rotate)].into_iter().for_each(|item| {
-          if let (name, Some(value)) = item.borrow() {
-              props.push(
-                  PropOrSpread::Prop(Box::new(Prop::KeyValue(KeyValueProp {
-                      key: PropName::Ident(Ident::new(Atom::new(*name), DUMMY_SP)),
-                      value: Box::new(generate_expr_lit_num!(*value as f64))
-                  })))
-              )
-          }
-      });
-
-      if let Angle::Deg(angle) = self.angle {
-          props.push(
-              PropOrSpread::Prop(Box::new(Prop::KeyValue(KeyValueProp {
-                  key: PropName::Ident(Ident::new("angle".into(), DUMMY_SP)),
-                  value: Box::new(generate_expr_lit_num!(angle as f64))
-              })))
-          );
+    [
+      ("x", &self.x),
+      ("y", &self.y),
+      ("z", &self.z),
+      ("z", &self.rotate),
+    ]
+    .into_iter()
+    .for_each(|item| {
+      if let (name, Some(value)) = item.borrow() {
+        props.push(PropOrSpread::Prop(Box::new(Prop::KeyValue(KeyValueProp {
+          key: PropName::Ident(Ident::new(Atom::new(*name), DUMMY_SP)),
+          value: Box::new(generate_expr_lit_num!(*value as f64)),
+        }))))
       }
+    });
 
+    if let Angle::Deg(angle) = self.angle {
       props.push(PropOrSpread::Prop(Box::new(Prop::KeyValue(KeyValueProp {
-          key: PropName::Ident(Ident::new("type".into(), DUMMY_SP)),
-          value: Box::new(generate_expr_enum!(ETransformType::Rotate))
+        key: PropName::Ident(Ident::new("angle".into(), DUMMY_SP)),
+        value: Box::new(generate_expr_lit_num!(angle as f64)),
       }))));
+    }
 
-      Some(ExprOrSpread {
-          spread: None,
-          expr: Box::new(Expr::Object(ObjectLit {
-              span: Default::default(),
-              props: props
-          }))
-      })
+    props.push(PropOrSpread::Prop(Box::new(Prop::KeyValue(KeyValueProp {
+      key: PropName::Ident(Ident::new("type".into(), DUMMY_SP)),
+      value: Box::new(generate_expr_enum!(ETransformType::Rotate)),
+    }))));
+
+    Some(ExprOrSpread {
+      spread: None,
+      expr: Box::new(Expr::Object(ObjectLit {
+        span: Default::default(),
+        props: props,
+      })),
+    })
   }
 
   pub fn to_rn_expr(&self) -> Vec<Expr> {
     let mut props = vec![];
-    [("-x", &self.x), ("-y", &self.y), ("-z", &self.z), ("", &self.rotate)].into_iter().for_each(|item| {
+    [
+      ("-x", &self.x),
+      ("-y", &self.y),
+      ("-z", &self.z),
+      ("", &self.rotate),
+    ]
+    .into_iter()
+    .for_each(|item| {
       if let (name, Some(_)) = item.borrow() {
-        props.push(
-          Expr::Object(ObjectLit {
-            span: DUMMY_SP,
-            props: vec![PropOrSpread::Prop(Box::new(Prop::KeyValue(KeyValueProp {
-              key: PropName::Ident(Ident::new(to_camel_case(format!("{}{}", "rotate", name).as_str(), false).into(), DUMMY_SP)),
-              value: Box::new(generate_expr_lit_str!(self.angle.to_css_string(PrinterOptions::default()).unwrap()))
-            })))]
-          })
-        );
+        props.push(Expr::Object(ObjectLit {
+          span: DUMMY_SP,
+          props: vec![PropOrSpread::Prop(Box::new(Prop::KeyValue(KeyValueProp {
+            key: PropName::Ident(Ident::new(
+              to_camel_case(format!("{}{}", "rotate", name).as_str(), false).into(),
+              DUMMY_SP,
+            )),
+            value: Box::new(generate_expr_lit_str!(self
+              .angle
+              .to_css_string(PrinterOptions::default())
+              .unwrap())),
+          })))],
+        }));
       }
     });
     props

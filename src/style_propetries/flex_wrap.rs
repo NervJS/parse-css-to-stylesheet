@@ -1,14 +1,16 @@
 use lightningcss::properties::{flex::FlexWrap as LNFlexWrap, Property};
 
-use crate::{generate_expr_enum, style_propetries::{style_property_enum, traits::ToExpr}};
+use crate::{
+  generate_expr_enum,
+  style_propetries::{style_property_enum, traits::ToExpr},
+};
 
 use super::{style_property_type::CSSPropertyType, unit::PropertyTuple};
-
 
 #[derive(Debug, Clone)]
 pub struct FlexWrap {
   pub id: String,
-  pub value: EnumValue
+  pub value: EnumValue,
 }
 
 #[derive(Debug, Clone)]
@@ -29,7 +31,7 @@ impl From<(String, &Property<'_>)> for FlexWrap {
           LNFlexWrap::NoWrap => EnumValue::NoWrap,
         },
         _ => EnumValue::NoWrap,
-      }
+      },
     }
   }
 }
@@ -39,11 +41,16 @@ impl ToExpr for FlexWrap {
     PropertyTuple::One(
       CSSPropertyType::FlexWrap,
       match self.value {
-        EnumValue::Wrap => generate_expr_enum!(style_property_enum::ArkUI_FlexWrap::ARKUI_FLEX_WRAP_WRAP),
-        EnumValue::WrapReverse => generate_expr_enum!(style_property_enum::ArkUI_FlexWrap::ARKUI_FLEX_WRAP_WRAP_REVERSE),
-        EnumValue::NoWrap => generate_expr_enum!(style_property_enum::ArkUI_FlexWrap::ARKUI_FLEX_WRAP_NO_WRAP),
-      }
+        EnumValue::Wrap => {
+          generate_expr_enum!(style_property_enum::ArkUI_FlexWrap::ARKUI_FLEX_WRAP_WRAP)
+        }
+        EnumValue::WrapReverse => {
+          generate_expr_enum!(style_property_enum::ArkUI_FlexWrap::ARKUI_FLEX_WRAP_WRAP_REVERSE)
+        }
+        EnumValue::NoWrap => {
+          generate_expr_enum!(style_property_enum::ArkUI_FlexWrap::ARKUI_FLEX_WRAP_NO_WRAP)
+        }
+      },
     )
   }
-
 }

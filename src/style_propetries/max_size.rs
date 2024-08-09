@@ -5,6 +5,6 @@ use crate::generate_size_property;
 // 生成property_name的value类型为 Size的属性
 generate_size_property![
   MaxSizeProperty,
-    (CSSPropertyType::MaxHeight, MaxHeight),
-    (CSSPropertyType::MaxWidth, MaxWidth)
+  (CSSPropertyType::MaxHeight, MaxHeight),
+  (CSSPropertyType::MaxWidth, MaxWidth)
 ];

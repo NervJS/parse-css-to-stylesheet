@@ -2,21 +2,20 @@
 
 use serde::Deserialize;
 
-use style_parser::StyleParser;
 use json_writer::JsonWriter;
+use style_parser::StyleParser;
 use style_propetries::unit::Platform;
-
 
 #[macro_use]
 extern crate napi_derive;
 
+mod constants;
+mod json_writer;
+mod parse_style_properties;
+mod style_parser;
+mod style_propetries;
 mod utils;
 mod visitor;
-mod constants;
-mod style_propetries;
-mod style_parser;
-mod parse_style_properties;
-mod json_writer;
 
 // styles: css的code string
 // platform_string: "ReactNative" | "Harmony"
@@ -24,21 +23,20 @@ mod json_writer;
 #[napi(object)]
 #[derive(Deserialize)]
 pub struct ParseOptions {
-  pub platform_string: String
+  pub platform_string: String,
 }
 
 #[napi(object)]
 pub struct ParseResult {
-  pub code: String
+  pub code: String,
 }
 
 #[napi]
 pub fn parse(styles: Vec<String>, options: ParseOptions) -> ParseResult {
-
   let platform = match options.platform_string.as_str() {
     "ReactNative" => Platform::ReactNative,
     "Harmony" => Platform::Harmony,
-    _ => Platform::Harmony
+    _ => Platform::Harmony,
   };
 
   // 解析样式文件
@@ -53,10 +51,10 @@ pub fn parse(styles: Vec<String>, options: ParseOptions) -> ParseResult {
   let style_map = JsonWriter::new(
     style_data.all_style.borrow().clone(),
     style_data.all_keyframes.borrow().clone(),
-    style_data.all_medias.borrow().clone()
+    style_data.all_medias.borrow().clone(),
   );
 
   ParseResult {
-    code: style_map.to_json()
+    code: style_map.to_json(),
   }
 }

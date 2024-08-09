@@ -5,7 +5,10 @@ use lightningcss::properties::{
 
 use swc_core::ecma::ast::*;
 
-use crate::{generate_expr_enum, style_propetries::{style_property_enum, traits::ToExpr}};
+use crate::{
+  generate_expr_enum,
+  style_propetries::{style_property_enum, traits::ToExpr},
+};
 
 use super::{style_property_type::CSSPropertyType, unit::PropertyTuple};
 
@@ -38,10 +41,14 @@ impl From<&LNBackgroundRepeat> for ImageRepeatItem {
 impl ImageRepeatItem {
   fn to_expr(&self) -> Expr {
     match &self {
-      Self::XY => generate_expr_enum!(style_property_enum::ArkUI_ImageRepeat::ARKUI_IMAGE_REPEAT_XY),
+      Self::XY => {
+        generate_expr_enum!(style_property_enum::ArkUI_ImageRepeat::ARKUI_IMAGE_REPEAT_XY)
+      }
       Self::X => generate_expr_enum!(style_property_enum::ArkUI_ImageRepeat::ARKUI_IMAGE_REPEAT_X),
       Self::Y => generate_expr_enum!(style_property_enum::ArkUI_ImageRepeat::ARKUI_IMAGE_REPEAT_Y),
-      Self::NoRepeat => generate_expr_enum!(style_property_enum::ArkUI_ImageRepeat::ARKUI_IMAGE_REPEAT_NONE),
+      Self::NoRepeat => {
+        generate_expr_enum!(style_property_enum::ArkUI_ImageRepeat::ARKUI_IMAGE_REPEAT_NONE)
+      }
     }
   }
 }
@@ -49,7 +56,7 @@ impl ImageRepeatItem {
 #[derive(Debug, Clone)]
 pub struct BackgroundRepeat {
   pub id: String,
-  pub value: Vec<ImageRepeatItem>
+  pub value: Vec<ImageRepeatItem>,
 }
 
 impl From<(String, &Property<'_>)> for BackgroundRepeat {

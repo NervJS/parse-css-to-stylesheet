@@ -1,10 +1,8 @@
-
-use swc_core::ecma::ast::*;
 use swc_core::common::DUMMY_SP;
+use swc_core::ecma::ast::*;
 
-use crate::{generate_expr_enum, generate_expr_lit_num};
 use crate::style_propetries::style_property_enum;
-
+use crate::{generate_expr_enum, generate_expr_lit_num};
 
 #[derive(Debug, Clone)]
 pub enum LinearGradientDirection {
@@ -22,7 +20,7 @@ pub enum LinearGradientDirection {
 pub struct LinearGradientItem {
   pub angle: Option<f32>,
   pub color_stops: Vec<(Expr, Expr)>,
-  pub derection: Option<LinearGradientDirection>
+  pub derection: Option<LinearGradientDirection>,
 }
 
 impl LinearGradientItem {
@@ -49,11 +47,11 @@ impl LinearGradientItem {
                 elems: vec![
                   Some(ExprOrSpread {
                     spread: None,
-                    expr: Box::new(item.0.clone())
+                    expr: Box::new(item.0.clone()),
                   }),
                   Some(ExprOrSpread {
                     spread: None,
-                    expr: Box::new(item.1.clone())
+                    expr: Box::new(item.1.clone()),
                   }),
                 ],
               })
@@ -90,7 +88,3 @@ impl LinearGradientItem {
 
 #[derive(Debug, Clone)]
 pub struct LinearGradient(pub Vec<LinearGradientItem>);
-
-
-
-

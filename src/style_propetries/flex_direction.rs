@@ -7,9 +7,8 @@ use super::{style_property_type::CSSPropertyType, traits::ToExpr, unit::Property
 #[derive(Debug, Clone)]
 pub struct FlexDirection {
   pub id: String,
-  pub value: EnumValue
+  pub value: EnumValue,
 }
-
 
 #[derive(Debug, Clone)]
 pub enum EnumValue {
@@ -31,7 +30,7 @@ impl From<(String, &Property<'_>)> for FlexDirection {
           LNFlexDirection::ColumnReverse => EnumValue::ColumnReverse,
         },
         _ => EnumValue::Row,
-      }
+      },
     }
   }
 }
@@ -41,11 +40,19 @@ impl ToExpr for FlexDirection {
     PropertyTuple::One(
       CSSPropertyType::FlexDirection,
       match self.value {
-        EnumValue::Row => generate_expr_enum!(style_property_enum::ArkUI_FlexDirection::ARKUI_FLEX_DIRECTION_ROW),
-        EnumValue::RowReverse => generate_expr_enum!(style_property_enum::ArkUI_FlexDirection::ARKUI_FLEX_DIRECTION_ROW_REVERSE),
-        EnumValue::Column => generate_expr_enum!(style_property_enum::ArkUI_FlexDirection::ARKUI_FLEX_DIRECTION_COLUMN),
-        EnumValue::ColumnReverse => generate_expr_enum!(style_property_enum::ArkUI_FlexDirection::ARKUI_FLEX_DIRECTION_COLUMN_REVERSE),
-      }
+        EnumValue::Row => {
+          generate_expr_enum!(style_property_enum::ArkUI_FlexDirection::ARKUI_FLEX_DIRECTION_ROW)
+        }
+        EnumValue::RowReverse => generate_expr_enum!(
+          style_property_enum::ArkUI_FlexDirection::ARKUI_FLEX_DIRECTION_ROW_REVERSE
+        ),
+        EnumValue::Column => {
+          generate_expr_enum!(style_property_enum::ArkUI_FlexDirection::ARKUI_FLEX_DIRECTION_COLUMN)
+        }
+        EnumValue::ColumnReverse => generate_expr_enum!(
+          style_property_enum::ArkUI_FlexDirection::ARKUI_FLEX_DIRECTION_COLUMN_REVERSE
+        ),
+      },
     )
   }
 }

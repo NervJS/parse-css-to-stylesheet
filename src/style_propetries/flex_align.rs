@@ -13,7 +13,7 @@ use super::{style_property_type::CSSPropertyType, traits::ToExpr, unit::Property
 #[derive(Debug, Clone)]
 pub struct FlexAlign {
   pub id: CSSPropertyType,
-  pub value: EnumValue
+  pub value: EnumValue,
 }
 
 #[derive(Debug, Clone)]
@@ -26,11 +26,14 @@ pub enum EnumValue {
   SpaceEvenly,
 }
 
-
 impl From<(String, &Property<'_>)> for FlexAlign {
   fn from(prop: (String, &Property<'_>)) -> Self {
     FlexAlign {
-      id: if prop.0 == "justifyContent" { CSSPropertyType::JustifyContent } else { CSSPropertyType::AlignContent },
+      id: if prop.0 == "justifyContent" {
+        CSSPropertyType::JustifyContent
+      } else {
+        CSSPropertyType::AlignContent
+      },
       value: match prop.1 {
         Property::JustifyContent(value, _) => match value {
           LNJustifyContent::ContentPosition { value, .. } => match value {
@@ -61,27 +64,37 @@ impl From<(String, &Property<'_>)> for FlexAlign {
           _ => EnumValue::Start,
         },
         _ => EnumValue::Start,
-      }
+      },
     }
   }
 }
 
 // 转换成鸿蒙样式
 impl ToExpr for FlexAlign {
-
   // 转换成鸿蒙样式
   fn to_expr(&self) -> PropertyTuple {
-    PropertyTuple::One (
+    PropertyTuple::One(
       self.id,
       match self.value {
-        EnumValue::Start => generate_expr_enum!(style_property_enum::ArkUI_FlexAlignment::ARKUI_FLEX_ALIGNMENT_START),
-        EnumValue::Center => generate_expr_enum!(style_property_enum::ArkUI_FlexAlignment::ARKUI_FLEX_ALIGNMENT_CENTER),
-        EnumValue::End => generate_expr_enum!(style_property_enum::ArkUI_FlexAlignment::ARKUI_FLEX_ALIGNMENT_END),
-        EnumValue::SpaceBetween => generate_expr_enum!(style_property_enum::ArkUI_FlexAlignment::ARKUI_FLEX_ALIGNMENT_SPACE_BETWEEN),
-        EnumValue::SpaceAround => generate_expr_enum!(style_property_enum::ArkUI_FlexAlignment::ARKUI_FLEX_ALIGNMENT_SPACE_AROUND),
-        EnumValue::SpaceEvenly => generate_expr_enum!(style_property_enum::ArkUI_FlexAlignment::ARKUI_FLEX_ALIGNMENT_SPACE_EVENLY),
-      }
+        EnumValue::Start => {
+          generate_expr_enum!(style_property_enum::ArkUI_FlexAlignment::ARKUI_FLEX_ALIGNMENT_START)
+        }
+        EnumValue::Center => {
+          generate_expr_enum!(style_property_enum::ArkUI_FlexAlignment::ARKUI_FLEX_ALIGNMENT_CENTER)
+        }
+        EnumValue::End => {
+          generate_expr_enum!(style_property_enum::ArkUI_FlexAlignment::ARKUI_FLEX_ALIGNMENT_END)
+        }
+        EnumValue::SpaceBetween => generate_expr_enum!(
+          style_property_enum::ArkUI_FlexAlignment::ARKUI_FLEX_ALIGNMENT_SPACE_BETWEEN
+        ),
+        EnumValue::SpaceAround => generate_expr_enum!(
+          style_property_enum::ArkUI_FlexAlignment::ARKUI_FLEX_ALIGNMENT_SPACE_AROUND
+        ),
+        EnumValue::SpaceEvenly => generate_expr_enum!(
+          style_property_enum::ArkUI_FlexAlignment::ARKUI_FLEX_ALIGNMENT_SPACE_EVENLY
+        ),
+      },
     )
   }
-
 }

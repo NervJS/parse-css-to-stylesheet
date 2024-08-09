@@ -1,4 +1,4 @@
-use lightningcss::properties::{Property, font};
+use lightningcss::properties::{font, Property};
 
 use crate::{generate_expr_enum, style_propetries::style_property_enum};
 
@@ -7,13 +7,13 @@ use super::{style_property_type::CSSPropertyType, traits::ToExpr, unit::Property
 #[derive(Debug, Clone)]
 pub struct FontStyle {
   pub id: String,
-  pub value: EnumValue
+  pub value: EnumValue,
 }
 
 #[derive(Debug, Clone)]
 pub enum EnumValue {
   Normal,
-  Italic
+  Italic,
 }
 
 impl ToExpr for FontStyle {
@@ -21,9 +21,13 @@ impl ToExpr for FontStyle {
     PropertyTuple::One(
       CSSPropertyType::FontStyle,
       match self.value {
-        EnumValue::Italic => generate_expr_enum!(style_property_enum::ArkUI_FontStyle::ARKUI_FONT_STYLE_ITALIC),
-        EnumValue::Normal => generate_expr_enum!(style_property_enum::ArkUI_FontStyle::ARKUI_FONT_STYLE_NORMAL),
-      }
+        EnumValue::Italic => {
+          generate_expr_enum!(style_property_enum::ArkUI_FontStyle::ARKUI_FONT_STYLE_ITALIC)
+        }
+        EnumValue::Normal => {
+          generate_expr_enum!(style_property_enum::ArkUI_FontStyle::ARKUI_FONT_STYLE_NORMAL)
+        }
+      },
     )
   }
 }
@@ -33,21 +37,13 @@ impl From<(String, &Property<'_>)> for FontStyle {
     FontStyle {
       id: prop.0,
       value: match prop.1 {
-        Property::FontStyle(value) => {
-          match value {
-            font::FontStyle::Italic => {
-              EnumValue::Italic
-            },
-            font::FontStyle::Normal => {
-              EnumValue::Normal
-            },
-            font::FontStyle::Oblique(_) => {
-              EnumValue::Normal
-            }
-          }
-        }
-        _ => EnumValue::Normal
-      }
+        Property::FontStyle(value) => match value {
+          font::FontStyle::Italic => EnumValue::Italic,
+          font::FontStyle::Normal => EnumValue::Normal,
+          font::FontStyle::Oblique(_) => EnumValue::Normal,
+        },
+        _ => EnumValue::Normal,
+      },
     }
   }
 }

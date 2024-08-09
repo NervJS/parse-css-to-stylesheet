@@ -1,5 +1,5 @@
-use crate::generate_size_property;
 use super::style_property_type::CSSPropertyType;
+use crate::generate_size_property;
 
 use lightningcss::properties::size::Size::LengthPercentage;
 
@@ -8,8 +8,8 @@ use lightningcss::properties::size::Size::LengthPercentage;
 // 使用宏生成 ColorProperty 结构体
 generate_size_property![
   SizeProperty,
-    (CSSPropertyType::Height, Height),
-    (CSSPropertyType::Width, Width),
-    (CSSPropertyType::MinWidth, MinWidth),
-    (CSSPropertyType::MinHeight, MinHeight)
+  (CSSPropertyType::Height, Height),
+  (CSSPropertyType::Width, Width),
+  (CSSPropertyType::MinWidth, MinWidth),
+  (CSSPropertyType::MinHeight, MinHeight)
 ];

@@ -1,20 +1,21 @@
-use lightningcss::properties::{Property, border::BorderSideWidth};
+use crate::{generate_expr_by_length, generate_invalid_expr};
+use lightningcss::properties::{border::BorderSideWidth, Property};
 use swc_core::ecma::ast::Expr;
-use crate::{generate_expr_by_length, generate_invalid_expr };
 
 use super::{style_property_type::CSSPropertyType, traits::ToExpr, unit::PropertyTuple};
-
 
 #[macro_export]
 macro_rules! generate_expr_by_border_side_width {
   ($val:expr, $platform:expr) => {{
-    use $crate::{generate_invalid_expr, generate_expr_by_length};
     use lightningcss::properties::border::BorderSideWidth;
+    use $crate::{generate_expr_by_length, generate_invalid_expr};
     match $val {
-      BorderSideWidth::Thin | BorderSideWidth::Medium | BorderSideWidth::Thick => generate_invalid_expr!(),
+      BorderSideWidth::Thin | BorderSideWidth::Medium | BorderSideWidth::Thick => {
+        generate_invalid_expr!()
+      }
       BorderSideWidth::Length(length) => {
         generate_expr_by_length!(length, $platform)
-      },
+      }
     }
   }};
 }
@@ -25,7 +26,7 @@ pub struct BorderWidth {
   pub top: Option<BorderSideWidth>,
   pub right: Option<BorderSideWidth>,
   pub bottom: Option<BorderSideWidth>,
-  pub left: Option<BorderSideWidth>
+  pub left: Option<BorderSideWidth>,
 }
 
 impl BorderWidth {
@@ -39,7 +40,7 @@ impl BorderWidth {
     }
   }
 
-  pub fn set_all (&mut self, val: BorderSideWidth) {
+  pub fn set_all(&mut self, val: BorderSideWidth) {
     self.top = Some(val.clone());
     self.right = Some(val.clone());
     self.bottom = Some(val.clone());
@@ -59,7 +60,6 @@ impl BorderWidth {
     self.left = Some(left);
   }
 }
-
 
 impl From<(String, &Property<'_>)> for BorderWidth {
   fn from(prop: (String, &Property<'_>)) -> Self {
@@ -90,20 +90,32 @@ impl From<(String, &Property<'_>)> for BorderWidth {
 }
 
 impl ToExpr for BorderWidth {
-    fn to_expr(&self) -> PropertyTuple {
-      let mut props: Vec<(CSSPropertyType, Expr)> = vec![];
-      if let Some(top) = &self.top {
-        props.push((CSSPropertyType::BorderTopWidth, generate_expr_by_border_side_width!(top, Platform::Harmony)))
-      }
-      if let Some(bottom) = &self.bottom {
-        props.push((CSSPropertyType::BorderBottomWidth, generate_expr_by_border_side_width!(bottom, Platform::Harmony)))
-      }
-      if let Some(left) = &self.left {
-        props.push((CSSPropertyType::BorderLeftWidth, generate_expr_by_border_side_width!(left, Platform::Harmony)))
-      }
-      if let Some(right) = &self.right {
-        props.push((CSSPropertyType::BorderRightWidth, generate_expr_by_border_side_width!(right, Platform::Harmony)))
-      }
-      PropertyTuple::Array(props)
+  fn to_expr(&self) -> PropertyTuple {
+    let mut props: Vec<(CSSPropertyType, Expr)> = vec![];
+    if let Some(top) = &self.top {
+      props.push((
+        CSSPropertyType::BorderTopWidth,
+        generate_expr_by_border_side_width!(top, Platform::Harmony),
+      ))
     }
+    if let Some(bottom) = &self.bottom {
+      props.push((
+        CSSPropertyType::BorderBottomWidth,
+        generate_expr_by_border_side_width!(bottom, Platform::Harmony),
+      ))
+    }
+    if let Some(left) = &self.left {
+      props.push((
+        CSSPropertyType::BorderLeftWidth,
+        generate_expr_by_border_side_width!(left, Platform::Harmony),
+      ))
+    }
+    if let Some(right) = &self.right {
+      props.push((
+        CSSPropertyType::BorderRightWidth,
+        generate_expr_by_border_side_width!(right, Platform::Harmony),
+      ))
+    }
+    PropertyTuple::Array(props)
+  }
 }

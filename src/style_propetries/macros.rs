@@ -1,8 +1,8 @@
 #[macro_export]
 macro_rules! generate_prop_name {
   ($key: expr) => {{
-    use swc_core::ecma::ast::*;
     use swc_core::common::DUMMY_SP;
+    use swc_core::ecma::ast::*;
     PropName::Ident(Ident::new($key.into(), DUMMY_SP))
   }};
 }
@@ -23,12 +23,14 @@ macro_rules! generate_expr_lit_num {
   }};
 }
 
-
 #[macro_export]
 macro_rules! generate_expr_lit_bool {
   ($var:expr) => {{
     use swc_core::ecma::ast::*;
-    Expr::Lit(Lit::Bool(Bool { span: DUMMY_SP, value: $var }))
+    Expr::Lit(Lit::Bool(Bool {
+      span: DUMMY_SP,
+      value: $var,
+    }))
   }};
 }
 
@@ -43,32 +45,31 @@ macro_rules! generate_expr_enum {
 #[macro_export]
 macro_rules! generate_expr_lit_color {
   ($color:expr) => {{
-      use swc_core::ecma::ast::*;
-      use $crate::utils::{hex_to_argb};
-      use lightningcss::{
-        traits::ToCss
-      };
-      use $crate::style_propetries::unit::convert_color_keywords_to_hex;
+    use lightningcss::traits::ToCss;
+    use swc_core::ecma::ast::*;
+    use $crate::style_propetries::unit::convert_color_keywords_to_hex;
+    use $crate::utils::hex_to_argb;
 
-      let color_string = convert_color_keywords_to_hex($color.to_css_string(lightningcss::stylesheet::PrinterOptions {
-        minify: false,
-        targets: lightningcss::targets::Targets::default(),
-        ..lightningcss::stylesheet::PrinterOptions::default()
-      }).unwrap());
+    let color_string = convert_color_keywords_to_hex(
+      $color
+        .to_css_string(lightningcss::stylesheet::PrinterOptions {
+          minify: false,
+          targets: lightningcss::targets::Targets::default(),
+          ..lightningcss::stylesheet::PrinterOptions::default()
+        })
+        .unwrap(),
+    );
 
-      match hex_to_argb(&color_string) {
-        Ok(argb) => Expr::Lit(Lit::Num(Number::from(argb as f64))),
-        Err(hex_or_rgba) => Expr::Lit(Lit::Str(hex_or_rgba.clone().into())).into()
-      }
-      
+    match hex_to_argb(&color_string) {
+      Ok(argb) => Expr::Lit(Lit::Num(Number::from(argb as f64))),
+      Err(hex_or_rgba) => Expr::Lit(Lit::Str(hex_or_rgba.clone().into())).into(),
+    }
   }};
 }
-
 
 #[macro_export]
 macro_rules! generate_expr_lit_calc {
   ($var:expr, $platform:expr) => {{
-
     use $crate::generate_expr_lit_str;
     generate_expr_lit_str!($var.clone())
 
@@ -100,7 +101,7 @@ macro_rules! generate_expr_lit_calc {
     //       }
     //     }
     // });
-    
+
     // Expr::Tpl(Tpl {
     //   span: DUMMY_SP,
     //   exprs: vec![],
@@ -119,25 +120,27 @@ macro_rules! generate_expr_lit_calc {
 #[macro_export]
 macro_rules! generate_expr_ident {
   ($var:expr) => {{
-    use swc_core::ecma::ast::*;
     use swc_core::common::DUMMY_SP;
+    use swc_core::ecma::ast::*;
     Expr::Ident(Ident::new($var.into(), DUMMY_SP))
   }};
 }
 
 #[macro_export]
-macro_rules! generate_expr_by_length  {
+macro_rules! generate_expr_by_length {
   ($var:expr, $platform:expr) => {{
-    use $crate::style_propetries::unit::{Platform, generate_expr_by_length_value};
-    use $crate::generate_expr_lit_calc;
     use lightningcss::traits::ToCss;
     use lightningcss::values::length::Length;
+    use $crate::generate_expr_lit_calc;
+    use $crate::style_propetries::unit::{generate_expr_by_length_value, Platform};
     match $var {
       Length::Value(val) => generate_expr_by_length_value(&val, $platform),
       Length::Calc(val) => {
-        let calc_string = val.to_css_string(lightningcss::stylesheet::PrinterOptions::default()).unwrap();
+        let calc_string = val
+          .to_css_string(lightningcss::stylesheet::PrinterOptions::default())
+          .unwrap();
         generate_expr_lit_calc!(calc_string, $platform)
-      },
+      }
     }
   }};
 }
@@ -149,26 +152,34 @@ macro_rules! generate_expr_by_length_percentage_or_auto {
     match $var {
       LengthPercentageOrAuto::LengthPercentage(length_percent) => {
         generate_expr_by_length_percentage!(length_percent, $platform)
-      },
-      LengthPercentageOrAuto::Auto => generate_expr_lit_str!("auto")
+      }
+      LengthPercentageOrAuto::Auto => generate_expr_lit_str!("auto"),
     }
   }};
 }
 
-
 #[macro_export]
 macro_rules! generate_expr_by_length_percentage {
   ($var:expr, $platform:expr) => {{
-    use $crate::{generate_expr_lit_str, generate_expr_lit_calc, style_propetries::unit::{generate_expr_by_length_value} };
     use lightningcss::traits::ToCss;
-    
+    use $crate::{
+      generate_expr_lit_calc, generate_expr_lit_str,
+      style_propetries::unit::generate_expr_by_length_value,
+    };
+
     match $var {
-      lightningcss::values::percentage::DimensionPercentage::Dimension(dimension) => generate_expr_by_length_value(&dimension, $platform),
-      lightningcss::values::percentage::DimensionPercentage::Percentage(percentage) => generate_expr_lit_str!((percentage.0 * 100.0).to_string() + "%"),
+      lightningcss::values::percentage::DimensionPercentage::Dimension(dimension) => {
+        generate_expr_by_length_value(&dimension, $platform)
+      }
+      lightningcss::values::percentage::DimensionPercentage::Percentage(percentage) => {
+        generate_expr_lit_str!((percentage.0 * 100.0).to_string() + "%")
+      }
       lightningcss::values::percentage::DimensionPercentage::Calc(calc) => {
-        let calc_string = calc.to_css_string(lightningcss::stylesheet::PrinterOptions::default()).unwrap();
+        let calc_string = calc
+          .to_css_string(lightningcss::stylesheet::PrinterOptions::default())
+          .unwrap();
         generate_expr_lit_calc!(calc_string, $platform)
-      },
+      }
     }
   }};
 }
@@ -176,22 +187,29 @@ macro_rules! generate_expr_by_length_percentage {
 #[macro_export]
 macro_rules! generate_invalid_expr {
   () => {{
-    use swc_core::ecma::ast::*;
     use swc_core::common::DUMMY_SP;
+    use swc_core::ecma::ast::*;
 
     Expr::Invalid(Invalid { span: DUMMY_SP })
   }};
 }
-
 
 // 依赖 use lightningcss::traits::ToCss;
 #[macro_export]
 macro_rules! generate_dimension_percentage {
   ($class:ident, $val:ident) => {
     match $val {
-      lightningcss::values::percentage::DimensionPercentage::Dimension(dimension) => $class::LengthValue(dimension.clone()),
-      lightningcss::values::percentage::DimensionPercentage::Percentage(percentage) => $class::Percentage(percentage.clone()),
-      lightningcss::values::percentage::DimensionPercentage::Calc(calc) => $class::String(calc.to_css_string(lightningcss::stylesheet::PrinterOptions::default()).unwrap())
+      lightningcss::values::percentage::DimensionPercentage::Dimension(dimension) => {
+        $class::LengthValue(dimension.clone())
+      }
+      lightningcss::values::percentage::DimensionPercentage::Percentage(percentage) => {
+        $class::Percentage(percentage.clone())
+      }
+      lightningcss::values::percentage::DimensionPercentage::Calc(calc) => $class::String(
+        calc
+          .to_css_string(lightningcss::stylesheet::PrinterOptions::default())
+          .unwrap(),
+      ),
     }
   };
 }
@@ -199,10 +217,10 @@ macro_rules! generate_dimension_percentage {
 #[macro_export]
 macro_rules! generate_expr_based_on_platform {
   ($platform:expr, $value:expr) => {
-      match $platform {
-          Platform::Harmony => $value.to_expr().into(),
-          _ => $value.to_expr().into(),
-      }
+    match $platform {
+      Platform::Harmony => $value.to_expr().into(),
+      _ => $value.to_expr().into(),
+    }
   };
 }
 
@@ -294,8 +312,8 @@ macro_rules! generate_number_property {
         match prop.1 {
           $(
             lightningcss::properties::Property::$property_name(value, _) => {
-              $class { 
-                id: prop.0, 
+              $class {
+                id: prop.0,
                 value: (
                   $property_enum,
                   *value
@@ -313,7 +331,7 @@ macro_rules! generate_number_property {
         }
       }
     }
-    
+
     impl $class {
       pub fn from_value (prop: (String, (CSSPropertyType, f32))) -> Self {
         $class {
@@ -324,7 +342,6 @@ macro_rules! generate_number_property {
     }
   };
 }
-
 
 // 生成property_name的value类型为 LengthValue的属性
 // 依赖：use swc_ecma_ast; use lightningcss
@@ -407,7 +424,7 @@ macro_rules! generate_size_property {
     use lightningcss::{
       traits::ToCss
     };
-    
+
     use $crate::{generate_expr_lit_str, generate_expr_lit_calc};
     use super::unit::PropertyTuple;
     use super::{traits::ToExpr, unit::{generate_expr_by_length_value, Platform}};
@@ -482,59 +499,58 @@ macro_rules! generate_size_property {
 #[macro_export]
 macro_rules! generate_tpl_expr {
   ($items: expr) => {{
-
     use swc_core::ecma::ast::*;
-    use swc_core::{
-      atoms::Atom,
-      common::DUMMY_SP
-    };
+    use swc_core::{atoms::Atom, common::DUMMY_SP};
 
-    let mut quasis = vec![
-      TplElement {
-        span: DUMMY_SP,
-        tail: false,
-        cooked: None,
-        raw: Atom::from("").into(),
-      },
-    ];
+    let mut quasis = vec![TplElement {
+      span: DUMMY_SP,
+      tail: false,
+      cooked: None,
+      raw: Atom::from("").into(),
+    }];
     let mut exprs = vec![];
-    $items.iter().for_each(|value| {
-      match value {
-        Expr::Lit(lit) => {
-          match lit {
-            Lit::Str(str_lit) => {
-              let mut quasi = quasis.pop().unwrap();
-              quasi.raw = Atom::from(format!(" {} {} ",quasi.raw.to_string(), str_lit.value.as_ref()));
-              quasis.push(quasi);
-            },
-            Lit::Num(num_lit) => {
-              let mut quasi = quasis.pop().unwrap();
-              quasi.raw = Atom::from(format!(" {} {} ",quasi.raw.to_string(), num_lit.value.to_string()));
-              quasis.push(quasi);
-            },
-            _ => {}
-          };
-        },
-        _ => {
-          exprs.push(Box::new(value.to_owned()));
-          quasis.push(
-            TplElement {
-              span: DUMMY_SP,
-              tail: false,
-              cooked: None,
-              raw: Atom::from("").into(),
-            },
-          )
-        }
+    $items.iter().for_each(|value| match value {
+      Expr::Lit(lit) => {
+        match lit {
+          Lit::Str(str_lit) => {
+            let mut quasi = quasis.pop().unwrap();
+            quasi.raw = Atom::from(format!(
+              " {} {} ",
+              quasi.raw.to_string(),
+              str_lit.value.as_ref()
+            ));
+            quasis.push(quasi);
+          }
+          Lit::Num(num_lit) => {
+            let mut quasi = quasis.pop().unwrap();
+            quasi.raw = Atom::from(format!(
+              " {} {} ",
+              quasi.raw.to_string(),
+              num_lit.value.to_string()
+            ));
+            quasis.push(quasi);
+          }
+          _ => {}
+        };
+      }
+      _ => {
+        exprs.push(Box::new(value.to_owned()));
+        quasis.push(TplElement {
+          span: DUMMY_SP,
+          tail: false,
+          cooked: None,
+          raw: Atom::from("").into(),
+        })
       }
     });
 
     // 删除无用空格
     for (i, quasi) in quasis.clone().into_iter().enumerate() {
-      let cleaned_string: String = quasi.raw
-      .split_whitespace()
-      .collect::<Vec<&str>>()
-      .join(" ");
+      let cleaned_string: String = quasi
+        .raw
+        .split_whitespace()
+        .collect::<Vec<&str>>()
+        .join(" ");
       if i == 0 {
         quasis[i].raw = Atom::from(format!("{} ", cleaned_string).trim_start()).into();
       } else if i == quasis.len() - 1 {

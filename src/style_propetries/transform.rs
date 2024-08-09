@@ -6,8 +6,13 @@ use swc_core::ecma::ast::*;
 
 use crate::style_propetries::traits::ToExpr;
 
-use super::{style_property_type::CSSPropertyType, transform_properties::{matrix::Matrix, rotate::Rotate, scale::Scale, skew::Skew, translate::Translate}, unit::PropertyTuple};
-
+use super::{
+  style_property_type::CSSPropertyType,
+  transform_properties::{
+    matrix::Matrix, rotate::Rotate, scale::Scale, skew::Skew, translate::Translate,
+  },
+  unit::PropertyTuple,
+};
 
 #[derive(Debug, Clone)]
 pub enum Matrix4 {
@@ -21,30 +26,27 @@ pub enum Matrix4 {
 #[derive(Debug, Clone)]
 pub struct Transform {
   pub id: String,
-  pub value: Vec<Matrix4>
+  pub value: Vec<Matrix4>,
 }
 
 impl ToExpr for Transform {
   fn to_expr(&self) -> PropertyTuple {
-    let mut props= vec![];
-    self.value.iter().for_each(|item| {
-      match item {
-        Matrix4::Translates(value) => {
-
-          props.push(value.to_expr_or_spread());
-        }
-        Matrix4::Rotates(value) => {
-          props.push(value.to_expr_or_spread());
-        }
-        Matrix4::Scales(value) => {
-          props.push(value.to_expr_or_spread());
-        }
-        Matrix4::Skew(value) => {
-          props.push(value.to_expr_or_spread());
-        }
-        Matrix4::Matrix(value) => {
-          props.push(value.to_expr_or_spread());
-        }
+    let mut props = vec![];
+    self.value.iter().for_each(|item| match item {
+      Matrix4::Translates(value) => {
+        props.push(value.to_expr_or_spread());
+      }
+      Matrix4::Rotates(value) => {
+        props.push(value.to_expr_or_spread());
+      }
+      Matrix4::Scales(value) => {
+        props.push(value.to_expr_or_spread());
+      }
+      Matrix4::Skew(value) => {
+        props.push(value.to_expr_or_spread());
+      }
+      Matrix4::Matrix(value) => {
+        props.push(value.to_expr_or_spread());
       }
     });
     PropertyTuple::One(
@@ -54,7 +56,6 @@ impl ToExpr for Transform {
         elems: props,
       }),
     )
-
   }
 }
 

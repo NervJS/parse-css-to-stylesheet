@@ -1,12 +1,26 @@
-use lightningcss::{properties::Property, values::{length::LengthPercentage, position::{HorizontalPositionKeyword, PositionComponent::{self, Center, Side}, VerticalPositionKeyword}}};
+use lightningcss::{
+  properties::Property,
+  values::{
+    length::LengthPercentage,
+    position::{
+      HorizontalPositionKeyword,
+      PositionComponent::{self, Center, Side},
+      VerticalPositionKeyword,
+    },
+  },
+};
 
-use swc_core::ecma::ast::*;
 use swc_core::common::DUMMY_SP;
+use swc_core::ecma::ast::*;
 
-use crate::{generate_expr_by_length_percentage, generate_expr_lit_str, style_propetries::traits::ToExpr};
+use crate::{
+  generate_expr_by_length_percentage, generate_expr_lit_str, style_propetries::traits::ToExpr,
+};
 
-use super::{style_property_type::CSSPropertyType, unit::{Platform, PropertyTuple}};
-
+use super::{
+  style_property_type::CSSPropertyType,
+  unit::{Platform, PropertyTuple},
+};
 
 #[derive(Debug, Clone)]
 pub struct TransformOrigin {
@@ -18,7 +32,7 @@ pub struct TransformOrigin {
 #[derive(Debug, Clone)]
 pub enum EnumValue {
   String(String),
-  Length(LengthPercentage)
+  Length(LengthPercentage),
 }
 
 impl TransformOrigin {
@@ -38,38 +52,33 @@ impl ToExpr for TransformOrigin {
       props: vec![
         PropOrSpread::Prop(Box::new(Prop::KeyValue(KeyValueProp {
           key: PropName::Ident(Ident::new(stringify!(x).into(), DUMMY_SP)),
-          value: Box::new(
-            match &self.x {
-              EnumValue::String(value) => generate_expr_lit_str!(value.to_string()),
-              EnumValue::Length(value) => generate_expr_by_length_percentage!(value, Platform::Harmony)
+          value: Box::new(match &self.x {
+            EnumValue::String(value) => generate_expr_lit_str!(value.to_string()),
+            EnumValue::Length(value) => {
+              generate_expr_by_length_percentage!(value, Platform::Harmony)
             }
-          ),
+          }),
         }))),
         PropOrSpread::Prop(Box::new(Prop::KeyValue(KeyValueProp {
           key: PropName::Ident(Ident::new(stringify!(y).into(), DUMMY_SP)),
-          value: Box::new(
-            match &self.y {
-              EnumValue::String(value) => generate_expr_lit_str!(value.to_string()),
-              EnumValue::Length(value) => generate_expr_by_length_percentage!(value, Platform::Harmony)
+          value: Box::new(match &self.y {
+            EnumValue::String(value) => generate_expr_lit_str!(value.to_string()),
+            EnumValue::Length(value) => {
+              generate_expr_by_length_percentage!(value, Platform::Harmony)
             }
-          ),
+          }),
         }))),
       ],
     });
 
-    PropertyTuple::One(
-      CSSPropertyType::TransformOrigin,
-      expr
-    )
+    PropertyTuple::One(CSSPropertyType::TransformOrigin, expr)
   }
-
 }
 
 impl From<(String, &Property<'_>)> for TransformOrigin {
   fn from(prop: (String, &Property<'_>)) -> Self {
     let mut transform_origin = TransformOrigin::new(prop.0);
     if let Property::TransformOrigin(position, _) = prop.1 {
-
       match &position.x {
         Center => {
           transform_origin.x = EnumValue::String("50%".to_string());

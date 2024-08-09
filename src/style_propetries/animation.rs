@@ -1,13 +1,25 @@
-
-
 use std::{cell::RefCell, collections::HashMap, rc::Rc};
 
-use lightningcss::{printer::PrinterOptions, properties::{animation::{self, AnimationFillMode}, Property}, traits::ToCss, values::{easing::EasingFunction,  time}};
+use lightningcss::{
+  printer::PrinterOptions,
+  properties::{
+    animation::{self, AnimationFillMode},
+    Property,
+  },
+  traits::ToCss,
+  values::{easing::EasingFunction, time},
+};
 
-use crate::{generate_expr_lit_num, generate_expr_enum, generate_expr_lit_str, style_parser::KeyFrameItem, style_propetries::style_property_enum, visitor::parse_style_values};
+use super::{
+  style_property_type::CSSPropertyType,
+  traits::ToExpr,
+  unit::{Platform, PropertyTuple},
+};
+use crate::{
+  generate_expr_enum, generate_expr_lit_num, generate_expr_lit_str, style_parser::KeyFrameItem,
+  style_propetries::style_property_enum, visitor::parse_style_values,
+};
 use swc_core::{common::DUMMY_SP, ecma::ast::*};
-use super::{style_property_type::CSSPropertyType, traits::ToExpr, unit::{Platform, PropertyTuple}};
-
 
 #[derive(Debug, Clone)]
 pub enum AnimationTimingFunction {
@@ -23,19 +35,30 @@ pub struct Animation {
   pub animation_delay: Option<f32>,
   pub animation_iteration: Option<f32>,
   pub animation_fill_mode: Option<AnimationFillMode>,
-  pub animation_timeing_function: Option<AnimationTimingFunction>
+  pub animation_timeing_function: Option<AnimationTimingFunction>,
 }
 
-impl From<(String, &Property<'_>, Option<Rc<RefCell<HashMap<String, Vec<KeyFrameItem>>>>>)> for Animation {
-  fn from(value: (String, &Property<'_>, Option<Rc<RefCell<HashMap<String, Vec<KeyFrameItem>>>>>)) -> Self {
-
+impl
+  From<(
+    String,
+    &Property<'_>,
+    Option<Rc<RefCell<HashMap<String, Vec<KeyFrameItem>>>>>,
+  )> for Animation
+{
+  fn from(
+    value: (
+      String,
+      &Property<'_>,
+      Option<Rc<RefCell<HashMap<String, Vec<KeyFrameItem>>>>>,
+    ),
+  ) -> Self {
     let mut animation_name = None;
-    let mut animation_duration =  None; // 0.0
-    let mut animation_delay =  None; // 0.0
-    let mut animation_iteration =  None; // 1.0
+    let mut animation_duration = None; // 0.0
+    let mut animation_delay = None; // 0.0
+    let mut animation_iteration = None; // 1.0
     let mut animation_fill_mode: Option<AnimationFillMode> = None;
     let mut animation_timeing_function: Option<AnimationTimingFunction> = None; // EasingFunction::Ease
-    
+
     match value.1 {
       // Property::AnimationName(_, _) => todo!(),
       // Property::AnimationDuration(_, _) => todo!(),
@@ -47,7 +70,12 @@ impl From<(String, &Property<'_>, Option<Rc<RefCell<HashMap<String, Vec<KeyFrame
       // Property::AnimationFillMode(_, _) => todo!(),
       Property::Animation(animation_list, _) => {
         animation_list.into_iter().for_each(|animation| {
-          animation_name = Some(animation.name.to_css_string(PrinterOptions::default()).unwrap());
+          animation_name = Some(
+            animation
+              .name
+              .to_css_string(PrinterOptions::default())
+              .unwrap(),
+          );
           animation_duration = Some(match animation.duration {
             time::Time::Seconds(s) => s * 1000.0,
             time::Time::Milliseconds(m) => m,
@@ -75,33 +103,31 @@ impl From<(String, &Property<'_>, Option<Rc<RefCell<HashMap<String, Vec<KeyFrame
             // EasingFunction::EaseIn => AnimationTimingFunction::AnimationCurve( style_property_enum::ArkUI_AnimationCurve::ARKUI_CURVE_EASE_IN ),
             // EasingFunction::EaseOut =>AnimationTimingFunction::AnimationCurve ( style_property_enum::ArkUI_AnimationCurve::ARKUI_CURVE_EASE_OUT ),
             // EasingFunction::EaseInOut =>AnimationTimingFunction::AnimationCurve ( style_property_enum::ArkUI_AnimationCurve::ARKUI_CURVE_EASE_IN_OUT ),
-
-            _ => AnimationTimingFunction::EasingFunction(animation.timing_function.clone())
+            _ => AnimationTimingFunction::EasingFunction(animation.timing_function.clone()),
           });
-
         });
-      },
+      }
       Property::AnimationDelay(delay, _) => {
         animation_delay = Some(match delay.get(0).unwrap() {
           time::Time::Seconds(s) => *s * 1000.0,
           time::Time::Milliseconds(m) => *m,
         });
-      },
+      }
       Property::AnimationDuration(duration, _) => {
         animation_duration = Some(match duration.get(0).unwrap() {
           time::Time::Seconds(s) => *s * 1000.0,
           time::Time::Milliseconds(m) => *m,
         })
-      },
+      }
       Property::AnimationIterationCount(iteration, _) => {
         animation_iteration = Some(match iteration.get(0).unwrap() {
           animation::AnimationIterationCount::Number(num) => *num,
           animation::AnimationIterationCount::Infinite => -1.0,
         })
-      },
+      }
       Property::AnimationName(name, _) => {
         animation_name = Some(name.to_css_string(PrinterOptions::default()).unwrap())
-      },
+      }
       Property::AnimationTimingFunction(timing_function, _) => {
         animation_timeing_function = Some(match timing_function.get(0).unwrap() {
           // EasingFunction::Linear => AnimationTimingFunction::AnimationCurve(style_property_enum::ArkUI_AnimationCurve::ARKUI_CURVE_LINEAR),
@@ -109,12 +135,12 @@ impl From<(String, &Property<'_>, Option<Rc<RefCell<HashMap<String, Vec<KeyFrame
           // EasingFunction::EaseIn => AnimationTimingFunction::AnimationCurve( style_property_enum::ArkUI_AnimationCurve::ARKUI_CURVE_EASE_IN ),
           // EasingFunction::EaseOut =>AnimationTimingFunction::AnimationCurve ( style_property_enum::ArkUI_AnimationCurve::ARKUI_CURVE_EASE_OUT ),
           // EasingFunction::EaseInOut =>AnimationTimingFunction::AnimationCurve ( style_property_enum::ArkUI_AnimationCurve::ARKUI_CURVE_EASE_IN_OUT ),
-          _ => AnimationTimingFunction::EasingFunction(timing_function.get(0).unwrap().clone())
+          _ => AnimationTimingFunction::EasingFunction(timing_function.get(0).unwrap().clone()),
         });
-      },
+      }
       _ => {}
     }
-    
+
     Animation {
       id: value.0,
       keyframes: value.2.clone(),
@@ -123,80 +149,96 @@ impl From<(String, &Property<'_>, Option<Rc<RefCell<HashMap<String, Vec<KeyFrame
       animation_delay,
       animation_fill_mode,
       animation_iteration,
-      animation_timeing_function
+      animation_timeing_function,
     }
-
   }
 }
 
-
 impl ToExpr for Animation {
   fn to_expr(&self) -> PropertyTuple {
-
     let mut exprs = vec![];
     if let Some(delay) = self.animation_delay {
-      exprs.push((CSSPropertyType::AnimationDelay, generate_expr_lit_num!(delay as f64)))
+      exprs.push((
+        CSSPropertyType::AnimationDelay,
+        generate_expr_lit_num!(delay as f64),
+      ))
     }
     if let Some(iteration) = self.animation_iteration {
-      exprs.push((CSSPropertyType::AnimationIterationCount, generate_expr_lit_num!(iteration as f64)))
+      exprs.push((
+        CSSPropertyType::AnimationIterationCount,
+        generate_expr_lit_num!(iteration as f64),
+      ))
     }
     if let Some(duration) = self.animation_duration {
-      exprs.push((CSSPropertyType::AnimationDuration, generate_expr_lit_num!(duration as f64)))
+      exprs.push((
+        CSSPropertyType::AnimationDuration,
+        generate_expr_lit_num!(duration as f64),
+      ))
     }
     if let Some(fill_mode) = &self.animation_fill_mode {
       // exprs.push((CSSPropertyType::AnimationFillMode, generate_expr_enum!(*fill_mode)));
-      exprs.push((CSSPropertyType::AnimationFillMode, generate_expr_lit_str!(fill_mode.to_css_string(PrinterOptions::default()).unwrap())));
+      exprs.push((
+        CSSPropertyType::AnimationFillMode,
+        generate_expr_lit_str!(fill_mode.to_css_string(PrinterOptions::default()).unwrap()),
+      ));
     }
     if let Some(timeing_function) = &self.animation_timeing_function {
       match timeing_function {
-        AnimationTimingFunction::AnimationCurve(timeing_function) => {
-          exprs.push((CSSPropertyType::AnimationTimingFunction, generate_expr_enum!(*timeing_function)))
-        },
-        AnimationTimingFunction::EasingFunction(timeing_function) => {
-          exprs.push((CSSPropertyType::AnimationTimingFunction, generate_expr_lit_str!(timeing_function.to_css_string(PrinterOptions::default()).unwrap())))
-        }
+        AnimationTimingFunction::AnimationCurve(timeing_function) => exprs.push((
+          CSSPropertyType::AnimationTimingFunction,
+          generate_expr_enum!(*timeing_function),
+        )),
+        AnimationTimingFunction::EasingFunction(timeing_function) => exprs.push((
+          CSSPropertyType::AnimationTimingFunction,
+          generate_expr_lit_str!(timeing_function
+            .to_css_string(PrinterOptions::default())
+            .unwrap()),
+        )),
       }
-
     }
     if let Some(name) = &self.animation_name {
       if let Some(keframes) = &self.keyframes {
-
-      let keyframe_map = keframes.borrow();
-      if let Some(keyframe_items) = keyframe_map.get(name) {
-        // animation-name: keyframes
-        exprs.push((CSSPropertyType::AnimationName, generate_expr_lit_str!(name.clone())));
-        exprs.push((CSSPropertyType::AnimationKeyFrames, Expr::Array(ArrayLit {
-          span: DUMMY_SP,
-          elems: keyframe_items.into_iter().map(|item| {
-            return Some(ExprOrSpread {
-              spread: None,
-              expr: Box::new(Expr::Object(ObjectLit {
-                span: DUMMY_SP,
-                props: vec![
-                  PropOrSpread::Prop(Box::new(Prop::KeyValue(KeyValueProp {
-                    key: PropName::Str("percentage".into()),
-                    value: Box::new(generate_expr_lit_num!(item.percentage as f64))
-                  }))),                   
-                  PropOrSpread::Prop(Box::new(Prop::KeyValue(KeyValueProp {
-                    key: PropName::Str("event".into()),
-                    value: Box::new(Expr::Array(ArrayLit {
+        let keyframe_map = keframes.borrow();
+        if let Some(keyframe_items) = keyframe_map.get(name) {
+          // animation-name: keyframes
+          exprs.push((
+            CSSPropertyType::AnimationName,
+            generate_expr_lit_str!(name.clone()),
+          ));
+          exprs.push((
+            CSSPropertyType::AnimationKeyFrames,
+            Expr::Array(ArrayLit {
+              span: DUMMY_SP,
+              elems: keyframe_items
+                .into_iter()
+                .map(|item| {
+                  return Some(ExprOrSpread {
+                    spread: None,
+                    expr: Box::new(Expr::Object(ObjectLit {
                       span: DUMMY_SP,
-                      elems: parse_style_values(item.declarations.clone(), Platform::Harmony)
-                    }))
-                  })))
-                ]
-              }))
-            })
-          }).collect::<Vec<Option<ExprOrSpread>>>()
-        })))
-        
-      
+                      props: vec![
+                        PropOrSpread::Prop(Box::new(Prop::KeyValue(KeyValueProp {
+                          key: PropName::Str("percentage".into()),
+                          value: Box::new(generate_expr_lit_num!(item.percentage as f64)),
+                        }))),
+                        PropOrSpread::Prop(Box::new(Prop::KeyValue(KeyValueProp {
+                          key: PropName::Str("event".into()),
+                          value: Box::new(Expr::Array(ArrayLit {
+                            span: DUMMY_SP,
+                            elems: parse_style_values(item.declarations.clone(), Platform::Harmony),
+                          })),
+                        }))),
+                      ],
+                    })),
+                  });
+                })
+                .collect::<Vec<Option<ExprOrSpread>>>(),
+            }),
+          ))
         }
       }
     }
 
     PropertyTuple::Array(exprs)
   }
-
 }
-

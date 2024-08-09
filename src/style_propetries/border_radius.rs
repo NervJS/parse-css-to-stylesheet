@@ -1,22 +1,26 @@
+use crate::{generate_expr_lit_str, generate_invalid_expr};
 use lightningcss::{
   properties::Property,
-  values::{length::LengthValue, percentage::DimensionPercentage}
+  values::{length::LengthValue, percentage::DimensionPercentage},
 };
 use swc_core::ecma::ast::Expr;
-use crate::{generate_expr_lit_str, generate_invalid_expr };
 
-use super::{style_property_type::CSSPropertyType, traits::ToExpr, unit::{generate_expr_by_length_value, Platform, PropertyTuple}};
-
-
+use super::{
+  style_property_type::CSSPropertyType,
+  traits::ToExpr,
+  unit::{generate_expr_by_length_value, Platform, PropertyTuple},
+};
 
 macro_rules! generate_expr_by_dimension_percentage {
   ($val:expr, $platform:expr) => {{
-    use $crate::{generate_invalid_expr, generate_expr_lit_str};
+    use $crate::{generate_expr_lit_str, generate_invalid_expr};
     match $val {
       DimensionPercentage::Dimension(val) => generate_expr_by_length_value(val, $platform),
-      DimensionPercentage::Percentage(value) => generate_expr_lit_str!((value.0 * 100.0).to_string() + "%"),
-      DimensionPercentage::Calc(_) => generate_invalid_expr!()
-  }
+      DimensionPercentage::Percentage(value) => {
+        generate_expr_lit_str!((value.0 * 100.0).to_string() + "%")
+      }
+      DimensionPercentage::Calc(_) => generate_invalid_expr!(),
+    }
   }};
 }
 
@@ -26,7 +30,7 @@ pub struct BorderRadius {
   pub top_left: Option<DimensionPercentage<LengthValue>>,
   pub top_right: Option<DimensionPercentage<LengthValue>>,
   pub bottom_left: Option<DimensionPercentage<LengthValue>>,
-  pub bottom_right: Option<DimensionPercentage<LengthValue>>
+  pub bottom_right: Option<DimensionPercentage<LengthValue>>,
 }
 
 impl BorderRadius {
@@ -54,7 +58,6 @@ impl BorderRadius {
   }
 }
 
-
 impl From<(String, &Property<'_>)> for BorderRadius {
   fn from(prop: (String, &Property<'_>)) -> Self {
     let mut border_width = BorderRadius::new(prop.0);
@@ -65,10 +68,10 @@ impl From<(String, &Property<'_>)> for BorderRadius {
         border_width.set_bottom_right(value.bottom_right.0.to_owned());
         border_width.set_bottom_left(value.bottom_left.0.to_owned());
       }
-      Property::BorderTopLeftRadius(value,_) => {
+      Property::BorderTopLeftRadius(value, _) => {
         border_width.set_top_left(value.0.to_owned());
       }
-      Property::BorderTopRightRadius(value,_) => {
+      Property::BorderTopRightRadius(value, _) => {
         border_width.set_top_right(value.0.to_owned());
       }
       Property::BorderBottomRightRadius(value, _) => {
@@ -84,23 +87,33 @@ impl From<(String, &Property<'_>)> for BorderRadius {
 }
 
 impl ToExpr for BorderRadius {
-    fn to_expr(&self) -> PropertyTuple {
-      let mut props: Vec<(CSSPropertyType, Expr)> = vec![];
+  fn to_expr(&self) -> PropertyTuple {
+    let mut props: Vec<(CSSPropertyType, Expr)> = vec![];
 
-      if let Some(top) = &self.top_left {
-        props.push((CSSPropertyType::BorderTopLeftRadius, generate_expr_by_dimension_percentage!(top, Platform::Harmony)))
-      }
-      if let Some(bottom) = &self.top_right {
-        props.push((CSSPropertyType::BorderTopRightRadius, generate_expr_by_dimension_percentage!(bottom, Platform::Harmony)))
-      }
-      if let Some(left) = &self.bottom_left {
-        props.push((CSSPropertyType::BorderBottomLeftRadius, generate_expr_by_dimension_percentage!(left, Platform::Harmony)))
-      }
-      if let Some(right) = &self.bottom_right {
-        props.push((CSSPropertyType::BorderBottomRightRadius, generate_expr_by_dimension_percentage!(right, Platform::Harmony)))
-      }
-      PropertyTuple::Array(props)
+    if let Some(top) = &self.top_left {
+      props.push((
+        CSSPropertyType::BorderTopLeftRadius,
+        generate_expr_by_dimension_percentage!(top, Platform::Harmony),
+      ))
     }
-
-    
+    if let Some(bottom) = &self.top_right {
+      props.push((
+        CSSPropertyType::BorderTopRightRadius,
+        generate_expr_by_dimension_percentage!(bottom, Platform::Harmony),
+      ))
+    }
+    if let Some(left) = &self.bottom_left {
+      props.push((
+        CSSPropertyType::BorderBottomLeftRadius,
+        generate_expr_by_dimension_percentage!(left, Platform::Harmony),
+      ))
+    }
+    if let Some(right) = &self.bottom_right {
+      props.push((
+        CSSPropertyType::BorderBottomRightRadius,
+        generate_expr_by_dimension_percentage!(right, Platform::Harmony),
+      ))
+    }
+    PropertyTuple::Array(props)
+  }
 }

@@ -1,4 +1,4 @@
-use lightningcss::properties::{Property, border::LineStyle};
+use lightningcss::properties::{border::LineStyle, Property};
 
 use swc_core::ecma::ast::*;
 
@@ -9,14 +9,22 @@ use super::{style_property_type::CSSPropertyType, traits::ToExpr, unit::Property
 #[macro_export]
 macro_rules! generate_expr_by_line_style {
   ($val:expr) => {{
-    use $crate::{generate_invalid_expr, generate_expr_enum, style_propetries::style_property_enum};
     use lightningcss::properties::border::LineStyle;
+    use $crate::{
+      generate_expr_enum, generate_invalid_expr, style_propetries::style_property_enum,
+    };
     match $val {
-      LineStyle::Dotted => generate_expr_enum!(style_property_enum::ArkUI_BorderStyle::ARKUI_BORDER_STYLE_DOTTED),
-      LineStyle::Dashed => generate_expr_enum!(style_property_enum::ArkUI_BorderStyle::ARKUI_BORDER_STYLE_DASHED),
-      LineStyle::Solid => generate_expr_enum!(style_property_enum::ArkUI_BorderStyle::ARKUI_BORDER_STYLE_SOLID),
-      _ => generate_invalid_expr!()
-  }
+      LineStyle::Dotted => {
+        generate_expr_enum!(style_property_enum::ArkUI_BorderStyle::ARKUI_BORDER_STYLE_DOTTED)
+      }
+      LineStyle::Dashed => {
+        generate_expr_enum!(style_property_enum::ArkUI_BorderStyle::ARKUI_BORDER_STYLE_DASHED)
+      }
+      LineStyle::Solid => {
+        generate_expr_enum!(style_property_enum::ArkUI_BorderStyle::ARKUI_BORDER_STYLE_SOLID)
+      }
+      _ => generate_invalid_expr!(),
+    }
   }};
 }
 
@@ -26,7 +34,7 @@ pub struct BorderStyle {
   pub top: Option<LineStyle>,
   pub right: Option<LineStyle>,
   pub bottom: Option<LineStyle>,
-  pub left: Option<LineStyle>
+  pub left: Option<LineStyle>,
 }
 
 impl BorderStyle {
@@ -40,7 +48,7 @@ impl BorderStyle {
     }
   }
 
-  pub fn set_all (&mut self, val: LineStyle) {
+  pub fn set_all(&mut self, val: LineStyle) {
     self.top = Some(val.clone());
     self.right = Some(val.clone());
     self.bottom = Some(val.clone());
@@ -60,7 +68,6 @@ impl BorderStyle {
     self.left = Some(left);
   }
 }
-
 
 impl From<(String, &Property<'_>)> for BorderStyle {
   fn from(prop: (String, &Property<'_>)) -> Self {
@@ -91,21 +98,32 @@ impl From<(String, &Property<'_>)> for BorderStyle {
 }
 
 impl ToExpr for BorderStyle {
-    fn to_expr(&self) -> PropertyTuple {
-      let mut props: Vec<(CSSPropertyType, Expr)> = vec![];
-      if let Some(top) = &self.top {
-        props.push((CSSPropertyType::BorderTopStyle, generate_expr_by_line_style!(top)))
-      }
-      if let Some(bottom) = &self.bottom {
-        props.push((CSSPropertyType::BorderBottomStyle, generate_expr_by_line_style!(bottom)))
-      }
-      if let Some(left) = &self.left {
-        props.push((CSSPropertyType::BorderLeftStyle, generate_expr_by_line_style!(left)))
-      }
-      if let Some(right) = &self.right {
-        props.push((CSSPropertyType::BorderRightStyle, generate_expr_by_line_style!(right)))
-      }
-      PropertyTuple::Array(props)
+  fn to_expr(&self) -> PropertyTuple {
+    let mut props: Vec<(CSSPropertyType, Expr)> = vec![];
+    if let Some(top) = &self.top {
+      props.push((
+        CSSPropertyType::BorderTopStyle,
+        generate_expr_by_line_style!(top),
+      ))
     }
-    
+    if let Some(bottom) = &self.bottom {
+      props.push((
+        CSSPropertyType::BorderBottomStyle,
+        generate_expr_by_line_style!(bottom),
+      ))
+    }
+    if let Some(left) = &self.left {
+      props.push((
+        CSSPropertyType::BorderLeftStyle,
+        generate_expr_by_line_style!(left),
+      ))
+    }
+    if let Some(right) = &self.right {
+      props.push((
+        CSSPropertyType::BorderRightStyle,
+        generate_expr_by_line_style!(right),
+      ))
+    }
+    PropertyTuple::Array(props)
+  }
 }

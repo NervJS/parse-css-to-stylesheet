@@ -1,6 +1,10 @@
-
-
-use lightningcss::properties::{display::{Display::{Keyword, Pair}, DisplayInside, DisplayKeyword, DisplayOutside}, Property};
+use lightningcss::properties::{
+  display::{
+    Display::{Keyword, Pair},
+    DisplayInside, DisplayKeyword, DisplayOutside,
+  },
+  Property,
+};
 
 use crate::{generate_expr_enum, generate_invalid_expr, style_propetries::style_property_enum};
 
@@ -9,7 +13,7 @@ use super::{style_property_type::CSSPropertyType, traits::ToExpr, unit::Property
 #[derive(Debug, Clone)]
 pub struct Display {
   pub id: String,
-  pub value: EnumValue
+  pub value: EnumValue,
 }
 
 #[derive(Debug, Clone)]
@@ -18,7 +22,7 @@ pub enum EnumValue {
   Flex,
   Block,
   Invalid,
-  Box
+  Box,
 }
 
 impl From<(String, &Property<'_>)> for Display {
@@ -49,11 +53,10 @@ impl From<(String, &Property<'_>)> for Display {
         } else {
           EnumValue::Invalid
         }
-      }
+      },
     }
   }
 }
-
 
 impl ToExpr for Display {
   fn to_expr(&self) -> PropertyTuple {
@@ -65,9 +68,7 @@ impl ToExpr for Display {
         EnumValue::Block => generate_expr_enum!(style_property_enum::Display::Block),
         EnumValue::Box => generate_expr_enum!(style_property_enum::Display::Box),
         EnumValue::Invalid => generate_invalid_expr!(),
-      }
+      },
     )
   }
-
 }
-

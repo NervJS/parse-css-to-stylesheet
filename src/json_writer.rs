@@ -6,7 +6,7 @@ use swc_core::ecma::ast::*;
 use crate::constants::{Pseudo, SUPPORT_PSEUDO_KEYS};
 use crate::style_propetries::style_value_type::StyleValueType;
 
-use crate::style_parser::KeyFrameItem;
+use crate::style_parser::{FontFaceItem, KeyFrameItem};
 use crate::style_propetries::style_media::StyleMedia;
 use crate::style_propetries::unit::Platform;
 use crate::visitor::parse_style_values;
@@ -16,6 +16,7 @@ pub struct JsonWriter {
   styles: IndexMap<(u32, String), Vec<StyleValueType>>,
   keyframes: IndexMap<(u32, String), Vec<KeyFrameItem>>,
   medias: Vec<StyleMedia>,
+  fonts: Vec<FontFaceItem>,
 }
 
 impl JsonWriter {
@@ -23,11 +24,13 @@ impl JsonWriter {
     styles: IndexMap<(u32, String), Vec<StyleValueType>>,
     keyframes: IndexMap<(u32, String), Vec<KeyFrameItem>>,
     medias: Vec<StyleMedia>,
+    fonts: Vec<FontFaceItem>,
   ) -> Self {
     Self {
       styles,
       keyframes,
       medias,
+      fonts,
     }
   }
 
@@ -203,6 +206,8 @@ impl JsonWriter {
       })
       .collect();
 
+    // fonts
+
     let json_value = expr_to_json(&Expr::Object(ObjectLit {
       span: DUMMY_SP,
       props: vec![
@@ -249,6 +254,25 @@ impl JsonWriter {
                   expr: Box::new(Expr::Object(ObjectLit {
                     span: DUMMY_SP,
                     props: media.clone().to_expr(),
+                  })),
+                })
+              })
+              .collect(),
+          })),
+        }))),
+        PropOrSpread::Prop(Box::new(Prop::KeyValue(KeyValueProp {
+          key: PropName::Ident(Ident::new("fonts".into(), DUMMY_SP)),
+          value: Box::new(Expr::Array(ArrayLit {
+            span: DUMMY_SP,
+            elems: self
+              .fonts
+              .iter()
+              .map(|font| {
+                Some(ExprOrSpread {
+                  spread: None,
+                  expr: Box::new(Expr::Object(ObjectLit {
+                    span: DUMMY_SP,
+                    props: font.clone().to_expr(),
                   })),
                 })
               })

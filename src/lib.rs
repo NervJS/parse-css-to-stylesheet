@@ -52,6 +52,7 @@ pub fn parse(styles: Vec<String>, options: ParseOptions) -> ParseResult {
     style_data.all_style.borrow().clone(),
     style_data.all_keyframes.borrow().clone(),
     style_data.all_medias.borrow().clone(),
+    style_data.all_fonts.borrow().clone(),
   );
 
   ParseResult {

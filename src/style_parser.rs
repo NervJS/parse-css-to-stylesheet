@@ -1,15 +1,21 @@
 use std::{cell::RefCell, convert::Infallible, rc::Rc};
 
 use super::parse_style_properties::parse_style_properties;
+use crate::{generate_expr_enum, generate_expr_lit_str};
+use crate::style_propetries::font_weight::{self, FontWeight};
+use crate::style_propetries::style_property_enum::ArkUI_FontWeight;
+use crate::style_propetries::traits::ToExpr;
 use crate::visitor::parse_style_values;
 use crate::{
   style_propetries::{style_value_type::StyleValueType, unit::Platform},
   utils::to_camel_case,
 };
 use indexmap::IndexMap;
+use lightningcss::properties::font::FontFamily;
+use lightningcss::rules::font_face::{FontFaceProperty, Source};
 use lightningcss::{
   declaration::DeclarationBlock,
-  properties::Property,
+  properties::{Property, font::{FontWeight as FontWeightProperty, AbsoluteFontWeight}},
   rules::{keyframes::KeyframeSelector, CssRule},
   stylesheet::{ParserOptions, PrinterOptions, StyleSheet},
   traits::ToCss,
@@ -27,6 +33,7 @@ pub struct StyleData {
   pub all_style: Rc<RefCell<IndexMap<(u32, String), StyleValue>>>,
   pub all_keyframes: Rc<RefCell<IndexMap<(u32, String), Vec<KeyFrameItem>>>>,
   pub all_medias: Rc<RefCell<Vec<StyleMedia>>>,
+  pub all_fonts: Rc<RefCell<Vec<FontFaceItem>>>,
 }
 
 pub struct KeyFramesData {
@@ -57,6 +64,36 @@ impl KeyFrameItem {
     return arr_keyframe_items;
   }
 }
+
+#[derive(Debug, Clone)]
+pub struct FontFaceItem {
+  pub font_family: String,
+  pub src: String,
+  pub font_weight: Option<ArkUI_FontWeight>,
+}
+
+impl FontFaceItem {
+  pub fn to_expr(&self) -> Vec<PropOrSpread> {
+    let mut result = vec![
+      PropOrSpread::Prop(Box::new(Prop::KeyValue(KeyValueProp {
+        key: PropName::Ident(Ident::new("fontFamily".into(), DUMMY_SP)),
+        value: Box::new(generate_expr_lit_str!(self.font_family.clone())),
+      }))),
+      PropOrSpread::Prop(Box::new(Prop::KeyValue(KeyValueProp {
+        key: PropName::Ident(Ident::new("src".into(), DUMMY_SP)),
+        value: Box::new(generate_expr_lit_str!(self.src.clone())),
+      }))),
+    ];
+    if let Some(font_weight) = self.font_weight {
+      result.push(PropOrSpread::Prop(Box::new(Prop::KeyValue(KeyValueProp {
+        key: PropName::Ident(Ident::new("fontWeight".into(), DUMMY_SP)),
+        value: Box::new(generate_expr_enum!(font_weight)),
+      }))));
+    }
+    return result;
+  }
+}
+
 #[derive(Debug, Clone)]
 pub struct StyleDeclaration<'i> {
   pub specificity: u32,
@@ -66,6 +103,7 @@ pub struct StyleDeclaration<'i> {
 struct StyleVisitor<'i> {
   all_style: Rc<RefCell<Vec<(u32, String, Vec<StyleDeclaration<'i>>)>>>,
   keyframes: Rc<RefCell<Vec<(u32, String, Vec<KeyFrameItem>)>>>,
+  all_fonts: Rc<RefCell<Vec<FontFaceItem>>>,
   medias: Rc<RefCell<Vec<StyleMedia>>>,
   media_index: u32,
 }
@@ -74,12 +112,14 @@ impl<'i> StyleVisitor<'i> {
   pub fn new(
     all_style: Rc<RefCell<Vec<(u32, String, Vec<StyleDeclaration<'i>>)>>>,
     keyframes: Rc<RefCell<Vec<(u32, String, Vec<KeyFrameItem>)>>>,
+    all_fonts: Rc<RefCell<Vec<FontFaceItem>>>,
     medias: Rc<RefCell<Vec<StyleMedia>>>,
     media_index: u32,
   ) -> Self {
     StyleVisitor {
       all_style,
       keyframes,
+      all_fonts,
       medias,
       media_index,
     }
@@ -190,7 +230,64 @@ impl<'i> Visitor<'i> for StyleVisitor<'i> {
           keyframe_data.name,
           keyframe_data.keyframes,
         ));
-      }
+      },
+      // 字体收集
+      CssRule::FontFace(font_face_rule) => {
+        let mut font_face = FontFaceItem {
+          font_family: "".to_string(),
+          src: "".to_string(),
+          font_weight: None,
+        };
+        font_face_rule.properties.iter().for_each(|property| {
+          match property {
+            FontFaceProperty::FontFamily(value) => {
+              font_face.font_family = value.to_css_string(PrinterOptions::default()).unwrap();
+            },
+            FontFaceProperty::Source(source) => {
+              // src 只取第一个
+              if let Some(next) = source.iter().next() {
+                match next {
+                  Source::Url(value) => {
+                    font_face.src = value.url.to_css_string(PrinterOptions::default()).unwrap();
+                  },
+                  _ => {}
+                }
+              }
+            },
+            FontFaceProperty::FontWeight(font_weight) => {
+              font_face.font_weight = Some(match &font_weight.0 {
+                FontWeightProperty::Bolder => ArkUI_FontWeight::ARKUI_FONT_WEIGHT_BOLDER,
+                FontWeightProperty::Lighter => ArkUI_FontWeight::ARKUI_FONT_WEIGHT_LIGHTER,
+                FontWeightProperty::Absolute(val) => {
+                  match val {
+                    AbsoluteFontWeight::Bold => ArkUI_FontWeight::ARKUI_FONT_WEIGHT_BOLD,
+                    AbsoluteFontWeight::Normal => ArkUI_FontWeight::ARKUI_FONT_WEIGHT_NORMAL,
+                    AbsoluteFontWeight::Weight(num) => {
+                      let new_num = ((num / 100.0).ceil() * 100.0) as i32;
+                      match new_num {
+                        100 => ArkUI_FontWeight::ARKUI_FONT_WEIGHT_W100,
+                        200 => ArkUI_FontWeight::ARKUI_FONT_WEIGHT_W200,
+                        300 => ArkUI_FontWeight::ARKUI_FONT_WEIGHT_W300,
+                        400 => ArkUI_FontWeight::ARKUI_FONT_WEIGHT_W400,
+                        500 => ArkUI_FontWeight::ARKUI_FONT_WEIGHT_W500,
+                        600 => ArkUI_FontWeight::ARKUI_FONT_WEIGHT_W600,
+                        700 => ArkUI_FontWeight::ARKUI_FONT_WEIGHT_W700,
+                        800 => ArkUI_FontWeight::ARKUI_FONT_WEIGHT_W800,
+                        900 => ArkUI_FontWeight::ARKUI_FONT_WEIGHT_W900,
+                        _ => ArkUI_FontWeight::ARKUI_FONT_WEIGHT_NORMAL,
+                      }
+                    },
+                  }
+                },
+              });
+            },
+            _ => {}
+          };
+          if !font_face.font_family.is_empty() && !font_face.src.is_empty() {
+            self.all_fonts.borrow_mut().push(font_face.clone());
+          }
+        });
+      },
       _ => {}
     }
     Ok(())
@@ -205,6 +302,7 @@ pub struct StyleParser<'i> {
   pub all_style: Rc<RefCell<Vec<(u32, String, Vec<StyleDeclaration<'i>>)>>>,
   pub all_keyframes: Rc<RefCell<Vec<(u32, String, Vec<KeyFrameItem>)>>>,
   pub all_medias: Rc<RefCell<Vec<StyleMedia>>>,
+  pub all_fonts: Rc<RefCell<Vec<FontFaceItem>>>,
 }
 
 impl<'i> StyleParser<'i> {
@@ -213,6 +311,7 @@ impl<'i> StyleParser<'i> {
       all_style: Rc::new(RefCell::new(vec![])),
       all_keyframes: Rc::new(RefCell::new(vec![])),
       all_medias: Rc::new(RefCell::new(vec![])),
+      all_fonts: Rc::new(RefCell::new(vec![])),
     }
   }
 
@@ -221,6 +320,7 @@ impl<'i> StyleParser<'i> {
     let mut style_visitor = StyleVisitor::new(
       Rc::clone(&self.all_style),
       Rc::clone(&self.all_keyframes),
+      Rc::clone(&self.all_fonts),
       Rc::clone(&self.all_medias),
       0,
     );
@@ -287,6 +387,7 @@ impl<'i> StyleParser<'i> {
       all_style: Rc::new(RefCell::new(final_all_style)),
       all_keyframes: Rc::new(RefCell::new(final_all_keyframes)),
       all_medias: self.all_medias.clone(),
+      all_fonts: self.all_fonts.clone(),
     };
   }
 

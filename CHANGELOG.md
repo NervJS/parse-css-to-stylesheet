@@ -1,3 +1,12 @@
+## [1.0.18](https://github.com/NervJS/parse-css-to-stylesheet/compare/v1.0.17...v1.0.18) (2024-08-12)
+
+
+### Features
+
+* 支持解析字体 ([e15d053](https://github.com/NervJS/parse-css-to-stylesheet/commit/e15d053abea4acbeedfb1e14b3d558c1a2496a6b))
+
+
+
 ## [1.0.17](https://github.com/NervJS/parse-css-to-stylesheet/compare/v1.0.16...v1.0.17) (2024-08-04)
 
 

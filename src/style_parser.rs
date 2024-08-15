@@ -248,7 +248,7 @@ impl<'i> Visitor<'i> for StyleVisitor<'i> {
               if let Some(next) = source.iter().next() {
                 match next {
                   Source::Url(value) => {
-                    font_face.src = value.url.to_css_string(PrinterOptions::default()).unwrap();
+                    font_face.src = value.url.url.as_ref().to_string();
                   },
                   _ => {}
                 }
@@ -284,7 +284,15 @@ impl<'i> Visitor<'i> for StyleVisitor<'i> {
             _ => {}
           };
           if !font_face.font_family.is_empty() && !font_face.src.is_empty() {
-            self.all_fonts.borrow_mut().push(font_face.clone());
+            let mut all_fonts = self.all_fonts.borrow_mut();
+            let has_font_index = all_fonts
+              .iter()
+              .position(|font| font.font_family == font_face.font_family);
+            if let Some(index) = has_font_index {
+              all_fonts[index] = font_face.clone();
+            } else {
+              all_fonts.push(font_face.clone());
+            }
           }
         });
       },

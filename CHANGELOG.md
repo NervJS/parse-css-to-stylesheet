@@ -1,3 +1,12 @@
+## [1.0.19](https://github.com/NervJS/parse-css-to-stylesheet/compare/v1.0.18...v1.0.19) (2024-08-15)
+
+
+### Features
+
+* 字体解析路径 ([63213f3](https://github.com/NervJS/parse-css-to-stylesheet/commit/63213f3a65facb09b70de754d2850781db799d53))
+
+
+
 ## [1.0.18](https://github.com/NervJS/parse-css-to-stylesheet/compare/v1.0.17...v1.0.18) (2024-08-12)
 
 

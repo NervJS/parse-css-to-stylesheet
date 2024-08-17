@@ -1,3 +1,12 @@
+## [1.0.20](https://github.com/NervJS/parse-css-to-stylesheet/compare/v1.0.19...v1.0.20) (2024-08-17)
+
+
+### Features
+
+* 支持解析 font-family ([5d19340](https://github.com/NervJS/parse-css-to-stylesheet/commit/5d19340e51e1b6fc8fd763b2bdaaa7e6099aaf92))
+
+
+
 ## [1.0.19](https://github.com/NervJS/parse-css-to-stylesheet/compare/v1.0.18...v1.0.19) (2024-08-15)
 
 

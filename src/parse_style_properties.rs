@@ -241,6 +241,14 @@ pub fn parse_style_properties(properties: &Vec<(String, Property)>) -> Vec<Style
           value,
         ))));
       }
+      "fontFamily" => {
+        final_properties.push(StyleValueType::Normal(Normal::new(
+          CSSPropertyType::FontFamily,
+          value
+            .value_to_css_string(PrinterOptions::default())
+            .unwrap(),
+        )));
+      }
       "lineHeight" => {
         final_properties.push(StyleValueType::LineHeight(LineHeight::from((
           id.to_string(),

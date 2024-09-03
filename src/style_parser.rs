@@ -203,14 +203,21 @@ impl<'i> StyleParser<'i> {
     binding.iter_mut().for_each(|(media_index, selector, style_value)| {
       let properties = style_value.declaration.declarations.iter().map(|property| {
         (
-          to_camel_case(
+          if(property.property_id().to_css_string(PrinterOptions::default()).unwrap().as_str().starts_with("--")) {
+            property
+            .property_id()
+            .to_css_string(PrinterOptions::default())
+            .unwrap()
+          } else  {
+            to_camel_case(
             property
               .property_id()
               .to_css_string(PrinterOptions::default())
               .unwrap()
               .as_str(),
             false,
-          ),
+            )
+          },
           property.clone(),
         )
       })

@@ -124,6 +124,7 @@ impl ToExpr for Background {
                             PropertyTuple::One(_, val) =>
                                 props.push((CSSPropertyType::BackgroundPosition, val)),
                             PropertyTuple::Array(val) => props.extend(val),
+                            _=> {}
                         }
                     }
                     if let Some(repeat) = &self.repeat {

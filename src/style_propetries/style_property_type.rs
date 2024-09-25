@@ -104,6 +104,7 @@ pub enum CSSPropertyType {
   Padding = 99,
   BorderRadius = 100,
   BoxOrient = 101,
+  PointerEvents = 102
 }
 
 pub fn string_to_css_property_type(property: &str) -> CSSPropertyType {
@@ -188,6 +189,7 @@ pub fn string_to_css_property_type(property: &str) -> CSSPropertyType {
     "animationIterationCount" => CSSPropertyType::AnimationIterationCount,
     "content" => CSSPropertyType::Content,
     "wordBreak" => CSSPropertyType::WordBreak,
+    "PointerEvents" => CSSPropertyType::PointerEvents,
     "webkitLineClamp" => CSSPropertyType::WebkitLineClamp,
     "animationFillMode" => CSSPropertyType::AnimationFillMode,
     "backgroundPositionX" => CSSPropertyType::BackgroundPositionX,

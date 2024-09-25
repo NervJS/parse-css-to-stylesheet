@@ -349,6 +349,14 @@ pub enum ArkUI_WordBreak {
 
 #[repr(u32)]
 #[derive(Hash, PartialEq, Eq, Debug, Clone, Copy)]
+pub enum PointerEvents {
+  Auto = 0,
+  None
+}
+
+
+#[repr(u32)]
+#[derive(Hash, PartialEq, Eq, Debug, Clone, Copy)]
 #[allow(non_camel_case_types)]
 pub enum PlaceholderVerticalAlignment {
   /** Offset At Baseline */

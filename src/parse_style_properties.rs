@@ -52,6 +52,7 @@ use crate::{
     number::NumberProperty,
     opacity::Opacity,
     overflow::Overflow,
+    pointer_events::PointerEvents,
     position::Position,
     size::SizeProperty,
     style_property_type::{string_to_css_property_type, CSSPropertyType},
@@ -69,6 +70,7 @@ use crate::{
     visibility::Visibility,
     white_space::WhiteSpace,
     word_break::WordBreak,
+
   },
   utils::lowercase_first,
 };
@@ -212,6 +214,13 @@ pub fn parse_style_properties(properties: &Vec<(String, Property)>) -> Vec<Style
       }
       "overflow" => {
         final_properties.push(StyleValueType::Overflow(Overflow::from((
+          id.to_string(),
+          value,
+        ))));
+      }
+      "pointerEvents" => {
+        println!("=+= pointerEvents");
+        final_properties.push(StyleValueType::PointerEvents(PointerEvents::from((
           id.to_string(),
           value,
         ))));

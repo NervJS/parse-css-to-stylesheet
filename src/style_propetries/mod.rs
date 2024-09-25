@@ -58,3 +58,4 @@ pub mod vertical_align;
 pub mod visibility;
 pub mod white_space;
 pub mod word_break;
+pub mod pointer_events;

@@ -208,7 +208,6 @@ impl From<(String, &Property<'_>)> for Transform {
         }
       }
     }
-    // println!("transform form {:?}", transform);
     Transform {
       id: prop.0,
       value: transform,

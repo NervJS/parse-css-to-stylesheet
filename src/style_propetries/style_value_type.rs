@@ -54,6 +54,7 @@ use super::{
   visibility::Visibility,
   white_space::WhiteSpace,
   word_break::WordBreak,
+  pointer_events::PointerEvents
 };
 
 #[derive(Debug, Clone)]
@@ -109,6 +110,7 @@ pub enum StyleValueType {
   WordBreak(WordBreak),
   WhiteSpace(WhiteSpace),
   BoxOrient(BoxOrient),
+  PointerEvents(PointerEvents),
 }
 
 impl ToStyleValue for StyleValueType {
@@ -265,6 +267,9 @@ impl ToStyleValue for StyleValueType {
         generate_expr_based_on_platform!(platform, value)
       }
       StyleValueType::BoxOrient(value) => {
+        generate_expr_based_on_platform!(platform, value)
+      }
+      StyleValueType::PointerEvents(value) => {
         generate_expr_based_on_platform!(platform, value)
       }
     }

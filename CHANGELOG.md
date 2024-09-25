@@ -1,3 +1,13 @@
+## [1.0.21](https://github.com/NervJS/parse-css-to-stylesheet/compare/v1.0.20...v1.0.21) (2024-09-25)
+
+
+### Features
+
+* 添加pointer_events的解析 ([24f9746](https://github.com/NervJS/parse-css-to-stylesheet/commit/24f9746b475caa07c9baceab5ec525852ec7fbc4))
+* use pnpm ([a814cb7](https://github.com/NervJS/parse-css-to-stylesheet/commit/a814cb77e35e8e6c7c7d789c44cb6755dde072c2))
+
+
+
 ## [1.0.20](https://github.com/NervJS/parse-css-to-stylesheet/compare/v1.0.19...v1.0.20) (2024-08-17)
 
 

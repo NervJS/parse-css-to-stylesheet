@@ -154,7 +154,6 @@ jobs:
   #         - host: macos-latest
   #           target: x86_64-apple-darwin
   #       node:
-  #         - '16'
   #         - '18'
   #   runs-on: ${{ matrix.settings.host }}
   #   steps:
@@ -185,7 +184,6 @@ jobs:
       fail-fast: false
       matrix:
         node:
-          - '16'
           - '18'
     runs-on: ubuntu-latest
     steps:
@@ -220,7 +218,6 @@ jobs:
       fail-fast: false
       matrix:
         node:
-          - '16'
           - '18'
     runs-on: ubuntu-latest
     steps:
@@ -257,7 +254,6 @@ jobs:
       fail-fast: false
       matrix:
         node:
-          - '16'
           - '18'
     runs-on: ubuntu-latest
     steps:
@@ -330,7 +326,6 @@ jobs:
       fail-fast: false
       matrix:
         node:
-          - '16'
           - '18'
     runs-on: ubuntu-latest
     steps:

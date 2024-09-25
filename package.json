@@ -51,5 +51,6 @@
     "format:source": "prettier . -w",
     "version": "napi version  && conventional-changelog -p angular -i CHANGELOG.md -s && git add CHANGELOG.md"
   },
+  "packageManager": "pnpm@9.11.0",
   "repository": "https://github.com/NervJS/parse-css-to-stylesheet"
 }

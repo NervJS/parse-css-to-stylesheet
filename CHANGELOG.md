@@ -1,3 +1,21 @@
+## [1.0.22](https://github.com/NervJS/parse-css-to-stylesheet/compare/v1.0.21...v1.0.22) (2024-09-25)
+
+
+### Bug Fixes
+
+* update ci workflow ([c0a87a6](https://github.com/NervJS/parse-css-to-stylesheet/commit/c0a87a695cc000131282cd850b96036e9e7a98aa))
+
+
+### Features
+
+* add registry ([f4b8ce7](https://github.com/NervJS/parse-css-to-stylesheet/commit/f4b8ce76a15f22442105fa8a2b5fd2718722170b))
+* rm node 16 ([ec7dbfc](https://github.com/NervJS/parse-css-to-stylesheet/commit/ec7dbfcb6d4edd96b9f16fdc1dbd2511ff103702))
+* use checkout v4 ([859aa90](https://github.com/NervJS/parse-css-to-stylesheet/commit/859aa90b673a3ac254be38b9bdfcde0c12824e9f))
+* use npm test ([8b72c6b](https://github.com/NervJS/parse-css-to-stylesheet/commit/8b72c6b69444f9a4c4055cb0238803b666d69711))
+* use pnpm ci ([66f1f9e](https://github.com/NervJS/parse-css-to-stylesheet/commit/66f1f9e05768d59104dbc1e7e0ddc4f1ea049697))
+
+
+
 ## [1.0.21](https://github.com/NervJS/parse-css-to-stylesheet/compare/v1.0.20...v1.0.21) (2024-09-25)
 
 

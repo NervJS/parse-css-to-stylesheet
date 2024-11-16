@@ -30,7 +30,7 @@ pub fn main() {
   let css = fs::read_to_string("__test__/fixure/pesudo.scss").unwrap();
 
   let platform = Platform::Harmony;
-
+  let is_entry = false; // 是否是入口文件
   let mut is_enable_nesting = true;
 
   // 解析组件文件
@@ -40,7 +40,7 @@ pub fn main() {
   document.parse(component, cm.clone(), &comments);
 
   // 解析样式文件
-  let mut style_parser = StyleParser::new(&document, platform.clone());
+  let mut style_parser = StyleParser::new(&document, platform.clone(), is_entry.clone());
   style_parser.parse(&css);
   let style_data = style_parser.calc();
 
@@ -57,6 +57,7 @@ pub fn main() {
     style_data.pesudo_style_record.clone(),
     style_data.all_style.clone(),
     is_enable_nesting,
+    is_entry
   );
   style_write.write(platform, document.taro_components.clone());
 

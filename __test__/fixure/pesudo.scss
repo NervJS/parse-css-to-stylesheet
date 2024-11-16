@@ -1,3 +1,25 @@
 .a {
   box-shadow: 0px 0px rgba(0, 0, 0, 0.04);
+  transform: translate(0, 0) rotate(0) skewX(0) skewY(0) scaleX(1) scaleY(1);
+  color: var(--primary-color);
+}
+
+.gap-4 {
+  gap: 16px;
+}
+
+.w-\[300px\] {
+  width: 300px
+}
+
+.h-\[50px\] {
+  width: 300px
+}
+
+.p-2 {
+  padding: 8px;
+}
+
+.bg-\[rgba\(0\2c 0\2c 0\2c 0\.5\)\] {
+  background-color: rgba(0,0,0,0.5);
 }

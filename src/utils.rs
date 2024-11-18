@@ -201,6 +201,11 @@ pub fn split_selector(selector: &str) -> Vec<TSelector> {
 
 // 分割类名 .a.b.c => ["a", "b", "c"]
 fn split_classes(input: &str) -> TSelector {
+  // 如果是 tailwindcss 的任意类，进行如下转换 例如：.bg-[rgba(0,0,0,0.5)] => bg-[rgba(0,0,0,0.5)] , .w-[100px] => w-[100px]
+  if is_tailwind_arbitrary(input) {
+    return TSelector::String(input[1..].to_string());
+  }
+
   let mut matches = Vec::new();
   let mut current_class = String::new();
   for char in input.chars() {
@@ -221,4 +226,9 @@ fn split_classes(input: &str) -> TSelector {
   } else {
       TSelector::String(input.replace(".", ""))
   }
+}
+
+// 是否是 tailwind.css 的任意值类名
+pub fn is_tailwind_arbitrary(input: &str) -> bool {
+  input.contains('[') && input.contains(']')
 }

@@ -7,8 +7,7 @@ use style_parser::StyleParser;
 use style_propetries::unit::Platform;
 
 use swc_core::{
-  ecma::codegen::{text_writer::JsWriter, Emitter},
-  common::{comments::SingleThreadedComments, sync::Lrc, SourceMap}
+  common::{comments::SingleThreadedComments, sync::Lrc, SourceMap}, ecma::{ast::Bool, codegen::{text_writer::JsWriter, Emitter}}
 };
 use crate::{document::JSXDocument, style_write::StyleWrite};
 
@@ -32,7 +31,8 @@ mod parse_style_properties;
 #[napi(object)]
 #[derive(Deserialize)]
 pub struct ParseOptions {
-  pub platform_string: String
+  pub platform_string: String,
+  pub is_entry: bool
 }
 
 #[napi(object)]
@@ -49,6 +49,8 @@ pub fn parse(component: String, styles: Vec<String>, options: ParseOptions) -> P
     _ => Platform::Harmony
   };
 
+  let is_entry = options.is_entry || false;
+
   let mut is_enable_nesting = true;
 
   // 解析组件文件
@@ -59,7 +61,7 @@ pub fn parse(component: String, styles: Vec<String>, options: ParseOptions) -> P
 
   // 解析样式文件
   let css = styles.join("\n");
-  let mut style_parser = StyleParser::new(&document, platform.clone());
+  let mut style_parser = StyleParser::new(&document, platform.clone(), is_entry.clone());
   style_parser.parse(&css);
   let style_data = style_parser.calc();
 
@@ -76,6 +78,7 @@ pub fn parse(component: String, styles: Vec<String>, options: ParseOptions) -> P
     style_data.pesudo_style_record.clone(),
     style_data.all_style.clone(),
     is_enable_nesting,
+    is_entry,
   );
   style_write.write(platform, document.taro_components.clone());
 

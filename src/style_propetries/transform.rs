@@ -159,14 +159,24 @@ impl From<(String, &Property<'_>)> for Transform {
             transform.push(Matrix4::Scales(scale));
           }
           LNTransform::ScaleX(x) => {
-            let mut scale = Scale::new();
-            scale.x = Some(x.clone());
-            transform.push(Matrix4::Scales(scale));
+            // 如果 transform 已经存在 scale 则不再添加，直接取出已经存在的 scale 进行修改
+            if let Some(Matrix4::Scales(scale)) = transform.iter_mut().find(|m| matches!(m, Matrix4::Scales(_))) {
+                scale.x = Some(x.clone());
+            } else {
+                let mut scale = Scale::new();
+                scale.x = Some(x.clone());
+                transform.push(Matrix4::Scales(scale));
+            }
           }
           LNTransform::ScaleY(y) => {
-            let mut scale = Scale::new();
-            scale.x = Some(y.clone());
-            transform.push(Matrix4::Scales(scale));
+            // 如果 transform 已经存在 scale 则不再添加，直接取出已经存在的 scale 进行修改
+            if let Some(Matrix4::Scales(scale)) = transform.iter_mut().find(|m| matches!(m, Matrix4::Scales(_))) {
+              scale.y = Some(y.clone());
+            } else {
+              let mut scale = Scale::new();
+              scale.y = Some(y.clone());
+              transform.push(Matrix4::Scales(scale));
+            }
           }
           LNTransform::ScaleZ(z) => {
             let mut scale = Scale::new();

@@ -4,7 +4,7 @@ use lightningcss::{properties::{custom::TokenOrValue, Property}, stylesheet::Pri
 use swc_core::{common::DUMMY_SP, ecma::{ast::{self}, utils::quote_ident}};
 use swc_core::ecma::ast::*;
 
-use crate::{constants::ENV_FUN, style_parser::KeyFrameItem, style_propetries::{animation::Animation, aspect_ratio::AspactRatio, background::Background, background_image::BackgroundImage, background_position::BackgroundPosition, background_repeat::BackgroundRepeat, background_size::BackgroundSize, border::Border, border_color::BorderColor, border_radius::BorderRadius, border_style::BorderStyle, border_width::BorderWidth, box_shadow::BoxShadow, color::ColorProperty, display::Display, expr::Expr, flex::Flex, flex_align::FlexAlign, flex_basis::FlexBasis, flex_direction::FlexDirection, flex_wrap::FlexWrap, font_size::FontSize, font_style::FontStyle, font_weight::FontWeight, gap::Gap, item_align::ItemAlign, length_value::LengthValueProperty, letter_spacing::LetterSpacing, line_height::LineHeight, marin_padding::MarginPadding, max_size::MaxSizeProperty, normal::Normal, number::NumberProperty, overflow::Overflow, size::SizeProperty, style_value_type::StyleValueType, text_align::TextAlign, text_decoration::TextDecoration, text_overflow::TextOverflow, text_shadow::TextShadow, text_transform::TextTransform, transform::Transform, transform_origin::TransformOrigin, unit::{generate_expr_by_length_value, Platform}, vertical_align::VerticalAlign}};
+use crate::{constants::ENV_FUN, constants::VAR_FUN, style_parser::KeyFrameItem, style_propetries::{animation::Animation, aspect_ratio::AspactRatio, background::Background, background_image::BackgroundImage, background_position::BackgroundPosition, background_repeat::BackgroundRepeat, background_size::BackgroundSize, border::Border, border_color::BorderColor, border_radius::BorderRadius, border_style::BorderStyle, border_width::BorderWidth, box_shadow::BoxShadow, color::ColorProperty, display::Display, expr::Expr, flex::Flex, flex_align::FlexAlign, flex_basis::FlexBasis, flex_direction::FlexDirection, flex_wrap::FlexWrap, font_size::FontSize, font_style::FontStyle, font_weight::FontWeight, gap::Gap, item_align::ItemAlign, length_value::LengthValueProperty, letter_spacing::LetterSpacing, line_height::LineHeight, marin_padding::MarginPadding, max_size::MaxSizeProperty, normal::Normal, number::NumberProperty, overflow::Overflow, size::SizeProperty, style_value_type::StyleValueType, text_align::TextAlign, text_decoration::TextDecoration, text_overflow::TextOverflow, text_shadow::TextShadow, text_transform::TextTransform, transform::Transform, transform_origin::TransformOrigin, unit::{generate_expr_by_length_value, Platform}, vertical_align::VerticalAlign}};
 
 pub fn parse_style_properties(properties: &Vec<(String, Property)>, keyframes_map: Option<Rc<RefCell<HashMap<String, Vec<KeyFrameItem>>>>>) -> Vec<StyleValueType> {
   let mut final_properties = vec![];
@@ -40,6 +40,35 @@ pub fn parse_style_properties(properties: &Vec<(String, Property)>, keyframes_ma
               final_properties.push(StyleValueType::Expr(Expr::new(id.to_string(), ast::Expr::Call(CallExpr {
                 span: DUMMY_SP,
                 callee: Callee::Expr(Box::new(ast::Expr::Ident(quote_ident!(ENV_FUN)))),
+                args: args,
+                type_args: None
+              }))));
+            },
+            TokenOrValue::Var(env) => {
+              is_env = true;
+              let mut args = vec![
+                ExprOrSpread {
+                  spread: None,
+                  expr: Box::new(ast::Expr::Lit(Lit::Str(env.name.to_css_string(PrinterOptions::default()).unwrap().into())))
+                }
+              ];
+              // env.name.to_css_string(PrinterOptions::default()).unwrap()))
+              if env.fallback.is_some() {
+                let fallback = env.fallback.as_ref().unwrap().0.get(0);
+                if let Some(token) = fallback {
+                  if let TokenOrValue::Length(length) = token {
+                    args.push(
+                      ExprOrSpread {
+                        spread: None,
+                        expr: Box::new(generate_expr_by_length_value(length, Platform::Harmony))
+                      }
+                    )
+                  }
+                }
+              }
+              final_properties.push(StyleValueType::Expr(Expr::new(id.to_string(), ast::Expr::Call(CallExpr {
+                span: DUMMY_SP,
+                callee: Callee::Expr(Box::new(ast::Expr::Ident(quote_ident!(VAR_FUN)))),
                 args: args,
                 type_args: None
               }))));

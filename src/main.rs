@@ -2,6 +2,7 @@ use json_writer::JsonWriter;
 use style_parser::StyleParser;
 use style_propetries::unit::Platform;
 
+mod stylesheet_generated;
 mod constants;
 mod json_writer;
 mod parse_style_properties;
@@ -32,5 +33,11 @@ pub fn main() {
     style_data.all_fonts.borrow().clone(),
   );
 
-  print!("{}", style_map.to_json());
+  let style_json = style_map.to_json();
+  print!("{}", style_json);
+  let convert_result = utils::convert_json_to_flatbuffer(&style_json);
+  if let Ok(buffer) = convert_result {
+    // 写文件
+    std::fs::write("__test__/fixure/style.bin", buffer).unwrap();
+  }
 }

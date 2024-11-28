@@ -59,7 +59,7 @@ impl ToExpr for TextShadow {
           PropOrSpread::Prop(Box::new(Prop::KeyValue(KeyValueProp {
             key: generate_prop_name!("radius"),
             value: Box::new(generate_expr_by_length!(
-              self.offset_x.as_ref().unwrap(),
+              self.blur_radius.as_ref().unwrap(),
               Platform::Harmony
             )),
           }))),

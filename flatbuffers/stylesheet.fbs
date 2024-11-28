@@ -1,0 +1,50 @@
+namespace Styles;
+
+table String {
+  value:string;
+}
+
+table Integer {
+  value:uint32;
+}
+
+union Value {
+  String,
+  Integer,
+  Object
+}
+
+table KeyValue {
+  key:string;
+  value:Value;
+}
+
+table Object {
+  fields:[KeyValue];
+}
+
+table DeclarationTuple {
+  property_id:uint8;
+  value:Value;
+}
+
+table Selector {
+  string_value:string;
+  integer_value:uint32;
+  is_string:bool;
+}
+
+table Style {
+  declarations:[DeclarationTuple];
+  media:uint32;
+  selector:[Selector];
+}
+
+table StyleSheet {
+  fonts:[string];
+  keyframes:[string];
+  medias:[string];
+  styles:[Style];
+}
+
+root_type StyleSheet;

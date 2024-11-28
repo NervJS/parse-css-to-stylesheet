@@ -10,8 +10,10 @@ use swc_core::ecma::{
   },
   visit::{Visit, VisitWith},
 };
+use serde_json::Value;
+use flatbuffers::{FlatBufferBuilder, WIPOffset, UnionWIPOffset};
 
-use crate::{constants::SelectorType, style_propetries::unit::Platform};
+use crate::{constants::SelectorType, stylesheet_generated::styles};
 
 pub fn lowercase_first(s: &mut str) {
   if let Some(c) = s.get_mut(0..1) {
@@ -169,4 +171,144 @@ fn split_classes(input: &str) -> TSelector {
   } else {
     TSelector::String(input.replace(".", ""))
   }
+}
+
+fn process_flatbuffer_value(builder: &mut FlatBufferBuilder, value: &Value) -> (styles::Value, WIPOffset<UnionWIPOffset>) {
+  match value {
+    Value::String(s) => create_flatbuffer_string_value(builder, s),
+    Value::Number(n) => create_flatbuffer_integer_value(builder, n),
+    Value::Object(obj) => create_flatbuffer_object_value(builder, obj),
+    _ => {
+      println!("{:?}", value);
+      panic!("Invalid value type")
+    }
+  }
+}
+
+fn create_flatbuffer_string_value(builder: &mut FlatBufferBuilder, s: &str) -> (styles::Value, WIPOffset<UnionWIPOffset>) {
+  let string_offset = builder.create_string(s);
+  let string = styles::String::create(builder, &styles::StringArgs {
+    value: Some(string_offset),
+  });
+  (styles::Value::String, string.as_union_value())
+}
+
+fn create_flatbuffer_integer_value(builder: &mut FlatBufferBuilder, n: &serde_json::Number) -> (styles::Value, WIPOffset<UnionWIPOffset>) {
+  let integer = styles::Integer::create(builder, &styles::IntegerArgs {
+    value: n.as_u64().unwrap() as u32,
+  });
+  (styles::Value::Integer, integer.as_union_value())
+}
+
+fn create_flatbuffer_object_value(builder: &mut FlatBufferBuilder, obj: &serde_json::Map<String, Value>) -> (styles::Value, WIPOffset<UnionWIPOffset>) {
+  let key_values: Vec<_> = obj.iter()
+      .map(|(key, value)| {
+        let key_offset = builder.create_string(key);
+        let (value_type, value_offset) = process_flatbuffer_value(builder, value);
+        
+        styles::KeyValue::create(builder, &styles::KeyValueArgs {
+          key: Some(key_offset),
+          value_type,
+          value: Some(value_offset),
+        })
+      })
+      .collect();
+
+  let fields_offset = builder.create_vector(&key_values);
+  let object = styles::Object::create(builder, &styles::ObjectArgs {
+    fields: Some(fields_offset),
+  });
+  
+  (styles::Value::Object, object.as_union_value())
+}
+
+pub fn convert_json_to_flatbuffer(json_str: &str) -> Result<Vec<u8>, serde_json::Error> {
+  let json: Value = serde_json::from_str(json_str)?;
+  let mut builder = FlatBufferBuilder::new();
+  let fonts: Vec<WIPOffset<&str>> = json["fonts"]
+    .as_array()
+    .unwrap()
+    .iter()
+    .map(|f| builder.create_string(f.as_str().unwrap()))
+    .collect();
+  let fonts = builder.create_vector(&fonts);
+
+  let keyframes: Vec<WIPOffset<&str>> = json["keyframes"]
+    .as_array()
+    .unwrap()
+    .iter()
+    .map(|k| builder.create_string(k.as_str().unwrap()))
+    .collect();
+  let keyframes = builder.create_vector(&keyframes);
+
+  let medias: Vec<WIPOffset<&str>> = json["medias"]
+    .as_array()
+    .unwrap()
+    .iter()
+    .map(|m| builder.create_string(m.as_str().unwrap()))
+    .collect();
+  let medias = builder.create_vector(&medias);
+
+  let styles: Vec<WIPOffset<styles::Style>> = json["styles"]
+    .as_array()
+    .unwrap()
+    .iter()
+    .map(|style| {
+      let declarations: Vec<WIPOffset<styles::DeclarationTuple>> = style["declarations"]
+        .as_array()
+        .unwrap()
+        .iter()
+        .map(|decl| {
+          let decl_array = decl.as_array().unwrap();
+          let property_id = decl_array[0].as_u64().unwrap() as u8;
+          let (value_type, value) = process_flatbuffer_value(&mut builder, &decl_array[1]);
+          styles::DeclarationTuple::create(&mut builder, &styles::DeclarationTupleArgs {
+            property_id: property_id,
+            value_type: value_type,
+            value: Some(value),
+          })
+        }).collect();
+        let declarations = builder.create_vector(&declarations);
+        
+        let selector: Vec<WIPOffset<styles::Selector>> = style["selector"]
+          .as_array()
+          .unwrap()
+          .iter()
+          .map(|sel| {
+            match sel {
+              Value::String(s) => {
+                let string_offset = builder.create_string(s);
+                styles::Selector::create(&mut builder, &styles::SelectorArgs {
+                  string_value: Some(string_offset),
+                  integer_value: 0,
+                  is_string: true,
+                })
+              },
+              Value::Number(n) => styles::Selector::create(&mut builder, &styles::SelectorArgs {
+                string_value: None,
+                integer_value: n.as_u64().unwrap() as u32,
+                is_string: false,
+              }),
+              _ => panic!("Invalid selector type"),
+            }
+          }).collect();
+        let selector = builder.create_vector(&selector);
+
+        styles::Style::create(&mut builder, &styles::StyleArgs {
+          declarations: Some(declarations),
+          media: style["media"].as_u64().unwrap() as u32,
+          selector: Some(selector),
+        })
+    }).collect();
+    let styles = builder.create_vector(&styles);
+    let stylesheet = styles::StyleSheet::create(&mut builder, &styles::StyleSheetArgs {
+      fonts: Some(fonts),
+      keyframes: Some(keyframes),
+      medias: Some(medias),
+      styles: Some(styles),
+    });
+
+    builder.finish(stylesheet, None);
+    Ok(builder.finished_data().to_vec())
+
 }

@@ -5,13 +5,53 @@ table String {
 }
 
 table Integer {
-  value:uint32;
+  value:int64;
+}
+
+table Double {
+  value:double;
+}
+
+table Boolean {
+  value:bool;
+}
+
+table StringArray {
+  values:[string];
+}
+
+table IntegerArray {
+  values:[int64];
+}
+
+table DoubleArray {
+  values:[double];
+}
+
+table ObjectArray {
+  values:[KeyValue];
+}
+
+table IntegereArrayArray {
+  values:[IntegerArray];
+}
+
+table DoubleArrayArray {
+  values:[DoubleArray];
 }
 
 union Value {
   String,
   Integer,
-  Object
+  Double,
+  Boolean,
+  StringArray,
+  IntegerArray,
+  DoubleArray,
+  Object,
+  ObjectArray,
+  IntegereArrayArray,
+  DoubleArrayArray
 }
 
 table KeyValue {
@@ -30,13 +70,13 @@ table DeclarationTuple {
 
 table Selector {
   string_value:string;
-  integer_value:uint32;
+  integer_value:uint8;
   is_string:bool;
 }
 
 table Style {
   declarations:[DeclarationTuple];
-  media:uint32;
+  media:uint8;
   selector:[Selector];
 }
 

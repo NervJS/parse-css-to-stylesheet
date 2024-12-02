@@ -176,13 +176,146 @@ fn split_classes(input: &str) -> TSelector {
 fn process_flatbuffer_value(builder: &mut FlatBufferBuilder, value: &Value) -> (styles::Value, WIPOffset<UnionWIPOffset>) {
   match value {
     Value::String(s) => create_flatbuffer_string_value(builder, s),
-    Value::Number(n) => create_flatbuffer_integer_value(builder, n),
+    Value::Number(n) => {
+      if n.is_f64() {
+        create_flatbuffer_double_value(builder, n)
+      } else {
+        create_flatbuffer_integer_value(builder, n)
+      }
+    },
+    Value::Bool(b) => create_flatbuffer_boolean_value(builder, *b),
+    Value::Array(arr) => {
+      if arr.len() > 0 {
+        match &arr[0] {
+          Value::String(_) => create_flatbuffer_array_string_value(builder, arr),
+          Value::Number(_) => {
+            let is_integer = arr.iter().all(|n| n.is_i64());
+            if is_integer {
+              create_flatbuffer_array_integer_value(builder, arr)
+            } else {
+              create_flatbuffer_array_double_value(builder, arr)
+            }
+          },
+          Value::Object(_) => {
+            let key_values: Vec<_> = arr.iter()
+              .map(|obj| {
+                let (value_type, value) = process_flatbuffer_value(builder, obj);
+                styles::KeyValue::create(builder, &styles::KeyValueArgs {
+                  key: None,
+                  value_type,
+                  value: Some(value),
+                })
+              })
+              .collect();
+            let fields_offset = builder.create_vector(&key_values);
+            let array = styles::ObjectArray::create(builder, &styles::ObjectArrayArgs {
+              values: Some(fields_offset),
+            });
+            (styles::Value::ObjectArray, array.as_union_value())
+          },
+          Value::Array(_) => {
+            let is_integer = arr.iter().all(|n| n.is_i64());
+            if is_integer {
+              create_flatbuffer_array_array_integer_value(builder, arr)
+            } else {
+              create_flatbuffer_array_array_double_value(builder, arr)
+            }
+          },
+          _ => {
+            println!("{:?}", value);
+            panic!("Invalid array type")
+          }
+        }
+      } else {
+        panic!("Empty array")
+      }
+    }
     Value::Object(obj) => create_flatbuffer_object_value(builder, obj),
     _ => {
       println!("{:?}", value);
       panic!("Invalid value type")
     }
   }
+}
+
+fn create_flatbuffer_array_array_integer_value(builder: &mut FlatBufferBuilder, arr: &Vec<Value>) -> (styles::Value, WIPOffset<UnionWIPOffset>) {
+  let integer_values: Vec<_> = arr.iter()
+    .map(|n| {
+      let values: Vec<_> = n.as_array().unwrap()
+        .iter()
+        .map(|n| n.as_i64().unwrap() as i64)
+        .collect();
+      let integers = builder.create_vector(&values);
+      styles::IntegerArray::create(builder, &&styles::IntegerArrayArgs {
+        values: Some(integers),
+      })
+    })
+    .collect();
+  let integers = builder.create_vector(&integer_values);
+  let array = styles::IntegereArrayArray::create(builder, &&styles::IntegereArrayArrayArgs {
+    values: Some(integers),
+  });
+  (styles::Value::IntegereArrayArray, array.as_union_value())
+}
+
+fn create_flatbuffer_array_array_double_value(builder: &mut FlatBufferBuilder, arr: &Vec<Value>) -> (styles::Value, WIPOffset<UnionWIPOffset>) {
+  let double_values: Vec<_> = arr.iter()
+    .map(|n| {
+      let values: Vec<_> = n.as_array().unwrap()
+        .iter()
+        .map(|n| n.as_f64().unwrap())
+        .collect();
+      let doubles = builder.create_vector(&values);
+      styles::DoubleArray::create(builder, &&styles::DoubleArrayArgs {
+        values: Some(doubles),
+      })
+    })
+    .collect();
+  let doubles = builder.create_vector(&double_values);
+  let array = styles::DoubleArrayArray::create(builder, &&styles::DoubleArrayArrayArgs {
+    values: Some(doubles),
+  });
+  (styles::Value::DoubleArrayArray, array.as_union_value())
+}
+
+fn create_flatbuffer_array_string_value(builder: &mut FlatBufferBuilder, arr: &Vec<Value>) -> (styles::Value, WIPOffset<UnionWIPOffset>) {
+  let string_offsets: Vec<_> = arr.iter()
+    .map(|s| builder.create_string(s.as_str().unwrap()))
+    .collect();
+  let strings = builder.create_vector(&string_offsets);
+  let array = styles::StringArray::create(builder, &styles::StringArrayArgs {
+    values: Some(strings),
+  });
+  (styles::Value::StringArray, array.as_union_value())
+}
+
+fn create_flatbuffer_array_double_value(builder: &mut FlatBufferBuilder, arr: &Vec<Value>) -> (styles::Value, WIPOffset<UnionWIPOffset>) {
+  let double_values: Vec<_> = arr.iter()
+    .map(|n| n.as_f64().unwrap())
+    .collect();
+  let doubles = builder.create_vector(&double_values);
+  let array = styles::DoubleArray::create(builder, &styles::DoubleArrayArgs {
+    values: Some(doubles),
+  });
+  (styles::Value::DoubleArray, array.as_union_value())
+}
+
+fn create_flatbuffer_array_integer_value(builder: &mut FlatBufferBuilder, arr: &Vec<Value>) -> (styles::Value, WIPOffset<UnionWIPOffset>) {
+  let integer_values: Vec<_> = arr.iter()
+    .map(|n| n.as_i64().unwrap() as i64)
+    .collect();
+  let integers = builder.create_vector(&integer_values);
+  let array = styles::IntegerArray::create(builder, &styles::IntegerArrayArgs {
+    values: Some(integers),
+  });
+  (styles::Value::IntegerArray, array.as_union_value())
+}
+
+fn create_flatbuffer_boolean_value(builder: &mut FlatBufferBuilder, b: bool) -> (styles::Value, WIPOffset<UnionWIPOffset>) {
+  let boolean = styles::Boolean::create(builder, &styles::BooleanArgs {
+    value: b,
+  });
+  (styles::Value::Boolean, boolean.as_union_value())
 }
 
 fn create_flatbuffer_string_value(builder: &mut FlatBufferBuilder, s: &str) -> (styles::Value, WIPOffset<UnionWIPOffset>) {
@@ -193,9 +326,16 @@ fn create_flatbuffer_string_value(builder: &mut FlatBufferBuilder, s: &str) -> (
   (styles::Value::String, string.as_union_value())
 }
 
+fn create_flatbuffer_double_value(builder: &mut FlatBufferBuilder, n: &serde_json::Number) -> (styles::Value, WIPOffset<UnionWIPOffset>) {
+  let double = styles::Double::create(builder, &styles::DoubleArgs {
+    value: n.as_f64().unwrap(),
+  });
+  (styles::Value::Double, double.as_union_value())
+}
+
 fn create_flatbuffer_integer_value(builder: &mut FlatBufferBuilder, n: &serde_json::Number) -> (styles::Value, WIPOffset<UnionWIPOffset>) {
   let integer = styles::Integer::create(builder, &styles::IntegerArgs {
-    value: n.as_u64().unwrap() as u32,
+    value: n.as_i64().unwrap() as i64,
   });
   (styles::Value::Integer, integer.as_union_value())
 }
@@ -254,6 +394,30 @@ pub fn convert_json_to_flatbuffer(json_str: &str) -> Result<Vec<u8>, serde_json:
     .unwrap()
     .iter()
     .map(|style| {
+      let selector: Vec<WIPOffset<styles::Selector>> = style["selector"]
+        .as_array()
+        .unwrap()
+        .iter()
+        .map(|sel| {
+          match sel {
+            Value::String(s) => {
+              let string_offset = builder.create_string(s);
+              styles::Selector::create(&mut builder, &styles::SelectorArgs {
+                string_value: Some(string_offset),
+                integer_value: 0,
+                is_string: true,
+              })
+            },
+            Value::Number(n) => styles::Selector::create(&mut builder, &styles::SelectorArgs {
+              string_value: None,
+              integer_value: n.as_u64().unwrap() as u8,
+              is_string: false,
+            }),
+            _ => panic!("Invalid selector type"),
+          }
+        }).collect();
+      let selector = builder.create_vector(&selector);
+
       let declarations: Vec<WIPOffset<styles::DeclarationTuple>> = style["declarations"]
         .as_array()
         .unwrap()
@@ -261,6 +425,7 @@ pub fn convert_json_to_flatbuffer(json_str: &str) -> Result<Vec<u8>, serde_json:
         .map(|decl| {
           let decl_array = decl.as_array().unwrap();
           let property_id = decl_array[0].as_u64().unwrap() as u8;
+          
           let (value_type, value) = process_flatbuffer_value(&mut builder, &decl_array[1]);
           styles::DeclarationTuple::create(&mut builder, &styles::DeclarationTupleArgs {
             property_id: property_id,
@@ -269,34 +434,10 @@ pub fn convert_json_to_flatbuffer(json_str: &str) -> Result<Vec<u8>, serde_json:
           })
         }).collect();
         let declarations = builder.create_vector(&declarations);
-        
-        let selector: Vec<WIPOffset<styles::Selector>> = style["selector"]
-          .as_array()
-          .unwrap()
-          .iter()
-          .map(|sel| {
-            match sel {
-              Value::String(s) => {
-                let string_offset = builder.create_string(s);
-                styles::Selector::create(&mut builder, &styles::SelectorArgs {
-                  string_value: Some(string_offset),
-                  integer_value: 0,
-                  is_string: true,
-                })
-              },
-              Value::Number(n) => styles::Selector::create(&mut builder, &styles::SelectorArgs {
-                string_value: None,
-                integer_value: n.as_u64().unwrap() as u32,
-                is_string: false,
-              }),
-              _ => panic!("Invalid selector type"),
-            }
-          }).collect();
-        let selector = builder.create_vector(&selector);
 
         styles::Style::create(&mut builder, &styles::StyleArgs {
           declarations: Some(declarations),
-          media: style["media"].as_u64().unwrap() as u32,
+          media: style["media"].as_u64().unwrap() as u8,
           selector: Some(selector),
         })
     }).collect();

@@ -365,29 +365,29 @@ fn create_flatbuffer_object_value(builder: &mut FlatBufferBuilder, obj: &serde_j
 pub fn convert_json_to_flatbuffer(json_str: &str) -> Result<Vec<u8>, serde_json::Error> {
   let json: Value = serde_json::from_str(json_str)?;
   let mut builder = FlatBufferBuilder::new();
-  let fonts: Vec<WIPOffset<&str>> = json["fonts"]
-    .as_array()
-    .unwrap()
-    .iter()
-    .map(|f| builder.create_string(f.as_str().unwrap()))
-    .collect();
-  let fonts = builder.create_vector(&fonts);
+  // let fonts: Vec<WIPOffset<&str>> = json["fonts"]
+  //   .as_array()
+  //   .unwrap()
+  //   .iter()
+  //   .map(|f| builder.create_string(f.as_str().unwrap()))
+  //   .collect();
+  // let fonts = builder.create_vector(&fonts);
 
-  let keyframes: Vec<WIPOffset<&str>> = json["keyframes"]
-    .as_array()
-    .unwrap()
-    .iter()
-    .map(|k| builder.create_string(k.as_str().unwrap()))
-    .collect();
-  let keyframes = builder.create_vector(&keyframes);
+  // let keyframes: Vec<WIPOffset<&str>> = json["keyframes"]
+  //   .as_array()
+  //   .unwrap()
+  //   .iter()
+  //   .map(|k| builder.create_string(k.as_str().unwrap()))
+  //   .collect();
+  // let keyframes = builder.create_vector(&keyframes);
 
-  let medias: Vec<WIPOffset<&str>> = json["medias"]
-    .as_array()
-    .unwrap()
-    .iter()
-    .map(|m| builder.create_string(m.as_str().unwrap()))
-    .collect();
-  let medias = builder.create_vector(&medias);
+  // let medias: Vec<WIPOffset<&str>> = json["medias"]
+  //   .as_array()
+  //   .unwrap()
+  //   .iter()
+  //   .map(|m| builder.create_string(m.as_str().unwrap()))
+  //   .collect();
+  // let medias = builder.create_vector(&medias);
 
   let styles: Vec<WIPOffset<styles::Style>> = json["styles"]
     .as_array()
@@ -443,9 +443,9 @@ pub fn convert_json_to_flatbuffer(json_str: &str) -> Result<Vec<u8>, serde_json:
     }).collect();
     let styles = builder.create_vector(&styles);
     let stylesheet = styles::StyleSheet::create(&mut builder, &styles::StyleSheetArgs {
-      fonts: Some(fonts),
-      keyframes: Some(keyframes),
-      medias: Some(medias),
+      fonts: None,
+      keyframes: None,
+      medias: None,
       styles: Some(styles),
     });
 

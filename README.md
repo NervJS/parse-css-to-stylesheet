@@ -13,7 +13,7 @@ import { parse } from '@tarojs/parse-css-to-stylesheet'
 const { code } = parse(jsxCode, [cssCode1, cssCode2, ...], {
   platformString: 'Harmony',
 })
-// code: jsx代码 string
+// code: CSS 代码 string
 ```
 
 ## 参数说明

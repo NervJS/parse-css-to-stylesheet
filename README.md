@@ -2,7 +2,7 @@
 
 ## 简介
 
-解析 React 组件与对应的 CSS 文件，为每一个 React 节点计算样式最终样式，应用于 React Native 、鸿蒙等不支持 CSS 写法的场景
+对 CSS 代码进行解析编码处理，应用于 React Native 、鸿蒙等不支持 CSS 写法的场景
 
 ## 使用方式
 

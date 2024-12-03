@@ -12,7 +12,6 @@ import { parse } from '@tarojs/parse-css-to-stylesheet'
 // Harmony
 const { code } = parse(jsxCode, [cssCode1, cssCode2, ...], {
   platformString: 'Harmony',
-  isEnableNesting: true // 支持解析嵌套选择器，默认关闭
 })
 // code: jsx代码 string
 ```
@@ -20,17 +19,20 @@ const { code } = parse(jsxCode, [cssCode1, cssCode2, ...], {
 ## 参数说明
 
 ```typescript
+export interface OutputOptions {
+  isBin?: boolean
+}
 export interface ParseOptions {
-  platformString: string; // 平台：'Harmony'
-  isEnableNesting?: boolean; // 是否支持嵌套解析
+  platformString: string  // 平台 Harmony
+  output?: OutputOptions
 }
 export interface ParseResult {
-  code: string; // 输出的jsxcode
+  code?: string
+  buffer?: Buffer
 }
 
 // 样式解析
 export function parse(
-  component: string,
   styles: Array<string>,
   options: ParseOptions
 ): ParseResult;
@@ -41,21 +43,14 @@ export function parse(
 | 配置参数        | 类型    | 可选值                   | 说明             |
 | --------------- | ------- | ------------------------ | ---------------- |
 | platformString  | String  | 'Harmony'、'ReactNative' | 平台             |
-| isEnableNesting | Boolean |                          | 样式嵌套解析开关 |
+| output          | Object |   { isBin: false }        | 输出格式 |
 
 #### ParseResult
 
 | 配置参数 | 类型   | 说明                      |
 | -------- | ------ | ------------------------- |
-| code     | String | 经过样式解析后的 JSX 代码 |
-
-在 Harmony 中，编译结果会依赖`@tarojs/plugin-platform-harmony-ets`中提供的几个包方法：
-
-1. `convertNumber2VP` 用于运行时进行单位转换
-2. `calcStaticStyle` 用于合成类，匹配类名
-3. `__combine_nesting_style__` 嵌套样式的合成
-
-具体位于 [Taro 主仓](https://github.com/NervJS/taro) 路径：_/taro/packages/taro-platform-harmony/src/runtime-ets_ 中
+| code     | String | 经过样式解析后的样式代码 |
+| buffer   | Buffer | 经过样式解析后的二进制 |
 
 ## 样式支持情况
 

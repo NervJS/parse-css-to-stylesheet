@@ -1,3 +1,27 @@
+# [1.1.0](https://github.com/NervJS/parse-css-to-stylesheet/compare/v1.0.20...v1.1.0) (2024-12-03)
+
+
+### Bug Fixes
+
+* 生成二进制暂时不处理 fonts/media/keyframes ([6f4a2d9](https://github.com/NervJS/parse-css-to-stylesheet/commit/6f4a2d94234349db2162d7bd2a0e14182e7ad2b6))
+* 完善样式编译成二进制处理 ([f0c467e](https://github.com/NervJS/parse-css-to-stylesheet/commit/f0c467edb3db331509661a69133a7fa94c186d7c))
+* update ci workflow ([c0a87a6](https://github.com/NervJS/parse-css-to-stylesheet/commit/c0a87a695cc000131282cd850b96036e9e7a98aa))
+
+
+### Features
+
+* 更新 typings ([098e3d2](https://github.com/NervJS/parse-css-to-stylesheet/commit/098e3d23aba86b69ac277b655bd42bdc62d05e50))
+* 添加pointer_events的解析 ([24f9746](https://github.com/NervJS/parse-css-to-stylesheet/commit/24f9746b475caa07c9baceab5ec525852ec7fbc4))
+* 支持将样式编译成二进制文件 ([8d53ada](https://github.com/NervJS/parse-css-to-stylesheet/commit/8d53adabd75a9e37033cfcffa2a6c0bc4df3d52c))
+* add registry ([f4b8ce7](https://github.com/NervJS/parse-css-to-stylesheet/commit/f4b8ce76a15f22442105fa8a2b5fd2718722170b))
+* rm node 16 ([ec7dbfc](https://github.com/NervJS/parse-css-to-stylesheet/commit/ec7dbfcb6d4edd96b9f16fdc1dbd2511ff103702))
+* use checkout v4 ([859aa90](https://github.com/NervJS/parse-css-to-stylesheet/commit/859aa90b673a3ac254be38b9bdfcde0c12824e9f))
+* use npm test ([8b72c6b](https://github.com/NervJS/parse-css-to-stylesheet/commit/8b72c6b69444f9a4c4055cb0238803b666d69711))
+* use pnpm ([1365797](https://github.com/NervJS/parse-css-to-stylesheet/commit/136579758f344b1a34af19f8e58bf7382064ddf6))
+* use pnpm ci ([66f1f9e](https://github.com/NervJS/parse-css-to-stylesheet/commit/66f1f9e05768d59104dbc1e7e0ddc4f1ea049697))
+
+
+
 ## [1.0.22](https://github.com/NervJS/parse-css-to-stylesheet/compare/v1.0.21...v1.0.22) (2024-09-25)
 
 

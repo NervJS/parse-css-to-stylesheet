@@ -31,6 +31,7 @@ pub fn main() {
     style_data.all_keyframes.borrow().clone(),
     style_data.all_medias.borrow().clone(),
     style_data.all_fonts.borrow().clone(),
+    None
   );
 
   let style_json = style_map.to_json();

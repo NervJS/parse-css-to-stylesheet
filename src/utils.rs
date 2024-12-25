@@ -442,11 +442,13 @@ pub fn convert_json_to_flatbuffer(json_str: &str) -> Result<Vec<u8>, serde_json:
         })
     }).collect();
     let styles = builder.create_vector(&styles);
+    let design_width = json["design_width"].as_u64().unwrap_or(0) as u16;
     let stylesheet = styles::StyleSheet::create(&mut builder, &styles::StyleSheetArgs {
       fonts: None,
       keyframes: None,
       medias: None,
       styles: Some(styles),
+      design_width: design_width,
     });
 
     builder.finish(stylesheet, None);

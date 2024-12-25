@@ -2278,6 +2278,7 @@ impl<'a> StyleSheet<'a> {
   pub const VT_KEYFRAMES: flatbuffers::VOffsetT = 6;
   pub const VT_MEDIAS: flatbuffers::VOffsetT = 8;
   pub const VT_STYLES: flatbuffers::VOffsetT = 10;
+  pub const VT_DESIGN_WIDTH: flatbuffers::VOffsetT = 12;
 
   #[inline]
   pub unsafe fn init_from_table(table: flatbuffers::Table<'a>) -> Self {
@@ -2293,6 +2294,7 @@ impl<'a> StyleSheet<'a> {
     if let Some(x) = args.medias { builder.add_medias(x); }
     if let Some(x) = args.keyframes { builder.add_keyframes(x); }
     if let Some(x) = args.fonts { builder.add_fonts(x); }
+    builder.add_design_width(args.design_width);
     builder.finish()
   }
 
@@ -2325,6 +2327,13 @@ impl<'a> StyleSheet<'a> {
     // which contains a valid value in this slot
     unsafe { self._tab.get::<flatbuffers::ForwardsUOffset<flatbuffers::Vector<'a, flatbuffers::ForwardsUOffset<Style>>>>(StyleSheet::VT_STYLES, None)}
   }
+  #[inline]
+  pub fn design_width(&self) -> u16 {
+    // Safety:
+    // Created from valid Table for this object
+    // which contains a valid value in this slot
+    unsafe { self._tab.get::<u16>(StyleSheet::VT_DESIGN_WIDTH, Some(0)).unwrap()}
+  }
 }
 
 impl flatbuffers::Verifiable for StyleSheet<'_> {
@@ -2338,6 +2347,7 @@ impl flatbuffers::Verifiable for StyleSheet<'_> {
      .visit_field::<flatbuffers::ForwardsUOffset<flatbuffers::Vector<'_, flatbuffers::ForwardsUOffset<&'_ str>>>>("keyframes", Self::VT_KEYFRAMES, false)?
      .visit_field::<flatbuffers::ForwardsUOffset<flatbuffers::Vector<'_, flatbuffers::ForwardsUOffset<&'_ str>>>>("medias", Self::VT_MEDIAS, false)?
      .visit_field::<flatbuffers::ForwardsUOffset<flatbuffers::Vector<'_, flatbuffers::ForwardsUOffset<Style>>>>("styles", Self::VT_STYLES, false)?
+     .visit_field::<u16>("design_width", Self::VT_DESIGN_WIDTH, false)?
      .finish();
     Ok(())
   }
@@ -2347,6 +2357,7 @@ pub struct StyleSheetArgs<'a> {
     pub keyframes: Option<flatbuffers::WIPOffset<flatbuffers::Vector<'a, flatbuffers::ForwardsUOffset<&'a str>>>>,
     pub medias: Option<flatbuffers::WIPOffset<flatbuffers::Vector<'a, flatbuffers::ForwardsUOffset<&'a str>>>>,
     pub styles: Option<flatbuffers::WIPOffset<flatbuffers::Vector<'a, flatbuffers::ForwardsUOffset<Style<'a>>>>>,
+    pub design_width: u16,
 }
 impl<'a> Default for StyleSheetArgs<'a> {
   #[inline]
@@ -2356,6 +2367,7 @@ impl<'a> Default for StyleSheetArgs<'a> {
       keyframes: None,
       medias: None,
       styles: None,
+      design_width: 0,
     }
   }
 }
@@ -2382,6 +2394,10 @@ impl<'a: 'b, 'b, A: flatbuffers::Allocator + 'a> StyleSheetBuilder<'a, 'b, A> {
     self.fbb_.push_slot_always::<flatbuffers::WIPOffset<_>>(StyleSheet::VT_STYLES, styles);
   }
   #[inline]
+  pub fn add_design_width(&mut self, design_width: u16) {
+    self.fbb_.push_slot::<u16>(StyleSheet::VT_DESIGN_WIDTH, design_width, 0);
+  }
+  #[inline]
   pub fn new(_fbb: &'b mut flatbuffers::FlatBufferBuilder<'a, A>) -> StyleSheetBuilder<'a, 'b, A> {
     let start = _fbb.start_table();
     StyleSheetBuilder {
@@ -2403,6 +2419,7 @@ impl core::fmt::Debug for StyleSheet<'_> {
       ds.field("keyframes", &self.keyframes());
       ds.field("medias", &self.medias());
       ds.field("styles", &self.styles());
+      ds.field("design_width", &self.design_width());
       ds.finish()
   }
 }

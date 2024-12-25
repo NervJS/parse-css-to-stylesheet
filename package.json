@@ -24,8 +24,8 @@
   ],
   "license": "MIT",
   "devDependencies": {
-    "@napi-rs/cli": "^2.16.3",
-    "ava": "^5.1.1",
+    "@napi-rs/cli": "^2.18.4",
+    "ava": "^5.3.1",
     "conventional-changelog-cli": "2.2.2",
     "npm-run-all": "4.1.5",
     "prettier": "2.8.8",

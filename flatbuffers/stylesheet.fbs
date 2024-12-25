@@ -85,6 +85,7 @@ table StyleSheet {
   keyframes:[string];
   medias:[string];
   styles:[Style];
+  design_width:uint16;
 }
 
 root_type StyleSheet;

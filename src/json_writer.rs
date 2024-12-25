@@ -17,6 +17,7 @@ pub struct JsonWriter {
   keyframes: IndexMap<(u32, String), Vec<KeyFrameItem>>,
   medias: Vec<StyleMedia>,
   fonts: Vec<FontFaceItem>,
+  design_width: Option<i32>,
 }
 
 impl JsonWriter {
@@ -25,12 +26,14 @@ impl JsonWriter {
     keyframes: IndexMap<(u32, String), Vec<KeyFrameItem>>,
     medias: Vec<StyleMedia>,
     fonts: Vec<FontFaceItem>,
+    design_width: Option<i32>,
   ) -> Self {
     Self {
       styles,
       keyframes,
       medias,
       fonts,
+      design_width,
     }
   }
 
@@ -208,7 +211,7 @@ impl JsonWriter {
 
     // fonts
 
-    let json_value = expr_to_json(&Expr::Object(ObjectLit {
+    let mut json_value = expr_to_json(&Expr::Object(ObjectLit {
       span: DUMMY_SP,
       props: vec![
         PropOrSpread::Prop(Box::new(Prop::KeyValue(KeyValueProp {
@@ -281,6 +284,11 @@ impl JsonWriter {
         }))),
       ],
     }));
+    // 如果 design_width 存在，则添加 design_width 到 json_value
+    if let Some(design_width) = self.design_width {
+      let map = json_value.as_object_mut().unwrap();
+      map.insert("design_width".to_string(), Value::Number(serde_json::Number::from(design_width)));
+    }
 
     // 打印 JSON 值
 

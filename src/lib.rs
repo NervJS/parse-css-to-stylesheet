@@ -35,6 +35,7 @@ pub struct OutputOptions {
 #[derive(Deserialize)]
 pub struct ParseOptions {
   pub platform_string: String,
+  pub design_width: Option<i32>,
   pub output: Option<OutputOptions>,
 }
 
@@ -51,6 +52,7 @@ pub fn parse(styles: Vec<String>, options: ParseOptions) -> ParseResult {
     "Harmony" => Platform::Harmony,
     _ => Platform::Harmony,
   };
+  let design_width = options.design_width;
   let output = options.output.unwrap_or(OutputOptions {
     is_bin: Some(false)
   });
@@ -70,6 +72,7 @@ pub fn parse(styles: Vec<String>, options: ParseOptions) -> ParseResult {
     style_data.all_keyframes.borrow().clone(),
     style_data.all_medias.borrow().clone(),
     style_data.all_fonts.borrow().clone(),
+    design_width,
   );
 
   let style_json = style_map.to_json();

@@ -8,6 +8,7 @@ export interface OutputOptions {
 }
 export interface ParseOptions {
   platformString: string
+  designWidth?: number
   output?: OutputOptions
 }
 export interface ParseResult {

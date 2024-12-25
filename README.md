@@ -10,8 +10,9 @@
 import { parse } from '@tarojs/parse-css-to-stylesheet'
 
 // Harmony
-const { code } = parse(jsxCode, [cssCode1, cssCode2, ...], {
+const { code } = parse([cssCode1, cssCode2, ...], {
   platformString: 'Harmony',
+  designWidth: 750
 })
 // code: CSS 代码 string
 ```

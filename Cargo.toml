@@ -26,6 +26,8 @@ pcre2 = "0.2.6"
 regex = "1.10.3"
 swc_core = { version = "0.90.24", features = ["__common", "ecma_transforms_typescript", "ecma_ast", "ecma_plugin_transform", "ecma_utils", "ecma_parser", "ecma_visit", "ecma_codegen", "__testing_transform"]}
 flatbuffers = "24.3.25"
+rust_decimal = "1.36.0"
+rust_decimal_macros = "1.36.0"
 
 [build-dependencies]
 napi-build = "2.0.1"

@@ -19,7 +19,8 @@ macro_rules! generate_expr_lit_str {
 macro_rules! generate_expr_lit_num {
   ($var:expr) => {{
     use swc_core::ecma::ast::*;
-    Expr::Lit(Lit::Num(Number::from($var)))
+    let rounded = ((($var as f64) * 100.0).round() / 100.0);
+    Expr::Lit(Lit::Num(Number::from(rounded)))
   }};
 }
 
@@ -166,13 +167,21 @@ macro_rules! generate_expr_by_length_percentage {
       generate_expr_lit_calc, generate_expr_lit_str,
       style_propetries::unit::generate_expr_by_length_value,
     };
+    use rust_decimal::prelude::{Decimal, FromPrimitive};
 
     match $var {
       lightningcss::values::percentage::DimensionPercentage::Dimension(dimension) => {
         generate_expr_by_length_value(&dimension, $platform)
       }
       lightningcss::values::percentage::DimensionPercentage::Percentage(percentage) => {
-        generate_expr_lit_str!((percentage.0 * 100.0).to_string() + "%")
+        let decimal = Decimal::from_f32(percentage.0 * 100.0);
+        let mut str_value = String::new();
+        if let Some(d) = decimal {
+          str_value = d.to_string();
+        } else {
+          str_value = (percentage.0 * 100.0).round().to_string();
+        }
+        generate_expr_lit_str!(str_value + "%")
       }
       lightningcss::values::percentage::DimensionPercentage::Calc(calc) => {
         let calc_string = calc
@@ -354,6 +363,7 @@ macro_rules! generate_length_value_property {
     use super::unit::PropertyTuple;
     use super::{traits::ToExpr, unit::{generate_expr_by_length_value, Platform}};
     use $crate::{generate_dimension_percentage, generate_expr_lit_calc, generate_expr_lit_str, generate_invalid_expr};
+    use rust_decimal::prelude::{Decimal, FromPrimitive};
 
     #[derive(Debug, Clone)]
     pub struct $class {
@@ -376,7 +386,16 @@ macro_rules! generate_length_value_property {
           match &self.value.1 {
             EnumValue::String(value) => generate_expr_lit_calc!(value, Platform::Harmony),
             EnumValue::LengthValue(length_value) => generate_expr_by_length_value(length_value, Platform::Harmony),
-            EnumValue::Percentage(value) => generate_expr_lit_str!((value.0 * 100.0).to_string() + "%"),
+            EnumValue::Percentage(value) => {
+              let decimal = Decimal::from_f32(value.0 * 100.0);
+              let mut str_value = String::new();
+              if let Some(d) = decimal {
+                str_value = d.to_string();
+              } else {
+                str_value = (value.0 * 100.0).round().to_string();
+              }
+              generate_expr_lit_str!(str_value + "%")
+            },
             EnumValue::Auto => generate_invalid_expr!()   // harmony 是个非法制，固不会生效
           }
         )
@@ -428,6 +447,7 @@ macro_rules! generate_size_property {
     use $crate::{generate_expr_lit_str, generate_expr_lit_calc};
     use super::unit::PropertyTuple;
     use super::{traits::ToExpr, unit::{generate_expr_by_length_value, Platform}};
+    use rust_decimal::prelude::{Decimal, FromPrimitive};
 
     #[derive(Debug, Clone)]
     pub struct $class {
@@ -450,7 +470,16 @@ macro_rules! generate_size_property {
           match &self.value.1 {
             EnumValue::String(value) => generate_expr_lit_calc!(value, Platform::Harmony),
             EnumValue::LengthValue(length_value) => generate_expr_by_length_value(length_value, Platform::Harmony),
-            EnumValue::Percentage(value) => generate_expr_lit_str!((value.0 * 100.0).to_string() + "%"),
+            EnumValue::Percentage(value) => {
+              let decimal = Decimal::from_f32(value.0 * 100.0);
+              let mut str_value = String::new();
+              if let Some(d) = decimal {
+                str_value = d.to_string();
+              } else {
+                str_value = (value.0 * 100.0).round().to_string();
+              }
+              generate_expr_lit_str!(str_value + "%")
+            },
             EnumValue::Auto => generate_expr_lit_str!("auto")   // harmony 是个非法制，固不会生效
           }
         )

@@ -145,6 +145,97 @@ impl<'a> flatbuffers::Verifiable for Value {
 impl flatbuffers::SimpleToVerifyInSlice for Value {}
 pub struct ValueUnionTableOffset {}
 
+#[deprecated(since = "2.0.0", note = "Use associated constants instead. This will no longer be generated in 2021.")]
+pub const ENUM_MIN_CONDITION_VALUE: u8 = 0;
+#[deprecated(since = "2.0.0", note = "Use associated constants instead. This will no longer be generated in 2021.")]
+pub const ENUM_MAX_CONDITION_VALUE: u8 = 2;
+#[deprecated(since = "2.0.0", note = "Use associated constants instead. This will no longer be generated in 2021.")]
+#[allow(non_camel_case_types)]
+pub const ENUM_VALUES_CONDITION_VALUE: [ConditionValue; 3] = [
+  ConditionValue::NONE,
+  ConditionValue::PrimitiveCondition,
+  ConditionValue::CompoundCondition,
+];
+
+#[derive(Clone, Copy, PartialEq, Eq, PartialOrd, Ord, Hash, Default)]
+#[repr(transparent)]
+pub struct ConditionValue(pub u8);
+#[allow(non_upper_case_globals)]
+impl ConditionValue {
+  pub const NONE: Self = Self(0);
+  pub const PrimitiveCondition: Self = Self(1);
+  pub const CompoundCondition: Self = Self(2);
+
+  pub const ENUM_MIN: u8 = 0;
+  pub const ENUM_MAX: u8 = 2;
+  pub const ENUM_VALUES: &'static [Self] = &[
+    Self::NONE,
+    Self::PrimitiveCondition,
+    Self::CompoundCondition,
+  ];
+  /// Returns the variant's name or "" if unknown.
+  pub fn variant_name(self) -> Option<&'static str> {
+    match self {
+      Self::NONE => Some("NONE"),
+      Self::PrimitiveCondition => Some("PrimitiveCondition"),
+      Self::CompoundCondition => Some("CompoundCondition"),
+      _ => None,
+    }
+  }
+}
+impl core::fmt::Debug for ConditionValue {
+  fn fmt(&self, f: &mut core::fmt::Formatter) -> core::fmt::Result {
+    if let Some(name) = self.variant_name() {
+      f.write_str(name)
+    } else {
+      f.write_fmt(format_args!("<UNKNOWN {:?}>", self.0))
+    }
+  }
+}
+impl<'a> flatbuffers::Follow<'a> for ConditionValue {
+  type Inner = Self;
+  #[inline]
+  unsafe fn follow(buf: &'a [u8], loc: usize) -> Self::Inner {
+    let b = flatbuffers::read_scalar_at::<u8>(buf, loc);
+    Self(b)
+  }
+}
+
+impl flatbuffers::Push for ConditionValue {
+    type Output = ConditionValue;
+    #[inline]
+    unsafe fn push(&self, dst: &mut [u8], _written_len: usize) {
+        flatbuffers::emplace_scalar::<u8>(dst, self.0);
+    }
+}
+
+impl flatbuffers::EndianScalar for ConditionValue {
+  type Scalar = u8;
+  #[inline]
+  fn to_little_endian(self) -> u8 {
+    self.0.to_le()
+  }
+  #[inline]
+  #[allow(clippy::wrong_self_convention)]
+  fn from_little_endian(v: u8) -> Self {
+    let b = u8::from_le(v);
+    Self(b)
+  }
+}
+
+impl<'a> flatbuffers::Verifiable for ConditionValue {
+  #[inline]
+  fn run_verifier(
+    v: &mut flatbuffers::Verifier, pos: usize
+  ) -> Result<(), flatbuffers::InvalidFlatbuffer> {
+    use self::flatbuffers::Verifiable;
+    u8::run_verifier(v, pos)
+  }
+}
+
+impl flatbuffers::SimpleToVerifyInSlice for ConditionValue {}
+pub struct ConditionValueUnionTableOffset {}
+
 pub enum StringOffset {}
 #[derive(Copy, Clone, PartialEq)]
 
@@ -2258,6 +2349,925 @@ impl core::fmt::Debug for Style<'_> {
       ds.finish()
   }
 }
+pub enum FontOffset {}
+#[derive(Copy, Clone, PartialEq)]
+
+pub struct Font<'a> {
+  pub _tab: flatbuffers::Table<'a>,
+}
+
+impl<'a> flatbuffers::Follow<'a> for Font<'a> {
+  type Inner = Font<'a>;
+  #[inline]
+  unsafe fn follow(buf: &'a [u8], loc: usize) -> Self::Inner {
+    Self { _tab: flatbuffers::Table::new(buf, loc) }
+  }
+}
+
+impl<'a> Font<'a> {
+  pub const VT_FONT_FAMILY: flatbuffers::VOffsetT = 4;
+  pub const VT_SRC: flatbuffers::VOffsetT = 6;
+
+  #[inline]
+  pub unsafe fn init_from_table(table: flatbuffers::Table<'a>) -> Self {
+    Font { _tab: table }
+  }
+  #[allow(unused_mut)]
+  pub fn create<'bldr: 'args, 'args: 'mut_bldr, 'mut_bldr, A: flatbuffers::Allocator + 'bldr>(
+    _fbb: &'mut_bldr mut flatbuffers::FlatBufferBuilder<'bldr, A>,
+    args: &'args FontArgs<'args>
+  ) -> flatbuffers::WIPOffset<Font<'bldr>> {
+    let mut builder = FontBuilder::new(_fbb);
+    if let Some(x) = args.src { builder.add_src(x); }
+    if let Some(x) = args.font_family { builder.add_font_family(x); }
+    builder.finish()
+  }
+
+
+  #[inline]
+  pub fn font_family(&self) -> Option<&'a str> {
+    // Safety:
+    // Created from valid Table for this object
+    // which contains a valid value in this slot
+    unsafe { self._tab.get::<flatbuffers::ForwardsUOffset<&str>>(Font::VT_FONT_FAMILY, None)}
+  }
+  #[inline]
+  pub fn src(&self) -> Option<&'a str> {
+    // Safety:
+    // Created from valid Table for this object
+    // which contains a valid value in this slot
+    unsafe { self._tab.get::<flatbuffers::ForwardsUOffset<&str>>(Font::VT_SRC, None)}
+  }
+}
+
+impl flatbuffers::Verifiable for Font<'_> {
+  #[inline]
+  fn run_verifier(
+    v: &mut flatbuffers::Verifier, pos: usize
+  ) -> Result<(), flatbuffers::InvalidFlatbuffer> {
+    use self::flatbuffers::Verifiable;
+    v.visit_table(pos)?
+     .visit_field::<flatbuffers::ForwardsUOffset<&str>>("font_family", Self::VT_FONT_FAMILY, false)?
+     .visit_field::<flatbuffers::ForwardsUOffset<&str>>("src", Self::VT_SRC, false)?
+     .finish();
+    Ok(())
+  }
+}
+pub struct FontArgs<'a> {
+    pub font_family: Option<flatbuffers::WIPOffset<&'a str>>,
+    pub src: Option<flatbuffers::WIPOffset<&'a str>>,
+}
+impl<'a> Default for FontArgs<'a> {
+  #[inline]
+  fn default() -> Self {
+    FontArgs {
+      font_family: None,
+      src: None,
+    }
+  }
+}
+
+pub struct FontBuilder<'a: 'b, 'b, A: flatbuffers::Allocator + 'a> {
+  fbb_: &'b mut flatbuffers::FlatBufferBuilder<'a, A>,
+  start_: flatbuffers::WIPOffset<flatbuffers::TableUnfinishedWIPOffset>,
+}
+impl<'a: 'b, 'b, A: flatbuffers::Allocator + 'a> FontBuilder<'a, 'b, A> {
+  #[inline]
+  pub fn add_font_family(&mut self, font_family: flatbuffers::WIPOffset<&'b  str>) {
+    self.fbb_.push_slot_always::<flatbuffers::WIPOffset<_>>(Font::VT_FONT_FAMILY, font_family);
+  }
+  #[inline]
+  pub fn add_src(&mut self, src: flatbuffers::WIPOffset<&'b  str>) {
+    self.fbb_.push_slot_always::<flatbuffers::WIPOffset<_>>(Font::VT_SRC, src);
+  }
+  #[inline]
+  pub fn new(_fbb: &'b mut flatbuffers::FlatBufferBuilder<'a, A>) -> FontBuilder<'a, 'b, A> {
+    let start = _fbb.start_table();
+    FontBuilder {
+      fbb_: _fbb,
+      start_: start,
+    }
+  }
+  #[inline]
+  pub fn finish(self) -> flatbuffers::WIPOffset<Font<'a>> {
+    let o = self.fbb_.end_table(self.start_);
+    flatbuffers::WIPOffset::new(o.value())
+  }
+}
+
+impl core::fmt::Debug for Font<'_> {
+  fn fmt(&self, f: &mut core::fmt::Formatter<'_>) -> core::fmt::Result {
+    let mut ds = f.debug_struct("Font");
+      ds.field("font_family", &self.font_family());
+      ds.field("src", &self.src());
+      ds.finish()
+  }
+}
+pub enum PrimitiveConditionOffset {}
+#[derive(Copy, Clone, PartialEq)]
+
+pub struct PrimitiveCondition<'a> {
+  pub _tab: flatbuffers::Table<'a>,
+}
+
+impl<'a> flatbuffers::Follow<'a> for PrimitiveCondition<'a> {
+  type Inner = PrimitiveCondition<'a>;
+  #[inline]
+  unsafe fn follow(buf: &'a [u8], loc: usize) -> Self::Inner {
+    Self { _tab: flatbuffers::Table::new(buf, loc) }
+  }
+}
+
+impl<'a> PrimitiveCondition<'a> {
+  pub const VT_FEATURE: flatbuffers::VOffsetT = 4;
+  pub const VT_OPERATOR: flatbuffers::VOffsetT = 6;
+  pub const VT_VALUE_TYPE: flatbuffers::VOffsetT = 8;
+  pub const VT_VALUE: flatbuffers::VOffsetT = 10;
+
+  #[inline]
+  pub unsafe fn init_from_table(table: flatbuffers::Table<'a>) -> Self {
+    PrimitiveCondition { _tab: table }
+  }
+  #[allow(unused_mut)]
+  pub fn create<'bldr: 'args, 'args: 'mut_bldr, 'mut_bldr, A: flatbuffers::Allocator + 'bldr>(
+    _fbb: &'mut_bldr mut flatbuffers::FlatBufferBuilder<'bldr, A>,
+    args: &'args PrimitiveConditionArgs
+  ) -> flatbuffers::WIPOffset<PrimitiveCondition<'bldr>> {
+    let mut builder = PrimitiveConditionBuilder::new(_fbb);
+    if let Some(x) = args.value { builder.add_value(x); }
+    builder.add_value_type(args.value_type);
+    builder.add_operator(args.operator);
+    builder.add_feature(args.feature);
+    builder.finish()
+  }
+
+
+  #[inline]
+  pub fn feature(&self) -> u8 {
+    // Safety:
+    // Created from valid Table for this object
+    // which contains a valid value in this slot
+    unsafe { self._tab.get::<u8>(PrimitiveCondition::VT_FEATURE, Some(0)).unwrap()}
+  }
+  #[inline]
+  pub fn operator(&self) -> u8 {
+    // Safety:
+    // Created from valid Table for this object
+    // which contains a valid value in this slot
+    unsafe { self._tab.get::<u8>(PrimitiveCondition::VT_OPERATOR, Some(0)).unwrap()}
+  }
+  #[inline]
+  pub fn value_type(&self) -> Value {
+    // Safety:
+    // Created from valid Table for this object
+    // which contains a valid value in this slot
+    unsafe { self._tab.get::<Value>(PrimitiveCondition::VT_VALUE_TYPE, Some(Value::NONE)).unwrap()}
+  }
+  #[inline]
+  pub fn value(&self) -> Option<flatbuffers::Table<'a>> {
+    // Safety:
+    // Created from valid Table for this object
+    // which contains a valid value in this slot
+    unsafe { self._tab.get::<flatbuffers::ForwardsUOffset<flatbuffers::Table<'a>>>(PrimitiveCondition::VT_VALUE, None)}
+  }
+  #[inline]
+  #[allow(non_snake_case)]
+  pub fn value_as_string(&self) -> Option<String<'a>> {
+    if self.value_type() == Value::String {
+      self.value().map(|t| {
+       // Safety:
+       // Created from a valid Table for this object
+       // Which contains a valid union in this slot
+       unsafe { String::init_from_table(t) }
+     })
+    } else {
+      None
+    }
+  }
+
+  #[inline]
+  #[allow(non_snake_case)]
+  pub fn value_as_integer(&self) -> Option<Integer<'a>> {
+    if self.value_type() == Value::Integer {
+      self.value().map(|t| {
+       // Safety:
+       // Created from a valid Table for this object
+       // Which contains a valid union in this slot
+       unsafe { Integer::init_from_table(t) }
+     })
+    } else {
+      None
+    }
+  }
+
+  #[inline]
+  #[allow(non_snake_case)]
+  pub fn value_as_double(&self) -> Option<Double<'a>> {
+    if self.value_type() == Value::Double {
+      self.value().map(|t| {
+       // Safety:
+       // Created from a valid Table for this object
+       // Which contains a valid union in this slot
+       unsafe { Double::init_from_table(t) }
+     })
+    } else {
+      None
+    }
+  }
+
+  #[inline]
+  #[allow(non_snake_case)]
+  pub fn value_as_boolean(&self) -> Option<Boolean<'a>> {
+    if self.value_type() == Value::Boolean {
+      self.value().map(|t| {
+       // Safety:
+       // Created from a valid Table for this object
+       // Which contains a valid union in this slot
+       unsafe { Boolean::init_from_table(t) }
+     })
+    } else {
+      None
+    }
+  }
+
+  #[inline]
+  #[allow(non_snake_case)]
+  pub fn value_as_string_array(&self) -> Option<StringArray<'a>> {
+    if self.value_type() == Value::StringArray {
+      self.value().map(|t| {
+       // Safety:
+       // Created from a valid Table for this object
+       // Which contains a valid union in this slot
+       unsafe { StringArray::init_from_table(t) }
+     })
+    } else {
+      None
+    }
+  }
+
+  #[inline]
+  #[allow(non_snake_case)]
+  pub fn value_as_integer_array(&self) -> Option<IntegerArray<'a>> {
+    if self.value_type() == Value::IntegerArray {
+      self.value().map(|t| {
+       // Safety:
+       // Created from a valid Table for this object
+       // Which contains a valid union in this slot
+       unsafe { IntegerArray::init_from_table(t) }
+     })
+    } else {
+      None
+    }
+  }
+
+  #[inline]
+  #[allow(non_snake_case)]
+  pub fn value_as_double_array(&self) -> Option<DoubleArray<'a>> {
+    if self.value_type() == Value::DoubleArray {
+      self.value().map(|t| {
+       // Safety:
+       // Created from a valid Table for this object
+       // Which contains a valid union in this slot
+       unsafe { DoubleArray::init_from_table(t) }
+     })
+    } else {
+      None
+    }
+  }
+
+  #[inline]
+  #[allow(non_snake_case)]
+  pub fn value_as_object(&self) -> Option<Object<'a>> {
+    if self.value_type() == Value::Object {
+      self.value().map(|t| {
+       // Safety:
+       // Created from a valid Table for this object
+       // Which contains a valid union in this slot
+       unsafe { Object::init_from_table(t) }
+     })
+    } else {
+      None
+    }
+  }
+
+  #[inline]
+  #[allow(non_snake_case)]
+  pub fn value_as_object_array(&self) -> Option<ObjectArray<'a>> {
+    if self.value_type() == Value::ObjectArray {
+      self.value().map(|t| {
+       // Safety:
+       // Created from a valid Table for this object
+       // Which contains a valid union in this slot
+       unsafe { ObjectArray::init_from_table(t) }
+     })
+    } else {
+      None
+    }
+  }
+
+  #[inline]
+  #[allow(non_snake_case)]
+  pub fn value_as_integere_array_array(&self) -> Option<IntegereArrayArray<'a>> {
+    if self.value_type() == Value::IntegereArrayArray {
+      self.value().map(|t| {
+       // Safety:
+       // Created from a valid Table for this object
+       // Which contains a valid union in this slot
+       unsafe { IntegereArrayArray::init_from_table(t) }
+     })
+    } else {
+      None
+    }
+  }
+
+  #[inline]
+  #[allow(non_snake_case)]
+  pub fn value_as_double_array_array(&self) -> Option<DoubleArrayArray<'a>> {
+    if self.value_type() == Value::DoubleArrayArray {
+      self.value().map(|t| {
+       // Safety:
+       // Created from a valid Table for this object
+       // Which contains a valid union in this slot
+       unsafe { DoubleArrayArray::init_from_table(t) }
+     })
+    } else {
+      None
+    }
+  }
+
+}
+
+impl flatbuffers::Verifiable for PrimitiveCondition<'_> {
+  #[inline]
+  fn run_verifier(
+    v: &mut flatbuffers::Verifier, pos: usize
+  ) -> Result<(), flatbuffers::InvalidFlatbuffer> {
+    use self::flatbuffers::Verifiable;
+    v.visit_table(pos)?
+     .visit_field::<u8>("feature", Self::VT_FEATURE, false)?
+     .visit_field::<u8>("operator", Self::VT_OPERATOR, false)?
+     .visit_union::<Value, _>("value_type", Self::VT_VALUE_TYPE, "value", Self::VT_VALUE, false, |key, v, pos| {
+        match key {
+          Value::String => v.verify_union_variant::<flatbuffers::ForwardsUOffset<String>>("Value::String", pos),
+          Value::Integer => v.verify_union_variant::<flatbuffers::ForwardsUOffset<Integer>>("Value::Integer", pos),
+          Value::Double => v.verify_union_variant::<flatbuffers::ForwardsUOffset<Double>>("Value::Double", pos),
+          Value::Boolean => v.verify_union_variant::<flatbuffers::ForwardsUOffset<Boolean>>("Value::Boolean", pos),
+          Value::StringArray => v.verify_union_variant::<flatbuffers::ForwardsUOffset<StringArray>>("Value::StringArray", pos),
+          Value::IntegerArray => v.verify_union_variant::<flatbuffers::ForwardsUOffset<IntegerArray>>("Value::IntegerArray", pos),
+          Value::DoubleArray => v.verify_union_variant::<flatbuffers::ForwardsUOffset<DoubleArray>>("Value::DoubleArray", pos),
+          Value::Object => v.verify_union_variant::<flatbuffers::ForwardsUOffset<Object>>("Value::Object", pos),
+          Value::ObjectArray => v.verify_union_variant::<flatbuffers::ForwardsUOffset<ObjectArray>>("Value::ObjectArray", pos),
+          Value::IntegereArrayArray => v.verify_union_variant::<flatbuffers::ForwardsUOffset<IntegereArrayArray>>("Value::IntegereArrayArray", pos),
+          Value::DoubleArrayArray => v.verify_union_variant::<flatbuffers::ForwardsUOffset<DoubleArrayArray>>("Value::DoubleArrayArray", pos),
+          _ => Ok(()),
+        }
+     })?
+     .finish();
+    Ok(())
+  }
+}
+pub struct PrimitiveConditionArgs {
+    pub feature: u8,
+    pub operator: u8,
+    pub value_type: Value,
+    pub value: Option<flatbuffers::WIPOffset<flatbuffers::UnionWIPOffset>>,
+}
+impl<'a> Default for PrimitiveConditionArgs {
+  #[inline]
+  fn default() -> Self {
+    PrimitiveConditionArgs {
+      feature: 0,
+      operator: 0,
+      value_type: Value::NONE,
+      value: None,
+    }
+  }
+}
+
+pub struct PrimitiveConditionBuilder<'a: 'b, 'b, A: flatbuffers::Allocator + 'a> {
+  fbb_: &'b mut flatbuffers::FlatBufferBuilder<'a, A>,
+  start_: flatbuffers::WIPOffset<flatbuffers::TableUnfinishedWIPOffset>,
+}
+impl<'a: 'b, 'b, A: flatbuffers::Allocator + 'a> PrimitiveConditionBuilder<'a, 'b, A> {
+  #[inline]
+  pub fn add_feature(&mut self, feature: u8) {
+    self.fbb_.push_slot::<u8>(PrimitiveCondition::VT_FEATURE, feature, 0);
+  }
+  #[inline]
+  pub fn add_operator(&mut self, operator: u8) {
+    self.fbb_.push_slot::<u8>(PrimitiveCondition::VT_OPERATOR, operator, 0);
+  }
+  #[inline]
+  pub fn add_value_type(&mut self, value_type: Value) {
+    self.fbb_.push_slot::<Value>(PrimitiveCondition::VT_VALUE_TYPE, value_type, Value::NONE);
+  }
+  #[inline]
+  pub fn add_value(&mut self, value: flatbuffers::WIPOffset<flatbuffers::UnionWIPOffset>) {
+    self.fbb_.push_slot_always::<flatbuffers::WIPOffset<_>>(PrimitiveCondition::VT_VALUE, value);
+  }
+  #[inline]
+  pub fn new(_fbb: &'b mut flatbuffers::FlatBufferBuilder<'a, A>) -> PrimitiveConditionBuilder<'a, 'b, A> {
+    let start = _fbb.start_table();
+    PrimitiveConditionBuilder {
+      fbb_: _fbb,
+      start_: start,
+    }
+  }
+  #[inline]
+  pub fn finish(self) -> flatbuffers::WIPOffset<PrimitiveCondition<'a>> {
+    let o = self.fbb_.end_table(self.start_);
+    flatbuffers::WIPOffset::new(o.value())
+  }
+}
+
+impl core::fmt::Debug for PrimitiveCondition<'_> {
+  fn fmt(&self, f: &mut core::fmt::Formatter<'_>) -> core::fmt::Result {
+    let mut ds = f.debug_struct("PrimitiveCondition");
+      ds.field("feature", &self.feature());
+      ds.field("operator", &self.operator());
+      ds.field("value_type", &self.value_type());
+      match self.value_type() {
+        Value::String => {
+          if let Some(x) = self.value_as_string() {
+            ds.field("value", &x)
+          } else {
+            ds.field("value", &"InvalidFlatbuffer: Union discriminant does not match value.")
+          }
+        },
+        Value::Integer => {
+          if let Some(x) = self.value_as_integer() {
+            ds.field("value", &x)
+          } else {
+            ds.field("value", &"InvalidFlatbuffer: Union discriminant does not match value.")
+          }
+        },
+        Value::Double => {
+          if let Some(x) = self.value_as_double() {
+            ds.field("value", &x)
+          } else {
+            ds.field("value", &"InvalidFlatbuffer: Union discriminant does not match value.")
+          }
+        },
+        Value::Boolean => {
+          if let Some(x) = self.value_as_boolean() {
+            ds.field("value", &x)
+          } else {
+            ds.field("value", &"InvalidFlatbuffer: Union discriminant does not match value.")
+          }
+        },
+        Value::StringArray => {
+          if let Some(x) = self.value_as_string_array() {
+            ds.field("value", &x)
+          } else {
+            ds.field("value", &"InvalidFlatbuffer: Union discriminant does not match value.")
+          }
+        },
+        Value::IntegerArray => {
+          if let Some(x) = self.value_as_integer_array() {
+            ds.field("value", &x)
+          } else {
+            ds.field("value", &"InvalidFlatbuffer: Union discriminant does not match value.")
+          }
+        },
+        Value::DoubleArray => {
+          if let Some(x) = self.value_as_double_array() {
+            ds.field("value", &x)
+          } else {
+            ds.field("value", &"InvalidFlatbuffer: Union discriminant does not match value.")
+          }
+        },
+        Value::Object => {
+          if let Some(x) = self.value_as_object() {
+            ds.field("value", &x)
+          } else {
+            ds.field("value", &"InvalidFlatbuffer: Union discriminant does not match value.")
+          }
+        },
+        Value::ObjectArray => {
+          if let Some(x) = self.value_as_object_array() {
+            ds.field("value", &x)
+          } else {
+            ds.field("value", &"InvalidFlatbuffer: Union discriminant does not match value.")
+          }
+        },
+        Value::IntegereArrayArray => {
+          if let Some(x) = self.value_as_integere_array_array() {
+            ds.field("value", &x)
+          } else {
+            ds.field("value", &"InvalidFlatbuffer: Union discriminant does not match value.")
+          }
+        },
+        Value::DoubleArrayArray => {
+          if let Some(x) = self.value_as_double_array_array() {
+            ds.field("value", &x)
+          } else {
+            ds.field("value", &"InvalidFlatbuffer: Union discriminant does not match value.")
+          }
+        },
+        _ => {
+          let x: Option<()> = None;
+          ds.field("value", &x)
+        },
+      };
+      ds.finish()
+  }
+}
+pub enum CompoundConditionOffset {}
+#[derive(Copy, Clone, PartialEq)]
+
+pub struct CompoundCondition<'a> {
+  pub _tab: flatbuffers::Table<'a>,
+}
+
+impl<'a> flatbuffers::Follow<'a> for CompoundCondition<'a> {
+  type Inner = CompoundCondition<'a>;
+  #[inline]
+  unsafe fn follow(buf: &'a [u8], loc: usize) -> Self::Inner {
+    Self { _tab: flatbuffers::Table::new(buf, loc) }
+  }
+}
+
+impl<'a> CompoundCondition<'a> {
+  pub const VT_CONDITIONS: flatbuffers::VOffsetT = 4;
+
+  #[inline]
+  pub unsafe fn init_from_table(table: flatbuffers::Table<'a>) -> Self {
+    CompoundCondition { _tab: table }
+  }
+  #[allow(unused_mut)]
+  pub fn create<'bldr: 'args, 'args: 'mut_bldr, 'mut_bldr, A: flatbuffers::Allocator + 'bldr>(
+    _fbb: &'mut_bldr mut flatbuffers::FlatBufferBuilder<'bldr, A>,
+    args: &'args CompoundConditionArgs<'args>
+  ) -> flatbuffers::WIPOffset<CompoundCondition<'bldr>> {
+    let mut builder = CompoundConditionBuilder::new(_fbb);
+    if let Some(x) = args.conditions { builder.add_conditions(x); }
+    builder.finish()
+  }
+
+
+  #[inline]
+  pub fn conditions(&self) -> Option<flatbuffers::Vector<'a, flatbuffers::ForwardsUOffset<Condition<'a>>>> {
+    // Safety:
+    // Created from valid Table for this object
+    // which contains a valid value in this slot
+    unsafe { self._tab.get::<flatbuffers::ForwardsUOffset<flatbuffers::Vector<'a, flatbuffers::ForwardsUOffset<Condition>>>>(CompoundCondition::VT_CONDITIONS, None)}
+  }
+}
+
+impl flatbuffers::Verifiable for CompoundCondition<'_> {
+  #[inline]
+  fn run_verifier(
+    v: &mut flatbuffers::Verifier, pos: usize
+  ) -> Result<(), flatbuffers::InvalidFlatbuffer> {
+    use self::flatbuffers::Verifiable;
+    v.visit_table(pos)?
+     .visit_field::<flatbuffers::ForwardsUOffset<flatbuffers::Vector<'_, flatbuffers::ForwardsUOffset<Condition>>>>("conditions", Self::VT_CONDITIONS, false)?
+     .finish();
+    Ok(())
+  }
+}
+pub struct CompoundConditionArgs<'a> {
+    pub conditions: Option<flatbuffers::WIPOffset<flatbuffers::Vector<'a, flatbuffers::ForwardsUOffset<Condition<'a>>>>>,
+}
+impl<'a> Default for CompoundConditionArgs<'a> {
+  #[inline]
+  fn default() -> Self {
+    CompoundConditionArgs {
+      conditions: None,
+    }
+  }
+}
+
+pub struct CompoundConditionBuilder<'a: 'b, 'b, A: flatbuffers::Allocator + 'a> {
+  fbb_: &'b mut flatbuffers::FlatBufferBuilder<'a, A>,
+  start_: flatbuffers::WIPOffset<flatbuffers::TableUnfinishedWIPOffset>,
+}
+impl<'a: 'b, 'b, A: flatbuffers::Allocator + 'a> CompoundConditionBuilder<'a, 'b, A> {
+  #[inline]
+  pub fn add_conditions(&mut self, conditions: flatbuffers::WIPOffset<flatbuffers::Vector<'b , flatbuffers::ForwardsUOffset<Condition<'b >>>>) {
+    self.fbb_.push_slot_always::<flatbuffers::WIPOffset<_>>(CompoundCondition::VT_CONDITIONS, conditions);
+  }
+  #[inline]
+  pub fn new(_fbb: &'b mut flatbuffers::FlatBufferBuilder<'a, A>) -> CompoundConditionBuilder<'a, 'b, A> {
+    let start = _fbb.start_table();
+    CompoundConditionBuilder {
+      fbb_: _fbb,
+      start_: start,
+    }
+  }
+  #[inline]
+  pub fn finish(self) -> flatbuffers::WIPOffset<CompoundCondition<'a>> {
+    let o = self.fbb_.end_table(self.start_);
+    flatbuffers::WIPOffset::new(o.value())
+  }
+}
+
+impl core::fmt::Debug for CompoundCondition<'_> {
+  fn fmt(&self, f: &mut core::fmt::Formatter<'_>) -> core::fmt::Result {
+    let mut ds = f.debug_struct("CompoundCondition");
+      ds.field("conditions", &self.conditions());
+      ds.finish()
+  }
+}
+pub enum ConditionOffset {}
+#[derive(Copy, Clone, PartialEq)]
+
+pub struct Condition<'a> {
+  pub _tab: flatbuffers::Table<'a>,
+}
+
+impl<'a> flatbuffers::Follow<'a> for Condition<'a> {
+  type Inner = Condition<'a>;
+  #[inline]
+  unsafe fn follow(buf: &'a [u8], loc: usize) -> Self::Inner {
+    Self { _tab: flatbuffers::Table::new(buf, loc) }
+  }
+}
+
+impl<'a> Condition<'a> {
+  pub const VT_TYPE_: flatbuffers::VOffsetT = 4;
+  pub const VT_VALUE_TYPE: flatbuffers::VOffsetT = 6;
+  pub const VT_VALUE: flatbuffers::VOffsetT = 8;
+
+  #[inline]
+  pub unsafe fn init_from_table(table: flatbuffers::Table<'a>) -> Self {
+    Condition { _tab: table }
+  }
+  #[allow(unused_mut)]
+  pub fn create<'bldr: 'args, 'args: 'mut_bldr, 'mut_bldr, A: flatbuffers::Allocator + 'bldr>(
+    _fbb: &'mut_bldr mut flatbuffers::FlatBufferBuilder<'bldr, A>,
+    args: &'args ConditionArgs
+  ) -> flatbuffers::WIPOffset<Condition<'bldr>> {
+    let mut builder = ConditionBuilder::new(_fbb);
+    if let Some(x) = args.value { builder.add_value(x); }
+    builder.add_value_type(args.value_type);
+    builder.add_type_(args.type_);
+    builder.finish()
+  }
+
+
+  #[inline]
+  pub fn type_(&self) -> u8 {
+    // Safety:
+    // Created from valid Table for this object
+    // which contains a valid value in this slot
+    unsafe { self._tab.get::<u8>(Condition::VT_TYPE_, Some(0)).unwrap()}
+  }
+  #[inline]
+  pub fn value_type(&self) -> ConditionValue {
+    // Safety:
+    // Created from valid Table for this object
+    // which contains a valid value in this slot
+    unsafe { self._tab.get::<ConditionValue>(Condition::VT_VALUE_TYPE, Some(ConditionValue::NONE)).unwrap()}
+  }
+  #[inline]
+  pub fn value(&self) -> Option<flatbuffers::Table<'a>> {
+    // Safety:
+    // Created from valid Table for this object
+    // which contains a valid value in this slot
+    unsafe { self._tab.get::<flatbuffers::ForwardsUOffset<flatbuffers::Table<'a>>>(Condition::VT_VALUE, None)}
+  }
+  #[inline]
+  #[allow(non_snake_case)]
+  pub fn value_as_primitive_condition(&self) -> Option<PrimitiveCondition<'a>> {
+    if self.value_type() == ConditionValue::PrimitiveCondition {
+      self.value().map(|t| {
+       // Safety:
+       // Created from a valid Table for this object
+       // Which contains a valid union in this slot
+       unsafe { PrimitiveCondition::init_from_table(t) }
+     })
+    } else {
+      None
+    }
+  }
+
+  #[inline]
+  #[allow(non_snake_case)]
+  pub fn value_as_compound_condition(&self) -> Option<CompoundCondition<'a>> {
+    if self.value_type() == ConditionValue::CompoundCondition {
+      self.value().map(|t| {
+       // Safety:
+       // Created from a valid Table for this object
+       // Which contains a valid union in this slot
+       unsafe { CompoundCondition::init_from_table(t) }
+     })
+    } else {
+      None
+    }
+  }
+
+}
+
+impl flatbuffers::Verifiable for Condition<'_> {
+  #[inline]
+  fn run_verifier(
+    v: &mut flatbuffers::Verifier, pos: usize
+  ) -> Result<(), flatbuffers::InvalidFlatbuffer> {
+    use self::flatbuffers::Verifiable;
+    v.visit_table(pos)?
+     .visit_field::<u8>("type_", Self::VT_TYPE_, false)?
+     .visit_union::<ConditionValue, _>("value_type", Self::VT_VALUE_TYPE, "value", Self::VT_VALUE, false, |key, v, pos| {
+        match key {
+          ConditionValue::PrimitiveCondition => v.verify_union_variant::<flatbuffers::ForwardsUOffset<PrimitiveCondition>>("ConditionValue::PrimitiveCondition", pos),
+          ConditionValue::CompoundCondition => v.verify_union_variant::<flatbuffers::ForwardsUOffset<CompoundCondition>>("ConditionValue::CompoundCondition", pos),
+          _ => Ok(()),
+        }
+     })?
+     .finish();
+    Ok(())
+  }
+}
+pub struct ConditionArgs {
+    pub type_: u8,
+    pub value_type: ConditionValue,
+    pub value: Option<flatbuffers::WIPOffset<flatbuffers::UnionWIPOffset>>,
+}
+impl<'a> Default for ConditionArgs {
+  #[inline]
+  fn default() -> Self {
+    ConditionArgs {
+      type_: 0,
+      value_type: ConditionValue::NONE,
+      value: None,
+    }
+  }
+}
+
+pub struct ConditionBuilder<'a: 'b, 'b, A: flatbuffers::Allocator + 'a> {
+  fbb_: &'b mut flatbuffers::FlatBufferBuilder<'a, A>,
+  start_: flatbuffers::WIPOffset<flatbuffers::TableUnfinishedWIPOffset>,
+}
+impl<'a: 'b, 'b, A: flatbuffers::Allocator + 'a> ConditionBuilder<'a, 'b, A> {
+  #[inline]
+  pub fn add_type_(&mut self, type_: u8) {
+    self.fbb_.push_slot::<u8>(Condition::VT_TYPE_, type_, 0);
+  }
+  #[inline]
+  pub fn add_value_type(&mut self, value_type: ConditionValue) {
+    self.fbb_.push_slot::<ConditionValue>(Condition::VT_VALUE_TYPE, value_type, ConditionValue::NONE);
+  }
+  #[inline]
+  pub fn add_value(&mut self, value: flatbuffers::WIPOffset<flatbuffers::UnionWIPOffset>) {
+    self.fbb_.push_slot_always::<flatbuffers::WIPOffset<_>>(Condition::VT_VALUE, value);
+  }
+  #[inline]
+  pub fn new(_fbb: &'b mut flatbuffers::FlatBufferBuilder<'a, A>) -> ConditionBuilder<'a, 'b, A> {
+    let start = _fbb.start_table();
+    ConditionBuilder {
+      fbb_: _fbb,
+      start_: start,
+    }
+  }
+  #[inline]
+  pub fn finish(self) -> flatbuffers::WIPOffset<Condition<'a>> {
+    let o = self.fbb_.end_table(self.start_);
+    flatbuffers::WIPOffset::new(o.value())
+  }
+}
+
+impl core::fmt::Debug for Condition<'_> {
+  fn fmt(&self, f: &mut core::fmt::Formatter<'_>) -> core::fmt::Result {
+    let mut ds = f.debug_struct("Condition");
+      ds.field("type_", &self.type_());
+      ds.field("value_type", &self.value_type());
+      match self.value_type() {
+        ConditionValue::PrimitiveCondition => {
+          if let Some(x) = self.value_as_primitive_condition() {
+            ds.field("value", &x)
+          } else {
+            ds.field("value", &"InvalidFlatbuffer: Union discriminant does not match value.")
+          }
+        },
+        ConditionValue::CompoundCondition => {
+          if let Some(x) = self.value_as_compound_condition() {
+            ds.field("value", &x)
+          } else {
+            ds.field("value", &"InvalidFlatbuffer: Union discriminant does not match value.")
+          }
+        },
+        _ => {
+          let x: Option<()> = None;
+          ds.field("value", &x)
+        },
+      };
+      ds.finish()
+  }
+}
+pub enum MediaOffset {}
+#[derive(Copy, Clone, PartialEq)]
+
+pub struct Media<'a> {
+  pub _tab: flatbuffers::Table<'a>,
+}
+
+impl<'a> flatbuffers::Follow<'a> for Media<'a> {
+  type Inner = Media<'a>;
+  #[inline]
+  unsafe fn follow(buf: &'a [u8], loc: usize) -> Self::Inner {
+    Self { _tab: flatbuffers::Table::new(buf, loc) }
+  }
+}
+
+impl<'a> Media<'a> {
+  pub const VT_ID: flatbuffers::VOffsetT = 4;
+  pub const VT_CONDITIONS: flatbuffers::VOffsetT = 6;
+
+  #[inline]
+  pub unsafe fn init_from_table(table: flatbuffers::Table<'a>) -> Self {
+    Media { _tab: table }
+  }
+  #[allow(unused_mut)]
+  pub fn create<'bldr: 'args, 'args: 'mut_bldr, 'mut_bldr, A: flatbuffers::Allocator + 'bldr>(
+    _fbb: &'mut_bldr mut flatbuffers::FlatBufferBuilder<'bldr, A>,
+    args: &'args MediaArgs<'args>
+  ) -> flatbuffers::WIPOffset<Media<'bldr>> {
+    let mut builder = MediaBuilder::new(_fbb);
+    if let Some(x) = args.conditions { builder.add_conditions(x); }
+    builder.add_id(args.id);
+    builder.finish()
+  }
+
+
+  #[inline]
+  pub fn id(&self) -> u8 {
+    // Safety:
+    // Created from valid Table for this object
+    // which contains a valid value in this slot
+    unsafe { self._tab.get::<u8>(Media::VT_ID, Some(0)).unwrap()}
+  }
+  #[inline]
+  pub fn conditions(&self) -> Option<flatbuffers::Vector<'a, flatbuffers::ForwardsUOffset<Condition<'a>>>> {
+    // Safety:
+    // Created from valid Table for this object
+    // which contains a valid value in this slot
+    unsafe { self._tab.get::<flatbuffers::ForwardsUOffset<flatbuffers::Vector<'a, flatbuffers::ForwardsUOffset<Condition>>>>(Media::VT_CONDITIONS, None)}
+  }
+}
+
+impl flatbuffers::Verifiable for Media<'_> {
+  #[inline]
+  fn run_verifier(
+    v: &mut flatbuffers::Verifier, pos: usize
+  ) -> Result<(), flatbuffers::InvalidFlatbuffer> {
+    use self::flatbuffers::Verifiable;
+    v.visit_table(pos)?
+     .visit_field::<u8>("id", Self::VT_ID, false)?
+     .visit_field::<flatbuffers::ForwardsUOffset<flatbuffers::Vector<'_, flatbuffers::ForwardsUOffset<Condition>>>>("conditions", Self::VT_CONDITIONS, false)?
+     .finish();
+    Ok(())
+  }
+}
+pub struct MediaArgs<'a> {
+    pub id: u8,
+    pub conditions: Option<flatbuffers::WIPOffset<flatbuffers::Vector<'a, flatbuffers::ForwardsUOffset<Condition<'a>>>>>,
+}
+impl<'a> Default for MediaArgs<'a> {
+  #[inline]
+  fn default() -> Self {
+    MediaArgs {
+      id: 0,
+      conditions: None,
+    }
+  }
+}
+
+pub struct MediaBuilder<'a: 'b, 'b, A: flatbuffers::Allocator + 'a> {
+  fbb_: &'b mut flatbuffers::FlatBufferBuilder<'a, A>,
+  start_: flatbuffers::WIPOffset<flatbuffers::TableUnfinishedWIPOffset>,
+}
+impl<'a: 'b, 'b, A: flatbuffers::Allocator + 'a> MediaBuilder<'a, 'b, A> {
+  #[inline]
+  pub fn add_id(&mut self, id: u8) {
+    self.fbb_.push_slot::<u8>(Media::VT_ID, id, 0);
+  }
+  #[inline]
+  pub fn add_conditions(&mut self, conditions: flatbuffers::WIPOffset<flatbuffers::Vector<'b , flatbuffers::ForwardsUOffset<Condition<'b >>>>) {
+    self.fbb_.push_slot_always::<flatbuffers::WIPOffset<_>>(Media::VT_CONDITIONS, conditions);
+  }
+  #[inline]
+  pub fn new(_fbb: &'b mut flatbuffers::FlatBufferBuilder<'a, A>) -> MediaBuilder<'a, 'b, A> {
+    let start = _fbb.start_table();
+    MediaBuilder {
+      fbb_: _fbb,
+      start_: start,
+    }
+  }
+  #[inline]
+  pub fn finish(self) -> flatbuffers::WIPOffset<Media<'a>> {
+    let o = self.fbb_.end_table(self.start_);
+    flatbuffers::WIPOffset::new(o.value())
+  }
+}
+
+impl core::fmt::Debug for Media<'_> {
+  fn fmt(&self, f: &mut core::fmt::Formatter<'_>) -> core::fmt::Result {
+    let mut ds = f.debug_struct("Media");
+      ds.field("id", &self.id());
+      ds.field("conditions", &self.conditions());
+      ds.finish()
+  }
+}
 pub enum StyleSheetOffset {}
 #[derive(Copy, Clone, PartialEq)]
 
@@ -2300,11 +3310,11 @@ impl<'a> StyleSheet<'a> {
 
 
   #[inline]
-  pub fn fonts(&self) -> Option<flatbuffers::Vector<'a, flatbuffers::ForwardsUOffset<&'a str>>> {
+  pub fn fonts(&self) -> Option<flatbuffers::Vector<'a, flatbuffers::ForwardsUOffset<Font<'a>>>> {
     // Safety:
     // Created from valid Table for this object
     // which contains a valid value in this slot
-    unsafe { self._tab.get::<flatbuffers::ForwardsUOffset<flatbuffers::Vector<'a, flatbuffers::ForwardsUOffset<&'a str>>>>(StyleSheet::VT_FONTS, None)}
+    unsafe { self._tab.get::<flatbuffers::ForwardsUOffset<flatbuffers::Vector<'a, flatbuffers::ForwardsUOffset<Font>>>>(StyleSheet::VT_FONTS, None)}
   }
   #[inline]
   pub fn keyframes(&self) -> Option<flatbuffers::Vector<'a, flatbuffers::ForwardsUOffset<&'a str>>> {
@@ -2314,11 +3324,11 @@ impl<'a> StyleSheet<'a> {
     unsafe { self._tab.get::<flatbuffers::ForwardsUOffset<flatbuffers::Vector<'a, flatbuffers::ForwardsUOffset<&'a str>>>>(StyleSheet::VT_KEYFRAMES, None)}
   }
   #[inline]
-  pub fn medias(&self) -> Option<flatbuffers::Vector<'a, flatbuffers::ForwardsUOffset<&'a str>>> {
+  pub fn medias(&self) -> Option<flatbuffers::Vector<'a, flatbuffers::ForwardsUOffset<Media<'a>>>> {
     // Safety:
     // Created from valid Table for this object
     // which contains a valid value in this slot
-    unsafe { self._tab.get::<flatbuffers::ForwardsUOffset<flatbuffers::Vector<'a, flatbuffers::ForwardsUOffset<&'a str>>>>(StyleSheet::VT_MEDIAS, None)}
+    unsafe { self._tab.get::<flatbuffers::ForwardsUOffset<flatbuffers::Vector<'a, flatbuffers::ForwardsUOffset<Media>>>>(StyleSheet::VT_MEDIAS, None)}
   }
   #[inline]
   pub fn styles(&self) -> Option<flatbuffers::Vector<'a, flatbuffers::ForwardsUOffset<Style<'a>>>> {
@@ -2343,9 +3353,9 @@ impl flatbuffers::Verifiable for StyleSheet<'_> {
   ) -> Result<(), flatbuffers::InvalidFlatbuffer> {
     use self::flatbuffers::Verifiable;
     v.visit_table(pos)?
-     .visit_field::<flatbuffers::ForwardsUOffset<flatbuffers::Vector<'_, flatbuffers::ForwardsUOffset<&'_ str>>>>("fonts", Self::VT_FONTS, false)?
+     .visit_field::<flatbuffers::ForwardsUOffset<flatbuffers::Vector<'_, flatbuffers::ForwardsUOffset<Font>>>>("fonts", Self::VT_FONTS, false)?
      .visit_field::<flatbuffers::ForwardsUOffset<flatbuffers::Vector<'_, flatbuffers::ForwardsUOffset<&'_ str>>>>("keyframes", Self::VT_KEYFRAMES, false)?
-     .visit_field::<flatbuffers::ForwardsUOffset<flatbuffers::Vector<'_, flatbuffers::ForwardsUOffset<&'_ str>>>>("medias", Self::VT_MEDIAS, false)?
+     .visit_field::<flatbuffers::ForwardsUOffset<flatbuffers::Vector<'_, flatbuffers::ForwardsUOffset<Media>>>>("medias", Self::VT_MEDIAS, false)?
      .visit_field::<flatbuffers::ForwardsUOffset<flatbuffers::Vector<'_, flatbuffers::ForwardsUOffset<Style>>>>("styles", Self::VT_STYLES, false)?
      .visit_field::<u16>("design_width", Self::VT_DESIGN_WIDTH, false)?
      .finish();
@@ -2353,9 +3363,9 @@ impl flatbuffers::Verifiable for StyleSheet<'_> {
   }
 }
 pub struct StyleSheetArgs<'a> {
-    pub fonts: Option<flatbuffers::WIPOffset<flatbuffers::Vector<'a, flatbuffers::ForwardsUOffset<&'a str>>>>,
+    pub fonts: Option<flatbuffers::WIPOffset<flatbuffers::Vector<'a, flatbuffers::ForwardsUOffset<Font<'a>>>>>,
     pub keyframes: Option<flatbuffers::WIPOffset<flatbuffers::Vector<'a, flatbuffers::ForwardsUOffset<&'a str>>>>,
-    pub medias: Option<flatbuffers::WIPOffset<flatbuffers::Vector<'a, flatbuffers::ForwardsUOffset<&'a str>>>>,
+    pub medias: Option<flatbuffers::WIPOffset<flatbuffers::Vector<'a, flatbuffers::ForwardsUOffset<Media<'a>>>>>,
     pub styles: Option<flatbuffers::WIPOffset<flatbuffers::Vector<'a, flatbuffers::ForwardsUOffset<Style<'a>>>>>,
     pub design_width: u16,
 }
@@ -2378,7 +3388,7 @@ pub struct StyleSheetBuilder<'a: 'b, 'b, A: flatbuffers::Allocator + 'a> {
 }
 impl<'a: 'b, 'b, A: flatbuffers::Allocator + 'a> StyleSheetBuilder<'a, 'b, A> {
   #[inline]
-  pub fn add_fonts(&mut self, fonts: flatbuffers::WIPOffset<flatbuffers::Vector<'b , flatbuffers::ForwardsUOffset<&'b  str>>>) {
+  pub fn add_fonts(&mut self, fonts: flatbuffers::WIPOffset<flatbuffers::Vector<'b , flatbuffers::ForwardsUOffset<Font<'b >>>>) {
     self.fbb_.push_slot_always::<flatbuffers::WIPOffset<_>>(StyleSheet::VT_FONTS, fonts);
   }
   #[inline]
@@ -2386,7 +3396,7 @@ impl<'a: 'b, 'b, A: flatbuffers::Allocator + 'a> StyleSheetBuilder<'a, 'b, A> {
     self.fbb_.push_slot_always::<flatbuffers::WIPOffset<_>>(StyleSheet::VT_KEYFRAMES, keyframes);
   }
   #[inline]
-  pub fn add_medias(&mut self, medias: flatbuffers::WIPOffset<flatbuffers::Vector<'b , flatbuffers::ForwardsUOffset<&'b  str>>>) {
+  pub fn add_medias(&mut self, medias: flatbuffers::WIPOffset<flatbuffers::Vector<'b , flatbuffers::ForwardsUOffset<Media<'b >>>>) {
     self.fbb_.push_slot_always::<flatbuffers::WIPOffset<_>>(StyleSheet::VT_MEDIAS, medias);
   }
   #[inline]

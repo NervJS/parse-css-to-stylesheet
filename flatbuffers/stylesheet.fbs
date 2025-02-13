@@ -80,10 +80,40 @@ table Style {
   selector:[Selector];
 }
 
+table Font {
+  font_family: string;
+  src: string;
+}
+
+table PrimitiveCondition {
+  feature:uint8;
+  operator:uint8;
+  value:Value;
+}
+
+table CompoundCondition {
+  conditions:[Condition];
+}
+
+union ConditionValue {
+  PrimitiveCondition,
+  CompoundCondition
+}
+
+table Condition {
+  type:uint8;
+  value:ConditionValue;
+}
+
+table Media {
+  id:uint8;
+  conditions:[Condition];
+}
+
 table StyleSheet {
-  fonts:[string];
+  fonts:[Font];
   keyframes:[string];
-  medias:[string];
+  medias:[Media];
   styles:[Style];
   design_width:uint16;
 }

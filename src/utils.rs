@@ -362,16 +362,85 @@ fn create_flatbuffer_object_value(builder: &mut FlatBufferBuilder, obj: &serde_j
   (styles::Value::Object, object.as_union_value())
 }
 
+fn create_flatbuffer_condition<'a>(builder: &mut FlatBufferBuilder<'a>, cond: &serde_json::Value) -> WIPOffset<styles::Condition<'a>> {
+  let cond_array = cond.as_array().unwrap();
+  let cond_type = cond_array[0].as_u64().unwrap() as u8;
+  let condition_value = match cond_type {
+    0 => { // PrimitiveCondition
+      let params = cond_array[1].as_array().unwrap();
+      let feature = params[0].as_u64().unwrap() as u8;
+      let operator = params[1].as_u64().unwrap() as u8;
+      // 处理value值
+      let (value_type, value) = process_flatbuffer_value(
+        builder, 
+        &params[2]
+      );
+      
+      // 创建PrimitiveCondition
+      let primitive = styles::PrimitiveCondition::create(
+        builder,
+        &styles::PrimitiveConditionArgs {
+          feature,
+          operator,
+          value_type,
+          value: Some(value),
+        }
+      );
+      styles::Condition::create(builder, &styles::ConditionArgs {
+        type_: cond_type,
+        value_type: styles::ConditionValue::PrimitiveCondition,
+        value: Some(primitive.as_union_value()),
+    })
+    },
+    _ => {
+      let compound_conditions: Vec<_> = cond_array[1]
+        .as_array()
+        .unwrap()
+        .iter()
+        .map(|cond| create_flatbuffer_condition(builder, cond))
+        .collect();
+      
+      let vec_offset = builder.create_vector(&compound_conditions);
+      let compound = styles::CompoundCondition::create(
+        builder,
+        &styles::CompoundConditionArgs {
+          conditions: Some(vec_offset),
+        }
+      );
+      
+      styles::Condition::create(
+        builder,
+        &styles::ConditionArgs {
+          type_: cond_type,
+          value_type: styles::ConditionValue::CompoundCondition,
+          value: Some(compound.as_union_value()),
+        }
+      )
+    }
+  };
+  condition_value
+}
+
 pub fn convert_json_to_flatbuffer(json_str: &str) -> Result<Vec<u8>, serde_json::Error> {
   let json: Value = serde_json::from_str(json_str)?;
   let mut builder = FlatBufferBuilder::new();
-  // let fonts: Vec<WIPOffset<&str>> = json["fonts"]
-  //   .as_array()
-  //   .unwrap()
-  //   .iter()
-  //   .map(|f| builder.create_string(f.as_str().unwrap()))
-  //   .collect();
-  // let fonts = builder.create_vector(&fonts);
+  let fonts: Vec<WIPOffset<styles::Font>> = json["fonts"]
+    .as_array()
+    .unwrap()
+    .iter()
+    .map(|f| {
+      let font_family = f["fontFamily"].as_str().unwrap_or("");
+      let src = f["src"].as_str().unwrap_or("");
+
+      let font_family = builder.create_string(font_family);
+      let src = builder.create_string(src);
+      let font = styles::Font::create(&mut builder, &styles::FontArgs {
+        font_family: Some(font_family),
+        src: Some(src),
+      });
+      font
+    }).collect();
+  let fonts = builder.create_vector(&fonts);
 
   // let keyframes: Vec<WIPOffset<&str>> = json["keyframes"]
   //   .as_array()
@@ -381,13 +450,26 @@ pub fn convert_json_to_flatbuffer(json_str: &str) -> Result<Vec<u8>, serde_json:
   //   .collect();
   // let keyframes = builder.create_vector(&keyframes);
 
-  // let medias: Vec<WIPOffset<&str>> = json["medias"]
-  //   .as_array()
-  //   .unwrap()
-  //   .iter()
-  //   .map(|m| builder.create_string(m.as_str().unwrap()))
-  //   .collect();
-  // let medias = builder.create_vector(&medias);
+  let medias: Vec<WIPOffset<styles::Media>> = json["medias"]
+    .as_array()
+    .unwrap()
+    .iter()
+    .map(|m| {
+      let conditions: Vec<_> = m["conditions"]
+        .as_array()
+        .unwrap()
+        .iter()
+        .map(|cond_array| create_flatbuffer_condition(&mut builder, cond_array))
+        .collect();
+      let conditions_vector = builder.create_vector(&conditions);
+      let media = styles::Media::create(&mut builder, &styles::MediaArgs {
+        id: m["id"].as_u64().unwrap() as u8,
+        conditions: Some(conditions_vector),
+      });
+      media
+    })
+    .collect();
+  let medias = builder.create_vector(&medias);
 
   let styles: Vec<WIPOffset<styles::Style>> = json["styles"]
     .as_array()
@@ -444,9 +526,9 @@ pub fn convert_json_to_flatbuffer(json_str: &str) -> Result<Vec<u8>, serde_json:
     let styles = builder.create_vector(&styles);
     let design_width = json["design_width"].as_u64().unwrap_or(0) as u16;
     let stylesheet = styles::StyleSheet::create(&mut builder, &styles::StyleSheetArgs {
-      fonts: None,
+      fonts: Some(fonts),
       keyframes: None,
-      medias: None,
+      medias: Some(medias),
       styles: Some(styles),
       design_width: design_width,
     });

@@ -1,3 +1,12 @@
+## [1.1.3](https://github.com/NervJS/parse-css-to-stylesheet/compare/v1.1.2...v1.1.3) (2025-02-13)
+
+
+### Features
+
+* 生成二进制文件时支持处理 fonts 和 medias ([daff126](https://github.com/NervJS/parse-css-to-stylesheet/commit/daff126a1165bb3c28680d4194d0d5c9d2923b87))
+
+
+
 ## [1.1.2](https://github.com/NervJS/parse-css-to-stylesheet/compare/v1.1.1...v1.1.2) (2025-01-10)
 
 

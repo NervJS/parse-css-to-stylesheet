@@ -1,6 +1,6 @@
 {
   "name": "@tarojs/parse-css-to-stylesheet-win32-x64-msvc",
-  "version": "1.1.3",
+  "version": "1.1.4",
   "os": [
     "win32"
   ],

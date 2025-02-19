@@ -1,3 +1,12 @@
+## [1.1.4](https://github.com/NervJS/parse-css-to-stylesheet/compare/v1.1.3...v1.1.4) (2025-02-19)
+
+
+### Features
+
+* 增加对规则对env的提前识别 ([a842ecb](https://github.com/NervJS/parse-css-to-stylesheet/commit/a842ecbd884b262858e83232beb69997d20fd804))
+
+
+
 ## [1.1.3](https://github.com/NervJS/parse-css-to-stylesheet/compare/v1.1.2...v1.1.3) (2025-02-13)
 
 

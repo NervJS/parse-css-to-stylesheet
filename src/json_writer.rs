@@ -5,6 +5,7 @@ use swc_core::common::DUMMY_SP;
 use swc_core::ecma::ast::*;
 
 use crate::constants::{Pseudo, SUPPORT_PSEUDO_KEYS};
+use crate::parse_style_properties::DeclsAndVars;
 use crate::style_propetries::style_value_type::StyleValueType;
 
 use crate::style_propetries::unit::Platform;
@@ -14,20 +15,20 @@ use crate::style_parser::KeyFrameItem;
 use crate::style_propetries::style_media::StyleMedia;
 
 pub struct JsonWriter {
-    styles: IndexMap<(u32, String), Vec<StyleValueType>>,
+    styles: IndexMap<(u32, String), DeclsAndVars>,
     keyframes: IndexMap<(u32, String), Vec<KeyFrameItem>>,
     medias: Vec<StyleMedia>,
 }
 
 impl JsonWriter {
 
-    pub fn new(styles: IndexMap<(u32, String), Vec<StyleValueType>>, keyframes: IndexMap<(u32, String), Vec<KeyFrameItem>>,
+    pub fn new(styles: IndexMap<(u32, String), DeclsAndVars>, keyframes: IndexMap<(u32, String), Vec<KeyFrameItem>>,
         medias: Vec<StyleMedia>) -> Self {
         Self { styles ,keyframes,medias }
     }
 
     pub fn to_json(&self) -> String {
-        let elems: Vec<Expr> = self.styles.iter().filter_map(|((media_index,selector), prop_or_spreads)| Some({
+        let elems: Vec<Expr> = self.styles.iter().filter_map(|((media_index,selector), item)| Some({
             // 识别伪类
             let mut new_selector = selector.clone();
             let mut pseudo_key = String::new();
@@ -90,8 +91,12 @@ impl JsonWriter {
                     key: PropName::Ident(Ident::new("declarations".into(), DUMMY_SP)),
                     value: Box::new(Expr::Array(ArrayLit {
                         span: DUMMY_SP,
-                        elems: parse_style_values(prop_or_spreads.clone(), Platform::Harmony)
+                        elems: parse_style_values(item.decls.clone(), Platform::Harmony)
                     })),
+                }))),
+                PropOrSpread::Prop(Box::new(Prop::KeyValue(KeyValueProp {
+                    key: PropName::Ident(Ident::new("has_env".into(), DUMMY_SP)),
+                    value: Box::new(Expr::Lit(Lit::Bool(Bool { span: DUMMY_SP, value: item.has_var }))),
                 })))
             ];
 

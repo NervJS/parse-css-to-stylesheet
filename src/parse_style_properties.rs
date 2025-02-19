@@ -5,8 +5,15 @@ use swc_core::ecma::ast::*;
 
 use crate::{generate_expr_lit_str, style_parser::KeyFrameItem, style_propetries::{animation::Animation, animation_multi::AnimationMulti, aspect_ratio::AspectRatio, background::Background, background_image::BackgroundImage, background_position::BackgroundPosition, background_repeat::BackgroundRepeat, background_size::BackgroundSize, border::Border, border_color::BorderColor, border_radius::BorderRadius, border_style::BorderStyle, border_width::BorderWidth, box_shadow::BoxShadow, color::ColorProperty, display::Display, expr::Expr, flex::Flex, flex_align::FlexAlign, flex_basis::FlexBasis, flex_direction::FlexDirection, flex_wrap::FlexWrap, font_size::FontSize, font_style::FontStyle, font_weight::FontWeight, gap::Gap, item_align::ItemAlign, length_value::LengthValueProperty, letter_spacing::LetterSpacing, line_height::LineHeight, marin_padding::MarginPadding, max_size::MaxSizeProperty, normal::Normal, number::NumberProperty, opacity::Opacity, overflow::Overflow, position::Position, size::SizeProperty, style_property_type::{string_to_css_property_type, CSSPropertyType}, style_value_type::StyleValueType, text_align::TextAlign, text_decoration::TextDecoration, text_overflow::TextOverflow, text_shadow::TextShadow, text_transform::TextTransform, transform::Transform, transform_origin::TransformOrigin, transition::Transition, unit::{generate_expr_by_length_value, Platform}, vertical_align::VerticalAlign, visibility::Visibility, white_space::WhiteSpace, word_break::WordBreak}, utils::lowercase_first};
 
-pub fn parse_style_properties(properties: &Vec<(String, Property)>) -> Vec<StyleValueType> {
+#[derive(Debug, Clone)]
+pub struct DeclsAndVars {
+  pub decls:Vec<StyleValueType>,
+  pub has_var: bool
+}
+
+pub fn parse_style_properties(properties: &Vec<(String, Property)>) -> DeclsAndVars{
   let mut final_properties = vec![];
+  let mut has_env = false;
   for (id, value)  in properties.iter() {
 
     let mut is_env: bool = false;
@@ -28,6 +35,7 @@ pub fn parse_style_properties(properties: &Vec<(String, Property)>) -> Vec<Style
       _ => {}
     };
     if is_env {
+      has_env = true;
       continue;
     }
 
@@ -255,5 +263,8 @@ pub fn parse_style_properties(properties: &Vec<(String, Property)>) -> Vec<Style
         }
 }
 
-  final_properties
+  DeclsAndVars {
+    decls: final_properties,
+    has_var: has_env
+  }
 }

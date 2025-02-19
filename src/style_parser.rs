@@ -4,7 +4,7 @@ use indexmap::IndexMap;
 use lightningcss::{declaration::DeclarationBlock, properties::Property, rules::{keyframes::KeyframeSelector, CssRule}, stylesheet::{ParserOptions, PrinterOptions, StyleSheet}, traits::ToCss, visit_types, visitor::{Visit, VisitTypes, Visitor}};
 use swc_core::ecma::ast::*;
 use swc_core::common::DUMMY_SP;
-use crate::{style_propetries::{style_value_type::StyleValueType, unit::Platform}, utils::to_camel_case};
+use crate::{parse_style_properties::DeclsAndVars, style_propetries::{style_value_type::StyleValueType, unit::Platform}, utils::to_camel_case};
 use crate::visitor::parse_style_values;
 use super::parse_style_properties::parse_style_properties;
 
@@ -13,7 +13,7 @@ use crate::style_propetries::style_media::StyleMedia;
 pub type StyleValue = Vec<StyleValueType>;
 #[derive(Debug)]
 pub struct StyleData {
-  pub all_style: Rc<RefCell<IndexMap<(u32,String), StyleValue>>>,
+  pub all_style: Rc<RefCell<IndexMap<(u32,String), DeclsAndVars>>>,
   pub all_keyframes: Rc<RefCell<IndexMap<(u32, String), Vec<KeyFrameItem>>>>,
   pub all_medias: Rc<RefCell<Vec<StyleMedia>>>,
 }
@@ -140,6 +140,7 @@ impl<'i> Visitor<'i> for StyleVisitor<'i> {
               )
             })
             .collect::<Vec<(_, _)>>(); // Speci
+            let item = parse_style_properties(&properties);
             let keyframe_item = KeyFrameItem {
               percentage: match selector {
                 KeyframeSelector::Percentage(percentage) => {
@@ -148,7 +149,7 @@ impl<'i> Visitor<'i> for StyleVisitor<'i> {
                 KeyframeSelector::From => 0.0,
                 KeyframeSelector::To => 1.0,
               },
-              declarations: parse_style_properties(&properties)
+              declarations: item.decls
             };
 
             keyframe_data.keyframes.push(keyframe_item)

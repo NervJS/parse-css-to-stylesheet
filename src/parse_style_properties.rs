@@ -75,8 +75,15 @@ use crate::{
   utils::lowercase_first,
 };
 
-pub fn parse_style_properties(properties: &Vec<(String, Property)>) -> Vec<StyleValueType> {
+#[derive(Debug, Clone)]
+pub struct DeclsAndVars {
+  pub decls:Vec<StyleValueType>,
+  pub has_env: bool
+}
+
+pub fn parse_style_properties(properties: &Vec<(String, Property)>) -> DeclsAndVars {
   let mut final_properties = vec![];
+  let mut has_env = false;
   for (id, value) in properties.iter() {
     let mut is_env: bool = false;
     match value {
@@ -98,6 +105,7 @@ pub fn parse_style_properties(properties: &Vec<(String, Property)>) -> Vec<Style
       _ => {}
     };
     if is_env {
+      has_env = true;
       continue;
     }
 
@@ -539,5 +547,8 @@ pub fn parse_style_properties(properties: &Vec<(String, Property)>) -> Vec<Style
     }
   }
 
-  final_properties
+  DeclsAndVars {
+    has_env: has_env,
+    decls: final_properties
+  }
 }

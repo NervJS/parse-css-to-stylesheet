@@ -1,6 +1,7 @@
 use std::{cell::RefCell, convert::Infallible, rc::Rc};
 
 use super::parse_style_properties::parse_style_properties;
+use crate::parse_style_properties::DeclsAndVars;
 use crate::{generate_expr_enum, generate_expr_lit_str};
 use crate::style_propetries::font_weight::{self, FontWeight};
 use crate::style_propetries::style_property_enum::ArkUI_FontWeight;
@@ -30,7 +31,7 @@ use crate::style_propetries::style_media::StyleMedia;
 pub type StyleValue = Vec<StyleValueType>;
 #[derive(Debug)]
 pub struct StyleData {
-  pub all_style: Rc<RefCell<IndexMap<(u32, String), StyleValue>>>,
+  pub all_style: Rc<RefCell<IndexMap<(u32, String), DeclsAndVars>>>,
   pub all_keyframes: Rc<RefCell<IndexMap<(u32, String), Vec<KeyFrameItem>>>>,
   pub all_medias: Rc<RefCell<Vec<StyleMedia>>>,
   pub all_fonts: Rc<RefCell<Vec<FontFaceItem>>>,
@@ -213,7 +214,7 @@ impl<'i> Visitor<'i> for StyleVisitor<'i> {
                   KeyframeSelector::From => 0.0,
                   KeyframeSelector::To => 1.0,
                 },
-                declarations: parse_style_properties(&properties),
+                declarations: parse_style_properties(&properties).decls,
               };
 
               keyframe_data.keyframes.push(keyframe_item)

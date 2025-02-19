@@ -4,6 +4,7 @@ use swc_core::common::DUMMY_SP;
 use swc_core::ecma::ast::*;
 
 use crate::constants::{Pseudo, SUPPORT_PSEUDO_KEYS};
+use crate::parse_style_properties::DeclsAndVars;
 use crate::style_propetries::style_value_type::StyleValueType;
 
 use crate::style_parser::{FontFaceItem, KeyFrameItem};
@@ -13,7 +14,7 @@ use crate::visitor::parse_style_values;
 use crate::{generate_expr_lit_num, generate_expr_lit_str, utils};
 
 pub struct JsonWriter {
-  styles: IndexMap<(u32, String), Vec<StyleValueType>>,
+  styles: IndexMap<(u32, String), DeclsAndVars>,
   keyframes: IndexMap<(u32, String), Vec<KeyFrameItem>>,
   medias: Vec<StyleMedia>,
   fonts: Vec<FontFaceItem>,
@@ -22,7 +23,7 @@ pub struct JsonWriter {
 
 impl JsonWriter {
   pub fn new(
-    styles: IndexMap<(u32, String), Vec<StyleValueType>>,
+    styles: IndexMap<(u32, String), DeclsAndVars>,
     keyframes: IndexMap<(u32, String), Vec<KeyFrameItem>>,
     medias: Vec<StyleMedia>,
     fonts: Vec<FontFaceItem>,
@@ -41,7 +42,7 @@ impl JsonWriter {
     let elems: Vec<Expr> = self
       .styles
       .iter()
-      .filter_map(|((media_index, selector), prop_or_spreads)| {
+      .filter_map(|((media_index, selector), item)| {
         Some({
           // 识别伪类
           let mut new_selector = selector.clone();
@@ -113,9 +114,13 @@ impl JsonWriter {
               key: PropName::Ident(Ident::new("declarations".into(), DUMMY_SP)),
               value: Box::new(Expr::Array(ArrayLit {
                 span: DUMMY_SP,
-                elems: parse_style_values(prop_or_spreads.clone(), Platform::Harmony),
+                elems: parse_style_values(item.decls.clone(), Platform::Harmony),
               })),
             }))),
+            PropOrSpread::Prop(Box::new(Prop::KeyValue(KeyValueProp {
+              key: PropName::Ident(Ident::new("has_env".into(), DUMMY_SP)),
+              value: Box::new(Expr::Lit(Lit::Bool(Bool { span: DUMMY_SP, value: item.has_env }))),
+            })))
           ];
 
           if pseudo_key.len() > 0 {

@@ -100,11 +100,16 @@ pub enum CSSPropertyType {
   AnimationName = 95,
   BorderWidth = 96,
   BorderColor = 97,
-  Margin = 98,
-  Padding = 99,
-  BorderRadius = 100,
+  Margin = 98,  // 复合属性
+  Padding = 99,  // 复合属性
+  BorderRadius = 100,  // 复合属性
   BoxOrient = 101,
-  PointerEvents = 102
+  PointerEvents = 102,
+  Background = 103,  // 复合属性
+  Flex = 104,  // 复合属性
+  Border = 105,  // 复合属性
+  BorderStyle = 106,  // 复合属性
+  Gap = 107,  // 复合属性
 }
 
 pub fn string_to_css_property_type(property: &str) -> CSSPropertyType {
@@ -211,6 +216,13 @@ pub fn string_to_css_property_type(property: &str) -> CSSPropertyType {
     "padding" => CSSPropertyType::Padding,
     "borderRadius" => CSSPropertyType::BorderRadius,
     "boxOrient" => CSSPropertyType::BoxOrient,
+    // S 复合属性，仅用作css变量的解析 ====
+    "background" => CSSPropertyType::Background,
+    "flex" => CSSPropertyType::Flex,
+    "border" => CSSPropertyType::Border,
+    "gap" => CSSPropertyType::Gap,
+    "borderStyle" => CSSPropertyType::BorderStyle,
+    // E 复合属性，仅用作css变量的解析 ====
     _ => CSSPropertyType::Invalid,
   }
 }

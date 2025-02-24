@@ -1,6 +1,6 @@
 use lightningcss::{
   properties::{custom::TokenOrValue, Property},
-  stylesheet::PrinterOptions,
+  stylesheet::PrinterOptions, traits::ToCss,
 };
 use swc_core::ecma::ast::*;
 use swc_core::{
@@ -15,61 +15,7 @@ use crate::{
   generate_expr_lit_str,
   style_parser::KeyFrameItem,
   style_propetries::{
-    animation::Animation,
-    animation_multi::AnimationMulti,
-    aspect_ratio::AspectRatio,
-    background::Background,
-    background_image::BackgroundImage,
-    background_position::BackgroundPosition,
-    background_repeat::BackgroundRepeat,
-    background_size::BackgroundSize,
-    border::Border,
-    border_color::BorderColor,
-    border_radius::BorderRadius,
-    border_style::BorderStyle,
-    border_width::BorderWidth,
-    box_orient::BoxOrient,
-    box_shadow::BoxShadow,
-    color::ColorProperty,
-    display::Display,
-    expr::Expr,
-    flex::Flex,
-    flex_align::FlexAlign,
-    flex_basis::FlexBasis,
-    flex_direction::FlexDirection,
-    flex_wrap::FlexWrap,
-    font_size::FontSize,
-    font_style::FontStyle,
-    font_weight::FontWeight,
-    gap::Gap,
-    item_align::ItemAlign,
-    length_value::LengthValueProperty,
-    letter_spacing::LetterSpacing,
-    line_height::LineHeight,
-    marin_padding::MarginPadding,
-    max_size::MaxSizeProperty,
-    normal::Normal,
-    number::NumberProperty,
-    opacity::Opacity,
-    overflow::Overflow,
-    pointer_events::PointerEvents,
-    position::Position,
-    size::SizeProperty,
-    style_property_type::{string_to_css_property_type, CSSPropertyType},
-    style_value_type::StyleValueType,
-    text_align::TextAlign,
-    text_decoration::TextDecoration,
-    text_overflow::TextOverflow,
-    text_shadow::TextShadow,
-    text_transform::TextTransform,
-    transform::Transform,
-    transform_origin::TransformOrigin,
-    transition::Transition,
-    unit::{generate_expr_by_length_value, Platform},
-    vertical_align::VerticalAlign,
-    visibility::Visibility,
-    white_space::WhiteSpace,
-    word_break::WordBreak,
+    animation::Animation, animation_multi::AnimationMulti, aspect_ratio::AspectRatio, background::Background, background_image::BackgroundImage, background_position::BackgroundPosition, background_repeat::BackgroundRepeat, background_size::BackgroundSize, border::Border, border_color::BorderColor, border_radius::BorderRadius, border_style::BorderStyle, border_width::BorderWidth, box_orient::BoxOrient, box_shadow::BoxShadow, color::ColorProperty, display::Display, expr::Expr, flex::Flex, flex_align::FlexAlign, flex_basis::FlexBasis, flex_direction::FlexDirection, flex_wrap::FlexWrap, font_size::FontSize, font_style::FontStyle, font_weight::FontWeight, gap::Gap, item_align::ItemAlign, length_value::LengthValueProperty, letter_spacing::LetterSpacing, line_height::LineHeight, marin_padding::MarginPadding, max_size::MaxSizeProperty, normal::Normal, number::NumberProperty, opacity::Opacity, overflow::Overflow, pointer_events::PointerEvents, position::Position, size::SizeProperty, style_property_type::{string_to_css_property_type, CSSPropertyType}, style_value_type::{CssVariable, StyleValueType}, text_align::TextAlign, text_decoration::TextDecoration, text_overflow::TextOverflow, text_shadow::TextShadow, text_transform::TextTransform, transform::Transform, transform_origin::TransformOrigin, transition::Transition, unit::{generate_expr_by_length_value, Platform}, variable::Variable, vertical_align::VerticalAlign, visibility::Visibility, white_space::WhiteSpace, word_break::WordBreak
 
   },
   utils::lowercase_first,
@@ -77,37 +23,89 @@ use crate::{
 
 #[derive(Debug, Clone)]
 pub struct DeclsAndVars {
-  pub decls:Vec<StyleValueType>,
+  pub decls: Vec<StyleValueType>,
+  pub vars: Vec<CssVariable>,
   pub has_env: bool
 }
 
 pub fn parse_style_properties(properties: &Vec<(String, Property)>) -> DeclsAndVars {
   let mut final_properties = vec![];
+  let mut variable_properties = vec![];
   let mut has_env = false;
-  for (id, value) in properties.iter() {
+  for (id, value)  in properties.iter() {
+    let mut is_var: bool = false;
     let mut is_env: bool = false;
     match value {
       Property::Unparsed(unparsed) => {
-        unparsed.value.0.iter().for_each(|item| match item {
-          TokenOrValue::Env(env) => {
-            is_env = true;
-            let env_result = value.value_to_css_string(PrinterOptions::default());
-            if (env_result.is_ok()) {
-              final_properties.push(StyleValueType::Expr(Expr::new(
-                string_to_css_property_type(id),
-                generate_expr_lit_str!(env_result.unwrap().to_string()),
-              )));
-            }
+        // 检查是否包含 var() 函数
+        is_var = unparsed.value.0.iter().any(|token| {
+          match token {
+            TokenOrValue::Function(f) => {
+              // 检查函数内的变量
+              f.arguments.0.iter().any(|arg| matches!(arg, TokenOrValue::Var(_)))
+            },
+            TokenOrValue::Var(_) => true,
+            _ => false
           }
-          _ => {}
         });
+
+        // 分析属性值中的所有 token
+        for token in unparsed.value.0.iter() {
+          match token {
+            TokenOrValue::Env(_) => is_env = true,
+            _ => {}
+          }
+        }
+
+        // // 处理包含变量的情况
+        if is_var {
+          final_properties.push(
+            StyleValueType::Variable(
+              Variable::new(
+                string_to_css_property_type(id),
+                generate_expr_lit_str!(
+                      value.value_to_css_string(PrinterOptions::default()).unwrap()
+                    )
+              )
+            )
+          );
+          continue;
+        }
+
+        // 处理环境变量
+        if is_env {
+          if let Ok(env_value) = value.value_to_css_string(PrinterOptions::default()) {
+            has_env = true;
+            final_properties.push(
+              StyleValueType::Expr(
+                Expr::new(
+                  string_to_css_property_type(id),
+                  generate_expr_lit_str!(env_value)
+                )
+              )
+            );
+          }
+          continue;
+        }
+      },
+      Property::Custom(custom) => {
+        let id_ = custom.name.to_css_string(Default::default()).unwrap();
+        // css 变量
+        if id_.starts_with("--") {
+          variable_properties.push(
+            CssVariable {
+              id: id_,
+              value: value.value_to_css_string(PrinterOptions::default()).unwrap().to_string(),
+            }
+          );
+        }
       }
       _ => {}
     };
-    if is_env {
-      has_env = true;
+    if is_env || is_var {
       continue;
     }
+
 
     let mut property_name = id.as_str();
 
@@ -549,6 +547,7 @@ pub fn parse_style_properties(properties: &Vec<(String, Property)>) -> DeclsAndV
 
   DeclsAndVars {
     has_env: has_env,
+    vars: variable_properties,
     decls: final_properties
   }
 }

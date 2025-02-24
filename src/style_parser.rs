@@ -2,6 +2,7 @@ use std::{cell::RefCell, convert::Infallible, rc::Rc};
 
 use super::parse_style_properties::parse_style_properties;
 use crate::parse_style_properties::DeclsAndVars;
+use crate::style_propetries::style_value_type::CssVariable;
 use crate::{generate_expr_enum, generate_expr_lit_str};
 use crate::style_propetries::font_weight::{self, FontWeight};
 use crate::style_propetries::style_property_enum::ArkUI_FontWeight;
@@ -29,9 +30,19 @@ use swc_core::ecma::ast::*;
 use crate::style_propetries::style_media::StyleMedia;
 
 pub type StyleValue = Vec<StyleValueType>;
+
+#[derive(Debug, Clone)]
+pub struct RuleItem {
+  pub selector: String,
+  pub media: u32,
+  pub declarations: Vec<StyleValueType>,
+  pub variables: Vec<CssVariable>,
+  pub has_env: bool
+}
+
 #[derive(Debug)]
 pub struct StyleData {
-  pub all_style: Rc<RefCell<IndexMap<(u32, String), DeclsAndVars>>>,
+  pub all_style: Rc<RefCell<Vec<RuleItem>>>, 
   pub all_keyframes: Rc<RefCell<IndexMap<(u32, String), Vec<KeyFrameItem>>>>,
   pub all_medias: Rc<RefCell<Vec<StyleMedia>>>,
   pub all_fonts: Rc<RefCell<Vec<FontFaceItem>>>,
@@ -371,17 +382,20 @@ impl<'i> StyleParser<'i> {
     let final_all_style = final_all_style
       .iter_mut()
       .map(|(media_index, selector, properties)| {
-        (
-          (media_index.to_owned(), selector.to_owned()),
-          parse_style_properties(
-            &properties
-              .iter()
-              .map(|(k, v)| (k.to_owned(), v.clone()))
-              .collect::<Vec<_>>(),
-          ),
-        )
-      })
-      .collect::<IndexMap<(_, _), _>>();
+        let decls_and_vars = parse_style_properties(
+          &properties
+            .iter()
+            .map(|(k, v)| (k.to_owned(), v.clone()))
+            .collect::<Vec<_>>()
+        );
+        RuleItem {
+          selector: selector.to_owned(),
+          media: media_index.to_owned(),
+          declarations: decls_and_vars.decls,
+          variables: decls_and_vars.vars,
+          has_env: decls_and_vars.has_env
+        }
+      }).collect::<Vec<RuleItem>>();
 
     let final_all_keyframes = self
       .all_keyframes

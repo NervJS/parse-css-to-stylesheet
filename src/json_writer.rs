@@ -7,14 +7,14 @@ use crate::constants::{Pseudo, SUPPORT_PSEUDO_KEYS};
 use crate::parse_style_properties::DeclsAndVars;
 use crate::style_propetries::style_value_type::StyleValueType;
 
-use crate::style_parser::{FontFaceItem, KeyFrameItem};
+use crate::style_parser::{FontFaceItem, KeyFrameItem, RuleItem};
 use crate::style_propetries::style_media::StyleMedia;
 use crate::style_propetries::unit::Platform;
 use crate::visitor::parse_style_values;
 use crate::{generate_expr_lit_num, generate_expr_lit_str, utils};
 
 pub struct JsonWriter {
-  styles: IndexMap<(u32, String), DeclsAndVars>,
+  styles: Vec<RuleItem>,
   keyframes: IndexMap<(u32, String), Vec<KeyFrameItem>>,
   medias: Vec<StyleMedia>,
   fonts: Vec<FontFaceItem>,
@@ -23,7 +23,7 @@ pub struct JsonWriter {
 
 impl JsonWriter {
   pub fn new(
-    styles: IndexMap<(u32, String), DeclsAndVars>,
+    styles: Vec<RuleItem>,
     keyframes: IndexMap<(u32, String), Vec<KeyFrameItem>>,
     medias: Vec<StyleMedia>,
     fonts: Vec<FontFaceItem>,
@@ -42,17 +42,17 @@ impl JsonWriter {
     let elems: Vec<Expr> = self
       .styles
       .iter()
-      .filter_map(|((media_index, selector), item)| {
+      .filter_map(|rule_item| {
         Some({
           // 识别伪类
-          let mut new_selector = selector.clone();
+          let mut new_selector = rule_item.selector.clone();
           let mut pseudo_key = String::new();
 
           if SUPPORT_PSEUDO_KEYS
             .into_iter()
-            .any(|s| selector.contains(s))
+            .any(|s| rule_item.selector.contains(s))
           {
-            let key_arr = selector.split(":").collect::<Vec<&str>>();
+            let key_arr = rule_item.selector.split(":").collect::<Vec<&str>>();
             if key_arr.len() == 2 {
               new_selector = key_arr[0].to_string();
               pseudo_key = key_arr[1].to_string();
@@ -63,7 +63,7 @@ impl JsonWriter {
           let mut lit_props = vec![
             PropOrSpread::Prop(Box::new(Prop::KeyValue(KeyValueProp {
               key: PropName::Ident(Ident::new("media".into(), DUMMY_SP)),
-              value: Box::new(Expr::Lit(Lit::Num(Number::from(*media_index as f64)))),
+              value: Box::new(Expr::Lit(Lit::Num(Number::from(rule_item.media as f64)))),
             }))),
             PropOrSpread::Prop(Box::new(Prop::KeyValue(KeyValueProp {
               key: PropName::Ident(Ident::new("selector".into(), DUMMY_SP)),
@@ -114,12 +114,28 @@ impl JsonWriter {
               key: PropName::Ident(Ident::new("declarations".into(), DUMMY_SP)),
               value: Box::new(Expr::Array(ArrayLit {
                 span: DUMMY_SP,
-                elems: parse_style_values(item.decls.clone(), Platform::Harmony),
+                elems: parse_style_values(rule_item.declarations.clone(), Platform::Harmony),
               })),
             }))),
             PropOrSpread::Prop(Box::new(Prop::KeyValue(KeyValueProp {
+                key: PropName::Ident(Ident::new("variables".into(), DUMMY_SP)),
+                value: Box::new(Expr::Object(ObjectLit {
+                    span: DUMMY_SP,
+                    props: rule_item.variables.clone().into_iter().map(|css_variable| {
+                        PropOrSpread::Prop(Box::new(Prop::KeyValue(KeyValueProp {
+                            key: PropName::Ident(Ident::new(css_variable.id.clone().into(), DUMMY_SP)),
+                            value: Box::new(Expr::Lit(Lit::Str(Str {
+                                span: DUMMY_SP,
+                                value: css_variable.value.clone().into(),
+                                raw: None,
+                            }))),
+                        })))
+                    }).collect::<Vec<PropOrSpread>>()
+                }))
+            }))),
+            PropOrSpread::Prop(Box::new(Prop::KeyValue(KeyValueProp {
               key: PropName::Ident(Ident::new("has_env".into(), DUMMY_SP)),
-              value: Box::new(Expr::Lit(Lit::Bool(Bool { span: DUMMY_SP, value: item.has_env }))),
+              value: Box::new(Expr::Lit(Lit::Bool(Bool { span: DUMMY_SP, value: rule_item.has_env }))),
             })))
           ];
 

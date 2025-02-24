@@ -16,6 +16,7 @@ pub mod box_shadow;
 pub mod color;
 pub mod display;
 pub mod expr;
+pub mod variable;
 pub mod flex;
 pub mod flex_align;
 pub mod flex_basis;

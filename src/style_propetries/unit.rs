@@ -21,6 +21,8 @@ pub enum PropertyTuple {
   One(CSSPropertyType, Expr),
   // 一对多属性：flex: 1 解析 => vec![(flexGrow, "1"), (flexShrink, "1"), (flexBasis, "0%")]
   Array(Vec<(CSSPropertyType, Expr)>),
+  // 变量类型 => (height, "var(--h)", 1)
+  Variable(CSSPropertyType, Expr),
 }
 
 // 根据长度单位生成对应的表达式

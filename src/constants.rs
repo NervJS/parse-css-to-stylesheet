@@ -57,3 +57,17 @@ impl SelectorType {
     self as u32 as f64
   }
 }
+
+#[repr(u32)]
+#[derive(Hash, PartialEq, Eq, Debug, Clone, Copy)]
+pub enum ValueFlag {
+  None, // 普通类型：0  [22, "100%"]
+  Variable, // 变量类型：1  [22, "var(--w)", 1]
+}
+
+impl ValueFlag {
+  // 将 SelectorType 枚举值转换为 f64
+  pub fn to_f64(self) -> f64 {
+    self as u32 as f64
+  }
+}

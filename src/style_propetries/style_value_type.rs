@@ -1,66 +1,20 @@
 use crate::generate_expr_based_on_platform;
 
+#[derive(Debug, Clone)]
+pub struct CssVariable {
+  pub id: String,
+  pub value: String
+}
+
 use super::{
-  animation::Animation,
-  animation_multi::AnimationMulti,
-  aspect_ratio::AspectRatio,
-  background::Background,
-  background_image::BackgroundImage,
-  background_position::BackgroundPosition,
-  background_repeat::BackgroundRepeat,
-  background_size::BackgroundSize,
-  border::Border,
-  border_color::BorderColor,
-  border_radius::BorderRadius,
-  border_style::BorderStyle,
-  border_width::BorderWidth,
-  box_orient::BoxOrient,
-  box_shadow::BoxShadow,
-  color::ColorProperty,
-  display::Display,
-  expr::Expr,
-  flex::Flex,
-  flex_align::FlexAlign,
-  flex_basis::FlexBasis,
-  flex_direction::FlexDirection,
-  flex_wrap::FlexWrap,
-  font_size::FontSize,
-  font_style::FontStyle,
-  font_weight::FontWeight,
-  gap::Gap,
-  item_align::ItemAlign,
-  length_value::LengthValueProperty,
-  letter_spacing::LetterSpacing,
-  line_height::LineHeight,
-  marin_padding::MarginPadding,
-  max_size::MaxSizeProperty,
-  normal::Normal,
-  number::NumberProperty,
-  opacity::Opacity,
-  overflow::Overflow,
-  position::Position,
-  size::SizeProperty,
-  text_align::TextAlign,
-  text_decoration::TextDecoration,
-  text_overflow::TextOverflow,
-  text_shadow::TextShadow,
-  text_transform::TextTransform,
-  traits::{ToExpr, ToStyleValue},
-  transform::Transform,
-  transform_origin::TransformOrigin,
-  transition::Transition,
-  unit::{Platform, PropertyTuple},
-  vertical_align::VerticalAlign,
-  visibility::Visibility,
-  white_space::WhiteSpace,
-  word_break::WordBreak,
-  pointer_events::PointerEvents
+  animation::Animation, animation_multi::AnimationMulti, aspect_ratio::AspectRatio, background::Background, background_image::BackgroundImage, background_position::BackgroundPosition, background_repeat::BackgroundRepeat, background_size::BackgroundSize, border::Border, border_color::BorderColor, border_radius::BorderRadius, border_style::BorderStyle, border_width::BorderWidth, box_orient::BoxOrient, box_shadow::BoxShadow, color::ColorProperty, display::Display, expr::Expr, flex::Flex, flex_align::FlexAlign, flex_basis::FlexBasis, flex_direction::FlexDirection, flex_wrap::FlexWrap, font_size::FontSize, font_style::FontStyle, font_weight::FontWeight, gap::Gap, item_align::ItemAlign, length_value::LengthValueProperty, letter_spacing::LetterSpacing, line_height::LineHeight, marin_padding::MarginPadding, max_size::MaxSizeProperty, normal::Normal, number::NumberProperty, opacity::Opacity, overflow::Overflow, pointer_events::PointerEvents, position::Position, size::SizeProperty, text_align::TextAlign, text_decoration::TextDecoration, text_overflow::TextOverflow, text_shadow::TextShadow, text_transform::TextTransform, traits::{ToExpr, ToStyleValue}, transform::Transform, transform_origin::TransformOrigin, transition::Transition, unit::{Platform, PropertyTuple}, variable::Variable, vertical_align::VerticalAlign, visibility::Visibility, white_space::WhiteSpace, word_break::WordBreak
 };
 
 #[derive(Debug, Clone)]
 pub enum StyleValueType {
   Normal(Normal),
   Expr(Expr),
+  Variable(Variable),
   NumberProperty(NumberProperty),
   ColorProperty(ColorProperty),
   LengthValueProperty(LengthValueProperty),
@@ -120,6 +74,9 @@ impl ToStyleValue for StyleValueType {
         generate_expr_based_on_platform!(platform, value)
       }
       StyleValueType::Expr(value) => {
+        generate_expr_based_on_platform!(platform, value)
+      }
+      StyleValueType::Variable(value) => {
         generate_expr_based_on_platform!(platform, value)
       }
       StyleValueType::NumberProperty(value) => {

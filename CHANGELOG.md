@@ -1,3 +1,12 @@
+## [1.1.7](https://github.com/NervJS/parse-css-to-stylesheet/compare/v1.1.6...v1.1.7) (2025-02-27)
+
+
+### Features
+
+* 增加暗黑模式的监听，优化产物体积 ([318996a](https://github.com/NervJS/parse-css-to-stylesheet/commit/318996a87f16491cb8744565c168030c3adde0ab))
+
+
+
 ## [1.1.6](https://github.com/NervJS/parse-css-to-stylesheet/compare/v1.1.5...v1.1.6) (2025-02-24)
 
 

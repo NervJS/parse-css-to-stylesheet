@@ -25,6 +25,7 @@ pub enum StyleMediaFeatureID {
   DeviceHeight = 7,
   DeviceAspectRatio = 8,
   Resolution = 9,
+  PrefersColorScheme = 10,
 }
 
 #[derive(Debug, Clone)]
@@ -383,6 +384,7 @@ impl StyleMedia {
         MediaFeatureId::DeviceHeight => return StyleMediaFeatureID::DeviceHeight,
         MediaFeatureId::DeviceAspectRatio => return StyleMediaFeatureID::DeviceAspectRatio,
         MediaFeatureId::Resolution => return StyleMediaFeatureID::Resolution,
+        MediaFeatureId::PrefersColorScheme => return StyleMediaFeatureID::PrefersColorScheme,
         _ => return StyleMediaFeatureID::Invalid,
       },
       _ => return StyleMediaFeatureID::Invalid,

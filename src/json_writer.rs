@@ -116,8 +116,19 @@ impl JsonWriter {
                 span: DUMMY_SP,
                 elems: parse_style_values(rule_item.declarations.clone(), Platform::Harmony),
               })),
-            }))),
-            PropOrSpread::Prop(Box::new(Prop::KeyValue(KeyValueProp {
+            })))
+          ];
+          if rule_item.has_env {
+            lit_props.push(
+              PropOrSpread::Prop(Box::new(Prop::KeyValue(KeyValueProp {
+                key: PropName::Ident(Ident::new("has_env".into(), DUMMY_SP)),
+                value: Box::new(Expr::Lit(Lit::Bool(Bool { span: DUMMY_SP, value: rule_item.has_env }))),
+              })))
+            );
+          }
+          if rule_item.variables.len() > 0 {
+            lit_props.push(
+              PropOrSpread::Prop(Box::new(Prop::KeyValue(KeyValueProp {
                 key: PropName::Ident(Ident::new("variables".into(), DUMMY_SP)),
                 value: Box::new(Expr::Object(ObjectLit {
                     span: DUMMY_SP,
@@ -132,12 +143,9 @@ impl JsonWriter {
                         })))
                     }).collect::<Vec<PropOrSpread>>()
                 }))
-            }))),
-            PropOrSpread::Prop(Box::new(Prop::KeyValue(KeyValueProp {
-              key: PropName::Ident(Ident::new("has_env".into(), DUMMY_SP)),
-              value: Box::new(Expr::Lit(Lit::Bool(Bool { span: DUMMY_SP, value: rule_item.has_env }))),
-            })))
-          ];
+              })))
+            );
+          }
 
           if pseudo_key.len() > 0 {
             let mut pseudo_enum = None;

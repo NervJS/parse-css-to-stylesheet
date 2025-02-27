@@ -1,8 +1,8 @@
 
-use lightningcss::{properties::{custom::TokenOrValue, Property}, stylesheet::PrinterOptions};
+use lightningcss::{properties::{custom::TokenOrValue, Property}, stylesheet::PrinterOptions, traits::ToCss};
 use swc_core::{common::DUMMY_SP, ecma::{ast::{self}, utils::quote_ident}};
 use swc_core::ecma::ast::*;
-
+use crate::style_propetries::style_value_type::{Variable};
 use crate::{generate_expr_lit_str, style_parser::KeyFrameItem, style_propetries::{animation::Animation, animation_multi::AnimationMulti, aspect_ratio::AspectRatio, background::Background, background_image::BackgroundImage, background_position::BackgroundPosition, background_repeat::BackgroundRepeat, background_size::BackgroundSize, border::Border, border_color::BorderColor, border_radius::BorderRadius, border_style::BorderStyle, border_width::BorderWidth, box_shadow::BoxShadow, color::ColorProperty, display::Display, expr::Expr, flex::Flex, flex_align::FlexAlign, flex_basis::FlexBasis, flex_direction::FlexDirection, flex_wrap::FlexWrap, font_size::FontSize, font_style::FontStyle, font_weight::FontWeight, gap::Gap, item_align::ItemAlign, length_value::LengthValueProperty, letter_spacing::LetterSpacing, line_height::LineHeight, marin_padding::MarginPadding, max_size::MaxSizeProperty, normal::Normal, number::NumberProperty, opacity::Opacity, overflow::Overflow, position::Position, size::SizeProperty, style_property_type::{string_to_css_property_type, CSSPropertyType}, style_value_type::StyleValueType, text_align::TextAlign, text_decoration::TextDecoration, text_overflow::TextOverflow, text_shadow::TextShadow, text_transform::TextTransform, transform::Transform, transform_origin::TransformOrigin, transition::Transition, unit::{generate_expr_by_length_value, Platform}, vertical_align::VerticalAlign, visibility::Visibility, white_space::WhiteSpace, word_break::WordBreak}, utils::lowercase_first};
 
 #[derive(Debug, Clone)]
@@ -32,6 +32,14 @@ pub fn parse_style_properties(properties: &Vec<(String, Property)>) -> DeclsAndV
           }
         });
       },
+      Property::Custom(custom) => {
+        if (id.as_str().starts_with("--")) {
+          final_properties.push(StyleValueType::Variable(Variable {
+            id: custom.name.to_css_string(PrinterOptions::default()).unwrap(),
+            value: value.value_to_css_string(PrinterOptions::default()).unwrap(),
+          }));
+        }
+      }
       _ => {}
     };
     if is_env {

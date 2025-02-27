@@ -33,7 +33,8 @@ pub fn parse_style_values(value: Vec<StyleValueType>, platform: Platform) -> Vec
 
   // 使用有序表
   let mut index_map = IndexMap::new();
-  
+  let mut variable_map = IndexMap::new();
+
   value.into_iter().for_each(|style_value| {
     let prop = style_value.to_expr(platform.clone());
     match prop {
@@ -46,6 +47,9 @@ pub fn parse_style_values(value: Vec<StyleValueType>, platform: Platform) -> Vec
           if let Expr::Invalid(_) = expr { return }
           index_map.insert(id.clone(), Box::new(expr));
         })
+      }
+      PropertyTuple::Variable { key, value} => {
+        variable_map.insert(key.clone(), value.clone());
       }
     }
   });
@@ -66,6 +70,31 @@ pub fn parse_style_values(value: Vec<StyleValueType>, platform: Platform) -> Vec
         Some(ExprOrSpread {
           spread: None,
           expr
+        })
+      ]
+    }))
+  });
+
+  variable_map.into_iter().for_each(|(key, value)| {
+    let key_ = key.to_string();
+    prop_or_spread.push(Expr::Array(ArrayLit {
+      span: DUMMY_SP,
+      elems: vec![
+        Some(ExprOrSpread {
+          spread: None,
+          expr: Box::new(Expr::Lit(Lit::Str(Str {
+            span: DUMMY_SP,
+            value: MyAtom::new(key_),
+            raw: None
+          })))
+        }),
+        Some(ExprOrSpread {
+          spread: None,
+          expr: Box::new(Expr::Lit(Lit::Str(Str {
+            span: DUMMY_SP,
+            value: MyAtom::new(value),
+            raw: None
+          })))
         })
       ]
     }))

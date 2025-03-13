@@ -1,3 +1,5 @@
+use bitflags::bitflags;
+
 // pub const CONVERT_STYLE_PREFIX: &'static str = "_";
 pub const CONVERT_STYLE_PX_FN: &'static str = "convertNumber2VP";
 pub const ENV_FUN: &'static str = "__env__";
@@ -58,16 +60,18 @@ impl SelectorType {
   }
 }
 
-#[repr(u32)]
-#[derive(Hash, PartialEq, Eq, Debug, Clone, Copy)]
-pub enum ValueFlag {
-  None, // 普通类型：0  [22, "100%"]
-  Variable, // 变量类型：1  [22, "var(--w)", 1]
+bitflags! {
+    #[derive(Hash, PartialEq, Eq, Debug, Clone, Copy)]
+    pub struct ValueFlag: u32 {
+        const NONE = 0;
+        const VARIABLE = 1;
+        const IMPORTANT = 2;
+    }
 }
 
 impl ValueFlag {
   // 将 SelectorType 枚举值转换为 f64
   pub fn to_f64(self) -> f64 {
-    self as u32 as f64
+    self.bits() as f64
   }
 }

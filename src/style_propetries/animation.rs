@@ -225,7 +225,7 @@ impl ToExpr for Animation {
                           key: PropName::Str("event".into()),
                           value: Box::new(Expr::Array(ArrayLit {
                             span: DUMMY_SP,
-                            elems: parse_style_values(item.declarations.clone(), Platform::Harmony),
+                            elems: parse_style_values(item.declarations.clone(), vec![], Platform::Harmony),
                           })),
                         }))),
                       ],

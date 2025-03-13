@@ -114,9 +114,9 @@ impl JsonWriter {
               key: PropName::Ident(Ident::new("declarations".into(), DUMMY_SP)),
               value: Box::new(Expr::Array(ArrayLit {
                 span: DUMMY_SP,
-                elems: parse_style_values(rule_item.declarations.clone(), Platform::Harmony),
+                elems: parse_style_values(rule_item.declarations.clone(), rule_item.important_declarections.clone(), Platform::Harmony),
               })),
-            })))
+            }))),
           ];
           if rule_item.has_env {
             lit_props.push(

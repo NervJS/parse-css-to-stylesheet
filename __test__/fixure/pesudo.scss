@@ -1,52 +1,9 @@
-.act {
-    width:10px;
-    animation: anim 1s;
-    font-family: 'Courier New', Courier, monospace;
-}
-@media (max-width:100px) {
-    .act {
-        width:101px;
-    }
-    @keyframes anim{
-        0% {
-            height:100px;
-        }
-        100% {
-            height:1000px;
-        }
-    }
-}
-@keyframes anim{
-    0% {
-        height:100px;
-    }
-    100% {
-        height:1000px;
-    }
+.hello {
+    margin-top: 10px !important;
+    margin: 24px auto;
+    margin-bottom: env(safe-area-inset-bottom);
 }
 
-@font-face {
-    font-family: JDZH-Light;
-    src: url('https://wq.360buyimg.com/data/ppms/others/JDZH_Light.ttf') format('truetype');
-  }
-  
-  @font-face {
-    font-family: JDZH-Regular;
-    src: url('https://wq.360buyimg.com/data/ppms/others/JDZH_Regular.ttf') format('truetype');
-  }
-  
-  @font-face {
-    font-family: JDZH-Bold;
-    src: url('https://wq.360buyimg.com/data/ppms/others/JDZH_Bold.ttf') format('truetype');
-  }
-  
-  @font-face {
-    font-family: JDZhengHT-EN-Bold;
-    src: url('https://wq.360buyimg.com/data/ppms/others/JDZhengHei_01_Bold.ttf') format('truetype');
-  }
-  
-  @font-face {
-    font-family: JDZhengHT-EN-Regular;
-    src: url('https://wq.360buyimg.com/data/ppms/others/JDZH_Regular.ttf') format('truetype');
-  }
-  
+.bbb {
+    margin-top: 30px;
+}

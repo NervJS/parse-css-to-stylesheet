@@ -36,6 +36,7 @@ pub struct RuleItem {
   pub selector: String,
   pub media: u32,
   pub declarations: Vec<StyleValueType>,
+  pub important_declarections:  Vec<StyleValueType>,
   pub variables: Vec<CssVariable>,
   pub has_env: bool
 }
@@ -69,7 +70,7 @@ impl KeyFrameItem {
         key: PropName::Str("event".into()),
         value: Box::new(Expr::Array(ArrayLit {
           span: DUMMY_SP,
-          elems: parse_style_values(self.declarations.clone(), Platform::Harmony),
+          elems: parse_style_values(self.declarations.clone(), vec![], Platform::Harmony),
         })),
       }))),
     ];
@@ -357,33 +358,45 @@ impl<'i> StyleParser<'i> {
     binding
       .iter_mut()
       .for_each(|(media_index, selector, style_value)| {
-        let properties = style_value
-          .declaration
-          .declarations
-          .iter()
-          .map(|property| {
-            (
-              to_camel_case(
-                property
-                  .property_id()
-                  .to_css_string(PrinterOptions::default())
-                  .unwrap()
-                  .as_str(),
-                false,
-              ),
-              property.clone(),
-            )
-          })
-          .collect::<Vec<(_, _)>>(); // Specify the lifetime of the tuple elements to match the input data
-        final_all_style.push((media_index, selector.to_owned(), properties));
+        // 辅助函数，用于处理属性转换，减少代码重复
+        let convert_properties = |props: &Vec<Property<'i>>| -> Vec<(String, Property<'i>)> {
+          props
+            .iter()
+            .map(|property| {
+              (
+                to_camel_case(
+                  property
+                    .property_id()
+                    .to_css_string(PrinterOptions::default())
+                    .unwrap()
+                    .as_str(),
+                  false,
+                ),
+                property.clone(),
+              )
+            })
+            .collect()
+        };
+        
+        // 处理普通属性和important属性
+        let properties = convert_properties(&style_value.declaration.declarations);
+        let important_properties = convert_properties(&style_value.declaration.important_declarations);
+        
+        final_all_style.push((media_index, selector.to_owned(), properties, important_properties));
       });
 
     // 进行样式解析优化，提前解析 ArkUI 的样式，减少运行时的计算
     let final_all_style = final_all_style
       .iter_mut()
-      .map(|(media_index, selector, properties)| {
+      .map(|(media_index, selector, properties, important_properties)| {
         let decls_and_vars = parse_style_properties(
           &properties
+            .iter()
+            .map(|(k, v)| (k.to_owned(), v.clone()))
+            .collect::<Vec<_>>()
+        );
+        let import_decls_and_vars = parse_style_properties(
+          &important_properties
             .iter()
             .map(|(k, v)| (k.to_owned(), v.clone()))
             .collect::<Vec<_>>()
@@ -392,6 +405,7 @@ impl<'i> StyleParser<'i> {
           selector: selector.to_owned(),
           media: media_index.to_owned(),
           declarations: decls_and_vars.decls,
+          important_declarections: import_decls_and_vars.decls,
           variables: decls_and_vars.vars,
           has_env: decls_and_vars.has_env
         }
@@ -431,28 +445,15 @@ impl<'i> StyleParser<'i> {
         let declaration = &declaration.declaration;
         let declarations = &declaration.declarations;
         for declaration in declarations.iter() {
-          let has_property_index = final_properties
-            .iter()
-            .position(|property| property.property_id() == declaration.property_id());
-          if let Some(index) = has_property_index {
-            final_properties[index] = declaration.clone();
-          } else {
-            final_properties.push(declaration.clone());
-          }
+          final_properties.push(declaration.clone());
         }
       }
+      let mut important_properties: Vec<Property<'i>> = Vec::new();
       for declaration in declarations.iter() {
         let declaration = &declaration.declaration;
         let important_declarations = &declaration.important_declarations;
         for declaration in important_declarations.iter() {
-          let has_property_index = final_properties
-            .iter()
-            .position(|property| property.property_id() == declaration.property_id());
-          if let Some(index) = has_property_index {
-            final_properties[index] = declaration.clone();
-          } else {
-            final_properties.push(declaration.clone());
-          }
+          important_properties.push(declaration.clone());
         }
       }
       final_style_record.push((
@@ -462,7 +463,7 @@ impl<'i> StyleParser<'i> {
           specificity: 0,
           declaration: DeclarationBlock {
             declarations: final_properties,
-            important_declarations: vec![],
+            important_declarations: important_properties,
           },
         },
       ));

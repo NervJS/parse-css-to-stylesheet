@@ -1,3 +1,30 @@
+## [1.1.8](https://github.com/NervJS/parse-css-to-stylesheet/compare/v1.1.7...v1.1.8) (2025-03-13)
+
+
+### Features
+
+* 增加对important的识别 ([08b378d](https://github.com/NervJS/parse-css-to-stylesheet/commit/08b378d2eda6c3e4a7719b11520106cdaa1c684f))
+
+
+
+## [1.1.8](https://github.com/NervJS/parse-css-to-stylesheet/compare/v1.1.7...v1.1.8) (2025-03-13)
+
+
+### Features
+
+* 增加对important的识别 ([08b378d](https://github.com/NervJS/parse-css-to-stylesheet/commit/08b378d2eda6c3e4a7719b11520106cdaa1c684f))
+
+
+
+## [1.1.8](https://github.com/NervJS/parse-css-to-stylesheet/compare/v1.1.7...v1.1.8) (2025-03-13)
+
+
+### Features
+
+* 增加对important的识别 ([08b378d](https://github.com/NervJS/parse-css-to-stylesheet/commit/08b378d2eda6c3e4a7719b11520106cdaa1c684f))
+
+
+
 ## [1.1.7](https://github.com/NervJS/parse-css-to-stylesheet/compare/v1.1.6...v1.1.7) (2025-02-27)
 
 

@@ -1,3 +1,12 @@
+## [1.1.9](https://github.com/NervJS/parse-css-to-stylesheet/compare/v1.1.8...v1.1.9) (2025-03-22)
+
+
+### Features
+
+* 生成二进制文件时支持伪类 ([d1aed1c](https://github.com/NervJS/parse-css-to-stylesheet/commit/d1aed1c8ed231dbeb61ca7e781dcf048396d798a))
+
+
+
 ## [1.1.8](https://github.com/NervJS/parse-css-to-stylesheet/compare/v1.1.7...v1.1.8) (2025-03-13)
 
 

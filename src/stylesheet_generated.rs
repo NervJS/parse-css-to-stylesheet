@@ -2236,7 +2236,8 @@ impl<'a> flatbuffers::Follow<'a> for Style<'a> {
 impl<'a> Style<'a> {
   pub const VT_DECLARATIONS: flatbuffers::VOffsetT = 4;
   pub const VT_MEDIA: flatbuffers::VOffsetT = 6;
-  pub const VT_SELECTOR: flatbuffers::VOffsetT = 8;
+  pub const VT_PSEUDO: flatbuffers::VOffsetT = 8;
+  pub const VT_SELECTOR: flatbuffers::VOffsetT = 10;
 
   #[inline]
   pub unsafe fn init_from_table(table: flatbuffers::Table<'a>) -> Self {
@@ -2250,6 +2251,7 @@ impl<'a> Style<'a> {
     let mut builder = StyleBuilder::new(_fbb);
     if let Some(x) = args.selector { builder.add_selector(x); }
     if let Some(x) = args.declarations { builder.add_declarations(x); }
+    builder.add_pseudo(args.pseudo);
     builder.add_media(args.media);
     builder.finish()
   }
@@ -2270,6 +2272,13 @@ impl<'a> Style<'a> {
     unsafe { self._tab.get::<u8>(Style::VT_MEDIA, Some(0)).unwrap()}
   }
   #[inline]
+  pub fn pseudo(&self) -> u8 {
+    // Safety:
+    // Created from valid Table for this object
+    // which contains a valid value in this slot
+    unsafe { self._tab.get::<u8>(Style::VT_PSEUDO, Some(0)).unwrap()}
+  }
+  #[inline]
   pub fn selector(&self) -> Option<flatbuffers::Vector<'a, flatbuffers::ForwardsUOffset<Selector<'a>>>> {
     // Safety:
     // Created from valid Table for this object
@@ -2287,6 +2296,7 @@ impl flatbuffers::Verifiable for Style<'_> {
     v.visit_table(pos)?
      .visit_field::<flatbuffers::ForwardsUOffset<flatbuffers::Vector<'_, flatbuffers::ForwardsUOffset<DeclarationTuple>>>>("declarations", Self::VT_DECLARATIONS, false)?
      .visit_field::<u8>("media", Self::VT_MEDIA, false)?
+     .visit_field::<u8>("pseudo", Self::VT_PSEUDO, false)?
      .visit_field::<flatbuffers::ForwardsUOffset<flatbuffers::Vector<'_, flatbuffers::ForwardsUOffset<Selector>>>>("selector", Self::VT_SELECTOR, false)?
      .finish();
     Ok(())
@@ -2295,6 +2305,7 @@ impl flatbuffers::Verifiable for Style<'_> {
 pub struct StyleArgs<'a> {
     pub declarations: Option<flatbuffers::WIPOffset<flatbuffers::Vector<'a, flatbuffers::ForwardsUOffset<DeclarationTuple<'a>>>>>,
     pub media: u8,
+    pub pseudo: u8,
     pub selector: Option<flatbuffers::WIPOffset<flatbuffers::Vector<'a, flatbuffers::ForwardsUOffset<Selector<'a>>>>>,
 }
 impl<'a> Default for StyleArgs<'a> {
@@ -2303,6 +2314,7 @@ impl<'a> Default for StyleArgs<'a> {
     StyleArgs {
       declarations: None,
       media: 0,
+      pseudo: 0,
       selector: None,
     }
   }
@@ -2320,6 +2332,10 @@ impl<'a: 'b, 'b, A: flatbuffers::Allocator + 'a> StyleBuilder<'a, 'b, A> {
   #[inline]
   pub fn add_media(&mut self, media: u8) {
     self.fbb_.push_slot::<u8>(Style::VT_MEDIA, media, 0);
+  }
+  #[inline]
+  pub fn add_pseudo(&mut self, pseudo: u8) {
+    self.fbb_.push_slot::<u8>(Style::VT_PSEUDO, pseudo, 0);
   }
   #[inline]
   pub fn add_selector(&mut self, selector: flatbuffers::WIPOffset<flatbuffers::Vector<'b , flatbuffers::ForwardsUOffset<Selector<'b >>>>) {
@@ -2345,6 +2361,7 @@ impl core::fmt::Debug for Style<'_> {
     let mut ds = f.debug_struct("Style");
       ds.field("declarations", &self.declarations());
       ds.field("media", &self.media());
+      ds.field("pseudo", &self.pseudo());
       ds.field("selector", &self.selector());
       ds.finish()
   }

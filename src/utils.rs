@@ -520,6 +520,7 @@ pub fn convert_json_to_flatbuffer(json_str: &str) -> Result<Vec<u8>, serde_json:
         styles::Style::create(&mut builder, &styles::StyleArgs {
           declarations: Some(declarations),
           media: style["media"].as_u64().unwrap() as u8,
+          pseudo: style["pseudo"].as_u64().unwrap_or(0) as u8,
           selector: Some(selector),
         })
     }).collect();

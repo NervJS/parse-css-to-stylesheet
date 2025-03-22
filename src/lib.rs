@@ -105,7 +105,7 @@ mod tests {
 
   #[test]
   fn test_valid_input() {
-    let json_input = json!({"fonts":[],"keyframes":[],"medias":[],"styles":[{"declarations":[[22,293],[42,4278753764u32]],"media":0,"selector":["app"]},{"declarations":[[41,4294901760u32]],"media":0,"selector":["tit"]},{"declarations":[[29,24],[41,4291979550u32]],"media":0,"selector":["tit",2,"app"]},{"declarations":[[22,100],[25,100]],"media":0,"selector":["img"]}]}).to_string();
+    let json_input = json!({"fonts":[],"keyframes":[],"medias":[],"styles":[{"declarations":[[22,293],[42,4278753764u32]],"media":0,"selector":["app"]},{"declarations":[[41,4294901760u32]],"media":0,"selector":["tit"]},{"declarations":[[29,24],[41,4291979550u32]],"media":0,"selector":["tit",2,"app"]},{"declarations":[[22,100],[25,100]],"media":0,"selector":["img"]}, {"declarations":[[79,"hello"]],"media":0,"pseudo":1,"selector":["hello"]}]}).to_string();
 
     let result = convert_json_to_flatbuffer(&json_input);
     assert!(result.is_ok());
@@ -124,7 +124,7 @@ mod tests {
 
     // 验证 styles
     let styles = style_sheet.styles().unwrap();
-    assert_eq!(styles.len(), 4); // 根据实际情况调整
+    assert_eq!(styles.len(), 5); // 根据实际情况调整
     let first_style = styles.get(0);
     assert_eq!(first_style.declarations().unwrap().len(), 2);
     
@@ -149,6 +149,20 @@ mod tests {
     assert_eq!(first_selector.string_value().unwrap(), "tit");
     let second_selector = selector.get(1);
     assert_eq!(second_selector.integer_value(), 2);
-    
+
+    let fourth_style = styles.get(3);
+    assert_eq!(fourth_style.declarations().unwrap().len(), 2);
+    let selector = fourth_style.selector().unwrap();
+    assert_eq!(selector.len(), 1);
+    let first_selector = selector.get(0);
+    assert_eq!(first_selector.string_value().unwrap(), "img");
+
+    let fifth_style = styles.get(4);
+    assert_eq!(fifth_style.declarations().unwrap().len(), 1);
+    let selector = fifth_style.selector().unwrap();
+    assert_eq!(selector.len(), 1);
+    let first_selector = selector.get(0);
+    assert_eq!(first_selector.string_value().unwrap(), "hello");
+    assert_eq!(fifth_style.pseudo(), 1);
   }
 }

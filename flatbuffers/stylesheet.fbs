@@ -77,6 +77,7 @@ table Selector {
 table Style {
   declarations:[DeclarationTuple];
   media:uint8;
+  pseudo:uint8;
   selector:[Selector];
 }
 

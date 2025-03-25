@@ -1,3 +1,12 @@
+## [1.1.10](https://github.com/NervJS/parse-css-to-stylesheet/compare/v1.1.9...v1.1.10) (2025-03-25)
+
+
+### Features
+
+* 增加 pseudo_key ([d176917](https://github.com/NervJS/parse-css-to-stylesheet/commit/d176917637049a32341d95c2268a5e9cbc8d6df3))
+
+
+
 ## [1.1.9](https://github.com/NervJS/parse-css-to-stylesheet/compare/v1.1.8...v1.1.9) (2025-03-22)
 
 

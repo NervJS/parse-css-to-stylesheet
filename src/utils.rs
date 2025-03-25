@@ -421,6 +421,24 @@ fn create_flatbuffer_condition<'a>(builder: &mut FlatBufferBuilder<'a>, cond: &s
   condition_value
 }
 
+fn create_flatbuffer_pseudo_key<'a>(builder: &mut FlatBufferBuilder<'a>, key: &serde_json::Value) -> WIPOffset<styles::PseudoKey<'a>> {
+  if key.is_i64() {
+    let integer_value = key.as_i64().unwrap() as i8;
+    styles::PseudoKey::create(builder, &styles::PseudoKeyArgs {
+      integer_value,
+      bool_value: false,
+      is_int: true,
+    })
+  } else {
+    let bool_value = key.as_bool().unwrap();
+    styles::PseudoKey::create(builder, &styles::PseudoKeyArgs {
+      integer_value: 0,
+      bool_value,
+      is_int: false,
+    })
+  }
+}
+
 pub fn convert_json_to_flatbuffer(json_str: &str) -> Result<Vec<u8>, serde_json::Error> {
   let json: Value = serde_json::from_str(json_str)?;
   let mut builder = FlatBufferBuilder::new();
@@ -516,12 +534,30 @@ pub fn convert_json_to_flatbuffer(json_str: &str) -> Result<Vec<u8>, serde_json:
           })
         }).collect();
         let declarations = builder.create_vector(&declarations);
+        let pseudo_key: Vec<WIPOffset<styles::PseudoKey>> = style["pseudo_key"]
+          .as_array()
+          .unwrap_or(&vec![])
+          .iter()
+          .map(|key| create_flatbuffer_pseudo_key(&mut builder, key))
+          .collect();
+        let pseudo_key_build = builder.create_vector(&pseudo_key);
+        let pseudo_val = if let Some(pseudo_val) = style["pseudo_val"].as_str() {
+          Some(builder.create_string(pseudo_val))
+        } else {
+          None
+        };
 
         styles::Style::create(&mut builder, &styles::StyleArgs {
           declarations: Some(declarations),
           media: style["media"].as_u64().unwrap() as u8,
           pseudo: style["pseudo"].as_u64().unwrap_or(0) as u8,
           selector: Some(selector),
+          pseudo_key: if pseudo_key.len() > 0 {
+            Some(pseudo_key_build)
+          } else {
+            None
+          },
+          pseudo_val: pseudo_val,
         })
     }).collect();
     let styles = builder.create_vector(&styles);

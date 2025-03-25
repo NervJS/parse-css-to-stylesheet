@@ -105,7 +105,7 @@ mod tests {
 
   #[test]
   fn test_valid_input() {
-    let json_input = json!({"fonts":[],"keyframes":[],"medias":[],"styles":[{"declarations":[[22,293],[42,4278753764u32]],"media":0,"selector":["app"]},{"declarations":[[41,4294901760u32]],"media":0,"selector":["tit"]},{"declarations":[[29,24],[41,4291979550u32]],"media":0,"selector":["tit",2,"app"]},{"declarations":[[22,100],[25,100]],"media":0,"selector":["img"]}, {"declarations":[[79,"hello"]],"media":0,"pseudo":1,"selector":["hello"]}]}).to_string();
+    let json_input = json!({"fonts":[],"keyframes":[],"medias":[],"styles":[{"declarations":[[22,293],[42,4278753764u32]],"media":0,"selector":["app"]},{"declarations":[[41,4294901760u32]],"media":0,"selector":["tit"]},{"declarations":[[29,24],[41,4291979550u32]],"media":0,"selector":["tit",2,"app"]},{"declarations":[[22,100],[25,100]],"media":0,"selector":["img"]}, {"declarations":[[79,"hello"]],"media":0,"pseudo":1,"selector":["hello"]},{"declarations":[[42,4294967264u32]],"media":0,"pseudo":5,"pseudo_key":[2,0,true],"pseudo_val":"2n","selector":["bbb"]}]}).to_string();
 
     let result = convert_json_to_flatbuffer(&json_input);
     assert!(result.is_ok());
@@ -124,7 +124,7 @@ mod tests {
 
     // 验证 styles
     let styles = style_sheet.styles().unwrap();
-    assert_eq!(styles.len(), 5); // 根据实际情况调整
+    assert_eq!(styles.len(), 6); // 根据实际情况调整
     let first_style = styles.get(0);
     assert_eq!(first_style.declarations().unwrap().len(), 2);
     
@@ -164,5 +164,27 @@ mod tests {
     let first_selector = selector.get(0);
     assert_eq!(first_selector.string_value().unwrap(), "hello");
     assert_eq!(fifth_style.pseudo(), 1);
+
+    let sixth_style = styles.get(5);
+    assert_eq!(sixth_style.declarations().unwrap().len(), 1);
+    let selector = sixth_style.selector().unwrap();
+    assert_eq!(selector.len(), 1);
+    let first_selector = selector.get(0);
+    assert_eq!(first_selector.string_value().unwrap(), "bbb");
+    assert_eq!(sixth_style.pseudo(), 5);
+    assert_eq!(sixth_style.pseudo_key().unwrap().len(), 3);
+    let first_pseudo_key = sixth_style.pseudo_key().unwrap().get(0);
+    assert_eq!(first_pseudo_key.integer_value(), 2);
+    assert_eq!(first_pseudo_key.bool_value(), false);
+    assert_eq!(first_pseudo_key.is_int(), true);
+    let second_pseudo_key = sixth_style.pseudo_key().unwrap().get(1);
+    assert_eq!(second_pseudo_key.integer_value(), 0);
+    assert_eq!(second_pseudo_key.bool_value(), false);
+    assert_eq!(second_pseudo_key.is_int(), true);
+    let third_pseudo_key = sixth_style.pseudo_key().unwrap().get(2);
+    assert_eq!(third_pseudo_key.integer_value(), 0);
+    assert_eq!(third_pseudo_key.bool_value(), true);
+    assert_eq!(third_pseudo_key.is_int(), false);
+    assert_eq!(sixth_style.pseudo_val().unwrap(), "2n");
   }
 }

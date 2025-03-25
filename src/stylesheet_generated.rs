@@ -2218,6 +2218,137 @@ impl core::fmt::Debug for Selector<'_> {
       ds.finish()
   }
 }
+pub enum PseudoKeyOffset {}
+#[derive(Copy, Clone, PartialEq)]
+
+pub struct PseudoKey<'a> {
+  pub _tab: flatbuffers::Table<'a>,
+}
+
+impl<'a> flatbuffers::Follow<'a> for PseudoKey<'a> {
+  type Inner = PseudoKey<'a>;
+  #[inline]
+  unsafe fn follow(buf: &'a [u8], loc: usize) -> Self::Inner {
+    Self { _tab: flatbuffers::Table::new(buf, loc) }
+  }
+}
+
+impl<'a> PseudoKey<'a> {
+  pub const VT_INTEGER_VALUE: flatbuffers::VOffsetT = 4;
+  pub const VT_BOOL_VALUE: flatbuffers::VOffsetT = 6;
+  pub const VT_IS_INT: flatbuffers::VOffsetT = 8;
+
+  #[inline]
+  pub unsafe fn init_from_table(table: flatbuffers::Table<'a>) -> Self {
+    PseudoKey { _tab: table }
+  }
+  #[allow(unused_mut)]
+  pub fn create<'bldr: 'args, 'args: 'mut_bldr, 'mut_bldr, A: flatbuffers::Allocator + 'bldr>(
+    _fbb: &'mut_bldr mut flatbuffers::FlatBufferBuilder<'bldr, A>,
+    args: &'args PseudoKeyArgs
+  ) -> flatbuffers::WIPOffset<PseudoKey<'bldr>> {
+    let mut builder = PseudoKeyBuilder::new(_fbb);
+    builder.add_is_int(args.is_int);
+    builder.add_bool_value(args.bool_value);
+    builder.add_integer_value(args.integer_value);
+    builder.finish()
+  }
+
+
+  #[inline]
+  pub fn integer_value(&self) -> i8 {
+    // Safety:
+    // Created from valid Table for this object
+    // which contains a valid value in this slot
+    unsafe { self._tab.get::<i8>(PseudoKey::VT_INTEGER_VALUE, Some(0)).unwrap()}
+  }
+  #[inline]
+  pub fn bool_value(&self) -> bool {
+    // Safety:
+    // Created from valid Table for this object
+    // which contains a valid value in this slot
+    unsafe { self._tab.get::<bool>(PseudoKey::VT_BOOL_VALUE, Some(false)).unwrap()}
+  }
+  #[inline]
+  pub fn is_int(&self) -> bool {
+    // Safety:
+    // Created from valid Table for this object
+    // which contains a valid value in this slot
+    unsafe { self._tab.get::<bool>(PseudoKey::VT_IS_INT, Some(false)).unwrap()}
+  }
+}
+
+impl flatbuffers::Verifiable for PseudoKey<'_> {
+  #[inline]
+  fn run_verifier(
+    v: &mut flatbuffers::Verifier, pos: usize
+  ) -> Result<(), flatbuffers::InvalidFlatbuffer> {
+    use self::flatbuffers::Verifiable;
+    v.visit_table(pos)?
+     .visit_field::<i8>("integer_value", Self::VT_INTEGER_VALUE, false)?
+     .visit_field::<bool>("bool_value", Self::VT_BOOL_VALUE, false)?
+     .visit_field::<bool>("is_int", Self::VT_IS_INT, false)?
+     .finish();
+    Ok(())
+  }
+}
+pub struct PseudoKeyArgs {
+    pub integer_value: i8,
+    pub bool_value: bool,
+    pub is_int: bool,
+}
+impl<'a> Default for PseudoKeyArgs {
+  #[inline]
+  fn default() -> Self {
+    PseudoKeyArgs {
+      integer_value: 0,
+      bool_value: false,
+      is_int: false,
+    }
+  }
+}
+
+pub struct PseudoKeyBuilder<'a: 'b, 'b, A: flatbuffers::Allocator + 'a> {
+  fbb_: &'b mut flatbuffers::FlatBufferBuilder<'a, A>,
+  start_: flatbuffers::WIPOffset<flatbuffers::TableUnfinishedWIPOffset>,
+}
+impl<'a: 'b, 'b, A: flatbuffers::Allocator + 'a> PseudoKeyBuilder<'a, 'b, A> {
+  #[inline]
+  pub fn add_integer_value(&mut self, integer_value: i8) {
+    self.fbb_.push_slot::<i8>(PseudoKey::VT_INTEGER_VALUE, integer_value, 0);
+  }
+  #[inline]
+  pub fn add_bool_value(&mut self, bool_value: bool) {
+    self.fbb_.push_slot::<bool>(PseudoKey::VT_BOOL_VALUE, bool_value, false);
+  }
+  #[inline]
+  pub fn add_is_int(&mut self, is_int: bool) {
+    self.fbb_.push_slot::<bool>(PseudoKey::VT_IS_INT, is_int, false);
+  }
+  #[inline]
+  pub fn new(_fbb: &'b mut flatbuffers::FlatBufferBuilder<'a, A>) -> PseudoKeyBuilder<'a, 'b, A> {
+    let start = _fbb.start_table();
+    PseudoKeyBuilder {
+      fbb_: _fbb,
+      start_: start,
+    }
+  }
+  #[inline]
+  pub fn finish(self) -> flatbuffers::WIPOffset<PseudoKey<'a>> {
+    let o = self.fbb_.end_table(self.start_);
+    flatbuffers::WIPOffset::new(o.value())
+  }
+}
+
+impl core::fmt::Debug for PseudoKey<'_> {
+  fn fmt(&self, f: &mut core::fmt::Formatter<'_>) -> core::fmt::Result {
+    let mut ds = f.debug_struct("PseudoKey");
+      ds.field("integer_value", &self.integer_value());
+      ds.field("bool_value", &self.bool_value());
+      ds.field("is_int", &self.is_int());
+      ds.finish()
+  }
+}
 pub enum StyleOffset {}
 #[derive(Copy, Clone, PartialEq)]
 
@@ -2237,7 +2368,9 @@ impl<'a> Style<'a> {
   pub const VT_DECLARATIONS: flatbuffers::VOffsetT = 4;
   pub const VT_MEDIA: flatbuffers::VOffsetT = 6;
   pub const VT_PSEUDO: flatbuffers::VOffsetT = 8;
-  pub const VT_SELECTOR: flatbuffers::VOffsetT = 10;
+  pub const VT_PSEUDO_KEY: flatbuffers::VOffsetT = 10;
+  pub const VT_PSEUDO_VAL: flatbuffers::VOffsetT = 12;
+  pub const VT_SELECTOR: flatbuffers::VOffsetT = 14;
 
   #[inline]
   pub unsafe fn init_from_table(table: flatbuffers::Table<'a>) -> Self {
@@ -2250,6 +2383,8 @@ impl<'a> Style<'a> {
   ) -> flatbuffers::WIPOffset<Style<'bldr>> {
     let mut builder = StyleBuilder::new(_fbb);
     if let Some(x) = args.selector { builder.add_selector(x); }
+    if let Some(x) = args.pseudo_val { builder.add_pseudo_val(x); }
+    if let Some(x) = args.pseudo_key { builder.add_pseudo_key(x); }
     if let Some(x) = args.declarations { builder.add_declarations(x); }
     builder.add_pseudo(args.pseudo);
     builder.add_media(args.media);
@@ -2279,6 +2414,20 @@ impl<'a> Style<'a> {
     unsafe { self._tab.get::<u8>(Style::VT_PSEUDO, Some(0)).unwrap()}
   }
   #[inline]
+  pub fn pseudo_key(&self) -> Option<flatbuffers::Vector<'a, flatbuffers::ForwardsUOffset<PseudoKey<'a>>>> {
+    // Safety:
+    // Created from valid Table for this object
+    // which contains a valid value in this slot
+    unsafe { self._tab.get::<flatbuffers::ForwardsUOffset<flatbuffers::Vector<'a, flatbuffers::ForwardsUOffset<PseudoKey>>>>(Style::VT_PSEUDO_KEY, None)}
+  }
+  #[inline]
+  pub fn pseudo_val(&self) -> Option<&'a str> {
+    // Safety:
+    // Created from valid Table for this object
+    // which contains a valid value in this slot
+    unsafe { self._tab.get::<flatbuffers::ForwardsUOffset<&str>>(Style::VT_PSEUDO_VAL, None)}
+  }
+  #[inline]
   pub fn selector(&self) -> Option<flatbuffers::Vector<'a, flatbuffers::ForwardsUOffset<Selector<'a>>>> {
     // Safety:
     // Created from valid Table for this object
@@ -2297,6 +2446,8 @@ impl flatbuffers::Verifiable for Style<'_> {
      .visit_field::<flatbuffers::ForwardsUOffset<flatbuffers::Vector<'_, flatbuffers::ForwardsUOffset<DeclarationTuple>>>>("declarations", Self::VT_DECLARATIONS, false)?
      .visit_field::<u8>("media", Self::VT_MEDIA, false)?
      .visit_field::<u8>("pseudo", Self::VT_PSEUDO, false)?
+     .visit_field::<flatbuffers::ForwardsUOffset<flatbuffers::Vector<'_, flatbuffers::ForwardsUOffset<PseudoKey>>>>("pseudo_key", Self::VT_PSEUDO_KEY, false)?
+     .visit_field::<flatbuffers::ForwardsUOffset<&str>>("pseudo_val", Self::VT_PSEUDO_VAL, false)?
      .visit_field::<flatbuffers::ForwardsUOffset<flatbuffers::Vector<'_, flatbuffers::ForwardsUOffset<Selector>>>>("selector", Self::VT_SELECTOR, false)?
      .finish();
     Ok(())
@@ -2306,6 +2457,8 @@ pub struct StyleArgs<'a> {
     pub declarations: Option<flatbuffers::WIPOffset<flatbuffers::Vector<'a, flatbuffers::ForwardsUOffset<DeclarationTuple<'a>>>>>,
     pub media: u8,
     pub pseudo: u8,
+    pub pseudo_key: Option<flatbuffers::WIPOffset<flatbuffers::Vector<'a, flatbuffers::ForwardsUOffset<PseudoKey<'a>>>>>,
+    pub pseudo_val: Option<flatbuffers::WIPOffset<&'a str>>,
     pub selector: Option<flatbuffers::WIPOffset<flatbuffers::Vector<'a, flatbuffers::ForwardsUOffset<Selector<'a>>>>>,
 }
 impl<'a> Default for StyleArgs<'a> {
@@ -2315,6 +2468,8 @@ impl<'a> Default for StyleArgs<'a> {
       declarations: None,
       media: 0,
       pseudo: 0,
+      pseudo_key: None,
+      pseudo_val: None,
       selector: None,
     }
   }
@@ -2336,6 +2491,14 @@ impl<'a: 'b, 'b, A: flatbuffers::Allocator + 'a> StyleBuilder<'a, 'b, A> {
   #[inline]
   pub fn add_pseudo(&mut self, pseudo: u8) {
     self.fbb_.push_slot::<u8>(Style::VT_PSEUDO, pseudo, 0);
+  }
+  #[inline]
+  pub fn add_pseudo_key(&mut self, pseudo_key: flatbuffers::WIPOffset<flatbuffers::Vector<'b , flatbuffers::ForwardsUOffset<PseudoKey<'b >>>>) {
+    self.fbb_.push_slot_always::<flatbuffers::WIPOffset<_>>(Style::VT_PSEUDO_KEY, pseudo_key);
+  }
+  #[inline]
+  pub fn add_pseudo_val(&mut self, pseudo_val: flatbuffers::WIPOffset<&'b  str>) {
+    self.fbb_.push_slot_always::<flatbuffers::WIPOffset<_>>(Style::VT_PSEUDO_VAL, pseudo_val);
   }
   #[inline]
   pub fn add_selector(&mut self, selector: flatbuffers::WIPOffset<flatbuffers::Vector<'b , flatbuffers::ForwardsUOffset<Selector<'b >>>>) {
@@ -2362,6 +2525,8 @@ impl core::fmt::Debug for Style<'_> {
       ds.field("declarations", &self.declarations());
       ds.field("media", &self.media());
       ds.field("pseudo", &self.pseudo());
+      ds.field("pseudo_key", &self.pseudo_key());
+      ds.field("pseudo_val", &self.pseudo_val());
       ds.field("selector", &self.selector());
       ds.finish()
   }

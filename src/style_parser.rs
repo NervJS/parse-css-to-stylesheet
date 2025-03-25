@@ -1,6 +1,8 @@
+use std::fmt::{Debug};
 use std::{cell::RefCell, convert::Infallible, rc::Rc};
 
 use super::parse_style_properties::parse_style_properties;
+use crate::constants::Pseudo;
 use crate::parse_style_properties::DeclsAndVars;
 use crate::style_propetries::style_value_type::CssVariable;
 use crate::{generate_expr_enum, generate_expr_lit_str};
@@ -15,6 +17,7 @@ use crate::{
 use indexmap::IndexMap;
 use lightningcss::properties::font::FontFamily;
 use lightningcss::rules::font_face::{FontFaceProperty, Source};
+use lightningcss::selector::PseudoElement;
 use lightningcss::{
   declaration::DeclarationBlock,
   properties::{Property, font::{FontWeight as FontWeightProperty, AbsoluteFontWeight}},
@@ -23,7 +26,9 @@ use lightningcss::{
   traits::ToCss,
   visit_types,
   visitor::{Visit, VisitTypes, Visitor},
+  selector::Component,
 };
+use parcel_selectors::parser::NthType;
 use swc_core::common::DUMMY_SP;
 use swc_core::ecma::ast::*;
 
@@ -31,9 +36,34 @@ use crate::style_propetries::style_media::StyleMedia;
 
 pub type StyleValue = Vec<StyleValueType>;
 
+#[derive(Clone)]
+pub struct Selector {
+  pub selector: String,
+  pub is_pseudo: bool,
+  pub pseudo_type: Option<Pseudo>,
+}
+
+impl Selector {
+  pub fn new(selector: String) -> Self {
+    Self { selector, is_pseudo: false, pseudo_type: None }
+  }
+}
+
+impl Debug for Selector {
+  fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+    write!(f, "Selector {{ selector: {}, is_pseudo: {}, pseudo_type: {:?} }}", self.selector, self.is_pseudo, self.pseudo_type)
+  }
+}
+
+impl PartialEq for Selector {
+  fn eq(&self, other: &Self) -> bool {
+    self.selector == other.selector
+  }
+}
+
 #[derive(Debug, Clone)]
 pub struct RuleItem {
-  pub selector: String,
+  pub selector: Selector,
   pub media: u32,
   pub declarations: Vec<StyleValueType>,
   pub important_declarections:  Vec<StyleValueType>,
@@ -114,7 +144,7 @@ pub struct StyleDeclaration<'i> {
 }
 
 struct StyleVisitor<'i> {
-  all_style: Rc<RefCell<Vec<(u32, String, Vec<StyleDeclaration<'i>>)>>>,
+  all_style: Rc<RefCell<Vec<(u32, Selector, Vec<StyleDeclaration<'i>>)>>>,
   keyframes: Rc<RefCell<Vec<(u32, String, Vec<KeyFrameItem>)>>>,
   all_fonts: Rc<RefCell<Vec<FontFaceItem>>>,
   medias: Rc<RefCell<Vec<StyleMedia>>>,
@@ -123,7 +153,7 @@ struct StyleVisitor<'i> {
 
 impl<'i> StyleVisitor<'i> {
   pub fn new(
-    all_style: Rc<RefCell<Vec<(u32, String, Vec<StyleDeclaration<'i>>)>>>,
+    all_style: Rc<RefCell<Vec<(u32, Selector, Vec<StyleDeclaration<'i>>)>>>,
     keyframes: Rc<RefCell<Vec<(u32, String, Vec<KeyFrameItem>)>>>,
     all_fonts: Rc<RefCell<Vec<FontFaceItem>>>,
     medias: Rc<RefCell<Vec<StyleMedia>>>,
@@ -147,14 +177,68 @@ impl<'i> Visitor<'i> for StyleVisitor<'i> {
     match rule {
       // 属性规则收集
       CssRule::Style(style) => {
-        let selectors_str = style.selectors.to_string();
-        let selectors: Vec<&str> = selectors_str.split(",").collect::<Vec<&str>>();
-        for index in 0..selectors.len() {
-          let selector = selectors[index].trim().to_string();
+        let selectors = style.selectors.0.iter().map(|selector| {
+          let mut selector_str = selector.to_css_string(PrinterOptions::default()).unwrap();
+          let mut is_pseudo = false;
+          let mut pseudo_type = None;
+          if selector.has_pseudo_element() {
+            is_pseudo = true;
+          }
+          selector.iter().for_each(|component| {
+            match component {
+              Component::Nth(nth) => {
+                match nth.ty {
+                  NthType::Child => {
+                    is_pseudo = true;
+                    if nth.is_function() {
+                      pseudo_type = Some(Pseudo::NthChild(nth.a, nth.b, true));
+                    } else {
+                      pseudo_type = Some(Pseudo::FirstChild);
+                    }
+                  },
+                  NthType::LastChild => {
+                    is_pseudo = true;
+                    if nth.is_function() {
+                      pseudo_type = Some(Pseudo::NthChild(nth.a, nth.b, false));
+                    } else {
+                      pseudo_type = Some(Pseudo::LastChild);
+                    }
+                  },
+                  _ => {}
+                }
+              },
+              Component::Empty => {
+                is_pseudo = true;
+                pseudo_type = Some(Pseudo::Empty);
+              },
+              Component::PseudoElement(pseudo) => {
+                match pseudo {
+                  PseudoElement::After => {
+                    pseudo_type = Some(Pseudo::After);
+                    is_pseudo = true;
+                  },
+                  PseudoElement::Before => {
+                    pseudo_type = Some(Pseudo::Before);
+                    is_pseudo = true;
+                  },
+                  _ => {}
+                }
+              },
+              _ => {}
+            }
+          });
+          Selector {
+            selector: selector_str,
+            is_pseudo,
+            pseudo_type,
+          }
+        }).collect::<Vec<Selector>>();
+
+        for (index, selector) in selectors.iter().enumerate() {
           let mut all_style = self.all_style.borrow_mut();
           let decorations = all_style
             .iter_mut()
-            .find(|(media_idx, id, _)| id == &selector && media_idx == &self.media_index);
+            .find(|(media_idx, id, _)| id == selector && media_idx == &self.media_index);
           if let Some((_, _, declarations)) = decorations {
             declarations.push(StyleDeclaration {
               specificity: style.selectors.0.get(index).unwrap().specificity(),
@@ -320,7 +404,7 @@ impl<'i> Visitor<'i> for StyleVisitor<'i> {
 }
 
 pub struct StyleParser<'i> {
-  pub all_style: Rc<RefCell<Vec<(u32, String, Vec<StyleDeclaration<'i>>)>>>,
+  pub all_style: Rc<RefCell<Vec<(u32, Selector, Vec<StyleDeclaration<'i>>)>>>,
   pub all_keyframes: Rc<RefCell<Vec<(u32, String, Vec<KeyFrameItem>)>>>,
   pub all_medias: Rc<RefCell<Vec<StyleMedia>>>,
   pub all_fonts: Rc<RefCell<Vec<FontFaceItem>>>,
@@ -432,7 +516,7 @@ impl<'i> StyleParser<'i> {
   fn calc_style_record(
     &self,
     //style_record: &mut Vec<(u32, T, Vec<StyleDeclaration<'i>>)>,
-  ) -> Vec<(u32, String, StyleDeclaration<'i>)> {
+  ) -> Vec<(u32, Selector, StyleDeclaration<'i>)> {
     let mut style_record = self.all_style.borrow_mut();
     // 创建一个新的向量 final_style_record，用于存储最终的样式记录
     let mut final_style_record = vec![];

@@ -18,14 +18,14 @@ pub const RN_CONVERT_STYLE_PX_FN: &'static str = "scalePx2dp";
 pub const RN_CONVERT_STYLE_VU_FN: &'static str = "scaleVu2dp";
 
 #[repr(u32)]
-#[derive(Hash, PartialEq, Eq, Debug, Clone)]
+#[derive(Hash, PartialEq, Eq, Debug, Clone, Copy)]
 pub enum Pseudo {
   None,
   Before,
   After,
   FirstChild,
   LastChild,
-  NthChild(String),
+  NthChild(i32, i32, bool),
   Empty,
 }
 
@@ -38,7 +38,7 @@ impl Pseudo {
       Pseudo::After => 2,
       Pseudo::FirstChild => 3,
       Pseudo::LastChild => 4,
-      Pseudo::NthChild(_) => 5,
+      Pseudo::NthChild(_, _, _) => 5,
       Pseudo::Empty => 6,
     }) as f64
   }

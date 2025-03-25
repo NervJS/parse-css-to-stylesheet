@@ -7,3 +7,12 @@
 .bbb {
     margin-top: 30px;
 }
+
+.hello .bbb:nth-child(-n + 3) {
+    border: 2px solid orange;
+    margin-bottom: 1px;
+}
+
+.bbb:nth-child(even) {
+    background-color: lightyellow;
+}

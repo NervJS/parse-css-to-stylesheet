@@ -45,18 +45,10 @@ impl JsonWriter {
       .filter_map(|rule_item| {
         Some({
           // 识别伪类
-          let mut new_selector = rule_item.selector.clone();
-          let mut pseudo_key = String::new();
-
-          if SUPPORT_PSEUDO_KEYS
-            .into_iter()
-            .any(|s| rule_item.selector.contains(s))
-          {
-            let key_arr = rule_item.selector.split(":").collect::<Vec<&str>>();
-            if key_arr.len() == 2 {
-              new_selector = key_arr[0].to_string();
-              pseudo_key = key_arr[1].to_string();
-            }
+          let mut new_selector = rule_item.selector.selector.clone();
+          let key_arr = new_selector.split(":").collect::<Vec<&str>>();
+          if key_arr.len() == 2 {
+            new_selector = key_arr[0].to_string();
           }
 
           let nesting_selector = utils::split_selector(&new_selector);
@@ -147,34 +139,49 @@ impl JsonWriter {
             );
           }
 
-          if pseudo_key.len() > 0 {
-            let mut pseudo_enum = None;
-            if pseudo_key == "before" {
-              pseudo_enum = Some(Pseudo::Before);
-            } else if pseudo_key == "after" {
-              pseudo_enum = Some(Pseudo::After);
-            } else if pseudo_key == "first-child" {
-              pseudo_enum = Some(Pseudo::FirstChild);
-            } else if pseudo_key == "last-child" {
-              pseudo_enum = Some(Pseudo::LastChild);
-            } else if pseudo_key == "empty" {
-              pseudo_enum = Some(Pseudo::Empty);
-            } else if pseudo_key.starts_with("nth-child") {
-              let key_arr = pseudo_key.split("(").collect::<Vec<&str>>();
-              if key_arr.len() == 2 {
-                let value = key_arr[1].trim_end_matches(")");
-                pseudo_enum = Some(Pseudo::NthChild(value.to_string()));
-              }
-            }
-            if let Some(pseudo_enum) = pseudo_enum {
-              if let Pseudo::NthChild(str) = &pseudo_enum {
+          if rule_item.selector.is_pseudo {
+            if let Some(pseudo_enum) = &rule_item.selector.pseudo_type {
+              if let Pseudo::NthChild(a, b, is_first) = &pseudo_enum {
+                let value: String = if *a == 0 && *b == 0 {
+                  "".to_string()
+                } else if *a == 0 {
+                  format!("{}", *b)
+                } else if *b == 0 {
+                  format!("{}n", *a)
+                } else {
+                  if *a == 1 {
+                    format!("n+{}", *b)
+                  } else {
+                    format!("{}n+{}", *a, *b)
+                  }
+                };
                 lit_props.push(PropOrSpread::Prop(Box::new(Prop::KeyValue(KeyValueProp {
                   key: PropName::Ident(Ident::new("pseudo_val".into(), DUMMY_SP)),
                   value: Box::new(Expr::Lit(Lit::Str(Str {
                     span: DUMMY_SP,
-                    value: str.clone().into(),
+                    value: value.into(),
                     raw: None,
                   }))),
+                }))));
+                lit_props.push(PropOrSpread::Prop(Box::new(Prop::KeyValue(KeyValueProp {
+                  key: PropName::Ident(Ident::new("pseudo_key".into(), DUMMY_SP)),
+                  value: Box::new(Expr::Array(ArrayLit {
+                    span: DUMMY_SP,
+                    elems: vec![
+                      Some(ExprOrSpread {
+                        spread: None,
+                        expr: Box::new(Expr::Lit(Lit::Num(Number::from(*a as f64)))),
+                      }),
+                      Some(ExprOrSpread {
+                        spread: None,
+                        expr: Box::new(Expr::Lit(Lit::Num(Number::from(*b as f64)))),
+                      }),
+                      Some(ExprOrSpread {
+                        spread: None,
+                        expr: Box::new(Expr::Lit(Lit::Bool(Bool { span: DUMMY_SP, value: *is_first }))),
+                      }),
+                    ],
+                  })),
                 }))));
               };
               lit_props.push(PropOrSpread::Prop(Box::new(Prop::KeyValue(KeyValueProp {

@@ -74,10 +74,18 @@ table Selector {
   is_string:bool;
 }
 
+table PseudoKey {
+  integer_value:int8;
+  bool_value:bool;
+  is_int:bool;
+}
+
 table Style {
   declarations:[DeclarationTuple];
   media:uint8;
   pseudo:uint8;
+  pseudo_key:[PseudoKey];
+  pseudo_val:string;
   selector:[Selector];
 }
 

@@ -105,7 +105,7 @@ mod tests {
 
   #[test]
   fn test_valid_input() {
-    let json_input = json!({"fonts":[],"keyframes":[],"medias":[],"styles":[{"declarations":[[22,293],[42,4278753764u32]],"media":0,"selector":["app"]},{"declarations":[[41,4294901760u32]],"media":0,"selector":["tit"]},{"declarations":[[29,24],[41,4291979550u32]],"media":0,"selector":["tit",2,"app"]},{"declarations":[[22,100],[25,100]],"media":0,"selector":["img"]}, {"declarations":[[79,"hello"]],"media":0,"pseudo":1,"selector":["hello"]},{"declarations":[[42,4294967264u32]],"media":0,"pseudo":5,"pseudo_key":[2,0,true],"pseudo_val":"2n","selector":["bbb"]}]}).to_string();
+    let json_input = json!({"fonts":[],"keyframes":[],"medias":[],"styles":[{"declarations":[[22,293],[42,4278753764u32],[25, "var(--h)", 1]],"media":0,"selector":["app"]},{"declarations":[[41,4294901760u32]],"media":0,"selector":["tit"]},{"declarations":[[29,24],[41,4291979550u32]],"media":0,"selector":["tit",2,"app"]},{"declarations":[[22,100],[25,100]],"media":0,"selector":["img"]}, {"declarations":[[79,"hello"]],"media":0,"pseudo":1,"selector":["hello"]},{"declarations":[[42,4294967264u32]],"media":0,"pseudo":5,"pseudo_key":[2,0,true],"pseudo_val":"2n","selector":["bbb"]}]}).to_string();
 
     let result = convert_json_to_flatbuffer(&json_input);
     assert!(result.is_ok());
@@ -126,7 +126,7 @@ mod tests {
     let styles = style_sheet.styles().unwrap();
     assert_eq!(styles.len(), 6); // 根据实际情况调整
     let first_style = styles.get(0);
-    assert_eq!(first_style.declarations().unwrap().len(), 2);
+    assert_eq!(first_style.declarations().unwrap().len(), 3);
     
     let first_declaration = first_style.declarations().unwrap().get(0);
     assert_eq!(first_declaration.property_id(), 22);
@@ -137,6 +137,12 @@ mod tests {
     assert_eq!(second_declaration.property_id(), 42);
     assert!(second_declaration.value_as_integer().is_some());
     assert_eq!(second_declaration.value_as_integer().unwrap().value(), 4278753764);
+    assert_eq!(second_declaration.flag(), 0);
+
+    let third_declaration = first_style.declarations().unwrap().get(2);
+    assert_eq!(third_declaration.property_id(), 25);
+    assert!(third_declaration.value_as_string().is_some());
+    assert_eq!(third_declaration.flag(), 1);
 
     let first_selector = first_style.selector().unwrap().get(0);
     assert_eq!(first_selector.string_value().unwrap(), "app");

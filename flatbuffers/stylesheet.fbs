@@ -66,6 +66,7 @@ table Object {
 table DeclarationTuple {
   property_id:uint8;
   value:Value;
+  flag:uint8;
 }
 
 table Selector {

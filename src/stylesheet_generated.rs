@@ -1714,6 +1714,7 @@ impl<'a> DeclarationTuple<'a> {
   pub const VT_PROPERTY_ID: flatbuffers::VOffsetT = 4;
   pub const VT_VALUE_TYPE: flatbuffers::VOffsetT = 6;
   pub const VT_VALUE: flatbuffers::VOffsetT = 8;
+  pub const VT_FLAG: flatbuffers::VOffsetT = 10;
 
   #[inline]
   pub unsafe fn init_from_table(table: flatbuffers::Table<'a>) -> Self {
@@ -1726,6 +1727,7 @@ impl<'a> DeclarationTuple<'a> {
   ) -> flatbuffers::WIPOffset<DeclarationTuple<'bldr>> {
     let mut builder = DeclarationTupleBuilder::new(_fbb);
     if let Some(x) = args.value { builder.add_value(x); }
+    builder.add_flag(args.flag);
     builder.add_value_type(args.value_type);
     builder.add_property_id(args.property_id);
     builder.finish()
@@ -1752,6 +1754,13 @@ impl<'a> DeclarationTuple<'a> {
     // Created from valid Table for this object
     // which contains a valid value in this slot
     unsafe { self._tab.get::<flatbuffers::ForwardsUOffset<flatbuffers::Table<'a>>>(DeclarationTuple::VT_VALUE, None)}
+  }
+  #[inline]
+  pub fn flag(&self) -> u8 {
+    // Safety:
+    // Created from valid Table for this object
+    // which contains a valid value in this slot
+    unsafe { self._tab.get::<u8>(DeclarationTuple::VT_FLAG, Some(0)).unwrap()}
   }
   #[inline]
   #[allow(non_snake_case)]
@@ -1944,6 +1953,7 @@ impl flatbuffers::Verifiable for DeclarationTuple<'_> {
           _ => Ok(()),
         }
      })?
+     .visit_field::<u8>("flag", Self::VT_FLAG, false)?
      .finish();
     Ok(())
   }
@@ -1952,6 +1962,7 @@ pub struct DeclarationTupleArgs {
     pub property_id: u8,
     pub value_type: Value,
     pub value: Option<flatbuffers::WIPOffset<flatbuffers::UnionWIPOffset>>,
+    pub flag: u8,
 }
 impl<'a> Default for DeclarationTupleArgs {
   #[inline]
@@ -1960,6 +1971,7 @@ impl<'a> Default for DeclarationTupleArgs {
       property_id: 0,
       value_type: Value::NONE,
       value: None,
+      flag: 0,
     }
   }
 }
@@ -1980,6 +1992,10 @@ impl<'a: 'b, 'b, A: flatbuffers::Allocator + 'a> DeclarationTupleBuilder<'a, 'b,
   #[inline]
   pub fn add_value(&mut self, value: flatbuffers::WIPOffset<flatbuffers::UnionWIPOffset>) {
     self.fbb_.push_slot_always::<flatbuffers::WIPOffset<_>>(DeclarationTuple::VT_VALUE, value);
+  }
+  #[inline]
+  pub fn add_flag(&mut self, flag: u8) {
+    self.fbb_.push_slot::<u8>(DeclarationTuple::VT_FLAG, flag, 0);
   }
   #[inline]
   pub fn new(_fbb: &'b mut flatbuffers::FlatBufferBuilder<'a, A>) -> DeclarationTupleBuilder<'a, 'b, A> {
@@ -2084,6 +2100,7 @@ impl core::fmt::Debug for DeclarationTuple<'_> {
           ds.field("value", &x)
         },
       };
+      ds.field("flag", &self.flag());
       ds.finish()
   }
 }

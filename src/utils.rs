@@ -527,10 +527,18 @@ pub fn convert_json_to_flatbuffer(json_str: &str) -> Result<Vec<u8>, serde_json:
           let property_id = decl_array[0].as_u64().unwrap() as u8;
           
           let (value_type, value) = process_flatbuffer_value(&mut builder, &decl_array[1]);
+          
+          let mut property_flag = 0;
+          // 判断下标2是否存在
+          if decl_array.len() == 3 {
+            property_flag = decl_array[2].as_u64().unwrap() as u8;
+          }
+          
           styles::DeclarationTuple::create(&mut builder, &styles::DeclarationTupleArgs {
             property_id: property_id,
             value_type: value_type,
             value: Some(value),
+            flag: property_flag
           })
         }).collect();
         let declarations = builder.create_vector(&declarations);

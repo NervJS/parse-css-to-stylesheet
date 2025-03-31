@@ -1,3 +1,12 @@
+## [1.1.11](https://github.com/NervJS/parse-css-to-stylesheet/compare/v1.1.10...v1.1.11) (2025-03-31)
+
+
+### Features
+
+* 修改flatbuffer产物编译 ([57a106f](https://github.com/NervJS/parse-css-to-stylesheet/commit/57a106f3fc50112a38f9fe7b55c64c152c78bc6b))
+
+
+
 ## [1.1.10](https://github.com/NervJS/parse-css-to-stylesheet/compare/v1.1.9...v1.1.10) (2025-03-25)
 
 

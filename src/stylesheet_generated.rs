@@ -2366,6 +2366,120 @@ impl core::fmt::Debug for PseudoKey<'_> {
       ds.finish()
   }
 }
+pub enum KeyValueStringOffset {}
+#[derive(Copy, Clone, PartialEq)]
+
+pub struct KeyValueString<'a> {
+  pub _tab: flatbuffers::Table<'a>,
+}
+
+impl<'a> flatbuffers::Follow<'a> for KeyValueString<'a> {
+  type Inner = KeyValueString<'a>;
+  #[inline]
+  unsafe fn follow(buf: &'a [u8], loc: usize) -> Self::Inner {
+    Self { _tab: flatbuffers::Table::new(buf, loc) }
+  }
+}
+
+impl<'a> KeyValueString<'a> {
+  pub const VT_KEY: flatbuffers::VOffsetT = 4;
+  pub const VT_VALUE: flatbuffers::VOffsetT = 6;
+
+  #[inline]
+  pub unsafe fn init_from_table(table: flatbuffers::Table<'a>) -> Self {
+    KeyValueString { _tab: table }
+  }
+  #[allow(unused_mut)]
+  pub fn create<'bldr: 'args, 'args: 'mut_bldr, 'mut_bldr, A: flatbuffers::Allocator + 'bldr>(
+    _fbb: &'mut_bldr mut flatbuffers::FlatBufferBuilder<'bldr, A>,
+    args: &'args KeyValueStringArgs<'args>
+  ) -> flatbuffers::WIPOffset<KeyValueString<'bldr>> {
+    let mut builder = KeyValueStringBuilder::new(_fbb);
+    if let Some(x) = args.value { builder.add_value(x); }
+    if let Some(x) = args.key { builder.add_key(x); }
+    builder.finish()
+  }
+
+
+  #[inline]
+  pub fn key(&self) -> Option<&'a str> {
+    // Safety:
+    // Created from valid Table for this object
+    // which contains a valid value in this slot
+    unsafe { self._tab.get::<flatbuffers::ForwardsUOffset<&str>>(KeyValueString::VT_KEY, None)}
+  }
+  #[inline]
+  pub fn value(&self) -> Option<&'a str> {
+    // Safety:
+    // Created from valid Table for this object
+    // which contains a valid value in this slot
+    unsafe { self._tab.get::<flatbuffers::ForwardsUOffset<&str>>(KeyValueString::VT_VALUE, None)}
+  }
+}
+
+impl flatbuffers::Verifiable for KeyValueString<'_> {
+  #[inline]
+  fn run_verifier(
+    v: &mut flatbuffers::Verifier, pos: usize
+  ) -> Result<(), flatbuffers::InvalidFlatbuffer> {
+    use self::flatbuffers::Verifiable;
+    v.visit_table(pos)?
+     .visit_field::<flatbuffers::ForwardsUOffset<&str>>("key", Self::VT_KEY, false)?
+     .visit_field::<flatbuffers::ForwardsUOffset<&str>>("value", Self::VT_VALUE, false)?
+     .finish();
+    Ok(())
+  }
+}
+pub struct KeyValueStringArgs<'a> {
+    pub key: Option<flatbuffers::WIPOffset<&'a str>>,
+    pub value: Option<flatbuffers::WIPOffset<&'a str>>,
+}
+impl<'a> Default for KeyValueStringArgs<'a> {
+  #[inline]
+  fn default() -> Self {
+    KeyValueStringArgs {
+      key: None,
+      value: None,
+    }
+  }
+}
+
+pub struct KeyValueStringBuilder<'a: 'b, 'b, A: flatbuffers::Allocator + 'a> {
+  fbb_: &'b mut flatbuffers::FlatBufferBuilder<'a, A>,
+  start_: flatbuffers::WIPOffset<flatbuffers::TableUnfinishedWIPOffset>,
+}
+impl<'a: 'b, 'b, A: flatbuffers::Allocator + 'a> KeyValueStringBuilder<'a, 'b, A> {
+  #[inline]
+  pub fn add_key(&mut self, key: flatbuffers::WIPOffset<&'b  str>) {
+    self.fbb_.push_slot_always::<flatbuffers::WIPOffset<_>>(KeyValueString::VT_KEY, key);
+  }
+  #[inline]
+  pub fn add_value(&mut self, value: flatbuffers::WIPOffset<&'b  str>) {
+    self.fbb_.push_slot_always::<flatbuffers::WIPOffset<_>>(KeyValueString::VT_VALUE, value);
+  }
+  #[inline]
+  pub fn new(_fbb: &'b mut flatbuffers::FlatBufferBuilder<'a, A>) -> KeyValueStringBuilder<'a, 'b, A> {
+    let start = _fbb.start_table();
+    KeyValueStringBuilder {
+      fbb_: _fbb,
+      start_: start,
+    }
+  }
+  #[inline]
+  pub fn finish(self) -> flatbuffers::WIPOffset<KeyValueString<'a>> {
+    let o = self.fbb_.end_table(self.start_);
+    flatbuffers::WIPOffset::new(o.value())
+  }
+}
+
+impl core::fmt::Debug for KeyValueString<'_> {
+  fn fmt(&self, f: &mut core::fmt::Formatter<'_>) -> core::fmt::Result {
+    let mut ds = f.debug_struct("KeyValueString");
+      ds.field("key", &self.key());
+      ds.field("value", &self.value());
+      ds.finish()
+  }
+}
 pub enum StyleOffset {}
 #[derive(Copy, Clone, PartialEq)]
 
@@ -2388,6 +2502,7 @@ impl<'a> Style<'a> {
   pub const VT_PSEUDO_KEY: flatbuffers::VOffsetT = 10;
   pub const VT_PSEUDO_VAL: flatbuffers::VOffsetT = 12;
   pub const VT_SELECTOR: flatbuffers::VOffsetT = 14;
+  pub const VT_VARIABLES: flatbuffers::VOffsetT = 16;
 
   #[inline]
   pub unsafe fn init_from_table(table: flatbuffers::Table<'a>) -> Self {
@@ -2399,6 +2514,7 @@ impl<'a> Style<'a> {
     args: &'args StyleArgs<'args>
   ) -> flatbuffers::WIPOffset<Style<'bldr>> {
     let mut builder = StyleBuilder::new(_fbb);
+    if let Some(x) = args.variables { builder.add_variables(x); }
     if let Some(x) = args.selector { builder.add_selector(x); }
     if let Some(x) = args.pseudo_val { builder.add_pseudo_val(x); }
     if let Some(x) = args.pseudo_key { builder.add_pseudo_key(x); }
@@ -2451,6 +2567,13 @@ impl<'a> Style<'a> {
     // which contains a valid value in this slot
     unsafe { self._tab.get::<flatbuffers::ForwardsUOffset<flatbuffers::Vector<'a, flatbuffers::ForwardsUOffset<Selector>>>>(Style::VT_SELECTOR, None)}
   }
+  #[inline]
+  pub fn variables(&self) -> Option<flatbuffers::Vector<'a, flatbuffers::ForwardsUOffset<KeyValueString<'a>>>> {
+    // Safety:
+    // Created from valid Table for this object
+    // which contains a valid value in this slot
+    unsafe { self._tab.get::<flatbuffers::ForwardsUOffset<flatbuffers::Vector<'a, flatbuffers::ForwardsUOffset<KeyValueString>>>>(Style::VT_VARIABLES, None)}
+  }
 }
 
 impl flatbuffers::Verifiable for Style<'_> {
@@ -2466,6 +2589,7 @@ impl flatbuffers::Verifiable for Style<'_> {
      .visit_field::<flatbuffers::ForwardsUOffset<flatbuffers::Vector<'_, flatbuffers::ForwardsUOffset<PseudoKey>>>>("pseudo_key", Self::VT_PSEUDO_KEY, false)?
      .visit_field::<flatbuffers::ForwardsUOffset<&str>>("pseudo_val", Self::VT_PSEUDO_VAL, false)?
      .visit_field::<flatbuffers::ForwardsUOffset<flatbuffers::Vector<'_, flatbuffers::ForwardsUOffset<Selector>>>>("selector", Self::VT_SELECTOR, false)?
+     .visit_field::<flatbuffers::ForwardsUOffset<flatbuffers::Vector<'_, flatbuffers::ForwardsUOffset<KeyValueString>>>>("variables", Self::VT_VARIABLES, false)?
      .finish();
     Ok(())
   }
@@ -2477,6 +2601,7 @@ pub struct StyleArgs<'a> {
     pub pseudo_key: Option<flatbuffers::WIPOffset<flatbuffers::Vector<'a, flatbuffers::ForwardsUOffset<PseudoKey<'a>>>>>,
     pub pseudo_val: Option<flatbuffers::WIPOffset<&'a str>>,
     pub selector: Option<flatbuffers::WIPOffset<flatbuffers::Vector<'a, flatbuffers::ForwardsUOffset<Selector<'a>>>>>,
+    pub variables: Option<flatbuffers::WIPOffset<flatbuffers::Vector<'a, flatbuffers::ForwardsUOffset<KeyValueString<'a>>>>>,
 }
 impl<'a> Default for StyleArgs<'a> {
   #[inline]
@@ -2488,6 +2613,7 @@ impl<'a> Default for StyleArgs<'a> {
       pseudo_key: None,
       pseudo_val: None,
       selector: None,
+      variables: None,
     }
   }
 }
@@ -2522,6 +2648,10 @@ impl<'a: 'b, 'b, A: flatbuffers::Allocator + 'a> StyleBuilder<'a, 'b, A> {
     self.fbb_.push_slot_always::<flatbuffers::WIPOffset<_>>(Style::VT_SELECTOR, selector);
   }
   #[inline]
+  pub fn add_variables(&mut self, variables: flatbuffers::WIPOffset<flatbuffers::Vector<'b , flatbuffers::ForwardsUOffset<KeyValueString<'b >>>>) {
+    self.fbb_.push_slot_always::<flatbuffers::WIPOffset<_>>(Style::VT_VARIABLES, variables);
+  }
+  #[inline]
   pub fn new(_fbb: &'b mut flatbuffers::FlatBufferBuilder<'a, A>) -> StyleBuilder<'a, 'b, A> {
     let start = _fbb.start_table();
     StyleBuilder {
@@ -2545,6 +2675,7 @@ impl core::fmt::Debug for Style<'_> {
       ds.field("pseudo_key", &self.pseudo_key());
       ds.field("pseudo_val", &self.pseudo_val());
       ds.field("selector", &self.selector());
+      ds.field("variables", &self.variables());
       ds.finish()
   }
 }

@@ -439,6 +439,15 @@ fn create_flatbuffer_pseudo_key<'a>(builder: &mut FlatBufferBuilder<'a>, key: &s
   }
 }
 
+fn create_flatbuffer_variables<'a>(builder: &mut FlatBufferBuilder<'a>, key: &String, value: &serde_json::Value) -> WIPOffset<styles::KeyValueString<'a>>  {
+  let key_offset = builder.create_string(key);
+  let value_offset = builder.create_string(value.as_str().unwrap());
+  styles::KeyValueString::create(builder, &styles::KeyValueStringArgs {
+    key: Some(key_offset),
+    value: Some(value_offset),
+  })
+}
+
 pub fn convert_json_to_flatbuffer(json_str: &str) -> Result<Vec<u8>, serde_json::Error> {
   let json: Value = serde_json::from_str(json_str)?;
   let mut builder = FlatBufferBuilder::new();
@@ -555,6 +564,18 @@ pub fn convert_json_to_flatbuffer(json_str: &str) -> Result<Vec<u8>, serde_json:
           None
         };
 
+        // variables: Object {"--color": String("red")}
+        let variables: Vec<WIPOffset<styles::KeyValueString>> = style["variables"]
+          .as_object()
+          .unwrap_or(&serde_json::Map::new())
+          .iter()
+          .map(|(key, value)| {
+            create_flatbuffer_variables(&mut builder, key, value)
+          })
+          .collect();
+
+        let variables_build = builder.create_vector(&variables);
+
         styles::Style::create(&mut builder, &styles::StyleArgs {
           declarations: Some(declarations),
           media: style["media"].as_u64().unwrap() as u8,
@@ -566,6 +587,11 @@ pub fn convert_json_to_flatbuffer(json_str: &str) -> Result<Vec<u8>, serde_json:
             None
           },
           pseudo_val: pseudo_val,
+          variables: if variables.len() > 0 {
+            Some(variables_build)
+          } else {
+            None
+          },
         })
     }).collect();
     let styles = builder.create_vector(&styles);

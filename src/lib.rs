@@ -105,7 +105,7 @@ mod tests {
 
   #[test]
   fn test_valid_input() {
-    let json_input = json!({"fonts":[],"keyframes":[],"medias":[],"styles":[{"declarations":[[22,293],[42,4278753764u32],[25, "var(--h)", 1]],"media":0,"selector":["app"]},{"declarations":[[41,4294901760u32]],"media":0,"selector":["tit"]},{"declarations":[[29,24],[41,4291979550u32]],"media":0,"selector":["tit",2,"app"]},{"declarations":[[22,100],[25,100]],"media":0,"selector":["img"]}, {"declarations":[[79,"hello"]],"media":0,"pseudo":1,"selector":["hello"]},{"declarations":[[42,4294967264u32]],"media":0,"pseudo":5,"pseudo_key":[2,0,true],"pseudo_val":"2n","selector":["bbb"]}]}).to_string();
+    let json_input = json!({"fonts":[],"keyframes":[],"medias":[],"styles":[{"declarations":[[22,293],[42,4278753764u32],[25, "var(--h)", 1]],"media":0,"selector":["app"],"variables":{"--color":"red"}},{"declarations":[[41,4294901760u32]],"media":0,"selector":["tit"]},{"declarations":[[29,24],[41,4291979550u32]],"media":0,"selector":["tit",2,"app"]},{"declarations":[[22,100],[25,100]],"media":0,"selector":["img"]}, {"declarations":[[79,"hello"]],"media":0,"pseudo":1,"selector":["hello"]},{"declarations":[[42,4294967264u32]],"media":0,"pseudo":5,"pseudo_key":[2,0,true],"pseudo_val":"2n","selector":["bbb"]}]}).to_string();
 
     let result = convert_json_to_flatbuffer(&json_input);
     assert!(result.is_ok());
@@ -127,6 +127,12 @@ mod tests {
     assert_eq!(styles.len(), 6); // 根据实际情况调整
     let first_style = styles.get(0);
     assert_eq!(first_style.declarations().unwrap().len(), 3);
+
+    // 验证variables
+    let variables = first_style.variables().unwrap();
+    assert_eq!(variables.len(), 1);
+    let first_variable = variables.get(0);
+    assert_eq!(first_variable.value().unwrap(), "red");
     
     let first_declaration = first_style.declarations().unwrap().get(0);
     assert_eq!(first_declaration.property_id(), 22);

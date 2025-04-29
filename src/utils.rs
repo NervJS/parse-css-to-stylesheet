@@ -596,12 +596,14 @@ pub fn convert_json_to_flatbuffer(json_str: &str) -> Result<Vec<u8>, serde_json:
     }).collect();
     let styles = builder.create_vector(&styles);
     let design_width = json["design_width"].as_u64().unwrap_or(0) as u16;
+    let allow_inherit = json["allow_inherit"].as_bool().unwrap_or(false);
     let stylesheet = styles::StyleSheet::create(&mut builder, &styles::StyleSheetArgs {
       fonts: Some(fonts),
       keyframes: None,
       medias: Some(medias),
       styles: Some(styles),
       design_width: design_width,
+      allow_inherit: allow_inherit,
     });
 
     builder.finish(stylesheet, None);

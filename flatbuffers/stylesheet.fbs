@@ -132,6 +132,7 @@ table StyleSheet {
   medias:[Media];
   styles:[Style];
   design_width:uint16;
+  allow_inherit:bool;
 }
 
 root_type StyleSheet;

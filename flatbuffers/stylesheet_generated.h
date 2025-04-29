@@ -1834,7 +1834,8 @@ struct StyleSheet FLATBUFFERS_FINAL_CLASS : private ::flatbuffers::Table {
     VT_KEYFRAMES = 6,
     VT_MEDIAS = 8,
     VT_STYLES = 10,
-    VT_DESIGN_WIDTH = 12
+    VT_DESIGN_WIDTH = 12,
+    VT_ALLOW_INHERIT = 14
   };
   const ::flatbuffers::Vector<::flatbuffers::Offset<Styles::Font>> *fonts() const {
     return GetPointer<const ::flatbuffers::Vector<::flatbuffers::Offset<Styles::Font>> *>(VT_FONTS);
@@ -1851,6 +1852,9 @@ struct StyleSheet FLATBUFFERS_FINAL_CLASS : private ::flatbuffers::Table {
   uint16_t design_width() const {
     return GetField<uint16_t>(VT_DESIGN_WIDTH, 0);
   }
+  bool allow_inherit() const {
+    return GetField<uint8_t>(VT_ALLOW_INHERIT, 0) != 0;
+  }
   bool Verify(::flatbuffers::Verifier &verifier) const {
     return VerifyTableStart(verifier) &&
            VerifyOffset(verifier, VT_FONTS) &&
@@ -1866,6 +1870,7 @@ struct StyleSheet FLATBUFFERS_FINAL_CLASS : private ::flatbuffers::Table {
            verifier.VerifyVector(styles()) &&
            verifier.VerifyVectorOfTables(styles()) &&
            VerifyField<uint16_t>(verifier, VT_DESIGN_WIDTH, 2) &&
+           VerifyField<uint8_t>(verifier, VT_ALLOW_INHERIT, 1) &&
            verifier.EndTable();
   }
 };
@@ -1889,6 +1894,9 @@ struct StyleSheetBuilder {
   void add_design_width(uint16_t design_width) {
     fbb_.AddElement<uint16_t>(StyleSheet::VT_DESIGN_WIDTH, design_width, 0);
   }
+  void add_allow_inherit(bool allow_inherit) {
+    fbb_.AddElement<uint8_t>(StyleSheet::VT_ALLOW_INHERIT, static_cast<uint8_t>(allow_inherit), 0);
+  }
   explicit StyleSheetBuilder(::flatbuffers::FlatBufferBuilder &_fbb)
         : fbb_(_fbb) {
     start_ = fbb_.StartTable();
@@ -1906,13 +1914,15 @@ inline ::flatbuffers::Offset<StyleSheet> CreateStyleSheet(
     ::flatbuffers::Offset<::flatbuffers::Vector<::flatbuffers::Offset<::flatbuffers::String>>> keyframes = 0,
     ::flatbuffers::Offset<::flatbuffers::Vector<::flatbuffers::Offset<Styles::Media>>> medias = 0,
     ::flatbuffers::Offset<::flatbuffers::Vector<::flatbuffers::Offset<Styles::Style>>> styles = 0,
-    uint16_t design_width = 0) {
+    uint16_t design_width = 0,
+    bool allow_inherit = false) {
   StyleSheetBuilder builder_(_fbb);
   builder_.add_styles(styles);
   builder_.add_medias(medias);
   builder_.add_keyframes(keyframes);
   builder_.add_fonts(fonts);
   builder_.add_design_width(design_width);
+  builder_.add_allow_inherit(allow_inherit);
   return builder_.Finish();
 }
 
@@ -1922,7 +1932,8 @@ inline ::flatbuffers::Offset<StyleSheet> CreateStyleSheetDirect(
     const std::vector<::flatbuffers::Offset<::flatbuffers::String>> *keyframes = nullptr,
     const std::vector<::flatbuffers::Offset<Styles::Media>> *medias = nullptr,
     const std::vector<::flatbuffers::Offset<Styles::Style>> *styles = nullptr,
-    uint16_t design_width = 0) {
+    uint16_t design_width = 0,
+    bool allow_inherit = false) {
   auto fonts__ = fonts ? _fbb.CreateVector<::flatbuffers::Offset<Styles::Font>>(*fonts) : 0;
   auto keyframes__ = keyframes ? _fbb.CreateVector<::flatbuffers::Offset<::flatbuffers::String>>(*keyframes) : 0;
   auto medias__ = medias ? _fbb.CreateVector<::flatbuffers::Offset<Styles::Media>>(*medias) : 0;
@@ -1933,7 +1944,8 @@ inline ::flatbuffers::Offset<StyleSheet> CreateStyleSheetDirect(
       keyframes__,
       medias__,
       styles__,
-      design_width);
+      design_width,
+      allow_inherit);
 }
 
 inline bool VerifyValue(::flatbuffers::Verifier &verifier, const void *obj, Value type) {

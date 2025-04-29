@@ -1,18 +1,21 @@
 .hello {
-    margin-top: 10px !important;
-    margin: 24px auto;
-    margin-bottom: env(safe-area-inset-bottom);
+    height: 100px;
+    width: 50%;
+    flex-direction: column;
+    flex-grow: 1;
+    color: #00f;
 }
 
-.bbb {
-    margin-top: 30px;
+.child {
+    background-size: contain;
+    background-image: linear-gradient(to bottom, #f00, #00f 10%, #0f0);
 }
 
-.hello .bbb:nth-child(-n + 3) {
-    border: 2px solid orange;
-    margin-bottom: 1px;
-}
-
-.bbb:nth-child(even) {
-    background-color: lightyellow;
+@media screen and (max-width: 100px) {
+    .hello {
+        height: 200px;
+        width: 100%;
+        color: #f00;
+        background-image: radial-gradient(circle, #f00, #00f 10%, #0f0);
+    }
 }

@@ -197,7 +197,11 @@ impl ToExpr for BackgroundImage {
         span: DUMMY_SP,
         props: vec![PropOrSpread::Prop(Box::new(Prop::KeyValue(KeyValueProp {
           key: PropName::Ident(Ident::new("src".into(), DUMMY_SP)),
-          value: Expr::Lit(Lit::Str(Str::from(src.to_string()))).into(),
+          value: Expr::Lit(Lit::Str(Str {
+            span: DUMMY_SP,
+            value: src.as_str().into(),
+            raw: None,
+          })).into(),
         })))]
         .into(),
       }),

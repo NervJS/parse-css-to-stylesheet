@@ -3619,6 +3619,7 @@ impl<'a> StyleSheet<'a> {
   pub const VT_MEDIAS: flatbuffers::VOffsetT = 8;
   pub const VT_STYLES: flatbuffers::VOffsetT = 10;
   pub const VT_DESIGN_WIDTH: flatbuffers::VOffsetT = 12;
+  pub const VT_ALLOW_INHERIT: flatbuffers::VOffsetT = 14;
 
   #[inline]
   pub unsafe fn init_from_table(table: flatbuffers::Table<'a>) -> Self {
@@ -3635,6 +3636,7 @@ impl<'a> StyleSheet<'a> {
     if let Some(x) = args.keyframes { builder.add_keyframes(x); }
     if let Some(x) = args.fonts { builder.add_fonts(x); }
     builder.add_design_width(args.design_width);
+    builder.add_allow_inherit(args.allow_inherit);
     builder.finish()
   }
 
@@ -3674,6 +3676,13 @@ impl<'a> StyleSheet<'a> {
     // which contains a valid value in this slot
     unsafe { self._tab.get::<u16>(StyleSheet::VT_DESIGN_WIDTH, Some(0)).unwrap()}
   }
+  #[inline]
+  pub fn allow_inherit(&self) -> bool {
+    // Safety:
+    // Created from valid Table for this object
+    // which contains a valid value in this slot
+    unsafe { self._tab.get::<bool>(StyleSheet::VT_ALLOW_INHERIT, Some(false)).unwrap()}
+  }
 }
 
 impl flatbuffers::Verifiable for StyleSheet<'_> {
@@ -3688,6 +3697,7 @@ impl flatbuffers::Verifiable for StyleSheet<'_> {
      .visit_field::<flatbuffers::ForwardsUOffset<flatbuffers::Vector<'_, flatbuffers::ForwardsUOffset<Media>>>>("medias", Self::VT_MEDIAS, false)?
      .visit_field::<flatbuffers::ForwardsUOffset<flatbuffers::Vector<'_, flatbuffers::ForwardsUOffset<Style>>>>("styles", Self::VT_STYLES, false)?
      .visit_field::<u16>("design_width", Self::VT_DESIGN_WIDTH, false)?
+     .visit_field::<bool>("allow_inherit", Self::VT_ALLOW_INHERIT, false)?
      .finish();
     Ok(())
   }
@@ -3698,6 +3708,7 @@ pub struct StyleSheetArgs<'a> {
     pub medias: Option<flatbuffers::WIPOffset<flatbuffers::Vector<'a, flatbuffers::ForwardsUOffset<Media<'a>>>>>,
     pub styles: Option<flatbuffers::WIPOffset<flatbuffers::Vector<'a, flatbuffers::ForwardsUOffset<Style<'a>>>>>,
     pub design_width: u16,
+    pub allow_inherit: bool,
 }
 impl<'a> Default for StyleSheetArgs<'a> {
   #[inline]
@@ -3708,6 +3719,7 @@ impl<'a> Default for StyleSheetArgs<'a> {
       medias: None,
       styles: None,
       design_width: 0,
+      allow_inherit: false,
     }
   }
 }
@@ -3738,6 +3750,10 @@ impl<'a: 'b, 'b, A: flatbuffers::Allocator + 'a> StyleSheetBuilder<'a, 'b, A> {
     self.fbb_.push_slot::<u16>(StyleSheet::VT_DESIGN_WIDTH, design_width, 0);
   }
   #[inline]
+  pub fn add_allow_inherit(&mut self, allow_inherit: bool) {
+    self.fbb_.push_slot::<bool>(StyleSheet::VT_ALLOW_INHERIT, allow_inherit, false);
+  }
+  #[inline]
   pub fn new(_fbb: &'b mut flatbuffers::FlatBufferBuilder<'a, A>) -> StyleSheetBuilder<'a, 'b, A> {
     let start = _fbb.start_table();
     StyleSheetBuilder {
@@ -3760,6 +3776,7 @@ impl core::fmt::Debug for StyleSheet<'_> {
       ds.field("medias", &self.medias());
       ds.field("styles", &self.styles());
       ds.field("design_width", &self.design_width());
+      ds.field("allow_inherit", &self.allow_inherit());
       ds.finish()
   }
 }

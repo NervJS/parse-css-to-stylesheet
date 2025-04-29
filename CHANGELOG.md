@@ -1,3 +1,12 @@
+## [1.1.13](https://github.com/NervJS/parse-css-to-stylesheet/compare/v1.1.12...v1.1.13) (2025-04-29)
+
+
+### Features
+
+* 修复bg的转义词，增加allow_inherit的配置 ([a179cfc](https://github.com/NervJS/parse-css-to-stylesheet/commit/a179cfcad37a7f798c4452071dd92e926875de40))
+
+
+
 ## [1.1.12](https://github.com/NervJS/parse-css-to-stylesheet/compare/v1.1.11...v1.1.12) (2025-03-31)
 
 

@@ -2793,6 +2793,251 @@ impl core::fmt::Debug for Font<'_> {
       ds.finish()
   }
 }
+pub enum KeyframeAnimationPointOffset {}
+#[derive(Copy, Clone, PartialEq)]
+
+pub struct KeyframeAnimationPoint<'a> {
+  pub _tab: flatbuffers::Table<'a>,
+}
+
+impl<'a> flatbuffers::Follow<'a> for KeyframeAnimationPoint<'a> {
+  type Inner = KeyframeAnimationPoint<'a>;
+  #[inline]
+  unsafe fn follow(buf: &'a [u8], loc: usize) -> Self::Inner {
+    Self { _tab: flatbuffers::Table::new(buf, loc) }
+  }
+}
+
+impl<'a> KeyframeAnimationPoint<'a> {
+  pub const VT_PERCENTAGE: flatbuffers::VOffsetT = 4;
+  pub const VT_DECLARATIONS: flatbuffers::VOffsetT = 6;
+
+  #[inline]
+  pub unsafe fn init_from_table(table: flatbuffers::Table<'a>) -> Self {
+    KeyframeAnimationPoint { _tab: table }
+  }
+  #[allow(unused_mut)]
+  pub fn create<'bldr: 'args, 'args: 'mut_bldr, 'mut_bldr, A: flatbuffers::Allocator + 'bldr>(
+    _fbb: &'mut_bldr mut flatbuffers::FlatBufferBuilder<'bldr, A>,
+    args: &'args KeyframeAnimationPointArgs<'args>
+  ) -> flatbuffers::WIPOffset<KeyframeAnimationPoint<'bldr>> {
+    let mut builder = KeyframeAnimationPointBuilder::new(_fbb);
+    if let Some(x) = args.declarations { builder.add_declarations(x); }
+    builder.add_percentage(args.percentage);
+    builder.finish()
+  }
+
+
+  #[inline]
+  pub fn percentage(&self) -> f32 {
+    // Safety:
+    // Created from valid Table for this object
+    // which contains a valid value in this slot
+    unsafe { self._tab.get::<f32>(KeyframeAnimationPoint::VT_PERCENTAGE, Some(0.0)).unwrap()}
+  }
+  #[inline]
+  pub fn declarations(&self) -> Option<flatbuffers::Vector<'a, flatbuffers::ForwardsUOffset<DeclarationTuple<'a>>>> {
+    // Safety:
+    // Created from valid Table for this object
+    // which contains a valid value in this slot
+    unsafe { self._tab.get::<flatbuffers::ForwardsUOffset<flatbuffers::Vector<'a, flatbuffers::ForwardsUOffset<DeclarationTuple>>>>(KeyframeAnimationPoint::VT_DECLARATIONS, None)}
+  }
+}
+
+impl flatbuffers::Verifiable for KeyframeAnimationPoint<'_> {
+  #[inline]
+  fn run_verifier(
+    v: &mut flatbuffers::Verifier, pos: usize
+  ) -> Result<(), flatbuffers::InvalidFlatbuffer> {
+    use self::flatbuffers::Verifiable;
+    v.visit_table(pos)?
+     .visit_field::<f32>("percentage", Self::VT_PERCENTAGE, false)?
+     .visit_field::<flatbuffers::ForwardsUOffset<flatbuffers::Vector<'_, flatbuffers::ForwardsUOffset<DeclarationTuple>>>>("declarations", Self::VT_DECLARATIONS, false)?
+     .finish();
+    Ok(())
+  }
+}
+pub struct KeyframeAnimationPointArgs<'a> {
+    pub percentage: f32,
+    pub declarations: Option<flatbuffers::WIPOffset<flatbuffers::Vector<'a, flatbuffers::ForwardsUOffset<DeclarationTuple<'a>>>>>,
+}
+impl<'a> Default for KeyframeAnimationPointArgs<'a> {
+  #[inline]
+  fn default() -> Self {
+    KeyframeAnimationPointArgs {
+      percentage: 0.0,
+      declarations: None,
+    }
+  }
+}
+
+pub struct KeyframeAnimationPointBuilder<'a: 'b, 'b, A: flatbuffers::Allocator + 'a> {
+  fbb_: &'b mut flatbuffers::FlatBufferBuilder<'a, A>,
+  start_: flatbuffers::WIPOffset<flatbuffers::TableUnfinishedWIPOffset>,
+}
+impl<'a: 'b, 'b, A: flatbuffers::Allocator + 'a> KeyframeAnimationPointBuilder<'a, 'b, A> {
+  #[inline]
+  pub fn add_percentage(&mut self, percentage: f32) {
+    self.fbb_.push_slot::<f32>(KeyframeAnimationPoint::VT_PERCENTAGE, percentage, 0.0);
+  }
+  #[inline]
+  pub fn add_declarations(&mut self, declarations: flatbuffers::WIPOffset<flatbuffers::Vector<'b , flatbuffers::ForwardsUOffset<DeclarationTuple<'b >>>>) {
+    self.fbb_.push_slot_always::<flatbuffers::WIPOffset<_>>(KeyframeAnimationPoint::VT_DECLARATIONS, declarations);
+  }
+  #[inline]
+  pub fn new(_fbb: &'b mut flatbuffers::FlatBufferBuilder<'a, A>) -> KeyframeAnimationPointBuilder<'a, 'b, A> {
+    let start = _fbb.start_table();
+    KeyframeAnimationPointBuilder {
+      fbb_: _fbb,
+      start_: start,
+    }
+  }
+  #[inline]
+  pub fn finish(self) -> flatbuffers::WIPOffset<KeyframeAnimationPoint<'a>> {
+    let o = self.fbb_.end_table(self.start_);
+    flatbuffers::WIPOffset::new(o.value())
+  }
+}
+
+impl core::fmt::Debug for KeyframeAnimationPoint<'_> {
+  fn fmt(&self, f: &mut core::fmt::Formatter<'_>) -> core::fmt::Result {
+    let mut ds = f.debug_struct("KeyframeAnimationPoint");
+      ds.field("percentage", &self.percentage());
+      ds.field("declarations", &self.declarations());
+      ds.finish()
+  }
+}
+pub enum KeyframeAnimationOffset {}
+#[derive(Copy, Clone, PartialEq)]
+
+pub struct KeyframeAnimation<'a> {
+  pub _tab: flatbuffers::Table<'a>,
+}
+
+impl<'a> flatbuffers::Follow<'a> for KeyframeAnimation<'a> {
+  type Inner = KeyframeAnimation<'a>;
+  #[inline]
+  unsafe fn follow(buf: &'a [u8], loc: usize) -> Self::Inner {
+    Self { _tab: flatbuffers::Table::new(buf, loc) }
+  }
+}
+
+impl<'a> KeyframeAnimation<'a> {
+  pub const VT_NAME: flatbuffers::VOffsetT = 4;
+  pub const VT_MEDIA: flatbuffers::VOffsetT = 6;
+  pub const VT_KEYFRAME_POINTS: flatbuffers::VOffsetT = 8;
+
+  #[inline]
+  pub unsafe fn init_from_table(table: flatbuffers::Table<'a>) -> Self {
+    KeyframeAnimation { _tab: table }
+  }
+  #[allow(unused_mut)]
+  pub fn create<'bldr: 'args, 'args: 'mut_bldr, 'mut_bldr, A: flatbuffers::Allocator + 'bldr>(
+    _fbb: &'mut_bldr mut flatbuffers::FlatBufferBuilder<'bldr, A>,
+    args: &'args KeyframeAnimationArgs<'args>
+  ) -> flatbuffers::WIPOffset<KeyframeAnimation<'bldr>> {
+    let mut builder = KeyframeAnimationBuilder::new(_fbb);
+    if let Some(x) = args.keyframe_points { builder.add_keyframe_points(x); }
+    if let Some(x) = args.name { builder.add_name(x); }
+    builder.add_media(args.media);
+    builder.finish()
+  }
+
+
+  #[inline]
+  pub fn name(&self) -> Option<&'a str> {
+    // Safety:
+    // Created from valid Table for this object
+    // which contains a valid value in this slot
+    unsafe { self._tab.get::<flatbuffers::ForwardsUOffset<&str>>(KeyframeAnimation::VT_NAME, None)}
+  }
+  #[inline]
+  pub fn media(&self) -> u8 {
+    // Safety:
+    // Created from valid Table for this object
+    // which contains a valid value in this slot
+    unsafe { self._tab.get::<u8>(KeyframeAnimation::VT_MEDIA, Some(0)).unwrap()}
+  }
+  #[inline]
+  pub fn keyframe_points(&self) -> Option<flatbuffers::Vector<'a, flatbuffers::ForwardsUOffset<KeyframeAnimationPoint<'a>>>> {
+    // Safety:
+    // Created from valid Table for this object
+    // which contains a valid value in this slot
+    unsafe { self._tab.get::<flatbuffers::ForwardsUOffset<flatbuffers::Vector<'a, flatbuffers::ForwardsUOffset<KeyframeAnimationPoint>>>>(KeyframeAnimation::VT_KEYFRAME_POINTS, None)}
+  }
+}
+
+impl flatbuffers::Verifiable for KeyframeAnimation<'_> {
+  #[inline]
+  fn run_verifier(
+    v: &mut flatbuffers::Verifier, pos: usize
+  ) -> Result<(), flatbuffers::InvalidFlatbuffer> {
+    use self::flatbuffers::Verifiable;
+    v.visit_table(pos)?
+     .visit_field::<flatbuffers::ForwardsUOffset<&str>>("name", Self::VT_NAME, false)?
+     .visit_field::<u8>("media", Self::VT_MEDIA, false)?
+     .visit_field::<flatbuffers::ForwardsUOffset<flatbuffers::Vector<'_, flatbuffers::ForwardsUOffset<KeyframeAnimationPoint>>>>("keyframe_points", Self::VT_KEYFRAME_POINTS, false)?
+     .finish();
+    Ok(())
+  }
+}
+pub struct KeyframeAnimationArgs<'a> {
+    pub name: Option<flatbuffers::WIPOffset<&'a str>>,
+    pub media: u8,
+    pub keyframe_points: Option<flatbuffers::WIPOffset<flatbuffers::Vector<'a, flatbuffers::ForwardsUOffset<KeyframeAnimationPoint<'a>>>>>,
+}
+impl<'a> Default for KeyframeAnimationArgs<'a> {
+  #[inline]
+  fn default() -> Self {
+    KeyframeAnimationArgs {
+      name: None,
+      media: 0,
+      keyframe_points: None,
+    }
+  }
+}
+
+pub struct KeyframeAnimationBuilder<'a: 'b, 'b, A: flatbuffers::Allocator + 'a> {
+  fbb_: &'b mut flatbuffers::FlatBufferBuilder<'a, A>,
+  start_: flatbuffers::WIPOffset<flatbuffers::TableUnfinishedWIPOffset>,
+}
+impl<'a: 'b, 'b, A: flatbuffers::Allocator + 'a> KeyframeAnimationBuilder<'a, 'b, A> {
+  #[inline]
+  pub fn add_name(&mut self, name: flatbuffers::WIPOffset<&'b  str>) {
+    self.fbb_.push_slot_always::<flatbuffers::WIPOffset<_>>(KeyframeAnimation::VT_NAME, name);
+  }
+  #[inline]
+  pub fn add_media(&mut self, media: u8) {
+    self.fbb_.push_slot::<u8>(KeyframeAnimation::VT_MEDIA, media, 0);
+  }
+  #[inline]
+  pub fn add_keyframe_points(&mut self, keyframe_points: flatbuffers::WIPOffset<flatbuffers::Vector<'b , flatbuffers::ForwardsUOffset<KeyframeAnimationPoint<'b >>>>) {
+    self.fbb_.push_slot_always::<flatbuffers::WIPOffset<_>>(KeyframeAnimation::VT_KEYFRAME_POINTS, keyframe_points);
+  }
+  #[inline]
+  pub fn new(_fbb: &'b mut flatbuffers::FlatBufferBuilder<'a, A>) -> KeyframeAnimationBuilder<'a, 'b, A> {
+    let start = _fbb.start_table();
+    KeyframeAnimationBuilder {
+      fbb_: _fbb,
+      start_: start,
+    }
+  }
+  #[inline]
+  pub fn finish(self) -> flatbuffers::WIPOffset<KeyframeAnimation<'a>> {
+    let o = self.fbb_.end_table(self.start_);
+    flatbuffers::WIPOffset::new(o.value())
+  }
+}
+
+impl core::fmt::Debug for KeyframeAnimation<'_> {
+  fn fmt(&self, f: &mut core::fmt::Formatter<'_>) -> core::fmt::Result {
+    let mut ds = f.debug_struct("KeyframeAnimation");
+      ds.field("name", &self.name());
+      ds.field("media", &self.media());
+      ds.field("keyframe_points", &self.keyframe_points());
+      ds.finish()
+  }
+}
 pub enum PrimitiveConditionOffset {}
 #[derive(Copy, Clone, PartialEq)]
 
@@ -3649,11 +3894,11 @@ impl<'a> StyleSheet<'a> {
     unsafe { self._tab.get::<flatbuffers::ForwardsUOffset<flatbuffers::Vector<'a, flatbuffers::ForwardsUOffset<Font>>>>(StyleSheet::VT_FONTS, None)}
   }
   #[inline]
-  pub fn keyframes(&self) -> Option<flatbuffers::Vector<'a, flatbuffers::ForwardsUOffset<&'a str>>> {
+  pub fn keyframes(&self) -> Option<flatbuffers::Vector<'a, flatbuffers::ForwardsUOffset<KeyframeAnimation<'a>>>> {
     // Safety:
     // Created from valid Table for this object
     // which contains a valid value in this slot
-    unsafe { self._tab.get::<flatbuffers::ForwardsUOffset<flatbuffers::Vector<'a, flatbuffers::ForwardsUOffset<&'a str>>>>(StyleSheet::VT_KEYFRAMES, None)}
+    unsafe { self._tab.get::<flatbuffers::ForwardsUOffset<flatbuffers::Vector<'a, flatbuffers::ForwardsUOffset<KeyframeAnimation>>>>(StyleSheet::VT_KEYFRAMES, None)}
   }
   #[inline]
   pub fn medias(&self) -> Option<flatbuffers::Vector<'a, flatbuffers::ForwardsUOffset<Media<'a>>>> {
@@ -3693,7 +3938,7 @@ impl flatbuffers::Verifiable for StyleSheet<'_> {
     use self::flatbuffers::Verifiable;
     v.visit_table(pos)?
      .visit_field::<flatbuffers::ForwardsUOffset<flatbuffers::Vector<'_, flatbuffers::ForwardsUOffset<Font>>>>("fonts", Self::VT_FONTS, false)?
-     .visit_field::<flatbuffers::ForwardsUOffset<flatbuffers::Vector<'_, flatbuffers::ForwardsUOffset<&'_ str>>>>("keyframes", Self::VT_KEYFRAMES, false)?
+     .visit_field::<flatbuffers::ForwardsUOffset<flatbuffers::Vector<'_, flatbuffers::ForwardsUOffset<KeyframeAnimation>>>>("keyframes", Self::VT_KEYFRAMES, false)?
      .visit_field::<flatbuffers::ForwardsUOffset<flatbuffers::Vector<'_, flatbuffers::ForwardsUOffset<Media>>>>("medias", Self::VT_MEDIAS, false)?
      .visit_field::<flatbuffers::ForwardsUOffset<flatbuffers::Vector<'_, flatbuffers::ForwardsUOffset<Style>>>>("styles", Self::VT_STYLES, false)?
      .visit_field::<u16>("design_width", Self::VT_DESIGN_WIDTH, false)?
@@ -3704,7 +3949,7 @@ impl flatbuffers::Verifiable for StyleSheet<'_> {
 }
 pub struct StyleSheetArgs<'a> {
     pub fonts: Option<flatbuffers::WIPOffset<flatbuffers::Vector<'a, flatbuffers::ForwardsUOffset<Font<'a>>>>>,
-    pub keyframes: Option<flatbuffers::WIPOffset<flatbuffers::Vector<'a, flatbuffers::ForwardsUOffset<&'a str>>>>,
+    pub keyframes: Option<flatbuffers::WIPOffset<flatbuffers::Vector<'a, flatbuffers::ForwardsUOffset<KeyframeAnimation<'a>>>>>,
     pub medias: Option<flatbuffers::WIPOffset<flatbuffers::Vector<'a, flatbuffers::ForwardsUOffset<Media<'a>>>>>,
     pub styles: Option<flatbuffers::WIPOffset<flatbuffers::Vector<'a, flatbuffers::ForwardsUOffset<Style<'a>>>>>,
     pub design_width: u16,
@@ -3734,7 +3979,7 @@ impl<'a: 'b, 'b, A: flatbuffers::Allocator + 'a> StyleSheetBuilder<'a, 'b, A> {
     self.fbb_.push_slot_always::<flatbuffers::WIPOffset<_>>(StyleSheet::VT_FONTS, fonts);
   }
   #[inline]
-  pub fn add_keyframes(&mut self, keyframes: flatbuffers::WIPOffset<flatbuffers::Vector<'b , flatbuffers::ForwardsUOffset<&'b  str>>>) {
+  pub fn add_keyframes(&mut self, keyframes: flatbuffers::WIPOffset<flatbuffers::Vector<'b , flatbuffers::ForwardsUOffset<KeyframeAnimation<'b >>>>) {
     self.fbb_.push_slot_always::<flatbuffers::WIPOffset<_>>(StyleSheet::VT_KEYFRAMES, keyframes);
   }
   #[inline]

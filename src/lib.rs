@@ -120,7 +120,7 @@ mod tests {
     assert_eq!(style_sheet.fonts().unwrap().len(), 0);
 
     // 验证 keyframes
-    // assert_eq!(style_sheet.keyframes().unwrap().len(), 0);
+    assert_eq!(style_sheet.keyframes().unwrap().len(), 0);
 
     // 验证 medias
     assert_eq!(style_sheet.medias().unwrap().len(), 0);
@@ -201,5 +201,93 @@ mod tests {
     assert_eq!(third_pseudo_key.bool_value(), true);
     assert_eq!(third_pseudo_key.is_int(), false);
     assert_eq!(sixth_style.pseudo_val().unwrap(), "2n");
+  }
+
+  #[test]
+  fn test_keyframes() {
+    // 创建一个包含keyframes的JSON测试用例
+    let json_input = json!({
+      "fonts": [],
+      "keyframes": [
+        {"name": "fadeIn", "media": 0, "keyframe": [
+          {"percent": 0, "event": [[42, 4278190080u32]]}, // 开始是黑色
+          {"percent": 100, "event": [[42, 4294967295u32]]} // 结束是白色
+        ]},
+        {"name": "spin", "media": 0, "keyframe": [
+          {"percent": 0, "event": [[22, 0]]},   // 旋转0度
+          {"percent": 50, "event": [[22, 180]]}, // 旋转180度
+          {"percent": 100, "event": [[22, 360]]} // 旋转360度
+        ]}
+      ],
+      "medias": [],
+      "styles": []
+    }).to_string();
+
+    let result = convert_json_to_flatbuffer(&json_input);
+    assert!(result.is_ok());
+
+    let buffer = result.unwrap();
+    let style_sheet = styles::root_as_style_sheet(&buffer).unwrap();
+
+    // 验证 keyframes
+    let keyframes = style_sheet.keyframes().unwrap();
+    assert_eq!(keyframes.len(), 2); // 应该有两个关键帧动画
+    
+    // 验证第一个keyframe
+    let first_keyframe = keyframes.get(0);
+    assert_eq!(first_keyframe.name().unwrap(), "fadeIn");
+    assert_eq!(first_keyframe.media(), 0);
+    
+    // 验证第一个keyframe的关键帧点
+    let first_keyframe_points = first_keyframe.keyframe_points().unwrap();
+    assert_eq!(first_keyframe_points.len(), 2);
+    
+    // 验证第一个关键帧点 (0%)
+    let point0 = first_keyframe_points.get(0);
+    assert_eq!(point0.percentage(), 0.0);
+    let declarations0 = point0.declarations().unwrap();
+    assert_eq!(declarations0.len(), 1);
+    let decl0 = declarations0.get(0);
+    assert_eq!(decl0.property_id(), 42); // 颜色属性
+    assert_eq!(decl0.value_as_integer().unwrap().value(), 4278190080);
+    
+    // 验证第二个关键帧点 (100%)
+    let point100 = first_keyframe_points.get(1);
+    assert_eq!(point100.percentage(), 100.0);
+    let declarations100 = point100.declarations().unwrap();
+    assert_eq!(declarations100.len(), 1);
+    let decl100 = declarations100.get(0);
+    assert_eq!(decl100.property_id(), 42);
+    assert_eq!(decl100.value_as_integer().unwrap().value(), 4294967295);
+    
+    // 验证第二个keyframe
+    let second_keyframe = keyframes.get(1);
+    assert_eq!(second_keyframe.name().unwrap(), "spin");
+    assert_eq!(second_keyframe.media(), 0);
+    
+    // 验证第二个keyframe的关键帧点
+    let second_keyframe_points = second_keyframe.keyframe_points().unwrap();
+    assert_eq!(second_keyframe_points.len(), 3);
+    
+    // 验证第一个关键帧点 (0%)
+    let point0 = second_keyframe_points.get(0);
+    assert_eq!(point0.percentage(), 0.0);
+    let declarations0 = point0.declarations().unwrap();
+    assert_eq!(declarations0.get(0).property_id(), 22);
+    assert_eq!(declarations0.get(0).value_as_integer().unwrap().value(), 0);
+    
+    // 验证第二个关键帧点 (50%)
+    let point50 = second_keyframe_points.get(1);
+    assert_eq!(point50.percentage(), 50.0);
+    let declarations50 = point50.declarations().unwrap();
+    assert_eq!(declarations50.get(0).property_id(), 22);
+    assert_eq!(declarations50.get(0).value_as_integer().unwrap().value(), 180);
+    
+    // 验证第三个关键帧点 (100%)
+    let point100 = second_keyframe_points.get(2);
+    assert_eq!(point100.percentage(), 100.0);
+    let declarations100 = point100.declarations().unwrap();
+    assert_eq!(declarations100.get(0).property_id(), 22);
+    assert_eq!(declarations100.get(0).value_as_integer().unwrap().value(), 360);
   }
 }

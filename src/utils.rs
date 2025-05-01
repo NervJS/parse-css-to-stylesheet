@@ -469,13 +469,70 @@ pub fn convert_json_to_flatbuffer(json_str: &str) -> Result<Vec<u8>, serde_json:
     }).collect();
   let fonts = builder.create_vector(&fonts);
 
-  // let keyframes: Vec<WIPOffset<&str>> = json["keyframes"]
-  //   .as_array()
-  //   .unwrap()
-  //   .iter()
-  //   .map(|k| builder.create_string(k.as_str().unwrap()))
-  //   .collect();
-  // let keyframes = builder.create_vector(&keyframes);
+  // 处理keyframes
+  let keyframes: Vec<WIPOffset<styles::KeyframeAnimation>> = json["keyframes"]
+    .as_array()
+    .unwrap()
+    .iter()
+    .map(|k| {
+      let name = k["name"].as_str().unwrap_or("");
+      let name_offset = builder.create_string(name);
+      let media = k["media"].as_u64().unwrap_or(0) as u8;
+      
+      // 处理关键帧点
+      let keyframe_points: Vec<WIPOffset<styles::KeyframeAnimationPoint>> = k["keyframe"]
+        .as_array()
+        .unwrap()
+        .iter()
+        .map(|point| {
+          let percentage = point["percent"].as_f64().unwrap_or(0.0) as f32;
+          
+          // 处理每个关键帧点的样式声明
+          let declarations: Vec<WIPOffset<styles::DeclarationTuple>> = point["event"]
+            .as_array()
+            .unwrap()
+            .iter()
+            .map(|decl| {
+              let decl_array = decl.as_array().unwrap();
+              let property_id = decl_array[0].as_u64().unwrap() as u8;
+              
+              let (value_type, value) = process_flatbuffer_value(&mut builder, &decl_array[1]);
+              
+              let mut property_flag = 0;
+              // 判断下标2是否存在
+              if decl_array.len() == 3 {
+                property_flag = decl_array[2].as_u64().unwrap() as u8;
+              }
+              
+              styles::DeclarationTuple::create(&mut builder, &styles::DeclarationTupleArgs {
+                property_id: property_id,
+                value_type: value_type,
+                value: Some(value),
+                flag: property_flag
+              })
+            }).collect();
+          
+          let declarations = builder.create_vector(&declarations);
+          
+          // 创建关键帧点
+          styles::KeyframeAnimationPoint::create(&mut builder, &styles::KeyframeAnimationPointArgs {
+            percentage: percentage,
+            declarations: Some(declarations),
+          })
+        }).collect();
+      
+      let keyframe_points = builder.create_vector(&keyframe_points);
+      
+      // 创建关键帧动画
+      styles::KeyframeAnimation::create(&mut builder, &styles::KeyframeAnimationArgs {
+        name: Some(name_offset),
+        media: media,
+        keyframe_points: Some(keyframe_points),
+      })
+    })
+    .collect();
+  
+  let keyframes = builder.create_vector(&keyframes);
 
   let medias: Vec<WIPOffset<styles::Media>> = json["medias"]
     .as_array()
@@ -599,7 +656,7 @@ pub fn convert_json_to_flatbuffer(json_str: &str) -> Result<Vec<u8>, serde_json:
     let allow_inherit = json["allow_inherit"].as_bool().unwrap_or(false);
     let stylesheet = styles::StyleSheet::create(&mut builder, &styles::StyleSheetArgs {
       fonts: Some(fonts),
-      keyframes: None,
+      keyframes: Some(keyframes),
       medias: Some(medias),
       styles: Some(styles),
       design_width: design_width,
@@ -608,5 +665,4 @@ pub fn convert_json_to_flatbuffer(json_str: &str) -> Result<Vec<u8>, serde_json:
 
     builder.finish(stylesheet, None);
     Ok(builder.finished_data().to_vec())
-
 }

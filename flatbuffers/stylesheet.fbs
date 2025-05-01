@@ -101,6 +101,19 @@ table Font {
   src: string;
 }
 
+// 关键帧动画点，每个点包含百分比和样式声明
+table KeyframeAnimationPoint {
+  percentage:float;
+  declarations:[DeclarationTuple];
+}
+
+// 关键帧动画，包含名称、媒体ID和一系列动画点
+table KeyframeAnimation {
+  name:string;
+  media:uint8;
+  keyframe_points:[KeyframeAnimationPoint];
+}
+
 table PrimitiveCondition {
   feature:uint8;
   operator:uint8;
@@ -128,7 +141,7 @@ table Media {
 
 table StyleSheet {
   fonts:[Font];
-  keyframes:[string];
+  keyframes:[KeyframeAnimation];
   medias:[Media];
   styles:[Style];
   design_width:uint16;

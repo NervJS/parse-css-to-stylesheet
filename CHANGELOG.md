@@ -1,3 +1,12 @@
+## [1.1.14](https://github.com/NervJS/parse-css-to-stylesheet/compare/v1.1.13...v1.1.14) (2025-05-01)
+
+
+### Features
+
+* 添加keyframse的flatbuffer解析 ([fa2cef9](https://github.com/NervJS/parse-css-to-stylesheet/commit/fa2cef940b33b0804ab780e1ced8ac254b5d7080))
+
+
+
 ## [1.1.13](https://github.com/NervJS/parse-css-to-stylesheet/compare/v1.1.12...v1.1.13) (2025-04-29)
 
 

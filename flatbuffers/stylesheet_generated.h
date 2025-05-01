@@ -8,9 +8,9 @@
 
 // Ensure the included flatbuffers.h is the same version as when this file was
 // generated, otherwise it may not be compatible.
-static_assert(FLATBUFFERS_VERSION_MAJOR == 24 &&
-              FLATBUFFERS_VERSION_MINOR == 3 &&
-              FLATBUFFERS_VERSION_REVISION == 25,
+static_assert(FLATBUFFERS_VERSION_MAJOR == 25 &&
+              FLATBUFFERS_VERSION_MINOR == 2 &&
+              FLATBUFFERS_VERSION_REVISION == 10,
              "Non-compatible flatbuffers version included");
 
 namespace Styles {
@@ -68,6 +68,12 @@ struct StyleBuilder;
 
 struct Font;
 struct FontBuilder;
+
+struct KeyframeAnimationPoint;
+struct KeyframeAnimationPointBuilder;
+
+struct KeyframeAnimation;
+struct KeyframeAnimationBuilder;
 
 struct PrimitiveCondition;
 struct PrimitiveConditionBuilder;
@@ -1484,6 +1490,148 @@ inline ::flatbuffers::Offset<Font> CreateFontDirect(
       src__);
 }
 
+struct KeyframeAnimationPoint FLATBUFFERS_FINAL_CLASS : private ::flatbuffers::Table {
+  typedef KeyframeAnimationPointBuilder Builder;
+  enum FlatBuffersVTableOffset FLATBUFFERS_VTABLE_UNDERLYING_TYPE {
+    VT_PERCENTAGE = 4,
+    VT_DECLARATIONS = 6
+  };
+  float percentage() const {
+    return GetField<float>(VT_PERCENTAGE, 0.0f);
+  }
+  const ::flatbuffers::Vector<::flatbuffers::Offset<Styles::DeclarationTuple>> *declarations() const {
+    return GetPointer<const ::flatbuffers::Vector<::flatbuffers::Offset<Styles::DeclarationTuple>> *>(VT_DECLARATIONS);
+  }
+  bool Verify(::flatbuffers::Verifier &verifier) const {
+    return VerifyTableStart(verifier) &&
+           VerifyField<float>(verifier, VT_PERCENTAGE, 4) &&
+           VerifyOffset(verifier, VT_DECLARATIONS) &&
+           verifier.VerifyVector(declarations()) &&
+           verifier.VerifyVectorOfTables(declarations()) &&
+           verifier.EndTable();
+  }
+};
+
+struct KeyframeAnimationPointBuilder {
+  typedef KeyframeAnimationPoint Table;
+  ::flatbuffers::FlatBufferBuilder &fbb_;
+  ::flatbuffers::uoffset_t start_;
+  void add_percentage(float percentage) {
+    fbb_.AddElement<float>(KeyframeAnimationPoint::VT_PERCENTAGE, percentage, 0.0f);
+  }
+  void add_declarations(::flatbuffers::Offset<::flatbuffers::Vector<::flatbuffers::Offset<Styles::DeclarationTuple>>> declarations) {
+    fbb_.AddOffset(KeyframeAnimationPoint::VT_DECLARATIONS, declarations);
+  }
+  explicit KeyframeAnimationPointBuilder(::flatbuffers::FlatBufferBuilder &_fbb)
+        : fbb_(_fbb) {
+    start_ = fbb_.StartTable();
+  }
+  ::flatbuffers::Offset<KeyframeAnimationPoint> Finish() {
+    const auto end = fbb_.EndTable(start_);
+    auto o = ::flatbuffers::Offset<KeyframeAnimationPoint>(end);
+    return o;
+  }
+};
+
+inline ::flatbuffers::Offset<KeyframeAnimationPoint> CreateKeyframeAnimationPoint(
+    ::flatbuffers::FlatBufferBuilder &_fbb,
+    float percentage = 0.0f,
+    ::flatbuffers::Offset<::flatbuffers::Vector<::flatbuffers::Offset<Styles::DeclarationTuple>>> declarations = 0) {
+  KeyframeAnimationPointBuilder builder_(_fbb);
+  builder_.add_declarations(declarations);
+  builder_.add_percentage(percentage);
+  return builder_.Finish();
+}
+
+inline ::flatbuffers::Offset<KeyframeAnimationPoint> CreateKeyframeAnimationPointDirect(
+    ::flatbuffers::FlatBufferBuilder &_fbb,
+    float percentage = 0.0f,
+    const std::vector<::flatbuffers::Offset<Styles::DeclarationTuple>> *declarations = nullptr) {
+  auto declarations__ = declarations ? _fbb.CreateVector<::flatbuffers::Offset<Styles::DeclarationTuple>>(*declarations) : 0;
+  return Styles::CreateKeyframeAnimationPoint(
+      _fbb,
+      percentage,
+      declarations__);
+}
+
+struct KeyframeAnimation FLATBUFFERS_FINAL_CLASS : private ::flatbuffers::Table {
+  typedef KeyframeAnimationBuilder Builder;
+  enum FlatBuffersVTableOffset FLATBUFFERS_VTABLE_UNDERLYING_TYPE {
+    VT_NAME = 4,
+    VT_MEDIA = 6,
+    VT_KEYFRAME_POINTS = 8
+  };
+  const ::flatbuffers::String *name() const {
+    return GetPointer<const ::flatbuffers::String *>(VT_NAME);
+  }
+  uint8_t media() const {
+    return GetField<uint8_t>(VT_MEDIA, 0);
+  }
+  const ::flatbuffers::Vector<::flatbuffers::Offset<Styles::KeyframeAnimationPoint>> *keyframe_points() const {
+    return GetPointer<const ::flatbuffers::Vector<::flatbuffers::Offset<Styles::KeyframeAnimationPoint>> *>(VT_KEYFRAME_POINTS);
+  }
+  bool Verify(::flatbuffers::Verifier &verifier) const {
+    return VerifyTableStart(verifier) &&
+           VerifyOffset(verifier, VT_NAME) &&
+           verifier.VerifyString(name()) &&
+           VerifyField<uint8_t>(verifier, VT_MEDIA, 1) &&
+           VerifyOffset(verifier, VT_KEYFRAME_POINTS) &&
+           verifier.VerifyVector(keyframe_points()) &&
+           verifier.VerifyVectorOfTables(keyframe_points()) &&
+           verifier.EndTable();
+  }
+};
+
+struct KeyframeAnimationBuilder {
+  typedef KeyframeAnimation Table;
+  ::flatbuffers::FlatBufferBuilder &fbb_;
+  ::flatbuffers::uoffset_t start_;
+  void add_name(::flatbuffers::Offset<::flatbuffers::String> name) {
+    fbb_.AddOffset(KeyframeAnimation::VT_NAME, name);
+  }
+  void add_media(uint8_t media) {
+    fbb_.AddElement<uint8_t>(KeyframeAnimation::VT_MEDIA, media, 0);
+  }
+  void add_keyframe_points(::flatbuffers::Offset<::flatbuffers::Vector<::flatbuffers::Offset<Styles::KeyframeAnimationPoint>>> keyframe_points) {
+    fbb_.AddOffset(KeyframeAnimation::VT_KEYFRAME_POINTS, keyframe_points);
+  }
+  explicit KeyframeAnimationBuilder(::flatbuffers::FlatBufferBuilder &_fbb)
+        : fbb_(_fbb) {
+    start_ = fbb_.StartTable();
+  }
+  ::flatbuffers::Offset<KeyframeAnimation> Finish() {
+    const auto end = fbb_.EndTable(start_);
+    auto o = ::flatbuffers::Offset<KeyframeAnimation>(end);
+    return o;
+  }
+};
+
+inline ::flatbuffers::Offset<KeyframeAnimation> CreateKeyframeAnimation(
+    ::flatbuffers::FlatBufferBuilder &_fbb,
+    ::flatbuffers::Offset<::flatbuffers::String> name = 0,
+    uint8_t media = 0,
+    ::flatbuffers::Offset<::flatbuffers::Vector<::flatbuffers::Offset<Styles::KeyframeAnimationPoint>>> keyframe_points = 0) {
+  KeyframeAnimationBuilder builder_(_fbb);
+  builder_.add_keyframe_points(keyframe_points);
+  builder_.add_name(name);
+  builder_.add_media(media);
+  return builder_.Finish();
+}
+
+inline ::flatbuffers::Offset<KeyframeAnimation> CreateKeyframeAnimationDirect(
+    ::flatbuffers::FlatBufferBuilder &_fbb,
+    const char *name = nullptr,
+    uint8_t media = 0,
+    const std::vector<::flatbuffers::Offset<Styles::KeyframeAnimationPoint>> *keyframe_points = nullptr) {
+  auto name__ = name ? _fbb.CreateString(name) : 0;
+  auto keyframe_points__ = keyframe_points ? _fbb.CreateVector<::flatbuffers::Offset<Styles::KeyframeAnimationPoint>>(*keyframe_points) : 0;
+  return Styles::CreateKeyframeAnimation(
+      _fbb,
+      name__,
+      media,
+      keyframe_points__);
+}
+
 struct PrimitiveCondition FLATBUFFERS_FINAL_CLASS : private ::flatbuffers::Table {
   typedef PrimitiveConditionBuilder Builder;
   enum FlatBuffersVTableOffset FLATBUFFERS_VTABLE_UNDERLYING_TYPE {
@@ -1840,8 +1988,8 @@ struct StyleSheet FLATBUFFERS_FINAL_CLASS : private ::flatbuffers::Table {
   const ::flatbuffers::Vector<::flatbuffers::Offset<Styles::Font>> *fonts() const {
     return GetPointer<const ::flatbuffers::Vector<::flatbuffers::Offset<Styles::Font>> *>(VT_FONTS);
   }
-  const ::flatbuffers::Vector<::flatbuffers::Offset<::flatbuffers::String>> *keyframes() const {
-    return GetPointer<const ::flatbuffers::Vector<::flatbuffers::Offset<::flatbuffers::String>> *>(VT_KEYFRAMES);
+  const ::flatbuffers::Vector<::flatbuffers::Offset<Styles::KeyframeAnimation>> *keyframes() const {
+    return GetPointer<const ::flatbuffers::Vector<::flatbuffers::Offset<Styles::KeyframeAnimation>> *>(VT_KEYFRAMES);
   }
   const ::flatbuffers::Vector<::flatbuffers::Offset<Styles::Media>> *medias() const {
     return GetPointer<const ::flatbuffers::Vector<::flatbuffers::Offset<Styles::Media>> *>(VT_MEDIAS);
@@ -1862,7 +2010,7 @@ struct StyleSheet FLATBUFFERS_FINAL_CLASS : private ::flatbuffers::Table {
            verifier.VerifyVectorOfTables(fonts()) &&
            VerifyOffset(verifier, VT_KEYFRAMES) &&
            verifier.VerifyVector(keyframes()) &&
-           verifier.VerifyVectorOfStrings(keyframes()) &&
+           verifier.VerifyVectorOfTables(keyframes()) &&
            VerifyOffset(verifier, VT_MEDIAS) &&
            verifier.VerifyVector(medias()) &&
            verifier.VerifyVectorOfTables(medias()) &&
@@ -1882,7 +2030,7 @@ struct StyleSheetBuilder {
   void add_fonts(::flatbuffers::Offset<::flatbuffers::Vector<::flatbuffers::Offset<Styles::Font>>> fonts) {
     fbb_.AddOffset(StyleSheet::VT_FONTS, fonts);
   }
-  void add_keyframes(::flatbuffers::Offset<::flatbuffers::Vector<::flatbuffers::Offset<::flatbuffers::String>>> keyframes) {
+  void add_keyframes(::flatbuffers::Offset<::flatbuffers::Vector<::flatbuffers::Offset<Styles::KeyframeAnimation>>> keyframes) {
     fbb_.AddOffset(StyleSheet::VT_KEYFRAMES, keyframes);
   }
   void add_medias(::flatbuffers::Offset<::flatbuffers::Vector<::flatbuffers::Offset<Styles::Media>>> medias) {
@@ -1911,7 +2059,7 @@ struct StyleSheetBuilder {
 inline ::flatbuffers::Offset<StyleSheet> CreateStyleSheet(
     ::flatbuffers::FlatBufferBuilder &_fbb,
     ::flatbuffers::Offset<::flatbuffers::Vector<::flatbuffers::Offset<Styles::Font>>> fonts = 0,
-    ::flatbuffers::Offset<::flatbuffers::Vector<::flatbuffers::Offset<::flatbuffers::String>>> keyframes = 0,
+    ::flatbuffers::Offset<::flatbuffers::Vector<::flatbuffers::Offset<Styles::KeyframeAnimation>>> keyframes = 0,
     ::flatbuffers::Offset<::flatbuffers::Vector<::flatbuffers::Offset<Styles::Media>>> medias = 0,
     ::flatbuffers::Offset<::flatbuffers::Vector<::flatbuffers::Offset<Styles::Style>>> styles = 0,
     uint16_t design_width = 0,
@@ -1929,13 +2077,13 @@ inline ::flatbuffers::Offset<StyleSheet> CreateStyleSheet(
 inline ::flatbuffers::Offset<StyleSheet> CreateStyleSheetDirect(
     ::flatbuffers::FlatBufferBuilder &_fbb,
     const std::vector<::flatbuffers::Offset<Styles::Font>> *fonts = nullptr,
-    const std::vector<::flatbuffers::Offset<::flatbuffers::String>> *keyframes = nullptr,
+    const std::vector<::flatbuffers::Offset<Styles::KeyframeAnimation>> *keyframes = nullptr,
     const std::vector<::flatbuffers::Offset<Styles::Media>> *medias = nullptr,
     const std::vector<::flatbuffers::Offset<Styles::Style>> *styles = nullptr,
     uint16_t design_width = 0,
     bool allow_inherit = false) {
   auto fonts__ = fonts ? _fbb.CreateVector<::flatbuffers::Offset<Styles::Font>>(*fonts) : 0;
-  auto keyframes__ = keyframes ? _fbb.CreateVector<::flatbuffers::Offset<::flatbuffers::String>>(*keyframes) : 0;
+  auto keyframes__ = keyframes ? _fbb.CreateVector<::flatbuffers::Offset<Styles::KeyframeAnimation>>(*keyframes) : 0;
   auto medias__ = medias ? _fbb.CreateVector<::flatbuffers::Offset<Styles::Media>>(*medias) : 0;
   auto styles__ = styles ? _fbb.CreateVector<::flatbuffers::Offset<Styles::Style>>(*styles) : 0;
   return Styles::CreateStyleSheet(

@@ -10,6 +10,7 @@ export interface ParseOptions {
   platformString: string
   designWidth?: number
   output?: OutputOptions
+  allowInherit?: boolean
 }
 export interface ParseResult {
   code?: string

@@ -72,7 +72,23 @@ macro_rules! generate_expr_lit_color {
 macro_rules! generate_expr_lit_calc {
   ($var:expr, $platform:expr) => {{
     use $crate::generate_expr_lit_str;
-    generate_expr_lit_str!($var.clone())
+    // 扫描 $var 中是存在px单位，如果存在，替换为lpx
+    let re = regex::Regex::new(r#"(\d+(?:px|vw|vh))"#).unwrap();
+    let result = re.replace_all($var.as_str(), |caps: &regex::Captures| {
+      let value = &caps[1];
+      let unit = &value[value.len() - 2..];
+      let parsed_value: i32 = value[..value.len() - 2].parse().unwrap();
+      if $platform == Platform::Harmony {
+        if unit == "px" {
+          format!("{}lpx", parsed_value)
+        } else {
+          format!("{}l{}", parsed_value, unit)
+        }
+      } else {
+        format!("{}px", parsed_value)
+      }
+    });
+    generate_expr_lit_str!(result.to_string())
 
     // use swc_core::ecma::ast::*;
     // use swc_core::{

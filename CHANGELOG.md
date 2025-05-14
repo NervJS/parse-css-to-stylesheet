@@ -1,3 +1,13 @@
+## [1.1.15](https://github.com/NervJS/parse-css-to-stylesheet/compare/v1.1.14...v1.1.15) (2025-05-14)
+
+
+### Features
+
+* 更新stylesheet_generated ([5095f15](https://github.com/NervJS/parse-css-to-stylesheet/commit/5095f1586103d8a342026d2eb9d3052fc16e3f10))
+* 修复calc对于px字符串的处理 ([bbc5539](https://github.com/NervJS/parse-css-to-stylesheet/commit/bbc5539f33f05b332f3afd75dd243023d0b0a6a3))
+
+
+
 ## [1.1.14](https://github.com/NervJS/parse-css-to-stylesheet/compare/v1.1.13...v1.1.14) (2025-05-01)
 
 

@@ -110,6 +110,10 @@ pub enum CSSPropertyType {
   Border = 105,  // 复合属性
   BorderStyle = 106,  // 复合属性
   Gap = 107,  // 复合属性
+  AnimationDirection = 108,
+  AnimationPlayState = 109,
+  // ...
+  All = 99999,       // used for transition-property
 }
 
 pub fn string_to_css_property_type(property: &str) -> CSSPropertyType {

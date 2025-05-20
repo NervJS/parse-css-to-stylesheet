@@ -415,3 +415,27 @@ pub enum BoxOrient {
   InlineAxis,
   BlockAxis,
 }
+
+#[repr(u32)]
+#[derive(Hash, PartialEq, Eq, Debug, Clone, Copy)]
+#[allow(non_camel_case_types)]
+pub enum ArkUI_AnimationDirection {
+  /** 正常播放 */
+  ARKUI_ANIMATION_DIRECTION_NORMAL = 0,
+  /** 反向播放 */
+  ARKUI_ANIMATION_DIRECTION_REVERSE,
+  /** 交替播放 */
+  ARKUI_ANIMATION_DIRECTION_ALTERNATE,
+  /** 反向交替播放 */
+  ARKUI_ANIMATION_DIRECTION_ALTERNATE_REVERSE,
+}
+
+#[repr(u32)]
+#[derive(Hash, PartialEq, Eq, Debug, Clone, Copy)]
+#[allow(non_camel_case_types)]
+pub enum ArkUI_AnimationPlayState {
+  /** 暂停状态 */
+  ARKUI_ANIMATION_PLAY_STATE_PAUSED = 0,
+  /** 运行状态 */
+  ARKUI_ANIMATION_PLAY_STATE_RUNNING,
+}

@@ -26,6 +26,21 @@ pub enum AnimationTimingFunction {
   AnimationCurve(style_property_enum::ArkUI_AnimationCurve),
   EasingFunction(EasingFunction),
 }
+
+#[derive(Debug, Clone)]
+pub enum AnimationDirection {
+  Normal,
+  Reverse,
+  Alternate,
+  AlternateReverse,
+}
+
+#[derive(Debug, Clone)]
+pub enum AnimationPlayState {
+  Paused,
+  Running,
+}
+
 #[derive(Debug, Clone)]
 pub struct AnimationMulti {
   pub animation_names: Vec<String>,
@@ -34,6 +49,8 @@ pub struct AnimationMulti {
   pub animation_iterations: Vec<f32>,
   pub animation_fill_modes: Vec<AnimationFillMode>,
   pub animation_timeing_functions: Vec<AnimationTimingFunction>,
+  pub animation_directions: Vec<style_property_enum::ArkUI_AnimationDirection>,
+  pub animation_play_states: Vec<style_property_enum::ArkUI_AnimationPlayState>,
 }
 
 impl From<(String, &Property<'_>)> for AnimationMulti {
@@ -44,6 +61,8 @@ impl From<(String, &Property<'_>)> for AnimationMulti {
     let mut animation_iterations: Vec<f32> = vec![]; // 1.0
     let mut animation_fill_modes: Vec<AnimationFillMode> = vec![];
     let mut animation_timeing_functions: Vec<AnimationTimingFunction> = vec![]; // EasingFunction::Ease
+    let mut animation_directions: Vec<style_property_enum::ArkUI_AnimationDirection> = vec![]; // ArkUI_AnimationDirection::ARKUI_ANIMATION_DIRECTION_NORMAL
+    let mut animation_play_states: Vec<style_property_enum::ArkUI_AnimationPlayState> = vec![]; // ArkUI_AnimationPlayState::ARKUI_ANIMATION_PLAY_STATE_RUNNING
 
     match value.1 {
       // Property::AnimationName(_, _) => todo!(),
@@ -104,7 +123,21 @@ impl From<(String, &Property<'_>)> for AnimationMulti {
           });
           animation_timeing_functions.push(animation_timeing_function.unwrap_or(
             AnimationTimingFunction::EasingFunction(EasingFunction::Ease),
-          ))
+          ));
+
+          let animation_direction = Some(match animation.direction {
+            animation::AnimationDirection::Normal => style_property_enum::ArkUI_AnimationDirection::ARKUI_ANIMATION_DIRECTION_NORMAL,
+            animation::AnimationDirection::Reverse => style_property_enum::ArkUI_AnimationDirection::ARKUI_ANIMATION_DIRECTION_REVERSE,
+            animation::AnimationDirection::Alternate => style_property_enum::ArkUI_AnimationDirection::ARKUI_ANIMATION_DIRECTION_ALTERNATE,
+            animation::AnimationDirection::AlternateReverse => style_property_enum::ArkUI_AnimationDirection::ARKUI_ANIMATION_DIRECTION_ALTERNATE_REVERSE,
+          });
+          animation_directions.push(animation_direction.unwrap_or(style_property_enum::ArkUI_AnimationDirection::ARKUI_ANIMATION_DIRECTION_NORMAL));
+
+          let animation_play_state = Some(match animation.play_state {
+            animation::AnimationPlayState::Paused => style_property_enum::ArkUI_AnimationPlayState::ARKUI_ANIMATION_PLAY_STATE_PAUSED,
+            animation::AnimationPlayState::Running => style_property_enum::ArkUI_AnimationPlayState::ARKUI_ANIMATION_PLAY_STATE_RUNNING,
+          });
+          animation_play_states.push(animation_play_state.unwrap_or(style_property_enum::ArkUI_AnimationPlayState::ARKUI_ANIMATION_PLAY_STATE_RUNNING));
         });
       }
       Property::AnimationDelay(delay, _) => {
@@ -155,6 +188,26 @@ impl From<(String, &Property<'_>)> for AnimationMulti {
           ));
         }
       }
+      Property::AnimationDirection(direction, _) => {
+        for direction_elem in direction {
+          let animation_direction = Some(match direction_elem {
+            animation::AnimationDirection::Normal => style_property_enum::ArkUI_AnimationDirection::ARKUI_ANIMATION_DIRECTION_NORMAL,
+            animation::AnimationDirection::Reverse => style_property_enum::ArkUI_AnimationDirection::ARKUI_ANIMATION_DIRECTION_REVERSE,
+            animation::AnimationDirection::Alternate => style_property_enum::ArkUI_AnimationDirection::ARKUI_ANIMATION_DIRECTION_ALTERNATE,
+            animation::AnimationDirection::AlternateReverse => style_property_enum::ArkUI_AnimationDirection::ARKUI_ANIMATION_DIRECTION_ALTERNATE_REVERSE,
+          });
+          animation_directions.push(animation_direction.unwrap_or(style_property_enum::ArkUI_AnimationDirection::ARKUI_ANIMATION_DIRECTION_NORMAL));
+        }
+      }
+      Property::AnimationPlayState(play_state, _) => {
+        for play_state_elem in play_state {
+          let animation_play_state = Some(match play_state_elem {
+            animation::AnimationPlayState::Paused => style_property_enum::ArkUI_AnimationPlayState::ARKUI_ANIMATION_PLAY_STATE_PAUSED,
+            animation::AnimationPlayState::Running => style_property_enum::ArkUI_AnimationPlayState::ARKUI_ANIMATION_PLAY_STATE_RUNNING,
+          });
+          animation_play_states.push(animation_play_state.unwrap_or(style_property_enum::ArkUI_AnimationPlayState::ARKUI_ANIMATION_PLAY_STATE_RUNNING));
+        }
+      }
       _ => {}
     }
 
@@ -165,6 +218,8 @@ impl From<(String, &Property<'_>)> for AnimationMulti {
       animation_fill_modes,
       animation_iterations,
       animation_timeing_functions,
+      animation_directions,
+      animation_play_states,
     }
   }
 }
@@ -296,6 +351,48 @@ impl ToExpr for AnimationMulti {
         .collect();
       exprs.push((
         CSSPropertyType::AnimationTimingFunction,
+        Expr::Array(ArrayLit {
+          span: DUMMY_SP,
+          elems: array_elements,
+        }),
+      ));
+    }
+
+    if !self.animation_directions.is_empty() {
+      let directions = &self.animation_directions;
+      let array_elements: Vec<_> = directions
+        .into_iter()
+        .map(|direction| {
+          let expr = generate_expr_enum!(*direction);
+          Some(ExprOrSpread {
+            spread: None,
+            expr: Box::new(expr),
+          })
+        })
+        .collect();
+      exprs.push((
+        CSSPropertyType::AnimationDirection,
+        Expr::Array(ArrayLit {
+          span: DUMMY_SP,
+          elems: array_elements,
+        }),
+      ));
+    }
+
+    if !self.animation_play_states.is_empty() {
+      let play_states = &self.animation_play_states;
+      let array_elements: Vec<_> = play_states
+        .into_iter()
+        .map(|play_state| {
+          let expr = generate_expr_enum!(*play_state);
+          Some(ExprOrSpread {
+            spread: None,
+            expr: Box::new(expr),
+          })
+        })
+        .collect();
+      exprs.push((
+        CSSPropertyType::AnimationPlayState,
         Expr::Array(ArrayLit {
           span: DUMMY_SP,
           elems: array_elements,

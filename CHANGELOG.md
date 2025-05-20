@@ -1,3 +1,12 @@
+## [1.1.16](https://github.com/NervJS/parse-css-to-stylesheet/compare/v1.1.15...v1.1.16) (2025-05-20)
+
+
+### Features
+
+* 添加animationDirection和animationplaystate的解析 ([e0d028d](https://github.com/NervJS/parse-css-to-stylesheet/commit/e0d028dd85e29ad354955ac3d85fd2df81d5452f))
+
+
+
 ## [1.1.15](https://github.com/NervJS/parse-css-to-stylesheet/compare/v1.1.14...v1.1.15) (2025-05-14)
 
 

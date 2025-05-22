@@ -50,7 +50,8 @@
     "run:rs": "cargo run",
     "format:source": "prettier . -w",
     "version": "napi version  && conventional-changelog -p angular -i CHANGELOG.md -s && git add CHANGELOG.md",
-    "flatbuffer": "flatc --rust -o ./src ./flatbuffers/stylesheet.fbs && flatc --cpp -o ./flatbuffers ./flatbuffers/stylesheet.fbs"
+    "flatbuffer": "flatc --rust -o ./src ./flatbuffers/stylesheet.fbs && flatc --cpp -o ./flatbuffers ./flatbuffers/stylesheet.fbs",
+    "resolve:bin": "flatc --json --raw-binary flatbuffers/stylesheet.fbs -- __test__/fixure/style.bin"
   },
   "packageManager": "pnpm@9.11.0",
   "repository": "https://github.com/NervJS/parse-css-to-stylesheet"

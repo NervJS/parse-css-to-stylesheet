@@ -124,25 +124,25 @@ pub fn parse_style_properties(properties: &Vec<(String, Property)>) -> DeclsAndV
       // 基础样式
       "alignContent" => {
         final_properties.push(StyleValueType::FlexAlign(FlexAlign::from((
-          id.to_string(),
+          property_name.to_string(),
           value,
         ))));
       }
       "justifyContent" => {
         final_properties.push(StyleValueType::FlexAlign(FlexAlign::from((
-          id.to_string(),
+          property_name.to_string(),
           value,
         ))));
       }
       "alignItems" => {
         final_properties.push(StyleValueType::AlignItems(ItemAlign::from((
-          id.to_string(),
+          property_name.to_string(),
           value,
         ))));
       }
       "alignSelf" => {
         final_properties.push(StyleValueType::AlignItems(ItemAlign::from((
-          id.to_string(),
+          property_name.to_string(),
           value,
         ))));
       }
@@ -151,43 +151,43 @@ pub fn parse_style_properties(properties: &Vec<(String, Property)>) -> DeclsAndV
       }
       "flexBasis" => {
         final_properties.push(StyleValueType::FlexBasis(FlexBasis::from((
-          id.to_string(),
+          property_name.to_string(),
           value,
         ))));
       }
       "flexDirection" => {
         final_properties.push(StyleValueType::FlexDirection(FlexDirection::from((
-          id.to_string(),
+          property_name.to_string(),
           value,
         ))));
       }
       "flexGrow" => {
         final_properties.push(StyleValueType::NumberProperty(NumberProperty::from((
-          id.to_string(),
+          property_name.to_string(),
           value,
         ))));
       }
       "flexShrink" => {
         final_properties.push(StyleValueType::NumberProperty(NumberProperty::from((
-          id.to_string(),
+          property_name.to_string(),
           value,
         ))));
       }
       "flexWrap" => {
         final_properties.push(StyleValueType::FlexWrap(FlexWrap::from((
-          id.to_string(),
+          property_name.to_string(),
           value,
         ))));
       }
       "aspectRatio" => {
         final_properties.push(StyleValueType::AspectRatio(AspectRatio::from((
-          id.to_string(),
+          property_name.to_string(),
           value,
         ))));
       }
       "display" => {
         final_properties.push(StyleValueType::Display(Display::from((
-          id.to_string(),
+          property_name.to_string(),
           value,
         ))));
       }

@@ -340,7 +340,8 @@ impl StyleMedia {
   fn parse_value(&mut self, feature_val: &MediaFeatureValue) -> Option<MediaValueType> {
     match feature_val {
       MediaFeatureValue::Length(length_value) => {
-        return Some(MediaValueType::Length(length_value.clone()));
+        let length_str = length_value.to_css_string(PrinterOptions::default());
+        return Some(MediaValueType::String(length_str.unwrap()));
       }
       MediaFeatureValue::Number(value) => {
         return Some(MediaValueType::Float(*value as f64));

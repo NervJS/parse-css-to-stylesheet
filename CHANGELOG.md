@@ -1,3 +1,17 @@
+## [1.1.17](https://github.com/NervJS/parse-css-to-stylesheet/compare/v1.1.16...v1.1.17) (2025-05-30)
+
+
+### Bug Fixes
+
+* 修复在postcss兼容低版本浏览器的额外样式 ([c0771a6](https://github.com/NervJS/parse-css-to-stylesheet/commit/c0771a64ea7004988139cb7f1c7909703b37087f))
+
+
+### Features
+
+* 添加解析bin文件的命令 ([911569b](https://github.com/NervJS/parse-css-to-stylesheet/commit/911569b836c957a0350f37d6ff2c2321e615a8f8))
+
+
+
 ## [1.1.16](https://github.com/NervJS/parse-css-to-stylesheet/compare/v1.1.15...v1.1.16) (2025-05-20)
 
 

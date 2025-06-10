@@ -1,3 +1,12 @@
+## [1.1.18](https://github.com/NervJS/parse-css-to-stylesheet/compare/v1.1.17...v1.1.18) (2025-06-10)
+
+
+### Features
+
+* 增加display: inline和inline-block ([cecfd33](https://github.com/NervJS/parse-css-to-stylesheet/commit/cecfd3364d1ef376ba689bf34d6f29b22410e2a1))
+
+
+
 ## [1.1.17](https://github.com/NervJS/parse-css-to-stylesheet/compare/v1.1.16...v1.1.17) (2025-05-30)
 
 

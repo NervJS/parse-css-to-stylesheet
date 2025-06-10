@@ -23,6 +23,8 @@ pub enum EnumValue {
   Block,
   Invalid,
   Box,
+  InlineBlock,
+  Inline,
 }
 
 impl From<(String, &Property<'_>)> for Display {
@@ -41,6 +43,14 @@ impl From<(String, &Property<'_>)> for Display {
                 EnumValue::Flex
               } else if let DisplayInside::Box(_) = value.inside {
                 EnumValue::Box
+              } else if let DisplayInside::FlowRoot = value.inside {
+                if let DisplayOutside::Inline = value.outside {
+                  EnumValue::InlineBlock
+                } else {
+                  EnumValue::Block
+                }
+              } else if let DisplayOutside::Inline = value.outside {
+                EnumValue::Inline
               } else {
                 if let DisplayOutside::Block = value.outside {
                   EnumValue::Block
@@ -67,6 +77,8 @@ impl ToExpr for Display {
         EnumValue::Flex => generate_expr_enum!(style_property_enum::Display::Flex),
         EnumValue::Block => generate_expr_enum!(style_property_enum::Display::Block),
         EnumValue::Box => generate_expr_enum!(style_property_enum::Display::Box),
+        EnumValue::InlineBlock => generate_expr_enum!(style_property_enum::Display::InlineBlock),
+        EnumValue::Inline => generate_expr_enum!(style_property_enum::Display::Inline),
         EnumValue::Invalid => generate_invalid_expr!(),
       },
     )

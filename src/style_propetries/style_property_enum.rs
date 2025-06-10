@@ -388,6 +388,8 @@ pub enum Display {
   Block,
   Flex,
   Box,
+  InlineBlock,
+  Inline,
 }
 
 #[repr(u32)]

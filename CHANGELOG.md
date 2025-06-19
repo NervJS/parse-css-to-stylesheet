@@ -1,3 +1,12 @@
+## [1.1.19](https://github.com/NervJS/parse-css-to-stylesheet/compare/v1.1.18...v1.1.19) (2025-06-19)
+
+
+### Features
+
+* 添加 animation-fill-mode 的解析 ([b41ff1b](https://github.com/NervJS/parse-css-to-stylesheet/commit/b41ff1bab9a45f303881b7f037c818971f07f314))
+
+
+
 ## [1.1.18](https://github.com/NervJS/parse-css-to-stylesheet/compare/v1.1.17...v1.1.18) (2025-06-10)
 
 

@@ -138,6 +138,9 @@ impl
           _ => AnimationTimingFunction::EasingFunction(timing_function.get(0).unwrap().clone()),
         });
       }
+      Property::AnimationFillMode(fill_mode, _) => {
+        animation_fill_mode = Some(fill_mode.get(0).unwrap().clone());
+      }
       _ => {}
     }
 
@@ -176,11 +179,13 @@ impl ToExpr for Animation {
       ))
     }
     if let Some(fill_mode) = &self.animation_fill_mode {
-      // exprs.push((CSSPropertyType::AnimationFillMode, generate_expr_enum!(*fill_mode)));
-      exprs.push((
-        CSSPropertyType::AnimationFillMode,
-        generate_expr_lit_str!(fill_mode.to_css_string(PrinterOptions::default()).unwrap()),
-      ));
+      let enum_value = match fill_mode {
+        AnimationFillMode::None => style_property_enum::ArkUI_AnimationFillMode::ARKUI_ANIMATION_FILL_MODE_NONE,
+        AnimationFillMode::Forwards => style_property_enum::ArkUI_AnimationFillMode::ARKUI_ANIMATION_FILL_MODE_FORWARDS,
+        AnimationFillMode::Backwards => style_property_enum::ArkUI_AnimationFillMode::ARKUI_ANIMATION_FILL_MODE_BACKWARDS,
+        AnimationFillMode::Both => style_property_enum::ArkUI_AnimationFillMode::ARKUI_ANIMATION_FILL_MODE_BOTH,
+      };
+      exprs.push((CSSPropertyType::AnimationFillMode, generate_expr_enum!(enum_value)));
     }
     if let Some(timeing_function) = &self.animation_timeing_function {
       match timeing_function {

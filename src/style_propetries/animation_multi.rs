@@ -208,6 +208,11 @@ impl From<(String, &Property<'_>)> for AnimationMulti {
           animation_play_states.push(animation_play_state.unwrap_or(style_property_enum::ArkUI_AnimationPlayState::ARKUI_ANIMATION_PLAY_STATE_RUNNING));
         }
       }
+      Property::AnimationFillMode(fill_mode, _) => {
+        for fill_mode_elem in fill_mode {
+          animation_fill_modes.push(fill_mode_elem.clone());
+        }
+      }
       _ => {}
     }
 
@@ -310,9 +315,13 @@ impl ToExpr for AnimationMulti {
       let array_elements: Vec<_> = fill_modes
         .into_iter()
         .map(|fill_mode| {
-          // Assuming `generate_expr_lit_num!` generates a numeric expression
-          let expr =
-            generate_expr_lit_str!(fill_mode.to_css_string(PrinterOptions::default()).unwrap());
+          let enum_value = match fill_mode {
+            AnimationFillMode::None => style_property_enum::ArkUI_AnimationFillMode::ARKUI_ANIMATION_FILL_MODE_NONE,
+            AnimationFillMode::Forwards => style_property_enum::ArkUI_AnimationFillMode::ARKUI_ANIMATION_FILL_MODE_FORWARDS,
+            AnimationFillMode::Backwards => style_property_enum::ArkUI_AnimationFillMode::ARKUI_ANIMATION_FILL_MODE_BACKWARDS,
+            AnimationFillMode::Both => style_property_enum::ArkUI_AnimationFillMode::ARKUI_ANIMATION_FILL_MODE_BOTH,
+          };
+          let expr = generate_expr_enum!(enum_value);
           Some(ExprOrSpread {
             spread: None,
             expr: Box::new(expr),

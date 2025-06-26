@@ -1,3 +1,12 @@
+## [1.1.20](https://github.com/NervJS/parse-css-to-stylesheet/compare/v1.1.19...v1.1.20) (2025-06-26)
+
+
+### Features
+
+* 支持设计稿转换模式配置 ([48bc103](https://github.com/NervJS/parse-css-to-stylesheet/commit/48bc10376be711421437c3f2719c2cbf048cc4b9))
+
+
+
 ## [1.1.19](https://github.com/NervJS/parse-css-to-stylesheet/compare/v1.1.18...v1.1.19) (2025-06-19)
 
 

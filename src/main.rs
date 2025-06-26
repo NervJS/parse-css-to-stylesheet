@@ -33,6 +33,7 @@ pub fn main() {
     style_data.all_fonts.borrow().clone(),
     None,
     None,
+    None,
   );
 
   let style_json = style_map.to_json();

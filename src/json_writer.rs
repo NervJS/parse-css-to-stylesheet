@@ -20,6 +20,7 @@ pub struct JsonWriter {
   fonts: Vec<FontFaceItem>,
   design_width: Option<i32>,
   allow_inherit: Option<bool>,
+  design_mode: Option<String>,
 }
 
 impl JsonWriter {
@@ -30,6 +31,7 @@ impl JsonWriter {
     fonts: Vec<FontFaceItem>,
     design_width: Option<i32>,
     allow_inherit: Option<bool>,
+    design_mode: Option<String>,
   ) -> Self {
     Self {
       styles,
@@ -38,6 +40,7 @@ impl JsonWriter {
       fonts,
       design_width,
       allow_inherit,
+      design_mode,
     }
   }
 
@@ -331,6 +334,10 @@ impl JsonWriter {
     if let Some(allow_inherit) = self.allow_inherit {
       let map = json_value.as_object_mut().unwrap();
       map.insert("allow_inherit".to_string(), Value::Bool(allow_inherit));
+    }
+    if let Some(design_mode) = &self.design_mode {
+      let map = json_value.as_object_mut().unwrap();
+      map.insert("design_mode".to_string(), Value::String(design_mode.clone()));
     }
 
     // 打印 JSON 值

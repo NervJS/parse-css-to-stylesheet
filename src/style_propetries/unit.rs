@@ -104,6 +104,7 @@ pub fn generate_expr_by_length_value(length_value: &LengthValue, platform: Platf
       }
     }
     LengthValue::Ch(num) => {
+      // 大写px
       match platform {
         Platform::ReactNative => {
           handler = Some(RN_CONVERT_STYLE_VU_FN.to_string());
@@ -111,7 +112,7 @@ pub fn generate_expr_by_length_value(length_value: &LengthValue, platform: Platf
           args.push(generate_expr_lit_str!("PX"));
         }
         Platform::Harmony => {
-          return generate_expr_lit_str!(format!("{}px", num));
+          return generate_expr_lit_str!(format!("{}vp", num));
           // handler = Some(CONVERT_STYLE_PX_FN.to_string());
           // args.push(generate_expr_lit_num!(*num as f64));
           // args.push(generate_expr_lit_str!("PX"));

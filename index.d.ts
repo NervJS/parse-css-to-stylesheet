@@ -11,6 +11,7 @@ export interface ParseOptions {
   designWidth?: number
   output?: OutputOptions
   allowInherit?: boolean
+  designMode?: string
 }
 export interface ParseResult {
   code?: string

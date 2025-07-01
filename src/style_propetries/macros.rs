@@ -82,7 +82,7 @@ macro_rules! generate_expr_lit_calc {
         if unit == "px" {
           format!("{}lpx", parsed_value)
         } else {
-          format!("{}l{}", parsed_value, unit)
+          format!("{}{}", parsed_value, unit)
         }
       } else {
         format!("{}px", parsed_value)

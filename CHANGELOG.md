@@ -1,3 +1,12 @@
+## [1.1.22](https://github.com/NervJS/parse-css-to-stylesheet/compare/v1.1.21...v1.1.22) (2025-07-01)
+
+
+### Bug Fixes
+
+* 修复calc解析vw异常 ([33b509e](https://github.com/NervJS/parse-css-to-stylesheet/commit/33b509ef5db667a75e3a78456787c8d2359e78db))
+
+
+
 ## [1.1.21](https://github.com/NervJS/parse-css-to-stylesheet/compare/v1.1.20...v1.1.21) (2025-06-26)
 
 

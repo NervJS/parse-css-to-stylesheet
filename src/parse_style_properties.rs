@@ -225,7 +225,6 @@ pub fn parse_style_properties(properties: &Vec<(String, Property)>) -> DeclsAndV
         ))));
       }
       "pointerEvents" => {
-        println!("=+= pointerEvents");
         final_properties.push(StyleValueType::PointerEvents(PointerEvents::from((
           id.to_string(),
           value,

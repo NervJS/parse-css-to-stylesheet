@@ -22,7 +22,6 @@ impl From<(String, &Property<'_>)> for PointerEvents {
         let val = value.1
             .value_to_css_string(PrinterOptions::default())
             .unwrap_or(String::from(""));
-        println!("=+=PointerEvents {:?}", val);
         PointerEvents {
             id: value.0,
             value: match val.as_str() {

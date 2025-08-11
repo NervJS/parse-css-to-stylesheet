@@ -1,3 +1,14 @@
+## [1.1.23](https://github.com/NervJS/parse-css-to-stylesheet/compare/v1.1.22...v1.1.23) (2025-08-11)
+
+
+### Features
+
+* 补充测试用例 ([c6d844a](https://github.com/NervJS/parse-css-to-stylesheet/commit/c6d844a30fc40b933cb70488ef609127614dabd6))
+* 处理css变量，变成lpx ([aa9348f](https://github.com/NervJS/parse-css-to-stylesheet/commit/aa9348f09d781593b927072b460669cff98eb951))
+* remove log ([52ba24b](https://github.com/NervJS/parse-css-to-stylesheet/commit/52ba24b6c69dcdab260251b88358fd2668284dd0))
+
+
+
 ## [1.1.22](https://github.com/NervJS/parse-css-to-stylesheet/compare/v1.1.21...v1.1.22) (2025-07-01)
 
 

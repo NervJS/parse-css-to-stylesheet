@@ -92,10 +92,23 @@ pub fn parse_style_properties(properties: &Vec<(String, Property)>) -> DeclsAndV
         let id_ = custom.name.to_css_string(Default::default()).unwrap();
         // css 变量
         if id_.starts_with("--") {
+
+          let re = regex::Regex::new(r#"\b(\d+(?:px|vw|vh))\b"#).unwrap();
+          let var_str = value.value_to_css_string(PrinterOptions::default()).unwrap().to_string();
+          let result = re.replace_all(var_str.as_str(), |caps: &regex::Captures| {
+            let value = &caps[1];
+            let unit = &value[value.len() - 2..];
+            let parsed_value: i32 = value[..value.len() - 2].parse().unwrap();
+            if unit == "px" {
+              format!("{}lpx", parsed_value)
+            } else {
+              format!("{}{}", parsed_value, unit)
+            }
+          });
           variable_properties.push(
             CssVariable {
               id: id_,
-              value: value.value_to_css_string(PrinterOptions::default()).unwrap().to_string(),
+              value: result.to_string(),
             }
           );
         }

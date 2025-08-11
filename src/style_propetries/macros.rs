@@ -11,7 +11,21 @@ macro_rules! generate_prop_name {
 macro_rules! generate_expr_lit_str {
   ($var:expr) => {{
     use swc_core::ecma::ast::*;
-    Expr::Lit(Lit::Str($var.into()))
+    
+    let re = regex::Regex::new(r#"\b(\d+(?:px|vw|vh))\b"#).unwrap();
+    let var_str = $var.to_string();
+    let result = re.replace_all(var_str.as_str(), |caps: &regex::Captures| {
+      let value = &caps[1];
+      let unit = &value[value.len() - 2..];
+      let parsed_value: i32 = value[..value.len() - 2].parse().unwrap();
+      if unit == "px" {
+        format!("{}lpx", parsed_value)
+      } else {
+        format!("{}{}", parsed_value, unit)
+      }
+    });
+
+    Expr::Lit(Lit::Str(result.into()))
   }};
 }
 

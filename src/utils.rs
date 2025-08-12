@@ -227,7 +227,12 @@ fn process_flatbuffer_value(builder: &mut FlatBufferBuilder, value: &Value) -> (
           }
         }
       } else {
-        panic!("Empty array")
+        // 处理空数组，返回一个空的整数数组
+        let empty_integers = builder.create_vector::<i64>(&[]);
+        let array = styles::IntegerArray::create(builder, &styles::IntegerArrayArgs {
+          values: Some(empty_integers),
+        });
+        (styles::Value::IntegerArray, array.as_union_value())
       }
     }
     Value::Object(obj) => create_flatbuffer_object_value(builder, obj),

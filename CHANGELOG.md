@@ -1,3 +1,17 @@
+## [1.1.25](https://github.com/NervJS/parse-css-to-stylesheet/compare/v1.1.23...v1.1.25) (2025-08-19)
+
+
+### Bug Fixes
+
+* 修复纯数字解析负数异常 ([02013b4](https://github.com/NervJS/parse-css-to-stylesheet/commit/02013b46d58493a920aa8113cdbc9feb259f51bf))
+
+
+### Features
+
+* 当json是一个空数组的时候，fb也转成一个空数组 ([33f7133](https://github.com/NervJS/parse-css-to-stylesheet/commit/33f7133701a148016cee0fbae95e056db60d6167))
+
+
+
 ## [1.1.24](https://github.com/NervJS/parse-css-to-stylesheet/compare/v1.1.23...v1.1.24) (2025-08-12)
 
 

@@ -168,7 +168,7 @@ pub fn generate_expr_with_css_input(input: String, platform: Platform) -> Expr {
   if let Ok(caps) = re.captures(bytes) {
     if let Some(caps) = caps {
       // 提取匹配到的数字部分
-      let input_str = std::str::from_utf8(&caps["num"]);
+      let input_str = std::str::from_utf8(&caps[0]);
       let unit = match std::str::from_utf8(&caps["unit"]) {
         Ok(s) => s,
         Err(_) => "vp",

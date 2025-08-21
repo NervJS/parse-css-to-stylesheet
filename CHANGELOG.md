@@ -1,3 +1,12 @@
+## [1.1.26](https://github.com/NervJS/parse-css-to-stylesheet/compare/v1.1.25...v1.1.26) (2025-08-21)
+
+
+### Bug Fixes
+
+* 修复:root不生效 ([5b0ae7d](https://github.com/NervJS/parse-css-to-stylesheet/commit/5b0ae7d707a153da503e4d25a969f9b91e4d5242))
+
+
+
 ## [1.1.25](https://github.com/NervJS/parse-css-to-stylesheet/compare/v1.1.23...v1.1.25) (2025-08-19)
 
 

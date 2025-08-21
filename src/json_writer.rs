@@ -52,11 +52,13 @@ impl JsonWriter {
         Some({
           // 识别伪类
           let mut new_selector = rule_item.selector.selector.clone();
-          let key_arr = new_selector.split(":").collect::<Vec<&str>>();
-          if key_arr.len() == 2 {
-            new_selector = key_arr[0].to_string();
+          // 特殊处理:root选择器
+          if new_selector != ":root" {
+            let key_arr = new_selector.split(":").collect::<Vec<&str>>();
+            if key_arr.len() == 2 {
+              new_selector = key_arr[0].to_string();
+            }
           }
-
           let nesting_selector = utils::split_selector(&new_selector);
           let mut lit_props = vec![
             PropOrSpread::Prop(Box::new(Prop::KeyValue(KeyValueProp {

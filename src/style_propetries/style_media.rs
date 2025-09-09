@@ -148,7 +148,7 @@ impl StyleMedia {
         MediaValueType::String(val) => {
           return Some(ExprOrSpread {
             spread: None,
-            expr: Box::new(generate_expr_lit_str!(val)),
+            expr: Box::new(generate_expr_lit_str!(val, false)),
           });
         }
       }
@@ -341,7 +341,7 @@ impl StyleMedia {
     match feature_val {
       MediaFeatureValue::Length(length_value) => {
         let length_str = length_value.to_css_string(PrinterOptions::default());
-        return Some(MediaValueType::String(length_str.unwrap()));
+        return Some(MediaValueType::String(length_str.unwrap().clone()));
       }
       MediaFeatureValue::Number(value) => {
         return Some(MediaValueType::Float(*value as f64));

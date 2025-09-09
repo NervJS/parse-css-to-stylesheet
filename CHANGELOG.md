@@ -1,3 +1,12 @@
+## [1.1.27](https://github.com/NervJS/parse-css-to-stylesheet/compare/v1.1.26...v1.1.27) (2025-09-09)
+
+
+### Bug Fixes
+
+* 修复媒体查询的单位范围 ([7ef6c73](https://github.com/NervJS/parse-css-to-stylesheet/commit/7ef6c739d6828ad443b768b3871511562dffa34e))
+
+
+
 ## [1.1.26](https://github.com/NervJS/parse-css-to-stylesheet/compare/v1.1.25...v1.1.26) (2025-08-21)
 
 

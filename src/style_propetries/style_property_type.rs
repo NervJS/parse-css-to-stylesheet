@@ -112,6 +112,8 @@ pub enum CSSPropertyType {
   Gap = 107,  // 复合属性
   AnimationDirection = 108,
   AnimationPlayState = 109,
+  Animation = 110,
+  Filter = 111,
   // ...
   All = 99999,       // used for transition-property
 }
@@ -226,6 +228,7 @@ pub fn string_to_css_property_type(property: &str) -> CSSPropertyType {
     "border" => CSSPropertyType::Border,
     "gap" => CSSPropertyType::Gap,
     "borderStyle" => CSSPropertyType::BorderStyle,
+    "filter" => CSSPropertyType::Filter,
     // E 复合属性，仅用作css变量的解析 ====
     _ => CSSPropertyType::Invalid,
   }

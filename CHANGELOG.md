@@ -1,3 +1,12 @@
+## [1.1.28](https://github.com/NervJS/parse-css-to-stylesheet/compare/v1.1.27...v1.1.28) (2025-09-10)
+
+
+### Features
+
+* 增加滤镜解析 ([13c33bf](https://github.com/NervJS/parse-css-to-stylesheet/commit/13c33bf0c23aa5d119384ac114798e27df019f7a))
+
+
+
 ## [1.1.27](https://github.com/NervJS/parse-css-to-stylesheet/compare/v1.1.26...v1.1.27) (2025-09-09)
 
 

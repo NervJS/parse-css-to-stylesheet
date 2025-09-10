@@ -1,6 +1,6 @@
 {
   "name": "@tarojs/parse-css-to-stylesheet-darwin-arm64",
-  "version": "1.1.27",
+  "version": "1.1.28",
   "os": [
     "darwin"
   ],

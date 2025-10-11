@@ -118,7 +118,7 @@ impl From<(String, &Property<'_>)> for Transition {
             _ => TransitionTimingFunction::EasingFunction(transition.timing_function.clone()),
           });
           if transition.property == PropertyId::All {
-            transtition_property = Some(-1);
+            transtition_property = Some(CSSPropertyType::All as i32);
           } else {
             transtition_property = Some(convert_property_to_cssty(&transition.property) as i32);
           }

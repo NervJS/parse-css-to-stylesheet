@@ -1,3 +1,12 @@
+## [1.1.29](https://github.com/NervJS/parse-css-to-stylesheet/compare/v1.1.28...v1.1.29) (2025-10-11)
+
+
+### Features
+
+* transition 为 all的时候，解析成CSSPropertyType::All而不是原来是-1 ([791cd84](https://github.com/NervJS/parse-css-to-stylesheet/commit/791cd846c4c547bca07ccdf892f65a3b17334a13))
+
+
+
 ## [1.1.28](https://github.com/NervJS/parse-css-to-stylesheet/compare/v1.1.27...v1.1.28) (2025-09-10)
 
 

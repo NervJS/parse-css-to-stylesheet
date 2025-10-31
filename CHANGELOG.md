@@ -1,3 +1,12 @@
+## [1.1.32](https://github.com/NervJS/parse-css-to-stylesheet/compare/v1.1.31...v1.1.32) (2025-10-31)
+
+
+### Bug Fixes
+
+* 修复font-family处理.的转义 ([8c80e91](https://github.com/NervJS/parse-css-to-stylesheet/commit/8c80e91a2bdbe468895516940b9d1de53619ecb8))
+
+
+
 ## [1.1.31](https://github.com/NervJS/parse-css-to-stylesheet/compare/v1.1.30...v1.1.31) (2025-10-31)
 
 

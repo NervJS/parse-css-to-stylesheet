@@ -776,9 +776,9 @@ dependencies = [
 
 [[package]]
 name = "lightningcss"
-version = "1.0.0-alpha.57"
+version = "1.0.0-alpha.54"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "10bc10261f46b8df263b80e7779d1748b1880488cd951fbb9e096430cead10e6"
+checksum = "07d306844e5af1753490c420c0d6ae3d814b00725092d106332762827ca8f0fe"
 dependencies = [
  "ahash 0.8.11",
  "bitflags 2.6.0",
@@ -1119,7 +1119,6 @@ name = "parse-css-to-stylesheet"
 version = "0.1.0"
 dependencies = [
  "bitflags 2.6.0",
- "cssparser",
  "ego-tree",
  "flatbuffers",
  "html5ever",

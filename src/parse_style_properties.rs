@@ -269,11 +269,9 @@ pub fn parse_style_properties(properties: &Vec<(String, Property)>) -> DeclsAndV
         ))));
       }
       "fontFamily" => {
-        final_properties.push(StyleValueType::Normal(Normal::new(
+        final_properties.push(StyleValueType::Expr(Expr::new(
           CSSPropertyType::FontFamily,
-          value
-            .value_to_css_string(PrinterOptions::default())
-            .unwrap(),
+          generate_expr_lit_str!(value.value_to_css_string(PrinterOptions::default()).unwrap()),
         )));
       }
       "lineHeight" => {

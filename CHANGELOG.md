@@ -1,3 +1,17 @@
+## [1.1.30](https://github.com/NervJS/parse-css-to-stylesheet/compare/v1.1.29...v1.1.30) (2025-10-31)
+
+
+### Bug Fixes
+
+* 修复选择器被合并导致匹配异常、修复fontfamliy不能有数字 ([f12d632](https://github.com/NervJS/parse-css-to-stylesheet/commit/f12d632af44518185de0781913926856a4ee1f4a))
+
+
+### Features
+
+* 锁定cargo的依赖版本 ([3fbbe99](https://github.com/NervJS/parse-css-to-stylesheet/commit/3fbbe997f89bf4e6095a42a6494c46bf52863d62))
+
+
+
 ## [1.1.29](https://github.com/NervJS/parse-css-to-stylesheet/compare/v1.1.28...v1.1.29) (2025-10-11)
 
 

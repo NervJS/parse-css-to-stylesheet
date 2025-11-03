@@ -272,11 +272,33 @@ pub fn parse_style_properties(properties: &Vec<(String, Property)>) -> DeclsAndV
         final_properties.push(StyleValueType::Expr(Expr::new(
           CSSPropertyType::FontFamily,
         {
-                let result = value.value_to_css_string(PrinterOptions::default()).unwrap();
-                let final_str = result.replace(r"\.", ".");
-                generate_expr_lit_str!(final_str)
-              }
-        )));
+                // 直接从 Property::FontFamily 提取原始值，避免 CSS 转义
+                let font_family_str = match value {
+                  Property::FontFamily(font_families) => {
+                    // 提取所有字体名称，用逗号连接，不进行 CSS 转义
+                    font_families.iter()
+                      .map(|family| {
+                        match family {
+                          lightningcss::properties::font::FontFamily::FamilyName(name) => name.as_ref().to_string(),
+                          lightningcss::properties::font::FontFamily::Generic(generic) => generic.to_css_string(PrinterOptions::default()).unwrap(),
+                        }
+                      })
+                      .collect::<Vec<_>>()
+                      .join(", ")
+                  },
+                  _ => {
+                    // 如果不是 FontFamily 类型，回退到 CSS 字符串方式，但去掉转义
+                    value.value_to_css_string(PrinterOptions::default())
+                      .map(|s| s.replace("\\", "").replace("\"", ""))
+                      .unwrap_or_else(|e| {
+                        eprintln!("fontFamily value_to_css_string failed: {:?}, value: {:?}", e, value);
+                        String::new()
+                      })
+                  }
+                };
+                generate_expr_lit_str!(font_family_str)
+            }
+          )));
       }
       "lineHeight" => {
         final_properties.push(StyleValueType::LineHeight(LineHeight::from((

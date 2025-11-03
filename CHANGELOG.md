@@ -1,3 +1,12 @@
+## [1.1.33](https://github.com/NervJS/parse-css-to-stylesheet/compare/v1.1.32...v1.1.33) (2025-11-03)
+
+
+### Bug Fixes
+
+* 修复font-family解析失败导致编译异常 ([f2e046d](https://github.com/NervJS/parse-css-to-stylesheet/commit/f2e046d19438270dbb4a71695151f6d316949f65))
+
+
+
 ## [1.1.32](https://github.com/NervJS/parse-css-to-stylesheet/compare/v1.1.31...v1.1.32) (2025-10-31)
 
 

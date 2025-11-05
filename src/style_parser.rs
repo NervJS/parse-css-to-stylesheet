@@ -236,15 +236,15 @@ impl<'i> Visitor<'i> for StyleVisitor<'i> {
 
         for (index, selector) in selectors.iter().enumerate() {
           let mut all_style = self.all_style.borrow_mut();
-          // let decorations = all_style
-          //   .iter_mut()
-          //   .find(|(media_idx, id, _)| id == selector && media_idx == &self.media_index);
-          // if let Some((_, _, declarations)) = decorations {
-          //   declarations.push(StyleDeclaration {
-          //     specificity: style.selectors.0.get(index).unwrap().specificity(),
-          //     declaration: style.declarations.clone(),
-          //   });
-          // } else {
+          let decorations = all_style
+            .iter_mut()
+            .find(|(media_idx, id, _)| id == selector && media_idx == &self.media_index);
+          if let Some((_, _, declarations)) = decorations {
+            declarations.push(StyleDeclaration {
+              specificity: style.selectors.0.get(index).unwrap().specificity(),
+              declaration: style.declarations.clone(),
+            });
+          } else {
             all_style.push((
               self.media_index,
               selector.clone(),
@@ -253,7 +253,7 @@ impl<'i> Visitor<'i> for StyleVisitor<'i> {
                 declaration: style.declarations.clone(),
               }],
             ));
-          // }
+          }
         }
       }
       // media

@@ -1,3 +1,12 @@
+## [1.1.35](https://github.com/NervJS/parse-css-to-stylesheet/compare/v1.1.34...v1.1.35) (2025-11-10)
+
+
+### Features
+
+* 支持border-left/right/bottom/top 4个方向的变量处理 ([2dba431](https://github.com/NervJS/parse-css-to-stylesheet/commit/2dba43183c69cdcfe586817152d65cfbf7b3cc00))
+
+
+
 ## [1.1.34](https://github.com/NervJS/parse-css-to-stylesheet/compare/v1.1.33...v1.1.34) (2025-11-05)
 
 

@@ -16,6 +16,7 @@ pub enum EnumValue {
   Relative,
   Absolute,
   Fixed,
+  Sticky,
   Invalid,
 }
 
@@ -30,6 +31,7 @@ impl From<(String, &Property<'_>)> for Position {
             position::Position::Relative => EnumValue::Relative,
             position::Position::Absolute => EnumValue::Absolute,
             position::Position::Fixed => EnumValue::Fixed,
+            position::Position::Sticky(_) => EnumValue::Sticky,
             _ => EnumValue::Invalid,
           }
         } else {
@@ -49,6 +51,7 @@ impl ToExpr for Position {
         EnumValue::Relative => generate_expr_enum!(style_property_enum::Position::Relative),
         EnumValue::Absolute => generate_expr_enum!(style_property_enum::Position::Absolute),
         EnumValue::Fixed => generate_expr_enum!(style_property_enum::Position::Fixed),
+        EnumValue::Sticky => generate_expr_enum!(style_property_enum::Position::Sticky),
         EnumValue::Invalid => generate_invalid_expr!(),
       },
     )

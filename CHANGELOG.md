@@ -1,3 +1,12 @@
+## [1.1.36](https://github.com/NervJS/parse-css-to-stylesheet/compare/v1.1.35...v1.1.36) (2026-01-09)
+
+
+### Features
+
+* 支持stikcy解析 ([2ddcdb5](https://github.com/NervJS/parse-css-to-stylesheet/commit/2ddcdb5a37a2c685e47fe9dce3f48229cf6a4e2d))
+
+
+
 ## [1.1.35](https://github.com/NervJS/parse-css-to-stylesheet/compare/v1.1.34...v1.1.35) (2025-11-10)
 
 

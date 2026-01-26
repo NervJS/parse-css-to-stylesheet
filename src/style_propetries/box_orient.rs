@@ -28,7 +28,7 @@ impl From<(String, &Property<'_>)> for BoxOrient {
           CSSBoxOrient::InlineAxis => EnumValue::InlineAxis,
           CSSBoxOrient::BlockAxis => EnumValue::BlockAxis,
         },
-        _ => EnumValue::InlineAxis,
+        _ => EnumValue::Vertical,
       },
     }
   }

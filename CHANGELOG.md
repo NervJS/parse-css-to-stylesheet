@@ -1,3 +1,12 @@
+## [1.1.37](https://github.com/NervJS/parse-css-to-stylesheet/compare/v1.1.36...v1.1.37) (2026-01-26)
+
+
+### Bug Fixes
+
+* 修复box-orient解析异常 ([4117a94](https://github.com/NervJS/parse-css-to-stylesheet/commit/4117a9412df302547f737ef374ed34c050f49ee5))
+
+
+
 ## [1.1.36](https://github.com/NervJS/parse-css-to-stylesheet/compare/v1.1.35...v1.1.36) (2026-01-09)
 
 

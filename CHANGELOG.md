@@ -1,3 +1,13 @@
+## [1.1.39](https://github.com/NervJS/parse-css-to-stylesheet/compare/v1.1.37...v1.1.39) (2026-03-17)
+
+
+### Bug Fixes
+
+* 修复white-space的normal不生效 ([f6167fd](https://github.com/NervJS/parse-css-to-stylesheet/commit/f6167fdc3b8d4855576b2395499ceb0659ead2cf))
+* add publishConfig to win32-x64-msvc package ([36c0b2e](https://github.com/NervJS/parse-css-to-stylesheet/commit/36c0b2e45dc270075c84059f963c1aa739c1f2ca))
+
+
+
 ## [1.1.38](https://github.com/NervJS/parse-css-to-stylesheet/compare/v1.1.37...v1.1.38) (2026-03-17)
 
 

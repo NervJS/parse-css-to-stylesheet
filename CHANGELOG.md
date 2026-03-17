@@ -1,3 +1,12 @@
+## [1.1.38](https://github.com/NervJS/parse-css-to-stylesheet/compare/v1.1.37...v1.1.38) (2026-03-17)
+
+
+### Bug Fixes
+
+* 修复white-space的normal不生效 ([f6167fd](https://github.com/NervJS/parse-css-to-stylesheet/commit/f6167fdc3b8d4855576b2395499ceb0659ead2cf))
+
+
+
 ## [1.1.37](https://github.com/NervJS/parse-css-to-stylesheet/compare/v1.1.36...v1.1.37) (2026-01-26)
 
 

@@ -12,5 +12,8 @@
   "engines": {
     "node": ">= 10"
   },
-  "repository": "https://github.com/NervJS/parse-css-to-stylesheet"
+  "repository": "https://github.com/NervJS/parse-css-to-stylesheet",
+  "publishConfig": {
+    "access": "public"
+  }
 }

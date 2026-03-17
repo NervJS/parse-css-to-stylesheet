@@ -54,5 +54,8 @@
     "resolve:bin": "flatc --json --raw-binary flatbuffers/stylesheet.fbs -- __test__/fixure/style.bin"
   },
   "packageManager": "pnpm@9.11.0",
-  "repository": "https://github.com/NervJS/parse-css-to-stylesheet"
+  "repository": "https://github.com/NervJS/parse-css-to-stylesheet",
+  "publishConfig": {
+    "access": "public"
+  }
 }

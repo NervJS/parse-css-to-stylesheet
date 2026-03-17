@@ -534,7 +534,7 @@ jobs:
       - name: Publish
         run: |
           echo "//registry.npmjs.org/:_authToken=$NPM_TOKEN" >> ~/.npmrc
-          npm publish  --registry=https://registry.npmjs.org/ $PUBLISH_PARAMS
+          npm publish --access public --registry=https://registry.npmjs.org/ $PUBLISH_PARAMS
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
           NPM_TOKEN: ${{ secrets.NPM_TOKEN }}

@@ -15,6 +15,7 @@ pub struct WhiteSpace {
 #[derive(Debug, Clone)]
 pub enum EnumValue {
   NoWrap,
+  Wrap,
   Invalid,
 }
 
@@ -23,6 +24,7 @@ impl ToExpr for WhiteSpace {
     PropertyTuple::One(CSSPropertyType::WhiteSpace, {
       match self.value {
         EnumValue::NoWrap => generate_expr_enum!(style_property_enum::WhiteSpace::NoWrap),
+        EnumValue::Wrap => generate_expr_enum!(style_property_enum::WhiteSpace::Wrap),
         EnumValue::Invalid => generate_invalid_expr!(),
       }
     })
@@ -36,6 +38,7 @@ impl From<(String, &Property<'_>)> for WhiteSpace {
       value: match prop.1 {
         Property::WhiteSpace(value) => match value {
           lightningcss::properties::text::WhiteSpace::NoWrap => EnumValue::NoWrap,
+          lightningcss::properties::text::WhiteSpace::Normal => EnumValue::Wrap,
           _ => EnumValue::Invalid,
         },
         _ => EnumValue::Invalid,

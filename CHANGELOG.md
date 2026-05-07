@@ -1,3 +1,12 @@
+## [1.1.40](https://github.com/NervJS/parse-css-to-stylesheet/compare/v1.1.39...v1.1.40) (2026-05-07)
+
+
+### Features
+
+* 增加对textDecorationThickness\textUnderlineOffset ([eaa4da2](https://github.com/NervJS/parse-css-to-stylesheet/commit/eaa4da23f0753b41957e0571dffe2606a30d5c6a))
+
+
+
 ## [1.1.39](https://github.com/NervJS/parse-css-to-stylesheet/compare/v1.1.37...v1.1.39) (2026-03-17)
 
 

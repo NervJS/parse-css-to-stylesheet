@@ -337,6 +337,18 @@ pub fn parse_style_properties(properties: &Vec<(String, Property)>) -> DeclsAndV
           value,
         ))));
       }
+      "textDecorationThickness" => {
+        final_properties.push(StyleValueType::TextDecoration(TextDecoration::from((
+          id.to_string(),
+          value,
+        ))));
+      }
+      "textUnderlineOffset" => {
+        final_properties.push(StyleValueType::Expr(Expr::new(
+          CSSPropertyType::TextUnderlineOffset,
+          generate_expr_lit_str!(value.value_to_css_string(PrinterOptions::default()).unwrap()),
+        )));
+      }
       "textShadow" => {
         final_properties.push(StyleValueType::TextShadow(TextShadow::from((
           id.to_string(),

@@ -118,6 +118,7 @@ pub enum CSSPropertyType {
   BorderRight = 113,
   BorderBottom = 114,
   BorderLeft = 115,
+  TextUnderlineOffset = 116,
   // ...
   All = 99999,       // used for transition-property
 }
@@ -219,6 +220,7 @@ pub fn string_to_css_property_type(property: &str) -> CSSPropertyType {
     "textDecorationThickness" => CSSPropertyType::TextDecorationThickness,
     "textDecorationStyle" => CSSPropertyType::TextDecorationStyle,
     "textDecorationColor" => CSSPropertyType::TextDecorationColor,
+    "textUnderlineOffset" => CSSPropertyType::TextUnderlineOffset,
     "animationName" => CSSPropertyType::AnimationName,
     "borderWidth" => CSSPropertyType::BorderWidth,
     "borderColor" => CSSPropertyType::BorderColor,

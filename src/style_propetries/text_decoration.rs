@@ -7,10 +7,9 @@ use lightningcss::{
 };
 
 use crate::{
-  generate_expr_enum, generate_expr_lit_color, generate_prop_name,
+  generate_expr_enum, generate_expr_lit_color, generate_expr_lit_str,
   style_propetries::{style_property_enum, traits::ToExpr},
 };
-use swc_core::common::DUMMY_SP;
 use swc_core::ecma::ast::*;
 
 use super::{style_property_type::CSSPropertyType, unit::PropertyTuple};
@@ -21,6 +20,8 @@ pub struct TextDecoration {
   pub line: Option<TextDecorationLine>,
   pub style: Option<TextDecorationStyle>,
   pub color: Option<TextDecorationColor>,
+  pub thickness: Option<String>,
+  pub underline_offset: Option<String>,
 }
 
 #[derive(Debug, Clone)]
@@ -95,6 +96,20 @@ impl ToExpr for TextDecoration {
       ));
     }
 
+    if let Some(thickness) = &self.thickness {
+      props.push((
+        CSSPropertyType::TextDecorationThickness,
+        generate_expr_lit_str!(thickness.clone()),
+      ));
+    }
+
+    if let Some(underline_offset) = &self.underline_offset {
+      props.push((
+        CSSPropertyType::TextUnderlineOffset,
+        generate_expr_lit_str!(underline_offset.clone()),
+      ));
+    }
+
     PropertyTuple::Array(props)
   }
 }
@@ -134,11 +149,18 @@ impl From<(String, &Property<'_>)> for TextDecoration {
         } else {
           color = None
         }
+        let thickness = value
+          .thickness
+          .to_css_string(PrinterOptions::default())
+          .ok()
+          .filter(|v| !v.trim().eq_ignore_ascii_case("auto"));
         TextDecoration {
           id: prop.0,
           line: Some(line),
           style: Some(style),
           color: color,
+          thickness,
+          underline_offset: None,
         }
       }
       Property::TextDecorationLine(value, _) => {
@@ -153,6 +175,8 @@ impl From<(String, &Property<'_>)> for TextDecoration {
           line: Some(line),
           style: None,
           color: None,
+          thickness: None,
+          underline_offset: None,
         }
       }
       Property::TextDecorationStyle(value, _) => {
@@ -168,6 +192,8 @@ impl From<(String, &Property<'_>)> for TextDecoration {
           line: None,
           style: Some(style),
           color: None,
+          thickness: None,
+          underline_offset: None,
         }
       }
       Property::TextDecorationColor(value, _) => {
@@ -195,6 +221,22 @@ impl From<(String, &Property<'_>)> for TextDecoration {
           line: None,
           style: None,
           color: color,
+          thickness: None,
+          underline_offset: None,
+        }
+      }
+      Property::TextDecorationThickness(value) => {
+        let thickness = value
+          .to_css_string(PrinterOptions::default())
+          .ok()
+          .filter(|v| !v.trim().eq_ignore_ascii_case("auto"));
+        TextDecoration {
+          id: prop.0,
+          line: None,
+          style: None,
+          color: None,
+          thickness,
+          underline_offset: None,
         }
       }
       _ => TextDecoration {
@@ -202,6 +244,8 @@ impl From<(String, &Property<'_>)> for TextDecoration {
         line: None,
         style: None,
         color: None,
+        thickness: None,
+        underline_offset: None,
       },
     }
   }

@@ -119,6 +119,7 @@ pub enum CSSPropertyType {
   BorderBottom = 114,
   BorderLeft = 115,
   TextUnderlineOffset = 116,
+  BackdropFilter = 117,
   // ...
   All = 99999,       // used for transition-property
 }
@@ -198,6 +199,7 @@ pub fn string_to_css_property_type(property: &str) -> CSSPropertyType {
     "opacity" => CSSPropertyType::Opacity,
     "transform" => CSSPropertyType::Transform,
     "transformOrigin" => CSSPropertyType::TransformOrigin,
+    "animation" => CSSPropertyType::Animation,
     "animationKeyFrames" => CSSPropertyType::AnimationKeyFrames,
     "animationDuration" => CSSPropertyType::AnimationDuration,
     "animationTimingFunction" => CSSPropertyType::AnimationTimingFunction,
@@ -239,6 +241,7 @@ pub fn string_to_css_property_type(property: &str) -> CSSPropertyType {
     "borderRight" => CSSPropertyType::BorderRight,
     "borderBottom" => CSSPropertyType::BorderBottom,
     "borderLeft" => CSSPropertyType::BorderLeft,
+    "backdropFilter" => CSSPropertyType::BackdropFilter,
     // E 复合属性，仅用作css变量的解析 ====
     _ => CSSPropertyType::Invalid,
   }

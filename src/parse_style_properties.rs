@@ -593,6 +593,12 @@ pub fn parse_style_properties(properties: &Vec<(String, Property)>) -> DeclsAndV
           generate_expr_lit_str!(value.value_to_css_string(PrinterOptions::default()).unwrap()),
         )));
       }
+      "backdropFilter" => {
+        final_properties.push(StyleValueType::Expr(Expr::new(
+          CSSPropertyType::BackdropFilter,
+          generate_expr_lit_str!(value.value_to_css_string(PrinterOptions::default()).unwrap()),
+        )));
+      }
       _ => {
         // position、zIndex等... 会自动处理 单位、数字等相关信息
         // final_properties.push(StyleValueType::Normal(Normal::new(id.to_string(), value.value_to_css_string(PrinterOptions::default()).unwrap())));

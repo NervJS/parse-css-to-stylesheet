@@ -1,3 +1,12 @@
+## [1.1.41](https://github.com/NervJS/parse-css-to-stylesheet/compare/v1.1.40...v1.1.41) (2026-05-25)
+
+
+### Features
+
+* 支持backdropFilter ([22c66d4](https://github.com/NervJS/parse-css-to-stylesheet/commit/22c66d4ecef999156c7ea4428304b038aae74ba9))
+
+
+
 ## [1.1.40](https://github.com/NervJS/parse-css-to-stylesheet/compare/v1.1.39...v1.1.40) (2026-05-07)
 
 

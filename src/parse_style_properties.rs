@@ -546,16 +546,16 @@ pub fn parse_style_properties(properties: &Vec<(String, Property)>) -> DeclsAndV
           value,
         ))));
       }
-      // "transition"
-      // | "transitionProperty"
-      // | "transitionDuration"
-      // | "transitionDelay"
-      // | "transitionTimingFunction" => {
-      //   final_properties.push(StyleValueType::Transition(Transition::from((
-      //     id.to_string(),
-      //     value,
-      //   ))));
-      // }
+      "transition"
+      | "transitionProperty"
+      | "transitionDuration"
+      | "transitionDelay"
+      | "transitionTimingFunction" => {
+        final_properties.push(StyleValueType::Transition(Transition::from((
+          id.to_string(),
+          value,
+        ))));
+      }
       "zIndex" => {
         final_properties.push(StyleValueType::Normal(Normal::new(
           CSSPropertyType::ZIndex,

@@ -1,3 +1,12 @@
+## [1.1.43](https://github.com/NervJS/parse-css-to-stylesheet/compare/v1.1.42...v1.1.43) (2026-07-14)
+
+
+### Reverts
+
+* Revert "chore(release): publish 1.1.42" ([89a0030](https://github.com/NervJS/parse-css-to-stylesheet/commit/89a0030ae4a76fd6e4a4deafc38fe14a8c69c726))
+
+
+
 ## [1.1.41](https://github.com/NervJS/parse-css-to-stylesheet/compare/v1.1.40...v1.1.41) (2026-05-25)
 
 

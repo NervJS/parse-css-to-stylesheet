@@ -1,6 +1,7 @@
 {
   "name": "@tarojs/parse-css-to-stylesheet",
-  "version": "1.1.41",
+  "version": "1.1.41-skip-transition",
+  "description": "Special version that skips transition properties during CSS parsing",
   "main": "index.js",
   "types": "index.d.ts",
   "napi": {

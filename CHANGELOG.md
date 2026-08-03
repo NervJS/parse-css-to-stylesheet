@@ -1,3 +1,12 @@
+## [1.1.44](https://github.com/NervJS/parse-css-to-stylesheet/compare/v1.1.43...v1.1.44) (2026-08-03)
+
+
+### Features
+
+* 支持解析ch/PX单位 ([974094b](https://github.com/NervJS/parse-css-to-stylesheet/commit/974094beb66e8bdf7127e7dfbbc936deb53b2052))
+
+
+
 ## [1.1.43](https://github.com/NervJS/parse-css-to-stylesheet/compare/v1.1.42...v1.1.43) (2026-07-14)
 
 

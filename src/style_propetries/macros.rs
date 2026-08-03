@@ -36,6 +36,15 @@ macro_rules! generate_expr_lit_str {
   }};
 }
 
+/// 生成字符串字面量，不把 px 转成 lpx/vp（用于物理像素等场景）
+#[macro_export]
+macro_rules! generate_expr_lit_str_raw {
+  ($var:expr) => {{
+    use swc_core::ecma::ast::*;
+    Expr::Lit(Lit::Str($var.to_string().into()))
+  }};
+}
+
 #[macro_export]
 macro_rules! generate_expr_lit_num {
   ($var:expr) => {{

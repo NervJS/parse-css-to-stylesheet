@@ -3,7 +3,7 @@ use pcre2::bytes::Regex;
 
 use crate::{
   constants::{CONVERT_STYLE_PX_FN, RN_CONVERT_STYLE_PX_FN, RN_CONVERT_STYLE_VU_FN},
-  generate_expr_lit_num, generate_expr_lit_str,
+  generate_expr_lit_num, generate_expr_lit_str, generate_expr_lit_str_raw,
 };
 use swc_core::common::DUMMY_SP;
 use swc_core::ecma::ast::*;
@@ -112,7 +112,8 @@ pub fn generate_expr_by_length_value(length_value: &LengthValue, platform: Platf
           args.push(generate_expr_lit_str!("PX"));
         }
         Platform::Harmony => {
-          return generate_expr_lit_str!(format!("{}vp", num));
+          // ch 作为物理像素标记，保留 px，避免 generate_expr_lit_str 转成 lpx
+          return generate_expr_lit_str_raw!(format!("{}px", num));
           // handler = Some(CONVERT_STYLE_PX_FN.to_string());
           // args.push(generate_expr_lit_num!(*num as f64));
           // args.push(generate_expr_lit_str!("PX"));
@@ -162,7 +163,7 @@ pub fn generate_expr_by_length_value(length_value: &LengthValue, platform: Platf
 
 pub fn generate_expr_with_css_input(input: String, platform: Platform) -> Expr {
   // 定义匹配 '16px' 的正则表达式
-  let re = Regex::new(r"(-?(?P<num>\d+(\.\d*)?|\.\d+))(?P<unit>(%|px|vw|vh|pX|PX|Px)?)").unwrap();
+  let re = Regex::new(r"(-?(?P<num>\d+(\.\d*)?|\.\d+))(?P<unit>(%|px|vw|vh|pX|PX|Px|ch)?)").unwrap();
   let bytes = input.as_bytes();
   // 使用正则表达式进行匹配
   if let Ok(caps) = re.captures(bytes) {
@@ -181,7 +182,9 @@ pub fn generate_expr_with_css_input(input: String, platform: Platform) -> Expr {
             }
             "px" => return generate_expr_lit_num!(number),
             "rem" => return generate_expr_lit_num!(number * 16.0),
-            "pX" | "PX" | "Px" => return generate_expr_lit_str!(format!("{}px", number)),
+            "pX" | "PX" | "Px" | "ch" => {
+              return generate_expr_lit_str_raw!(format!("{}px", number))
+            }
             "%" => return generate_expr_lit_str!(format!("{}%", number)),
             _ => {
               // 如果没有单位，则认为是纯数字，返回 Expr::Num

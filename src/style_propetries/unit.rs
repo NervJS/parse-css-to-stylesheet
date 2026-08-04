@@ -104,7 +104,7 @@ pub fn generate_expr_by_length_value(length_value: &LengthValue, platform: Platf
       }
     }
     LengthValue::Ch(num) => {
-      // 大写px
+      // ch → 输出物理像素单位 ppx（避免走 generate_expr_lit_str 被转成 lpx）
       match platform {
         Platform::ReactNative => {
           handler = Some(RN_CONVERT_STYLE_VU_FN.to_string());
@@ -112,11 +112,7 @@ pub fn generate_expr_by_length_value(length_value: &LengthValue, platform: Platf
           args.push(generate_expr_lit_str!("PX"));
         }
         Platform::Harmony => {
-          // ch 作为物理像素标记，保留 px，避免 generate_expr_lit_str 转成 lpx
-          return generate_expr_lit_str_raw!(format!("{}px", num));
-          // handler = Some(CONVERT_STYLE_PX_FN.to_string());
-          // args.push(generate_expr_lit_num!(*num as f64));
-          // args.push(generate_expr_lit_str!("PX"));
+          return generate_expr_lit_str_raw!(format!("{}ppx", num));
         }
       }
     }
@@ -182,9 +178,10 @@ pub fn generate_expr_with_css_input(input: String, platform: Platform) -> Expr {
             }
             "px" => return generate_expr_lit_num!(number),
             "rem" => return generate_expr_lit_num!(number * 16.0),
-            "pX" | "PX" | "Px" | "ch" => {
+            "pX" | "PX" | "Px" => {
               return generate_expr_lit_str_raw!(format!("{}px", number))
             }
+            "ch" => return generate_expr_lit_str_raw!(format!("{}ppx", number)),
             "%" => return generate_expr_lit_str!(format!("{}%", number)),
             _ => {
               // 如果没有单位，则认为是纯数字，返回 Expr::Num

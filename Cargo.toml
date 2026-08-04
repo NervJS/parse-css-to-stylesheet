@@ -34,4 +34,6 @@ napi-build = "2.0.1"
 
 [profile.release]
 lto = true
-debug = false # prevent Windows LNK1201 when writing PDBs under LTO
+debug = false
+strip = "symbols"
+incremental = false

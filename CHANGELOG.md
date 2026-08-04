@@ -1,3 +1,12 @@
+## [1.1.45](https://github.com/NervJS/parse-css-to-stylesheet/compare/v1.1.44...v1.1.45) (2026-08-04)
+
+
+### Features
+
+* 支持1ppx ([11bfa8a](https://github.com/NervJS/parse-css-to-stylesheet/commit/11bfa8aa6cab8d869e714e72d4d7ea2134937bd1))
+
+
+
 ## [1.1.44](https://github.com/NervJS/parse-css-to-stylesheet/compare/v1.1.43...v1.1.44) (2026-08-03)
 
 

@@ -1,3 +1,12 @@
+# [1.2.0](https://github.com/NervJS/parse-css-to-stylesheet/compare/v1.1.45...v1.2.0) (2026-09-07)
+
+
+### Features
+
+* 支持fb瘦身优化 ([5f035e5](https://github.com/NervJS/parse-css-to-stylesheet/commit/5f035e575566906a633204e07cd421ff714138bd))
+
+
+
 ## [1.1.45](https://github.com/NervJS/parse-css-to-stylesheet/compare/v1.1.44...v1.1.45) (2026-08-04)
 
 

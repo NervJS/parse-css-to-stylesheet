@@ -1,0 +1,159 @@
+namespace StylesV2;
+
+// 字符串池引用：id 为 StyleSheet.string_pool 的下标
+// 字符串只存一份到池里，各引用处只存 4 字节下标
+table PoolString {
+  id:uint32;
+}
+
+table Integer {
+  value:int64;
+}
+
+table Double {
+  value:double;
+}
+
+table Boolean {
+  value:bool;
+}
+
+// 字符串数组，元素为 string_pool 下标
+table StringArray {
+  values:[uint32];
+}
+
+table IntegerArray {
+  values:[int64];
+}
+
+table DoubleArray {
+  values:[double];
+}
+
+table ObjectArray {
+  values:[KeyValue];
+}
+
+table IntegereArrayArray {
+  values:[IntegerArray];
+}
+
+table DoubleArrayArray {
+  values:[DoubleArray];
+}
+
+union Value {
+  PoolString,
+  Integer,
+  Double,
+  Boolean,
+  StringArray,
+  IntegerArray,
+  DoubleArray,
+  Object,
+  ObjectArray,
+  IntegereArrayArray,
+  DoubleArrayArray
+}
+
+table KeyValue {
+  key:string;
+  value:Value;
+}
+
+table Object {
+  fields:[KeyValue];
+}
+
+table DeclarationTuple {
+  property_id:uint8;
+  value:Value;
+  flag:uint8;
+}
+
+// struct 内联存储，省掉 table 的 vtable/offset 开销
+// is_string 为 true 时 string_id 为 string_pool 下标，否则取 integer_value
+struct Selector {
+  string_id:uint32;
+  integer_value:uint8;
+  is_string:bool;
+}
+
+struct PseudoKey {
+  integer_value:int8;
+  bool_value:bool;
+  is_int:bool;
+}
+
+// CSS 变量键值对，key/value 均为 string_pool 下标
+struct KeyValueString {
+  key:uint32;
+  value:uint32;
+}
+
+table Style {
+  declarations:[DeclarationTuple];
+  media:uint8;
+  pseudo:uint8;
+  pseudo_key:[PseudoKey];
+  pseudo_val:string;
+  selector:[Selector];
+  variables:[KeyValueString];
+}
+
+table Font {
+  font_family: string;
+  src: string;
+}
+
+// 关键帧动画点，每个点包含百分比和样式声明
+table KeyframeAnimationPoint {
+  percentage:float;
+  declarations:[DeclarationTuple];
+}
+
+// 关键帧动画，包含名称、媒体ID和一系列动画点
+table KeyframeAnimation {
+  name:string;
+  media:uint8;
+  keyframe_points:[KeyframeAnimationPoint];
+}
+
+table PrimitiveCondition {
+  feature:uint8;
+  operator:uint8;
+  value:Value;
+}
+
+table CompoundCondition {
+  conditions:[Condition];
+}
+
+union ConditionValue {
+  PrimitiveCondition,
+  CompoundCondition
+}
+
+table Condition {
+  type:uint8;
+  value:ConditionValue;
+}
+
+table Media {
+  id:uint8;
+  conditions:[Condition];
+}
+
+table StyleSheet {
+  fonts:[Font];
+  keyframes:[KeyframeAnimation];
+  medias:[Media];
+  styles:[Style];
+  // 字符串池：declaration 字符串值、选择器、CSS 变量等统一去重存放
+  string_pool:[string];
+  design_width:uint16;
+  allow_inherit:bool;
+}
+
+root_type StyleSheet;

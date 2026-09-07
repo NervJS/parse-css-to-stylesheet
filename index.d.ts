@@ -5,6 +5,7 @@
 
 export interface OutputOptions {
   isBin?: boolean
+  version?: string
 }
 export interface ParseOptions {
   platformString: string

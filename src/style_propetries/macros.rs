@@ -442,7 +442,11 @@ macro_rules! generate_length_value_property {
               }
               generate_expr_lit_str!(str_value + "%")
             },
-            EnumValue::Auto => generate_invalid_expr!()   // harmony 是个非法制，固不会生效
+            EnumValue::Auto => generate_expr_lit_str!("auto")
+            // margin-* / inset 的 auto 透传为 "auto" 字符串：
+            // Fabric conversions 识别 "auto"（margin 居中、inset 未定位语义），
+            // 下游 yoga/布局引擎均有对应支持；padding 经 lightningcss 解析不会产生 Auto
+            // （padding-* 只接受 LengthPercentage，`padding-*: auto` 在解析期即被丢弃）。
           }
         )
       }

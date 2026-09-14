@@ -1,3 +1,12 @@
+## [1.2.1](https://github.com/NervJS/parse-css-to-stylesheet/compare/v1.2.0...v1.2.1) (2026-09-14)
+
+
+### Features
+
+* 更新文档 ([8357173](https://github.com/NervJS/parse-css-to-stylesheet/commit/8357173521599178f5c47e97c0b6ec0e0aba0771))
+
+
+
 # [1.2.0](https://github.com/NervJS/parse-css-to-stylesheet/compare/v1.1.45...v1.2.0) (2026-09-07)
 
 

@@ -282,6 +282,23 @@ test('Harmony attrbute test left top right bottom margin-left margin-right margi
   t.snapshot(code)
 })
 
+test('Harmony attrbute test margin auto', t => {
+  const { code } = parse([`
+  .item {
+    margin-left: auto;
+    margin-right: auto;
+    margin-top: auto;
+    margin-bottom: auto;
+  }
+  .item2 {
+    margin: 0 auto;
+  }
+  `], {
+    platformString: 'Harmony'
+  })
+  t.snapshot(code)
+})
+
 test('Harmony attrbute test width height min-width max-width min-height max-height', t => {
   const { code } = parse([`
   .item {

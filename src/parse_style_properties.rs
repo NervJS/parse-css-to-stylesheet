@@ -21,12 +21,69 @@ use crate::{
   utils::lowercase_first,
 };
 
+use crate::style_propetries::traits::ToStyleValue;
+
 #[derive(Debug, Clone)]
 pub struct DeclsAndVars {
   pub decls: Vec<StyleValueType>,
   pub vars: Vec<CssVariable>,
   pub has_env: bool
 }
+
+// ---------------------------------------------------------------------------
+// 注册表派发：把 `match property_name { ... }` 的同构臂（约 60 条）从
+// `property_registry.rs` 的表自动展开。
+//
+// 表内 `src` 字段：
+//   - `pname` — 把当前 camelCase 属性名（vendor 前缀摘除 + 首字母小写）传给 `From::from`
+//     例如 `FlexAlign::from(("justifyContent", value))` 中 `"justifyContent"` 决定枚举 id。
+//   - `id`    — 把底层 lightningcss `PropertyId` 的原始 camelCase 字符串传给 `From::from`
+//     例如 `Gap::from(("columnGap", value))`。
+//   - `special` / `skip` — 在此生成 `None`，由下面的手写 match 继续处理。
+//
+// 返回 `Some(StyleValueType)` 表示匹配并成功构造，`None` 则 fallthrough。
+// 语义与原始 dispatch 完全一致：行为差异仅在源码层面（去重），JS 产物字节级不变。
+// ---------------------------------------------------------------------------
+
+/// 单个属性的 wrap 派发器：`StyleValueType::$wrapper($payload::from((.., value)))`。
+/// `$src` ∈ {pname, id} 决定第一个 tuple 元素用的是 property name 还是原始 id。
+macro_rules! __dispatch_wrap_one {
+  (pname, $wrapper:ident, $payload:ident, $pname:expr, $id:expr, $value:expr) => {
+    Some(StyleValueType::$wrapper($payload::from(($pname.to_string(), $value))))
+  };
+  (id, $wrapper:ident, $payload:ident, $pname:expr, $id:expr, $value:expr) => {
+    Some(StyleValueType::$wrapper($payload::from(($id.to_string(), $value))))
+  };
+  // special / skip：不在通用派发中处理
+  (special, $wrapper:ident, $payload:ident, $pname:expr, $id:expr, $value:expr) => { None };
+  (skip, $wrapper:ident, $payload:ident, $pname:expr, $id:expr, $value:expr) => { None };
+}
+
+macro_rules! __define_registry_dispatch {
+  ($($variant:ident, $id_num:expr, $kind:ident, $wrap:ident($payload:ident) $src:ident, $kebab:literal, $camel:literal $(, $alias:literal)* ;)*) => {
+    /// 注册表驱动的属性派发。匹配 camelCase 属性名（含别名）→ 构造 StyleValueType。
+    ///
+    /// - `property_name`：已 vendor 前缀摘除 + 首字母小写的 camelCase 名
+    /// - `id`：原始 lightningcss `PropertyId` 的 camelCase 字符串（`FlexAlign` 等结构需用它选 id）
+    /// - `value`：lightningcss `Property`
+    ///
+    /// 返回 `None` 时由调用点继续走手写的特殊臂（fontFamily / content / zIndex / …）。
+    pub fn registry_dispatch_property(
+      property_name: &str,
+      id: &str,
+      value: &lightningcss::properties::Property<'_>,
+    ) -> Option<StyleValueType> {
+      match property_name {
+        $(
+          $camel $(| $alias)* => __dispatch_wrap_one!($src, $wrap, $payload, property_name, id, value),
+        )*
+        _ => None,
+      }
+    }
+  };
+}
+
+crate::for_each_property_entry!(__define_registry_dispatch);
 
 pub fn parse_style_properties(properties: &Vec<(String, Property)>) -> DeclsAndVars {
   let mut final_properties = vec![];
@@ -133,94 +190,56 @@ pub fn parse_style_properties(properties: &Vec<(String, Property)>) -> DeclsAndV
     let mut property_name = property_name.to_string();
     lowercase_first(&mut property_name);
 
+    // -------------------------------------------------------------------
+    // 第一步：注册表同构派发（约 60 条 wrap 臂），匹配即 push
+    // -------------------------------------------------------------------
+    if let Some(decl) = registry_dispatch_property(property_name.as_str(), id.as_str(), value) {
+      final_properties.push(decl);
+      continue;
+    }
+
+    // -------------------------------------------------------------------
+    // 第二步：特殊臂（每条都是真实业务逻辑，保留手写）
+    //   8 条：fontFamily / content / zIndex / lineClamp / textUnderlineOffset
+    //         / filter / backdropFilter / gridTemplate(+ Columns/Rows 简写拆分)
+    // -------------------------------------------------------------------
     match property_name.as_str() {
-      // 基础样式
-      "alignContent" => {
-        final_properties.push(StyleValueType::FlexAlign(FlexAlign::from((
-          property_name.to_string(),
-          value,
-        ))));
+      "fontFamily" => {
+        final_properties.push(StyleValueType::Expr(Expr::new(
+          CSSPropertyType::FontFamily,
+          {
+            // 直接从 Property::FontFamily 提取原始值，避免 CSS 转义
+            let font_family_str = match value {
+              Property::FontFamily(font_families) => {
+                // 提取所有字体名称，用逗号连接，不进行 CSS 转义
+                font_families
+                  .iter()
+                  .map(|family| {
+                    match family {
+                      lightningcss::properties::font::FontFamily::FamilyName(name) => name.as_ref().to_string(),
+                      lightningcss::properties::font::FontFamily::Generic(generic) => generic.to_css_string(PrinterOptions::default()).unwrap(),
+                    }
+                  })
+                  .collect::<Vec<_>>()
+                  .join(", ")
+              },
+              _ => {
+                // 如果不是 FontFamily 类型，回退到 CSS 字符串方式，但去掉转义
+                value.value_to_css_string(PrinterOptions::default())
+                  .map(|s| s.replace("\\", "").replace("\"", ""))
+                  .unwrap_or_else(|e| {
+                    eprintln!("fontFamily value_to_css_string failed: {:?}, value: {:?}", e, value);
+                    String::new()
+                  })
+              }
+            };
+            generate_expr_lit_str!(font_family_str)
+          }
+        )));
       }
-      "justifyContent" => {
-        final_properties.push(StyleValueType::FlexAlign(FlexAlign::from((
-          property_name.to_string(),
-          value,
-        ))));
-      }
-      "alignItems" => {
-        final_properties.push(StyleValueType::AlignItems(ItemAlign::from((
-          property_name.to_string(),
-          value,
-        ))));
-      }
-      "alignSelf" => {
-        final_properties.push(StyleValueType::AlignItems(ItemAlign::from((
-          property_name.to_string(),
-          value,
-        ))));
-      }
-      "flex" => {
-        final_properties.push(StyleValueType::Flex(Flex::from((id.to_string(), value))));
-      }
-      "flexBasis" => {
-        final_properties.push(StyleValueType::FlexBasis(FlexBasis::from((
-          property_name.to_string(),
-          value,
-        ))));
-      }
-      "flexDirection" => {
-        final_properties.push(StyleValueType::FlexDirection(FlexDirection::from((
-          property_name.to_string(),
-          value,
-        ))));
-      }
-      "flexGrow" => {
-        final_properties.push(StyleValueType::NumberProperty(NumberProperty::from((
-          property_name.to_string(),
-          value,
-        ))));
-      }
-      "flexShrink" => {
-        final_properties.push(StyleValueType::NumberProperty(NumberProperty::from((
-          property_name.to_string(),
-          value,
-        ))));
-      }
-      "flexWrap" => {
-        final_properties.push(StyleValueType::FlexWrap(FlexWrap::from((
-          property_name.to_string(),
-          value,
-        ))));
-      }
-      "aspectRatio" => {
-        final_properties.push(StyleValueType::AspectRatio(AspectRatio::from((
-          property_name.to_string(),
-          value,
-        ))));
-      }
-      "display" => {
-        final_properties.push(StyleValueType::Display(Display::from((
-          property_name.to_string(),
-          value,
-        ))));
-      }
-      // S Grid 布局（跨端基础集）====
-      // justify-items / justify-self 直接复用 ItemAlign 的映射逻辑（结构同 align-items/align-self）
-      "justifyItems" => {
-        final_properties.push(StyleValueType::AlignItems(ItemAlign::from((
-          property_name.to_string(),
-          value,
-        ))));
-      }
-      "justifySelf" => {
-        final_properties.push(StyleValueType::AlignItems(ItemAlign::from((
-          property_name.to_string(),
-          value,
-        ))));
-      }
-      "gridTemplateColumns" | "gridTemplateRows" | "gridTemplate" => {
+      "gridTemplate" => {
+        // grid-template 简写：无 areas 时拆出 rows/columns 两条独立声明
         if let lightningcss::properties::Property::GridTemplate(template) = value {
-          // 简写 `grid-template: rows / columns`：拆出两条独立声明
           if let lightningcss::properties::grid::GridTemplateAreas::None = &template.areas {
             final_properties.push(StyleValueType::GridTemplate(GridTemplate::from((
               "gridTemplateRows".to_string(),
@@ -232,324 +251,11 @@ pub fn parse_style_properties(properties: &Vec<(String, Property)>) -> DeclsAndV
             ))));
           }
           // 带 areas 的 grid-template 属于方案 2，不支持时静默跳过
-        } else {
-          final_properties.push(StyleValueType::GridTemplate(GridTemplate::from((
-            property_name.to_string(),
-            value,
-          ))));
         }
       }
-      "gridRow" | "gridColumn" | "gridArea" | "gridRowStart" | "gridRowEnd"
-      | "gridColumnStart" | "gridColumnEnd" => {
-        final_properties.push(StyleValueType::GridPlacement(GridPlacement::from((
+      "gridTemplateColumns" | "gridTemplateRows" => {
+        final_properties.push(StyleValueType::GridTemplate(GridTemplate::from((
           property_name.to_string(),
-          value,
-        ))));
-      }
-      // E Grid 布局 ====
-      "gap" | "columnGap" | "rowGap" => {
-        final_properties.push(StyleValueType::Gap(Gap::from((id.to_string(), value))));
-      }
-      "margin" | "padding" => {
-        final_properties.push(StyleValueType::MarginPadding(MarginPadding::from((
-          id.to_string(),
-          value,
-        ))));
-      }
-      "marginTop" | "marginBottom" | "marginLeft" | "marginRight" | "paddingTop"
-      | "paddingBottom" | "paddingLeft" | "paddingRight" | "top" | "bottom" | "left" | "right" => {
-        final_properties.push(StyleValueType::LengthValueProperty(
-          LengthValueProperty::from((id.to_string(), value)),
-        ));
-      }
-      "maxHeight" | "maxWidth" => {
-        final_properties.push(StyleValueType::MaxSizeProperty(MaxSizeProperty::from((
-          id.to_string(),
-          value,
-        ))));
-      }
-      "height" | "width" | "minHeight" | "minWidth" => {
-        final_properties.push(StyleValueType::SizeProperty(SizeProperty::from((
-          id.to_string(),
-          value,
-        ))));
-      }
-      "overflow" => {
-        final_properties.push(StyleValueType::Overflow(Overflow::from((
-          id.to_string(),
-          value,
-        ))));
-      }
-      "pointerEvents" => {
-        final_properties.push(StyleValueType::PointerEvents(PointerEvents::from((
-          id.to_string(),
-          value,
-        ))));
-      }
-      "color" | "backgroundColor" => {
-        final_properties.push(StyleValueType::ColorProperty(ColorProperty::from((
-          id.to_string(),
-          value,
-        ))));
-      }
-      // 文本样式
-      "fontSize" => {
-        final_properties.push(StyleValueType::FontSize(FontSize::from((
-          id.to_string(),
-          value,
-        ))));
-      }
-      "fontStyle" => {
-        final_properties.push(StyleValueType::FontStyle(FontStyle::from((
-          id.to_string(),
-          value,
-        ))));
-      }
-      "fontWeight" => {
-        final_properties.push(StyleValueType::FontWeight(FontWeight::from((
-          id.to_string(),
-          value,
-        ))));
-      }
-      "fontFamily" => {
-        final_properties.push(StyleValueType::Expr(Expr::new(
-          CSSPropertyType::FontFamily,
-        {
-                // 直接从 Property::FontFamily 提取原始值，避免 CSS 转义
-                let font_family_str = match value {
-                  Property::FontFamily(font_families) => {
-                    // 提取所有字体名称，用逗号连接，不进行 CSS 转义
-                    font_families.iter()
-                      .map(|family| {
-                        match family {
-                          lightningcss::properties::font::FontFamily::FamilyName(name) => name.as_ref().to_string(),
-                          lightningcss::properties::font::FontFamily::Generic(generic) => generic.to_css_string(PrinterOptions::default()).unwrap(),
-                        }
-                      })
-                      .collect::<Vec<_>>()
-                      .join(", ")
-                  },
-                  _ => {
-                    // 如果不是 FontFamily 类型，回退到 CSS 字符串方式，但去掉转义
-                    value.value_to_css_string(PrinterOptions::default())
-                      .map(|s| s.replace("\\", "").replace("\"", ""))
-                      .unwrap_or_else(|e| {
-                        eprintln!("fontFamily value_to_css_string failed: {:?}, value: {:?}", e, value);
-                        String::new()
-                      })
-                  }
-                };
-                generate_expr_lit_str!(font_family_str)
-            }
-          )));
-      }
-      "lineHeight" => {
-        final_properties.push(StyleValueType::LineHeight(LineHeight::from((
-          id.to_string(),
-          value,
-        ))));
-      }
-      "textAlign" => {
-        final_properties.push(StyleValueType::TextAlign(TextAlign::from((
-          id.to_string(),
-          value,
-        ))));
-      }
-      "textDecoration" => {
-        // textDecorationLine、textDecorationColor、textDecorationStyle
-        final_properties.push(StyleValueType::TextDecoration(TextDecoration::from((
-          id.to_string(),
-          value,
-        ))));
-      }
-      "textDecorationLine" => {
-        final_properties.push(StyleValueType::TextDecoration(TextDecoration::from((
-          id.to_string(),
-          value,
-        ))));
-      }
-      "textDecorationColor" => {
-        final_properties.push(StyleValueType::TextDecoration(TextDecoration::from((
-          id.to_string(),
-          value,
-        ))));
-      }
-      "textDecorationStyle" => {
-        final_properties.push(StyleValueType::TextDecoration(TextDecoration::from((
-          id.to_string(),
-          value,
-        ))));
-      }
-      "textDecorationThickness" => {
-        final_properties.push(StyleValueType::TextDecoration(TextDecoration::from((
-          id.to_string(),
-          value,
-        ))));
-      }
-      "textUnderlineOffset" => {
-        final_properties.push(StyleValueType::Expr(Expr::new(
-          CSSPropertyType::TextUnderlineOffset,
-          generate_expr_lit_str!(value.value_to_css_string(PrinterOptions::default()).unwrap()),
-        )));
-      }
-      "textShadow" => {
-        final_properties.push(StyleValueType::TextShadow(TextShadow::from((
-          id.to_string(),
-          value,
-        ))));
-      }
-      "textTransform" => {
-        final_properties.push(StyleValueType::TextTransform(TextTransform::from((
-          id.to_string(),
-          value,
-        ))));
-      }
-      "textOverflow" => {
-        final_properties.push(StyleValueType::TextOverflow(TextOverflow::from((
-          id.to_string(),
-          value,
-        ))));
-      }
-      "letterSpacing" => {
-        final_properties.push(StyleValueType::LetterSpacing(LetterSpacing::from((
-          id.to_string(),
-          value,
-        ))));
-      }
-      "verticalAlign" => {
-        final_properties.push(StyleValueType::VerticalAlign(VerticalAlign::from((
-          id.to_string(),
-          value,
-        ))));
-      }
-      // 边框
-      "borderColor" => {
-        final_properties.push(StyleValueType::BorderColor(BorderColor::from((
-          id.to_string(),
-          value,
-        ))));
-      }
-      "borderTopColor" | "borderBottomColor" | "borderLeftColor" | "borderRightColor" => {
-        final_properties.push(StyleValueType::BorderColor(BorderColor::from((
-          id.to_string(),
-          value,
-        ))));
-      }
-      "borderWidth" => {
-        final_properties.push(StyleValueType::BorderWidth(BorderWidth::from((
-          id.to_string(),
-          value,
-        ))));
-      }
-      "borderTopWidth" | "borderBottomWidth" | "borderLeftWidth" | "borderRightWidth" => {
-        final_properties.push(StyleValueType::BorderWidth(BorderWidth::from((
-          id.to_string(),
-          value,
-        ))));
-      }
-      "borderRadius" => {
-        final_properties.push(StyleValueType::BorderRadius(BorderRadius::from((
-          id.to_string(),
-          value,
-        ))));
-      }
-      "borderTopLeftRadius"
-      | "borderTopRightRadius"
-      | "borderBottomLeftRadius"
-      | "borderBottomRightRadius" => {
-        final_properties.push(StyleValueType::BorderRadius(BorderRadius::from((
-          id.to_string(),
-          value,
-        ))));
-      }
-      "borderStyle" => {
-        final_properties.push(StyleValueType::BorderStyle(BorderStyle::from((
-          id.to_string(),
-          value,
-        ))));
-      }
-      "borderTopStyle" | "borderBottomStyle" | "borderLeftStyle" | "borderRightStyle" => {
-        final_properties.push(StyleValueType::BorderStyle(BorderStyle::from((
-          id.to_string(),
-          value,
-        ))));
-      }
-      "border" => {
-        final_properties.push(StyleValueType::Border(Border::from((
-          id.to_string(),
-          value,
-        ))));
-      }
-      "borderTop" | "borderBottom" | "borderLeft" | "borderRight" => {
-        final_properties.push(StyleValueType::Border(Border::from((
-          id.to_string(),
-          value,
-        ))));
-      }
-      // 变换
-      "transform" => {
-        final_properties.push(StyleValueType::Transform(Transform::from((
-          id.to_string(),
-          value,
-        ))));
-      }
-      "transformOrigin" => {
-        final_properties.push(StyleValueType::TransformOrigin(TransformOrigin::from((
-          id.to_string(),
-          value,
-        ))));
-      }
-      // 背景
-      "backgroundRepeat" => {
-        final_properties.push(StyleValueType::BackgroundRepeat(BackgroundRepeat::from((
-          id.to_string(),
-          value,
-        ))));
-      }
-      "backgroundPosition" => {
-        final_properties.push(StyleValueType::BackgroundPosition(
-          BackgroundPosition::from((id.to_string(), value)),
-        ));
-      }
-      "backgroundSize" => {
-        final_properties.push(StyleValueType::BackgroundSize(BackgroundSize::from((
-          id.to_string(),
-          value,
-        ))));
-      }
-      "backgroundImage" => {
-        final_properties.push(StyleValueType::BackgroundImage(BackgroundImage::from((
-          id.to_string(),
-          value,
-        ))));
-      }
-      "background" => {
-        final_properties.push(StyleValueType::Background(Background::from((
-          id.to_string(),
-          value,
-        ))));
-      }
-      "boxShadow" => {
-        final_properties.push(StyleValueType::BoxShadow(BoxShadow::from((
-          id.to_string(),
-          value,
-        ))));
-      }
-      "position" => {
-        final_properties.push(StyleValueType::Position(Position::from((
-          id.to_string(),
-          value,
-        ))));
-      }
-      "visibility" => {
-        final_properties.push(StyleValueType::Visibility(Visibility::from((
-          id.to_string(),
-          value,
-        ))));
-      }
-      "opacity" => {
-        final_properties.push(StyleValueType::Opacity(Opacity::from((
-          id.to_string(),
           value,
         ))));
       }
@@ -569,36 +275,6 @@ pub fn parse_style_properties(properties: &Vec<(String, Property)>) -> DeclsAndV
           )));
         }
       }
-      "animation" | "animationName" => {
-        // if let Some(ref keyframes_map) = keyframes_map {
-        //   final_properties.push(StyleValueType::Animation(Animation::from((id.to_string(), value, Some(keyframes_map.clone())))));
-        // }
-        final_properties.push(StyleValueType::AnimationMulti(AnimationMulti::from((
-          id.to_string(),
-          value,
-        ))));
-      }
-      "animationDelay"
-      | "animationDuration"
-      | "animationIterationCount"
-      | "animationTimingFunction"
-      | "animationFillMode" => {
-        // final_properties.push(StyleValueType::Animation(Animation::from((id.to_string(), value, None))));
-        final_properties.push(StyleValueType::AnimationMulti(AnimationMulti::from((
-          id.to_string(),
-          value,
-        ))));
-      }
-      "transition"
-      | "transitionProperty"
-      | "transitionDuration"
-      | "transitionDelay"
-      | "transitionTimingFunction" => {
-        final_properties.push(StyleValueType::Transition(Transition::from((
-          id.to_string(),
-          value,
-        ))));
-      }
       "zIndex" => {
         final_properties.push(StyleValueType::Normal(Normal::new(
           CSSPropertyType::ZIndex,
@@ -615,19 +291,11 @@ pub fn parse_style_properties(properties: &Vec<(String, Property)>) -> DeclsAndV
             .unwrap(),
         )));
       }
-      "wordBreak" => final_properties.push(StyleValueType::WordBreak(WordBreak::from((
-        id.to_string(),
-        value,
-      )))),
-      "whiteSpace" => final_properties.push(StyleValueType::WhiteSpace(WhiteSpace::from((
-        id.to_string(),
-        value,
-      )))),
-      "boxOrient" => {
-        final_properties.push(StyleValueType::BoxOrient(BoxOrient::from((
-          id.to_string(),
-          value,
-        ))));
+      "textUnderlineOffset" => {
+        final_properties.push(StyleValueType::Expr(Expr::new(
+          CSSPropertyType::TextUnderlineOffset,
+          generate_expr_lit_str!(value.value_to_css_string(PrinterOptions::default()).unwrap()),
+        )));
       }
       "filter" => {
         // 吐出字符串
@@ -643,7 +311,7 @@ pub fn parse_style_properties(properties: &Vec<(String, Property)>) -> DeclsAndV
         )));
       }
       _ => {
-        // position、zIndex等... 会自动处理 单位、数字等相关信息
+        // position、zIndex等... 会自动处理 单位、数字等相关信息（注册表已覆盖大多数场景）
         // final_properties.push(StyleValueType::Normal(Normal::new(id.to_string(), value.value_to_css_string(PrinterOptions::default()).unwrap())));
       }
     }
@@ -652,6 +320,6 @@ pub fn parse_style_properties(properties: &Vec<(String, Property)>) -> DeclsAndV
   DeclsAndVars {
     has_env: has_env,
     vars: variable_properties,
-    decls: final_properties
+    decls: final_properties,
   }
 }

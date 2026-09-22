@@ -112,54 +112,116 @@ test style_propetries::style_property_type::tests::registry_is_consistent ... ok
 test result: ok. 5 passed; 0 failed;
 ```
 
-## 7. 派发层改造（#2 任务的完整方案）
+## 7. 派发层改造（#2 任务，已落地）
 
-本次代码**尚未切换**，以下是已审核过、随手即可做的方案：
+当前 `parse_style_properties.rs` 已由"73 臂 `match` 全手写"切换成 **注册表驱动的派发 + 约 10 条手写特殊臂**。
 
-当前 `parse_style_properties.rs` 的 `match property_name.as_str()`（73 臂）将与放入注册表的下一个宏被替换成“注册表派发 + 少量特殊臂”：
+### 7.0 注册表 row 的追加 dispatch 元数据
 
-```rust
-// 未来替换形态（示意）
-crate::for_each_property_entry!(__define_dispatch_property);
+`for_each_property_entry!` 每行 row 在 `property_registry.rs` 内扩展了 2 个字段：
 
-// 特殊返回值的场景仍单独写 match（6 条真实特殊臂 + grid 简写展开）：
-//   fontFamily (自定义提取)、content (剥离引号/忽略空串)、
-//   zIndex / textUnderlineOffset / filter / backdropFilter (走 value_to_css_string 兜底)，
-//   加上 justifyItems / justifySelf (走 ItemAlign) 和 gridTemplate (简写展开)。
+```text
+Variant, id, kind, Wrapper(PayloadType) src, "kebab-css", "camelCase" (, "alias")* ;
 ```
 
-设计原则：
-1. **重复 With 声明**（`StyleValueType::X(X::from(...))`）都下沉到表展开的通用宏中，payload 只有：不同用的 `StyleValueType` 变体、是否使用 `property_name`（原 camel）还是原始 `id`。
-2. 读耗时 `value_to_css_string` 兜底的路径（13 处：12 处在 `parse_style_properties.rs`、1 处在 `pointer_events.rs`）与 logical shorthand 展开仍写在 `parse_style_properties.rs` 中，以可人工读为原则。
-3. **生产产物 100% 相同**：dispatch 后再跑一次全量 46 个快照得到 0 差异即为 PR acceptable。
+- `src = pname` → 派发时把 vendor 已摘除、首字母已小写的 `property_name`（当前 camel 名字）传给 `From::from`。需要它区分同 payload 内部的属性词，例如 `FlexAlign` 里 `justifyContent` vs `alignContent`、`ItemAlign` 里 alignItems/alignSelf/justifyItems/justifySelf。
+- `src = id` → 派发时把 lightningcss `PropertyId` 的原始 camel 字符串 `id` 传给 `From::from`（`PointerEvents`、`TextDecoration` 等）。
+- `src = special` → 不在派发宏中生成代码，由后面手写的 `match` 负责（共 9 条臂，见 §7.2）。
+- `src = skip` → 永不派发（`BackgroundPositionX/Y`、`AnimationKeyFrames`、`AnimationDirection`、`AnimationPlayState`），仅作枚举占位。
 
-### 7.1 派发臂如何收敛
-
-原 `match property_name.as_str()` 共 73 臂、其中 6 臂是真实特殊逻辑（见上），加上 `gridTemplate` 的简写拆分；其余约 66 臂全部是 `StyleValueType::X(X::from((property_name 或 id, value)))` 的同构形式。注册表派发后这部分将收敛为：
-- 由表展开出的同构臂（约 60+ 条），与
-- 少量独立手写的特殊臂（fontFamily / content / zIndex / textUnderlineOffset / filter / backdropFilter / justifyItems / justifySelf / gridTemplate 的简写拆分）≈ 8–9 条。
-
-## 8. StyleValueType 段宏化（#3 任务完整方案）
-
-当前 `style_value_type.rs` 有 55 变体，而 `ToStyleValue` 的实现是 55 次复制粘贴 `generate_expr_based_on_platform!(platform, value)`。
-
-计划用与注册表同来源的 **一个二次宏** 展开这两个东西：
+### 7.1 展开出的派发入口
 
 ```rust
-// 伪代码示意
-crate::for_each_property_entry!(__define_style_value_type_and_dispatch);
+// src/parse_style_properties.rs（节选）
+crate::for_each_property_entry!(__define_registry_dispatch);
+// 展开后：
+//   pub fn registry_dispatch_property(
+//       property_name: &str, id: &str,
+//       value: &lightningcss::properties::Property<'_>,
+//   ) -> Option<StyleValueType> {
+//     match property_name {
+//       $( $camel $(| $alias)* => __dispatch_wrap_one!($src, $wrap, $payload, property_name, id, value), )*
+//       _ => None,
+//     }
+//   }
+```
+
+`__dispatch_wrap_one!` 依据字面 `$src` 从 `pname` / `id` / `special` / `skip` 匹配 4 条模板，前两支把 tuple `(name, value)` 送入对应 `Payload::from` 并 `Some(...)`，后两支返回 `None`。
+
+调用方（简化）：
+
+```rust
+if let Some(decl) = registry_dispatch_property(property_name.as_str(), id.as_str(), value) {
+  final_properties.push(decl);
+  continue;
+}
+match property_name.as_str() {
+  "fontFamily" => { ... }            // 自定义：用 font-family 的 Value 结构化信息
+  "gridTemplate" => { ... }          // 简写拆分：分裂成 rows / columns 两条 GridTemplate 推送
+  "gridTemplateColumns" | "gridTemplateRows" => { ... }  // 走 GridTemplate::from
+  "content" => { ... }               // 剥离 ""、trim 引号
+  "zIndex" => { ... }
+  "lineClamp" => { ... }             // 走 Normal
+  "textUnderlineOffset" | "filter" | "backdropFilter" => { ... }  // 走 Expr + value_to_css_string
+  _ => {}
+}
+```
+
+### 7.2 保留手写的特殊臂（9 条）
+
+| 手写臂 | 原因 |
+|---|---|
+| `fontFamily` | 需要直接打开 `Property::FontFamily` 把每一项 FamilyName/Generic join 为 `, `，失败时 fallback 用 `value_to_css_string` 并剥 `\` 与 `"` |
+| `gridTemplate` | 简写拆分：无 areas 时同时 push `gridTemplateRows` + `gridTemplateColumns` 两条 GridTemplate |
+| `gridTemplateColumns` / `gridTemplateRows` | 走 `GridTemplate::from((property_name, value))`（与 gridTemplate 共用 payload，但需明确属性名） |
+| `content` | 空串 `""` 须跳过；非空需 `trim_matches('"')`，生成 `Normal::new(Content, ...)` |
+| `zIndex` | `Normal` 兜底 |
+| `lineClamp` | `Normal::new(WebkitLineClamp, value_to_css_string)` |
+| `textUnderlineOffset` / `filter` / `backdropFilter` | `Expr` 包裹 `value_to_css_string` 后的字面量 |
+
+## 8. StyleValueType 派发宏化（#3 任务，已落地）
+
+`style_value_type.rs` 从 55 行重复 `match` 臂收缩为 1 张表 + 2 个 macro。
+
+### 8.1 独立的小表
+
+StyleValueType 的 payload 与 CSSPropertyType 的 wrapper 并非一一对应（如 `Animation` variant 存在但构造不出来；`Normal/Expr/Variable` 不在注册表里），所以单独留一张 52 行的 `for_each_style_value_type!` 表（`GridTemplate` / `GridPlacement` 追加在表尾）：
+
+```text
+crate::for_each_style_value_type!(__some_consumer);
+// 每行：Variant(PayloadType);
+// 1. Display(Display); ... 52. GridPlacement(GridPlacement);
+```
+
+### 8.2 展开出的 enum + to_expr
+
+```rust
+crate::for_each_style_value_type!(__define_style_value_type);
 // 展开：
-//  1) StyleValueType 各 variant（DeclarItem）
-//  2) impl ToStyleValue for StyleValueType {
-//       fn to_style_value(&self, platform: Platform) -> Expr {
-//         match self {
-//           $( StyleValueType::$wrapper(value) => generate_expr_based_on_platform!(platform, value), )*
-//         }
+//   pub enum StyleValueType {
+//     Normal(Normal), Expr(Expr), Variable(Variable),   // 三个手写
+//     $( $variant($payload), )*                         // 由表展开 52 条
+//   }
+
+crate::for_each_style_value_type!(__dispatch_style_value_type_to_expr);
+// 展开：
+//   impl ToStyleValue for StyleValueType {
+//     fn to_expr(&self, platform: Platform) -> Expr {
+//       match self {
+//         StyleValueType::Normal(v)   => generate_expr_based_on_platform!(platform, v),
+//         StyleValueType::Expr(v)     => generate_expr_based_on_platform!(platform, v),
+//         StyleValueType::Variable(v) => generate_expr_based_on_platform!(platform, v),
+//         $( StyleValueType::$variant(value) => generate_expr_based_on_platform!(platform, value), )*
 //       }
 //     }
+//   }
 ```
 
-需要新增的字段：在每条注册表记录里补充 `StyleValueType` 包装名（与 variant 同名在大多数情形），剩余正常、Expr、Variable 三个非属性包装类型仍手写。预估把 `style_value_type.rs` 中 ToStyleValue 从 170 行压缩为 <40 行，并保持 ABI / SNAPSHOT 不变。
+### 8.3 关键保留点
+
+- **enum 顺序** = `Normal/Expr/Variable` + 表序（原手写 55 行顺序），且 enum 没有 `#[repr]` —— 变体重排在 Rust 是行为中性的，但保持这个顺序方便人眼 diff。
+- `StyleValueType::Animation` 变体从未被构造，仅出现在被注释掉的代码里；仍保留在表中，防止误删时触发未使用告警。
+- 展开出的 `to_expr` 55 条臂逐字相同，行为对 46 项 ava 快照完全透明。
 
 ## 9. 验证流程（#4 任务，一次完整跑通记录）
 

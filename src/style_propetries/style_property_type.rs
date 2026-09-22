@@ -2,7 +2,7 @@
 // ⚠️ 数值 id 是线上产物格式，新增属性只能在末尾追加，禁止改动既有值。
 
 macro_rules! __define_css_property_type {
-  ($($variant:ident, $id:expr, $kind:ident, $kebab:literal, $camel:literal $(, $alias:literal)* ;)*) => {
+  ($($variant:ident, $id:expr, $kind:ident, $wrap:ident($payload:ident) $src:ident, $kebab:literal, $camel:literal $(, $alias:literal)* ;)*) => {
     #[repr(u32)]
     #[derive(Hash, PartialEq, Eq, Debug, Clone, Copy)]
     pub enum CSSPropertyType {
@@ -16,9 +16,9 @@ macro_rules! __define_css_property_type {
 crate::for_each_property_entry!(__define_css_property_type);
 
 /// 按 camelCase 属性名反查属性类型（含别名）。
-/// 主 camel 名仅在 simple 属性上生效：复合属性的同名 camel 由 var() 变量路径使用。
+/// 主 camel 名仅在 simple / compound 属性的"假 camel（仅 CSS 变量反查）"语义无歧义时生效。
 macro_rules! __define_string_to_type {
-  ($($variant:ident, $id:expr, $kind:ident, $kebab:literal, $camel:literal $(, $alias:literal)* ;)*) => {
+  ($($variant:ident, $id:expr, $kind:ident, $wrap:ident($payload:ident) $src:ident, $kebab:literal, $camel:literal $(, $alias:literal)* ;)*) => {
     pub fn string_to_css_property_type(property: &str) -> CSSPropertyType {
       match property {
         $($camel => CSSPropertyType::$variant, $($alias => CSSPropertyType::$variant,)*)*
@@ -39,7 +39,7 @@ mod tests {
   #[test]
   fn registry_is_consistent() {
     macro_rules! __collect {
-      ($($variant:ident, $id:expr, $kind:ident, $kebab:literal, $camel:literal $(, $alias:literal)* ;)*) => {{
+      ($($variant:ident, $id:expr, $kind:ident, $wrap:ident($payload:ident) $src:ident, $kebab:literal, $camel:literal $(, $alias:literal)* ;)*) => {{
         let ids: Vec<(u32, &str)> = vec![$( ($id, stringify!($variant)) ),*];
         let enum_ids: Vec<(u32, &str)> = vec![$( (CSSPropertyType::$variant as u32, stringify!($variant)) ),*];
         (ids, enum_ids)

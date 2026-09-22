@@ -824,3 +824,94 @@ test('Harmony combine test useHoc', t => {
   })
   t.snapshot(code)
 })
+
+test('Harmony attrbute test grid', t => {
+  const { code } = parse([`
+  .grid {
+    display: grid;
+    grid-template-columns: 1fr 2fr;
+    grid-template-rows: auto 1fr;
+    gap: 10px;
+    justify-items: center;
+    align-items: stretch;
+    justify-content: space-between;
+    align-content: center;
+  }
+  .inline-grid {
+    display: inline-grid;
+  }
+  .grid-repeat {
+    display: grid;
+    grid-template-columns: repeat(3, 1fr);
+  }
+  .grid-repeat-multi {
+    grid-template-columns: repeat(2, 100px 1fr);
+  }
+  .grid-mixed {
+    grid-template-columns: 100px 50% 1fr 2fr;
+  }
+  .grid-none {
+    grid-template-columns: none;
+  }
+  .grid-keywords {
+    grid-template-columns: min-content max-content auto;
+  }
+  .grid-passthrough {
+    grid-template-columns: minmax(100px, 1fr);
+    grid-template-rows: repeat(auto-fill, 100px);
+  }
+  .item {
+    grid-column: 1 / span 2;
+    grid-row: 1 / 3;
+    justify-self: end;
+    align-self: center;
+  }
+  .item-start-end {
+    grid-column-start: 2;
+    grid-column-end: span 3;
+    grid-row-start: 1;
+    grid-row-end: -1;
+  }
+  .item-span {
+    grid-column: span 2;
+    grid-area: 1 / 2 / 3 / 4;
+  }
+  .item-named {
+    grid-column: header / footer;
+  }
+  `], {
+    platformString: 'Harmony'
+  })
+  t.snapshot(code)
+})
+
+test('Harmony attrbute test grid template shorthand', t => {
+  const { code } = parse([`
+  .grid-template {
+    display: grid;
+    grid-template: 1fr auto / 1fr 2fr;
+  }
+  `], {
+    platformString: 'Harmony'
+  })
+  t.snapshot(code)
+})
+
+test('Harmony grid flatbuffer v2 round trip', t => {
+  const { buffer } = parse([`
+  .grid {
+    display: grid;
+    grid-template-columns: 1fr 2fr;
+    grid-template-rows: auto 1fr;
+  }
+  .item {
+    grid-column: 1 / span 2;
+    grid-area: 1 / 2 / 3 / 4;
+  }
+  `], {
+    platformString: 'Harmony',
+    output: { isBin: true, version: 'v2' }
+  })
+  t.true(buffer instanceof Buffer)
+  t.true(buffer.length > 0)
+})

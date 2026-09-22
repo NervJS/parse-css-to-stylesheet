@@ -1,6 +1,7 @@
 use lightningcss::properties::{
-  align::AlignItems as LNAlignItems, align::AlignSelf as LNAlignSelf, align::BaselinePosition,
-  align::SelfPosition, Property,
+  align::AlignItems as LNAlignItems, align::AlignSelf as LNAlignSelf,
+  align::JustifyItems as LNJustifyItems, align::JustifySelf as LNJustifySelf,
+  align::BaselinePosition, align::SelfPosition, Property,
 };
 
 use crate::{generate_expr_enum, generate_invalid_expr, style_propetries::style_property_enum};
@@ -27,10 +28,12 @@ pub enum EnumValue {
 impl From<(String, &Property<'_>)> for ItemAlign {
   fn from(prop: (String, &Property<'_>)) -> Self {
     ItemAlign {
-      id: if prop.0 == "alignItems" {
-        CSSPropertyType::AlignItems
-      } else {
-        CSSPropertyType::AlignSelf
+      id: match prop.0.as_str() {
+        "alignItems" => CSSPropertyType::AlignItems,
+        "alignSelf" => CSSPropertyType::AlignSelf,
+        "justifyItems" => CSSPropertyType::JustifyItems,
+        "justifySelf" => CSSPropertyType::JustifySelf,
+        _ => CSSPropertyType::Invalid,
       },
       value: match prop.1 {
         Property::AlignItems(value, _) => match value {
@@ -57,6 +60,35 @@ impl From<(String, &Property<'_>)> for ItemAlign {
           },
           LNAlignSelf::Stretch => EnumValue::Stretch,
           LNAlignSelf::BaselinePosition(value) => match value {
+            BaselinePosition::Last => EnumValue::Ignore,
+            _ => EnumValue::Baseline,
+          },
+          _ => EnumValue::Auto,
+        },
+        Property::JustifyItems(value) => match value {
+          LNJustifyItems::Stretch => EnumValue::Stretch,
+          LNJustifyItems::SelfPosition { value, .. } => match value {
+            SelfPosition::Start | SelfPosition::FlexStart => EnumValue::Start,
+            SelfPosition::Center => EnumValue::Center,
+            SelfPosition::End | SelfPosition::FlexEnd => EnumValue::End,
+            _ => EnumValue::Ignore,
+          },
+          LNJustifyItems::BaselinePosition(value) => match value {
+            BaselinePosition::Last => EnumValue::Ignore,
+            _ => EnumValue::Baseline,
+          },
+          _ => EnumValue::Auto,
+        },
+        Property::JustifySelf(value) => match value {
+          LNJustifySelf::Auto => EnumValue::Auto,
+          LNJustifySelf::Stretch => EnumValue::Stretch,
+          LNJustifySelf::SelfPosition { value, .. } => match value {
+            SelfPosition::Start | SelfPosition::FlexStart => EnumValue::Start,
+            SelfPosition::Center => EnumValue::Center,
+            SelfPosition::End | SelfPosition::FlexEnd => EnumValue::End,
+            _ => EnumValue::Ignore,
+          },
+          LNJustifySelf::BaselinePosition(value) => match value {
             BaselinePosition::Last => EnumValue::Ignore,
             _ => EnumValue::Baseline,
           },

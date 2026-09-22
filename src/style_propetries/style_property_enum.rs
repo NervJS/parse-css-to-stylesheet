@@ -390,6 +390,9 @@ pub enum Display {
   Box,
   InlineBlock,
   Inline,
+  // 追加在末尾，保证已有枚举值不变
+  Grid,
+  InlineGrid,
 }
 
 #[repr(u32)]

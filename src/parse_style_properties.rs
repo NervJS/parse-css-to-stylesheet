@@ -15,7 +15,7 @@ use crate::{
   generate_expr_lit_str,
   style_parser::KeyFrameItem,
   style_propetries::{
-    animation::Animation, animation_multi::AnimationMulti, aspect_ratio::AspectRatio, background::Background, background_image::BackgroundImage, background_position::BackgroundPosition, background_repeat::BackgroundRepeat, background_size::BackgroundSize, border::Border, border_color::BorderColor, border_radius::BorderRadius, border_style::BorderStyle, border_width::BorderWidth, box_orient::BoxOrient, box_shadow::BoxShadow, color::ColorProperty, display::Display, expr::Expr, flex::Flex, flex_align::FlexAlign, flex_basis::FlexBasis, flex_direction::FlexDirection, flex_wrap::FlexWrap, font_size::FontSize, font_style::FontStyle, font_weight::FontWeight, gap::Gap, item_align::ItemAlign, length_value::LengthValueProperty, letter_spacing::LetterSpacing, line_height::LineHeight, marin_padding::MarginPadding, max_size::MaxSizeProperty, normal::Normal, number::NumberProperty, opacity::Opacity, overflow::Overflow, pointer_events::PointerEvents, position::Position, size::SizeProperty, style_property_type::{string_to_css_property_type, CSSPropertyType}, style_value_type::{CssVariable, StyleValueType}, text_align::TextAlign, text_decoration::TextDecoration, text_overflow::TextOverflow, text_shadow::TextShadow, text_transform::TextTransform, transform::Transform, transform_origin::TransformOrigin, transition::Transition, unit::{generate_expr_by_length_value, Platform}, variable::Variable, vertical_align::VerticalAlign, visibility::Visibility, white_space::WhiteSpace, word_break::WordBreak
+    animation::Animation, animation_multi::AnimationMulti, aspect_ratio::AspectRatio, background::Background, background_image::BackgroundImage, background_position::BackgroundPosition, background_repeat::BackgroundRepeat, background_size::BackgroundSize, border::Border, border_color::BorderColor, border_radius::BorderRadius, border_style::BorderStyle, border_width::BorderWidth, box_orient::BoxOrient, box_shadow::BoxShadow, color::ColorProperty, display::Display, expr::Expr, flex::Flex, flex_align::FlexAlign, flex_basis::FlexBasis, flex_direction::FlexDirection, flex_wrap::FlexWrap, font_size::FontSize, font_style::FontStyle, font_weight::FontWeight, gap::Gap, grid_placement::GridPlacement, grid_template::GridTemplate, item_align::ItemAlign, length_value::LengthValueProperty, letter_spacing::LetterSpacing, line_height::LineHeight, marin_padding::MarginPadding, max_size::MaxSizeProperty, normal::Normal, number::NumberProperty, opacity::Opacity, overflow::Overflow, pointer_events::PointerEvents, position::Position, size::SizeProperty, style_property_type::{string_to_css_property_type, CSSPropertyType}, style_value_type::{CssVariable, StyleValueType}, text_align::TextAlign, text_decoration::TextDecoration, text_overflow::TextOverflow, text_shadow::TextShadow, text_transform::TextTransform, transform::Transform, transform_origin::TransformOrigin, transition::Transition, unit::{generate_expr_by_length_value, Platform}, variable::Variable, vertical_align::VerticalAlign, visibility::Visibility, white_space::WhiteSpace, word_break::WordBreak
 
   },
   utils::lowercase_first,
@@ -204,6 +204,49 @@ pub fn parse_style_properties(properties: &Vec<(String, Property)>) -> DeclsAndV
           value,
         ))));
       }
+      // S Grid 布局（跨端基础集）====
+      // justify-items / justify-self 直接复用 ItemAlign 的映射逻辑（结构同 align-items/align-self）
+      "justifyItems" => {
+        final_properties.push(StyleValueType::AlignItems(ItemAlign::from((
+          property_name.to_string(),
+          value,
+        ))));
+      }
+      "justifySelf" => {
+        final_properties.push(StyleValueType::AlignItems(ItemAlign::from((
+          property_name.to_string(),
+          value,
+        ))));
+      }
+      "gridTemplateColumns" | "gridTemplateRows" | "gridTemplate" => {
+        if let lightningcss::properties::Property::GridTemplate(template) = value {
+          // 简写 `grid-template: rows / columns`：拆出两条独立声明
+          if let lightningcss::properties::grid::GridTemplateAreas::None = &template.areas {
+            final_properties.push(StyleValueType::GridTemplate(GridTemplate::from((
+              "gridTemplateRows".to_string(),
+              &lightningcss::properties::Property::GridTemplateRows(template.rows.clone()),
+            ))));
+            final_properties.push(StyleValueType::GridTemplate(GridTemplate::from((
+              "gridTemplateColumns".to_string(),
+              &lightningcss::properties::Property::GridTemplateColumns(template.columns.clone()),
+            ))));
+          }
+          // 带 areas 的 grid-template 属于方案 2，不支持时静默跳过
+        } else {
+          final_properties.push(StyleValueType::GridTemplate(GridTemplate::from((
+            property_name.to_string(),
+            value,
+          ))));
+        }
+      }
+      "gridRow" | "gridColumn" | "gridArea" | "gridRowStart" | "gridRowEnd"
+      | "gridColumnStart" | "gridColumnEnd" => {
+        final_properties.push(StyleValueType::GridPlacement(GridPlacement::from((
+          property_name.to_string(),
+          value,
+        ))));
+      }
+      // E Grid 布局 ====
       "gap" | "columnGap" | "rowGap" => {
         final_properties.push(StyleValueType::Gap(Gap::from((id.to_string(), value))));
       }

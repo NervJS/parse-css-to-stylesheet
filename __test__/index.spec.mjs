@@ -742,12 +742,47 @@ test('Harmony attrbute test color', t => {
 })
 
 test('Harmony attrbute test -webkt-line-clamp', t => {
+  // 注意：属性名是 `-webkt-line-clamp`（缺 `i`），这是历史遗留 typo。
+  // 真正的 -webkit-line-clamp 走 vendor-strip 后仍能产出 [81,...]，见下方同名
+  // 但拼写正确的测试。本用例固定不识别的 vendor 属性应当产出空 declarations，
+  // 防止误以为 typo 路径也走 WebkitLineClamp=81。
   const { code } = parse([`
   .line1 {
     -webkt-line-clamp: 1;
   }
   .line2 {
     -webkt-line-clamp: 2;
+  }
+  `], {
+    platformString: 'Harmony'
+  })
+  t.snapshot(code)
+})
+
+test('Harmony attrbute test -webkit-line-clamp', t => {
+  // 与上面 typo 测试互补：-webkit-line-clamp 应当走 vendor-strip +
+  // 『lineClamp』 特殊臂 → Normal::new(WebkitLineClamp, ...)
+  const { code } = parse([`
+  .line1 {
+    -webkit-line-clamp: 1;
+  }
+  .line2 {
+    -webkit-line-clamp: 2;
+  }
+  `], {
+    platformString: 'Harmony'
+  })
+  t.snapshot(code)
+})
+
+test('Harmony attrbute test -webkit-appearance -moz-appearance', t => {
+  // appearance 无注册表条目，应走 dispatch 未命中的兜底路径。此用例主要
+  // 证明 vendor-strip 分支（src/parse_style_properties.rs:182-186）对
+  // 非注册表即 vendor-only 属性也能正常走完 parse 流程。
+  const { code } = parse([`
+  .a {
+    -webkit-appearance: none;
+    -moz-appearance: none;
   }
   `], {
     platformString: 'Harmony'

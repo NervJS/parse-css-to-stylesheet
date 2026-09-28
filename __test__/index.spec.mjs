@@ -932,6 +932,44 @@ test('Harmony attrbute test grid template shorthand', t => {
   t.snapshot(code)
 })
 
+test('Harmony attrbute test grid full features', t => {
+  const { code } = parse([`
+  .grid-minmax {
+    grid-template-columns: minmax(100px, 1fr) minmax(50%, auto) minmax(min-content, max-content);
+  }
+  .grid-fit {
+    grid-template-columns: fit-content(200px) fit-content(50%);
+  }
+  .grid-auto-repeat {
+    grid-template-columns: repeat(auto-fill, 100px) repeat(auto-fit, minmax(50px, 1fr));
+  }
+  .grid-auto-size {
+    grid-auto-rows: 100px;
+    grid-auto-columns: minmax(50px, auto);
+  }
+  .grid-flow-row {
+    grid-auto-flow: row;
+  }
+  .grid-flow-col-dense {
+    grid-auto-flow: column dense;
+  }
+  .grid-flow-row-dense {
+    grid-auto-flow: dense;
+  }
+  .place {
+    place-items: center stretch;
+    place-self: start;
+    place-content: space-between center;
+  }
+  .place-single {
+    place-items: baseline;
+  }
+  `], {
+    platformString: 'Harmony'
+  })
+  t.snapshot(code)
+})
+
 test('Harmony grid flatbuffer v2 round trip', t => {
   const { buffer } = parse([`
   .grid {

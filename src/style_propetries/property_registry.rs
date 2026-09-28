@@ -151,6 +151,10 @@ macro_rules! for_each_property_entry {
       GridArea,               126, compound,GridPlacement(GridPlacement) pname,     "grid-area",                "gridArea";
       JustifyItems,           127, simple,  AlignItems(ItemAlign) pname,            "justify-items",            "justifyItems";
       JustifySelf,            128, simple,  AlignItems(ItemAlign) pname,            "justify-self",             "justifySelf";
+      // 网格布局（完整集补充：隐式轨道 + 自动放置流）
+      GridAutoRows,           129, simple,  Special(Special) special,               "grid-auto-rows",           "gridAutoRows";
+      GridAutoColumns,        130, simple,  Special(Special) special,               "grid-auto-columns",        "gridAutoColumns";
+      GridAutoFlow,           131, simple,  GridAutoFlow(GridAutoFlow) pname,       "grid-auto-flow",           "gridAutoFlow";
     }
   };
 }

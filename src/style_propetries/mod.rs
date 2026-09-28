@@ -27,6 +27,7 @@ pub mod font_style;
 pub mod font_weight;
 pub mod gap;
 pub mod graident_properties;
+pub mod grid_auto_flow;
 pub mod grid_placement;
 pub mod grid_template;
 pub mod item_align;

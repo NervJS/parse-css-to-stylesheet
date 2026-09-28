@@ -1,12 +1,12 @@
 use lightningcss::{
   properties::{custom::TokenOrValue, Property},
-  stylesheet::PrinterOptions, traits::ToCss,
+  stylesheet::PrinterOptions, traits::ToCss, vendor_prefix::VendorPrefix,
 };
 
 use crate::{
   generate_expr_lit_str,
   style_propetries::{
-    animation_multi::AnimationMulti, aspect_ratio::AspectRatio, background::Background, background_image::BackgroundImage, background_position::BackgroundPosition, background_repeat::BackgroundRepeat, background_size::BackgroundSize, border::Border, border_color::BorderColor, border_radius::BorderRadius, border_style::BorderStyle, border_width::BorderWidth, box_orient::BoxOrient, box_shadow::BoxShadow, color::ColorProperty, display::Display, expr::Expr, flex::Flex, flex_align::FlexAlign, flex_basis::FlexBasis, flex_direction::FlexDirection, flex_wrap::FlexWrap, font_size::FontSize, font_style::FontStyle, font_weight::FontWeight, gap::Gap, grid_placement::GridPlacement, grid_template::GridTemplate, item_align::ItemAlign, length_value::LengthValueProperty, letter_spacing::LetterSpacing, line_height::LineHeight, marin_padding::MarginPadding, max_size::MaxSizeProperty, normal::Normal, number::NumberProperty, opacity::Opacity, overflow::Overflow, pointer_events::PointerEvents, position::Position, size::SizeProperty, style_property_type::{string_to_css_property_type, CSSPropertyType}, style_value_type::{CssVariable, StyleValueType}, text_align::TextAlign, text_decoration::TextDecoration, text_overflow::TextOverflow, text_shadow::TextShadow, text_transform::TextTransform, transform::Transform, transform_origin::TransformOrigin, transition::Transition, variable::Variable, vertical_align::VerticalAlign, visibility::Visibility, white_space::WhiteSpace, word_break::WordBreak
+    animation_multi::AnimationMulti, aspect_ratio::AspectRatio, background::Background, background_image::BackgroundImage, background_position::BackgroundPosition, background_repeat::BackgroundRepeat, background_size::BackgroundSize, border::Border, border_color::BorderColor, border_radius::BorderRadius, border_style::BorderStyle, border_width::BorderWidth, box_orient::BoxOrient, box_shadow::BoxShadow, color::ColorProperty, display::Display, expr::Expr, flex::Flex, flex_align::FlexAlign, flex_basis::FlexBasis, flex_direction::FlexDirection, flex_wrap::FlexWrap, font_size::FontSize, font_style::FontStyle, font_weight::FontWeight, gap::Gap, grid_auto_flow::GridAutoFlow, grid_placement::GridPlacement, grid_template::GridTemplate, item_align::ItemAlign, length_value::LengthValueProperty, letter_spacing::LetterSpacing, line_height::LineHeight, marin_padding::MarginPadding, max_size::MaxSizeProperty, normal::Normal, number::NumberProperty, opacity::Opacity, overflow::Overflow, pointer_events::PointerEvents, position::Position, size::SizeProperty, style_property_type::{string_to_css_property_type, CSSPropertyType}, style_value_type::{CssVariable, StyleValueType}, text_align::TextAlign, text_decoration::TextDecoration, text_overflow::TextOverflow, text_shadow::TextShadow, text_transform::TextTransform, transform::Transform, transform_origin::TransformOrigin, transition::Transition, variable::Variable, vertical_align::VerticalAlign, visibility::Visibility, white_space::WhiteSpace, word_break::WordBreak
 
   },
   utils::lowercase_first,
@@ -247,6 +247,57 @@ pub fn parse_style_properties(properties: &Vec<(String, Property)>) -> DeclsAndV
           property_name.to_string(),
           value,
         ))));
+      }
+      "gridAutoRows" | "gridAutoColumns" => {
+        // 与 template 同构的 track sizing 列表，复用 GridTemplate 数值槽
+        final_properties.push(StyleValueType::GridTemplate(GridTemplate::from((
+          property_name.to_string(),
+          value,
+        ))));
+      }
+      // place-* 简写：编译期展开为两条长属性（align-* 既有 id + justify-* grid id），
+      // 运行时无需感知简写
+      "placeItems" => {
+        if let Property::PlaceItems(place) = value {
+          let align_prop = Property::AlignItems(place.align.clone(), VendorPrefix::None);
+          let justify_prop = Property::JustifyItems(place.justify.clone());
+          final_properties.push(StyleValueType::AlignItems(ItemAlign::from((
+            "alignItems".to_string(),
+            &align_prop,
+          ))));
+          final_properties.push(StyleValueType::AlignItems(ItemAlign::from((
+            "justifyItems".to_string(),
+            &justify_prop,
+          ))));
+        }
+      }
+      "placeSelf" => {
+        if let Property::PlaceSelf(place) = value {
+          let align_prop = Property::AlignSelf(place.align.clone(), VendorPrefix::None);
+          let justify_prop = Property::JustifySelf(place.justify.clone());
+          final_properties.push(StyleValueType::AlignItems(ItemAlign::from((
+            "alignSelf".to_string(),
+            &align_prop,
+          ))));
+          final_properties.push(StyleValueType::AlignItems(ItemAlign::from((
+            "justifySelf".to_string(),
+            &justify_prop,
+          ))));
+        }
+      }
+      "placeContent" => {
+        if let Property::PlaceContent(place) = value {
+          let align_prop = Property::AlignContent(place.align.clone(), VendorPrefix::None);
+          let justify_prop = Property::JustifyContent(place.justify.clone(), VendorPrefix::None);
+          final_properties.push(StyleValueType::FlexAlign(FlexAlign::from((
+            "alignContent".to_string(),
+            &align_prop,
+          ))));
+          final_properties.push(StyleValueType::FlexAlign(FlexAlign::from((
+            "justifyContent".to_string(),
+            &justify_prop,
+          ))));
+        }
       }
       "content" => {
         // 判断content内容是否是空字符串

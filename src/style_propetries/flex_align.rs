@@ -24,6 +24,7 @@ pub enum EnumValue {
   SpaceBetween,
   SpaceAround,
   SpaceEvenly,
+  Stretch,
 }
 
 impl From<(String, &Property<'_>)> for FlexAlign {
@@ -45,6 +46,7 @@ impl From<(String, &Property<'_>)> for FlexAlign {
             ContentDistribution::SpaceBetween => EnumValue::SpaceBetween,
             ContentDistribution::SpaceAround => EnumValue::SpaceAround,
             ContentDistribution::SpaceEvenly => EnumValue::SpaceEvenly,
+            ContentDistribution::Stretch => EnumValue::Stretch,
             _ => EnumValue::Start,
           },
           _ => EnumValue::Start,
@@ -59,6 +61,7 @@ impl From<(String, &Property<'_>)> for FlexAlign {
             ContentDistribution::SpaceBetween => EnumValue::SpaceBetween,
             ContentDistribution::SpaceAround => EnumValue::SpaceAround,
             ContentDistribution::SpaceEvenly => EnumValue::SpaceEvenly,
+            ContentDistribution::Stretch => EnumValue::Stretch,
             _ => EnumValue::Start,
           },
           _ => EnumValue::Start,
@@ -93,6 +96,9 @@ impl ToExpr for FlexAlign {
         ),
         EnumValue::SpaceEvenly => generate_expr_enum!(
           style_property_enum::ArkUI_FlexAlignment::ARKUI_FLEX_ALIGNMENT_SPACE_EVENLY
+        ),
+        EnumValue::Stretch => generate_expr_enum!(
+          style_property_enum::ArkUI_FlexAlignment::ARKUI_FLEX_ALIGNMENT_STRETCH
         ),
       },
     )

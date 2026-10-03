@@ -179,6 +179,19 @@ pub fn parse_style_properties(properties: &Vec<(String, Property)>) -> DeclsAndV
     let mut property_name = property_name.to_string();
     lowercase_first(&mut property_name);
 
+    // lightningcss 1.0.0-alpha.45 将合法的单独 dense 留作 Unparsed，
+    // 但 CSS string parser 会把它当作 row dense（位值 2）。
+    if property_name == "gridAutoFlow" && matches!(value, Property::Unparsed(_)) {
+      if value.value_to_css_string(PrinterOptions::default())
+        .is_ok_and(|css| css.trim().eq_ignore_ascii_case("dense")) {
+        final_properties.push(StyleValueType::GridAutoFlow(GridAutoFlow {
+          id: CSSPropertyType::GridAutoFlow,
+          bits: Some(2),
+        }));
+        continue;
+      }
+    }
+
     // -------------------------------------------------------------------
     // 第一步：注册表同构派发（约 60 条 wrap 臂），匹配即 push
     // -------------------------------------------------------------------

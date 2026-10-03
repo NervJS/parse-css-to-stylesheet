@@ -27,6 +27,7 @@ pub enum EnumValue {
   Inline,
   Grid,
   InlineGrid,
+  InlineFlex,
 }
 
 impl From<(String, &Property<'_>)> for Display {
@@ -49,7 +50,11 @@ impl From<(String, &Property<'_>)> for Display {
                   EnumValue::Grid
                 }
               } else if let DisplayInside::Flex(_) = value.inside {
-                EnumValue::Flex
+                if let DisplayOutside::Inline = value.outside {
+                  EnumValue::InlineFlex
+                } else {
+                  EnumValue::Flex
+                }
               } else if let DisplayInside::Box(_) = value.inside {
                 EnumValue::Box
               } else if let DisplayInside::FlowRoot = value.inside {
@@ -90,6 +95,7 @@ impl ToExpr for Display {
         EnumValue::Inline => generate_expr_enum!(style_property_enum::Display::Inline),
         EnumValue::Grid => generate_expr_enum!(style_property_enum::Display::Grid),
         EnumValue::InlineGrid => generate_expr_enum!(style_property_enum::Display::InlineGrid),
+        EnumValue::InlineFlex => generate_expr_enum!(style_property_enum::Display::InlineFlex),
         EnumValue::Invalid => generate_invalid_expr!(),
       },
     )

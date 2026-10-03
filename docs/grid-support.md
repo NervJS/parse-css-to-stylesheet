@@ -8,7 +8,7 @@
 
 | JWT/jtransaction CSS 属性 | 支持能力 |
 | --- | --- |
-| `display: grid / inline-grid` | 新增两个 display 枚举值 |
+| `display: grid / inline-grid / inline-flex` | 数值枚举分别为 6 / 7 / 8，和 TaroCSS 字符串解析保持一致 |
 | `grid-template-columns` / `grid-template-rows` | px / vw / vh 等长度、百分比、`fr`、`min/max-content`、`auto`、`minmax()`、`fit-content()`；`repeat(n, …)` 编译期展开；`repeat(auto-fill/auto-fit, …)` 变长槽直出 |
 | `grid-template` 简写（rows / columns） | 编译期展开为两行/两列模板，**不含 areas 的简写** |
 | `grid-auto-rows` / `grid-auto-columns` | 与 template 同构的 track-size 列表（无 none/repeat 外层） |
@@ -18,11 +18,11 @@
 | `grid-area` 简写 | 四条线：row-start / column-start / row-end / column-end |
 | `justify-items` / `justify-self` | 复用既有 align-items / align-self 数值体系（flex-start、end、center、stretch、baseline） |
 | `place-items` / `place-self` / `place-content` 简写 | 编译期展开为 align-* + justify-* 两条长属性 |
-| `gap` / `justify-content` / `align-content` | 走既有实现，天然兼容 grid |
+| `gap` / `justify-content` / `align-content` | 走既有实现；content 的 `stretch` 使用枚举值 4 |
 
 **明确不支持（涉及运行时布局引擎，属后续方案）**：`grid-template-areas`、命名 grid-area、命名网格线、`subgrid`。
 
-**已知限制**：lightningcss 1.0.0-alpha.45 不接受 `grid-auto-flow: dense` 单独写法（其 parser 要求 dense 后必须跟 row/column），需写 `row dense`；单独 `dense` 的声明会被 lightningcss 丢弃。
+**lightningcss 兼容处理**：1.0.0-alpha.45 将单独的 `grid-auto-flow: dense` 留作 Unparsed；编译入口将其转换为 `row dense` 的数值 2。
 
 ## 2. 关键设计：扁平数值槽（方案 A）
 
@@ -123,8 +123,10 @@ lightningcss 的 `GridAutoFlow` 是 bitflags（Row=0b00, Column=0b01, Dense=0b10
 ### 2.3 display 与对齐
 
 - `display: grid` → 6（`Display::Grid`），`display: inline-grid` → 7（`Display::InlineGrid`），追加在既有 0–5 之后，老产物枚举值不受影响。
+- `display: inline-flex` → 8；`justify-content: stretch` / `align-content: stretch` → 4，与字符串解析和运行时枚举一致。
 - `justify-items` / `justify-self` 走 `ItemAlign` 数值体系，与 `align-items` / `align-self` 同枚举，运行时一套解析代码同时服务 flex 和 grid。
 - `place-items` / `place-self` / `place-content` 简写在编译期展开为两条长属性（`place-items: center stretch` → `align-items: center` + `justify-items: stretch`），运行时无需感知简写，产物中不出现 place-* 条目。
+- `place-*` 含 `var()` / `env()` 时保留原声明，以属性 ID 132 / 133 / 134 交给运行时变量及字符串解析路径。
 
 ## 3. 回退与降级策略
 
@@ -137,7 +139,7 @@ lightningcss 的 `GridAutoFlow` 是 bitflags（Row=0b00, Column=0b01, Dense=0b10
 | 命名网格线（`grid-column: sidebar-start / content-end`） | **整条声明被丢弃**（鸿蒙侧无线名概念，静默忽略比错误输出安全） | 无 `[12x, …]` 条目 |
 | `grid-template` 简写含 `areas`（行内 `"A B"` 字符串） | **整个声明被跳过**（areas 属后续方案，避免输出残缺布局误导运行时） | 无 `[118]/[119]` 条目 |
 | `subgrid` | lightningcss alpha.45 无此 AST 变体，声明按 Unparsed 丢弃 | 无条目 |
-| `grid-auto-flow: dense`（单独写） | lightningcss parser 限制（dense 后须跟 row/column），声明被丢弃；写 `row dense` 即可 | 无条目 |
+| `grid-auto-flow: dense`（单独写） | 兼容 lightningcss 的 Unparsed 分支，等同 `row dense` | `[131, 2]` |
 
 ## 4. 实现要点
 
@@ -148,7 +150,7 @@ lightningcss 的 `GridAutoFlow` 是 bitflags（Row=0b00, Column=0b01, Dense=0b10
 
 ## 5. 验证
 
-`__test__/index.spec.mjs` 新增 4 组用例（49 个测试全绿）：
+`__test__/index.spec.mjs` 的 Grid 相关用例覆盖以下路径（当前全套 52 个测试通过）：
 
 - `Harmony attrbute test grid`：cover fr / px / em / min-content / max-content / 百分比 / none / repeat 展开 / minmax 与 auto-fill 数值槽 / 全部定位属性（线号、负数、span、area）/ 命名线丢弃
 - `Harmony attrbute test grid template shorthand`：`grid-template: 1fr auto / 1fr 2fr` → `[119, [2,1,0, 3,0,100]]` + `[118, [2,1,0, 2,2,0]]`（简写展开为数值槽，而非回退字符串）

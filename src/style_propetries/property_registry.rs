@@ -155,6 +155,10 @@ macro_rules! for_each_property_entry {
       GridAutoRows,           129, simple,  Special(Special) special,               "grid-auto-rows",           "gridAutoRows";
       GridAutoColumns,        130, simple,  Special(Special) special,               "grid-auto-columns",        "gridAutoColumns";
       GridAutoFlow,           131, simple,  GridAutoFlow(GridAutoFlow) pname,       "grid-auto-flow",           "gridAutoFlow";
+      // place-* 正常声明展开为长属性；保留 ID 用于 var()/env() 字符串回退。
+      PlaceItems,             132, compound,Special(Special) special,               "place-items",              "placeItems";
+      PlaceSelf,              133, compound,Special(Special) special,               "place-self",               "placeSelf";
+      PlaceContent,           134, compound,Special(Special) special,               "place-content",            "placeContent";
     }
   };
 }

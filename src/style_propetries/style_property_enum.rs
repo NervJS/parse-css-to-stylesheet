@@ -72,6 +72,8 @@ pub enum ArkUI_FlexAlignment {
   ARKUI_FLEX_ALIGNMENT_CENTER = 2,
   /** The child components are aligned with the end edge of the main axis. */
   ARKUI_FLEX_ALIGNMENT_END = 3,
+  /** Grid 的 auto 轨道按剩余空间拉伸；与运行时枚举值保持一致。 */
+  ARKUI_FLEX_ALIGNMENT_STRETCH = 4,
   /** The child components are evenly distributed along the main axis. The space between any two adjacent components
    *  is the same. The first component is aligned with the main-start, and the last component is aligned with
    *  the main-end. */
@@ -393,6 +395,7 @@ pub enum Display {
   // 追加在末尾，保证已有枚举值不变
   Grid,
   InlineGrid,
+  InlineFlex,
 }
 
 #[repr(u32)]

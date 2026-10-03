@@ -988,3 +988,32 @@ test('Harmony grid flatbuffer v2 round trip', t => {
   t.true(buffer instanceof Buffer)
   t.true(buffer.length > 0)
 })
+
+test('Harmony grid string parser parity for new enums and place shorthands', t => {
+  const { code } = parse([`
+  .inline-flex { display: inline-flex; }
+  .stretch { justify-content: stretch; align-content: stretch; }
+  .place { place-items: center stretch; place-self: start; place-content: stretch; }
+  `], { platformString: 'Harmony' })
+  const styles = JSON.parse(code).styles
+  const declarations = selector => styles.find(style => style.selector[0] === selector).declarations
+  t.deepEqual(declarations('inline-flex'), [[11, 8]])
+  t.deepEqual(declarations('stretch'), [[2, 4], [1, 4]])
+  t.deepEqual(declarations('place'), [[3, 2], [127, 4], [4, 1], [128, 1], [1, 4], [2, 4]])
+})
+
+test('Harmony place shorthand var fallback preserves property ids', t => {
+  const { code } = parse([`
+  .place-var {
+    place-items: var(--items);
+    place-self: var(--self);
+    place-content: var(--content);
+  }
+  `], { platformString: 'Harmony' })
+  t.deepEqual(JSON.parse(code).styles[0].declarations.map(([id]) => id), [132, 133, 134])
+})
+
+test('Harmony grid-auto-flow dense matches inline string parsing', t => {
+  const { code } = parse([`.dense { grid-auto-flow: dense; }`], { platformString: 'Harmony' })
+  t.deepEqual(JSON.parse(code).styles[0].declarations, [[131, 2]])
+})

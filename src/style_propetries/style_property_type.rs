@@ -1,248 +1,64 @@
-// CSS 属性枚举
-#[repr(u32)]
-#[derive(Hash, PartialEq, Eq, Debug, Clone, Copy)]
-pub enum CSSPropertyType {
-  Invalid = 0,
-  AlignContent = 1,
-  JustifyContent = 2,
-  AlignItems = 3,
-  AlignSelf = 4,
-  FlexBasis = 5,
-  FlexDirection = 6,
-  FlexGrow = 7,
-  FlexShrink = 8,
-  FlexWrap = 9,
-  AspectRatio = 10,
-  Display = 11,
-  ColumnGap = 12,
-  RowGap = 13,
-  MarginLeft = 14,
-  MarginRight = 15,
-  MarginTop = 16,
-  MarginBottom = 17,
-  PaddingLeft = 18,
-  PaddingRight = 19,
-  PaddingTop = 20,
-  PaddingBottom = 21,
-  Width = 22,
-  MinWidth = 23,
-  MaxWidth = 24,
-  Height = 25,
-  MinHeight = 26,
-  MaxHeight = 27,
-  Overflow = 28,
-  FontSize = 29,
-  FontStyle = 30,
-  FontFamily = 31,
-  FontWeight = 32,
-  LineHeight = 33,
-  LetterSpacing = 34,
-  VerticalAlign = 35,
-  TextAlign = 36,
-  TextDecoration = 37,
-  TextShadow = 38,
-  TextOverflow = 39,
-  TextTransform = 40,
-  Color = 41,
-  BackgroundColor = 42,
-  BackgroundImage = 43,
-  BackgroundPosition = 44,
-  BackgroundSize = 45,
-  BackgroundRepeat = 46,
-  BorderTopColor = 47,
-  BorderRightColor = 48,
-  BorderBottomColor = 49,
-  BorderLeftColor = 50,
-  BorderTopStyle = 51,
-  BorderRightStyle = 52,
-  BorderBottomStyle = 53,
-  BorderLeftStyle = 54,
-  BorderTopWidth = 55,
-  BorderRightWidth = 56,
-  BorderBottomWidth = 57,
-  BorderLeftWidth = 58,
-  BorderTopLeftRadius = 59,
-  BorderTopRightRadius = 60,
-  BorderBottomLeftRadius = 61,
-  BorderBottomRightRadius = 62,
-  BoxShadow = 63,
-  ZIndex = 64,
-  Position = 65,
-  Top = 66,
-  Right = 67,
-  Bottom = 68,
-  Left = 69,
-  Visibility = 70,
-  Opacity = 71,
-  Transform = 72,
-  TransformOrigin = 73,
-  AnimationKeyFrames = 74,
-  AnimationDuration = 75,
-  AnimationTimingFunction = 76,
-  AnimationDelay = 77,
-  AnimationIterationCount = 78,
-  Content = 79,
-  WordBreak = 80,
-  WebkitLineClamp = 81,
-  AnimationFillMode = 82,
-  BackgroundPositionX = 83,
-  BackgroundPositionY = 84,
-  Transition = 85,
-  TransitionProperty = 86,
-  TransitionDuration = 87,
-  TransitionTimingFunction = 88,
-  TransitionDelay = 89,
-  WhiteSpace = 90,
-  TextDecorationLine = 91,
-  TextDecorationThickness = 92,
-  TextDecorationStyle = 93,
-  TextDecorationColor = 94,
-  AnimationName = 95,
-  BorderWidth = 96,
-  BorderColor = 97,
-  Margin = 98,  // 复合属性
-  Padding = 99,  // 复合属性
-  BorderRadius = 100,  // 复合属性
-  BoxOrient = 101,
-  PointerEvents = 102,
-  Background = 103,  // 复合属性
-  Flex = 104,  // 复合属性
-  Border = 105,  // 复合属性
-  BorderStyle = 106,  // 复合属性
-  Gap = 107,  // 复合属性
-  AnimationDirection = 108,
-  AnimationPlayState = 109,
-  Animation = 110,
-  Filter = 111,
-  BorderTop = 112,
-  BorderRight = 113,
-  BorderBottom = 114,
-  BorderLeft = 115,
-  TextUnderlineOffset = 116,
-  BackdropFilter = 117,
-  // ...
-  All = 99999,       // used for transition-property
+// CSS 属性枚举：由 property_registry 的属性表生成（唯一事实源）。
+// ⚠️ 数值 id 是线上产物格式，新增属性只能在末尾追加，禁止改动既有值。
+
+macro_rules! __define_css_property_type {
+  ($($variant:ident, $id:expr, $kind:ident, $wrap:ident($payload:ident) $src:ident, $kebab:literal, $camel:literal $(, $alias:literal)* ;)*) => {
+    #[repr(u32)]
+    #[derive(Hash, PartialEq, Eq, Debug, Clone, Copy)]
+    pub enum CSSPropertyType {
+      Invalid = 0,
+      $($variant = $id,)*
+      All = 99999, // used for transition-property
+    }
+  };
 }
 
-pub fn string_to_css_property_type(property: &str) -> CSSPropertyType {
-  match property {
-    "alignContent" => CSSPropertyType::AlignContent,
-    "justifyContent" => CSSPropertyType::JustifyContent,
-    "alignItems" => CSSPropertyType::AlignItems,
-    "alignSelf" => CSSPropertyType::AlignSelf,
-    "flexBasis" => CSSPropertyType::FlexBasis,
-    "flexDirection" => CSSPropertyType::FlexDirection,
-    "flexGrow" => CSSPropertyType::FlexGrow,
-    "flexShrink" => CSSPropertyType::FlexShrink,
-    "flexWrap" => CSSPropertyType::FlexWrap,
-    "aspectRatio" => CSSPropertyType::AspectRatio,
-    "display" => CSSPropertyType::Display,
-    "columnGap" => CSSPropertyType::ColumnGap,
-    "rowGap" => CSSPropertyType::RowGap,
-    "marginLeft" => CSSPropertyType::MarginLeft,
-    "marginRight" => CSSPropertyType::MarginRight,
-    "marginTop" => CSSPropertyType::MarginTop,
-    "marginBottom" => CSSPropertyType::MarginBottom,
-    "paddingLeft" => CSSPropertyType::PaddingLeft,
-    "paddingRight" => CSSPropertyType::PaddingRight,
-    "paddingTop" => CSSPropertyType::PaddingTop,
-    "paddingBottom" => CSSPropertyType::PaddingBottom,
-    "width" => CSSPropertyType::Width,
-    "minWidth" => CSSPropertyType::MinWidth,
-    "maxWidth" => CSSPropertyType::MaxWidth,
-    "height" => CSSPropertyType::Height,
-    "minHeight" => CSSPropertyType::MinHeight,
-    "maxHeight" => CSSPropertyType::MaxHeight,
-    "overflow" => CSSPropertyType::Overflow,
-    "fontSize" => CSSPropertyType::FontSize,
-    "fontStyle" => CSSPropertyType::FontStyle,
-    "fontFamily" => CSSPropertyType::FontFamily,
-    "fontWeight" => CSSPropertyType::FontWeight,
-    "lineHeight" => CSSPropertyType::LineHeight,
-    "letterSpacing" => CSSPropertyType::LetterSpacing,
-    "verticalAlign" => CSSPropertyType::VerticalAlign,
-    "textAlign" => CSSPropertyType::TextAlign,
-    "textDecoration" => CSSPropertyType::TextDecoration,
-    "textShadow" => CSSPropertyType::TextShadow,
-    "textOverflow" => CSSPropertyType::TextOverflow,
-    "textTransform" => CSSPropertyType::TextTransform,
-    "color" => CSSPropertyType::Color,
-    "backgroundColor" => CSSPropertyType::BackgroundColor,
-    "backgroundImage" => CSSPropertyType::BackgroundImage,
-    "backgroundPosition" => CSSPropertyType::BackgroundPosition,
-    "backgroundSize" => CSSPropertyType::BackgroundSize,
-    "backgroundRepeat" => CSSPropertyType::BackgroundRepeat,
-    "borderTopColor" => CSSPropertyType::BorderTopColor,
-    "borderRightColor" => CSSPropertyType::BorderRightColor,
-    "borderBottomColor" => CSSPropertyType::BorderBottomColor,
-    "borderLeftColor" => CSSPropertyType::BorderLeftColor,
-    "borderTopStyle" => CSSPropertyType::BorderTopStyle,
-    "borderRightStyle" => CSSPropertyType::BorderRightStyle,
-    "borderBottomStyle" => CSSPropertyType::BorderBottomStyle,
-    "borderLeftStyle" => CSSPropertyType::BorderLeftStyle,
-    "borderTopWidth" => CSSPropertyType::BorderTopWidth,
-    "borderRightWidth" => CSSPropertyType::BorderRightWidth,
-    "borderBottomWidth" => CSSPropertyType::BorderBottomWidth,
-    "borderLeftWidth" => CSSPropertyType::BorderLeftWidth,
-    "borderTopLeftRadius" => CSSPropertyType::BorderTopLeftRadius,
-    "borderTopRightRadius" => CSSPropertyType::BorderTopRightRadius,
-    "borderBottomLeftRadius" => CSSPropertyType::BorderBottomLeftRadius,
-    "borderBottomRightRadius" => CSSPropertyType::BorderBottomRightRadius,
-    "boxShadow" => CSSPropertyType::BoxShadow,
-    "zIndex" => CSSPropertyType::ZIndex,
-    "position" => CSSPropertyType::Position,
-    "top" => CSSPropertyType::Top,
-    "right" => CSSPropertyType::Right,
-    "bottom" => CSSPropertyType::Bottom,
-    "left" => CSSPropertyType::Left,
-    "visibility" => CSSPropertyType::Visibility,
-    "opacity" => CSSPropertyType::Opacity,
-    "transform" => CSSPropertyType::Transform,
-    "transformOrigin" => CSSPropertyType::TransformOrigin,
-    "animation" => CSSPropertyType::Animation,
-    "animationKeyFrames" => CSSPropertyType::AnimationKeyFrames,
-    "animationDuration" => CSSPropertyType::AnimationDuration,
-    "animationTimingFunction" => CSSPropertyType::AnimationTimingFunction,
-    "animationDelay" => CSSPropertyType::AnimationDelay,
-    "animationIterationCount" => CSSPropertyType::AnimationIterationCount,
-    "content" => CSSPropertyType::Content,
-    "wordBreak" => CSSPropertyType::WordBreak,
-    "PointerEvents" => CSSPropertyType::PointerEvents,
-    "webkitLineClamp" => CSSPropertyType::WebkitLineClamp,
-    "animationFillMode" => CSSPropertyType::AnimationFillMode,
-    "backgroundPositionX" => CSSPropertyType::BackgroundPositionX,
-    "backgroundPositionY" => CSSPropertyType::BackgroundPositionY,
-    "transition" => CSSPropertyType::Transition,
-    "transitionProperty" => CSSPropertyType::TransitionProperty,
-    "transitionDuration" => CSSPropertyType::TransitionDuration,
-    "transitionTimingFunction" => CSSPropertyType::TransitionTimingFunction,
-    "transitionDelay" => CSSPropertyType::TransitionDelay,
-    "whiteSpace" => CSSPropertyType::WhiteSpace,
-    "textDecorationLine" => CSSPropertyType::TextDecorationLine,
-    "textDecorationThickness" => CSSPropertyType::TextDecorationThickness,
-    "textDecorationStyle" => CSSPropertyType::TextDecorationStyle,
-    "textDecorationColor" => CSSPropertyType::TextDecorationColor,
-    "textUnderlineOffset" => CSSPropertyType::TextUnderlineOffset,
-    "animationName" => CSSPropertyType::AnimationName,
-    "borderWidth" => CSSPropertyType::BorderWidth,
-    "borderColor" => CSSPropertyType::BorderColor,
-    "margin" => CSSPropertyType::Margin,
-    "padding" => CSSPropertyType::Padding,
-    "borderRadius" => CSSPropertyType::BorderRadius,
-    "boxOrient" => CSSPropertyType::BoxOrient,
-    // S 复合属性，仅用作css变量的解析 ====
-    "background" => CSSPropertyType::Background,
-    "flex" => CSSPropertyType::Flex,
-    "border" => CSSPropertyType::Border,
-    "gap" => CSSPropertyType::Gap,
-    "borderStyle" => CSSPropertyType::BorderStyle,
-    "filter" => CSSPropertyType::Filter,
-    "borderTop" => CSSPropertyType::BorderTop,
-    "borderRight" => CSSPropertyType::BorderRight,
-    "borderBottom" => CSSPropertyType::BorderBottom,
-    "borderLeft" => CSSPropertyType::BorderLeft,
-    "backdropFilter" => CSSPropertyType::BackdropFilter,
-    // E 复合属性，仅用作css变量的解析 ====
-    _ => CSSPropertyType::Invalid,
+crate::for_each_property_entry!(__define_css_property_type);
+
+/// 按 camelCase 属性名反查属性类型（含别名）。
+/// 主 camel 名仅在 simple / compound 属性的"假 camel（仅 CSS 变量反查）"语义无歧义时生效。
+macro_rules! __define_string_to_type {
+  ($($variant:ident, $id:expr, $kind:ident, $wrap:ident($payload:ident) $src:ident, $kebab:literal, $camel:literal $(, $alias:literal)* ;)*) => {
+    pub fn string_to_css_property_type(property: &str) -> CSSPropertyType {
+      match property {
+        $($camel => CSSPropertyType::$variant, $($alias => CSSPropertyType::$variant,)*)*
+        _ => CSSPropertyType::Invalid,
+      }
+    }
+  };
+}
+
+crate::for_each_property_entry!(__define_string_to_type);
+
+#[cfg(test)]
+mod tests {
+  use super::*;
+
+  /// 注册表内部一致性：id 唯一（Invalid/All 除外）、camel→variant 映射可达、
+  /// enum 判别值与表内 id 一致。
+  #[test]
+  fn registry_is_consistent() {
+    macro_rules! __collect {
+      ($($variant:ident, $id:expr, $kind:ident, $wrap:ident($payload:ident) $src:ident, $kebab:literal, $camel:literal $(, $alias:literal)* ;)*) => {{
+        let ids: Vec<(u32, &str)> = vec![$( ($id, stringify!($variant)) ),*];
+        let enum_ids: Vec<(u32, &str)> = vec![$( (CSSPropertyType::$variant as u32, stringify!($variant)) ),*];
+        (ids, enum_ids)
+      }};
+    }
+    let (ids, enum_ids) = crate::for_each_property_entry!(__collect);
+    // 1) id 唯一
+    for (i, (id, name)) in ids.iter().enumerate() {
+      assert!(
+        !ids.iter().skip(i + 1).any(|(other, _)| other == id),
+        "duplicate id {} on {}", id, name
+      );
+    }
+    // 2) 表内 id == enum 判别值
+    assert_eq!(ids, enum_ids);
+    // 3) camel 名可反查（主名 + 别名）
+    assert_eq!(string_to_css_property_type("width") as u32, CSSPropertyType::Width as u32);
+    assert_eq!(string_to_css_property_type("webkitLineClamp") as u32, CSSPropertyType::WebkitLineClamp as u32);
+    assert_eq!(string_to_css_property_type("PointerEvents") as u32, CSSPropertyType::PointerEvents as u32);
+    assert_eq!(string_to_css_property_type("nope"), CSSPropertyType::Invalid);
   }
 }

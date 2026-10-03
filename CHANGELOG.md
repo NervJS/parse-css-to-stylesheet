@@ -1,3 +1,14 @@
+# [2.0.0](https://github.com/NervJS/parse-css-to-stylesheet/compare/v1.2.1...v2.0.0) (2026-10-03)
+
+
+### Features
+
+* 支持更完整的grid ([97365a7](https://github.com/NervJS/parse-css-to-stylesheet/commit/97365a78a8549a9408ac73ed41c96186e1e73064))
+* 支持grid/alignContent: stretch ([17218a6](https://github.com/NervJS/parse-css-to-stylesheet/commit/17218a63f1fe708a221431952be2c39018cbb527))
+* **grid:** CSS Grid 编译支持 + 属性注册表（架构优化第一步） ([4bdd4df](https://github.com/NervJS/parse-css-to-stylesheet/commit/4bdd4df8b682ac1894f0769ce63054133f63ba17))
+
+
+
 ## [1.2.1](https://github.com/NervJS/parse-css-to-stylesheet/compare/v1.2.0...v1.2.1) (2026-09-14)
 
 

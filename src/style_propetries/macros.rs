@@ -54,6 +54,15 @@ macro_rules! generate_expr_lit_num {
   }};
 }
 
+/// 输出 f64 数字字面量（不做 2 位小数截断，用于 grid 槽位等需要精确保留 index/type 的场景）
+#[macro_export]
+macro_rules! generate_expr_lit_num_grid {
+  ($var:expr) => {{
+    use swc_core::ecma::ast::*;
+    Expr::Lit(Lit::Num(Number::from($var as f64)))
+  }};
+}
+
 #[macro_export]
 macro_rules! generate_expr_lit_bool {
   ($var:expr) => {{

@@ -4,7 +4,6 @@ use swc_core::common::DUMMY_SP;
 use swc_core::ecma::ast::*;
 
 use crate::constants::{Pseudo, SUPPORT_PSEUDO_KEYS};
-use crate::parse_style_properties::DeclsAndVars;
 use crate::style_propetries::style_value_type::StyleValueType;
 
 use crate::style_parser::{FontFaceItem, KeyFrameItem, RuleItem};

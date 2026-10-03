@@ -127,8 +127,20 @@ export function parse(
 | border-bottom-style        | 'dotted', 'dashed', 'solid'                                                                                                                 |    ✔️    |
 | border-left-style          | 'dotted', 'dashed', 'solid'                                                                                                                 |    ✔️    |
 | opacity                    | Number                                                                                                                                      |    ✔️    |
-| display                    | 'flex', 'none', 'block'                                                                                                                     |    ✔️    |
+| display                    | 'flex', 'none', 'block', 'grid', 'inline-grid'                                                                                              |    ✔️    |
 | display                    | 'inline-block', 'inline-flex', 'inline'                                                                                                     |    ❌    |
+| grid-template-columns      | Length、Percentage、fr、min-content、max-content、auto、none、repeat(n, …)                                                                  |    ✔️    |
+| grid-template-rows         | Length、Percentage、fr、min-content、max-content、auto、none、repeat(n, …)                                                                  |    ✔️    |
+| grid-template              | 'rows / columns' 简写（不含 areas）                                                                                                         |    ✔️    |
+| grid-row-start             | auto、线号、'span n'                                                                                                                        |    ✔️    |
+| grid-row-end               | auto、线号、'span n'                                                                                                                        |    ✔️    |
+| grid-column-start          | auto、线号、'span n'                                                                                                                        |    ✔️    |
+| grid-column-end            | auto、线号、'span n'                                                                                                                        |    ✔️    |
+| grid-row                   | 'start / end' 简写                                                                                                                          |    ✔️    |
+| grid-column                | 'start / end' 简写                                                                                                                          |    ✔️    |
+| grid-area                  | 'row-start / col-start / row-end / col-end' 简写（不支持命名 area）                                                                         |    ✔️    |
+| justify-items              | 'flex-start', 'flex-end', 'center', 'baseline', 'stretch'                                                                                   |    ✔️    |
+| justify-self               | 'flex-start', 'flex-end', 'center', 'baseline', 'stretch', 'auto'                                                                           |    ✔️    |
 | overflow                   | 'hidden', 'visible', 'scroll', 'auto'                                                                                                       |    ✔️    |
 | transform                  | translate、translateX、translateY、translateZ、translate2d、translate3d、scale、scaleX、scaleY、scale3d、rotate、rotateX、rotateY、rotate3d |    ✔️    |
 | transform-origin           | Length(top/center/bottom) Length(left/center/right)                                                                                         |    ✔️    |
@@ -143,6 +155,9 @@ export function parse(
   - \<radial-extent>不支持, 如（closest-side、closest-corner、farthest-side、farthest-corner）
 - `display` 不支持 **行内**
 - 定位不支持 **bottom** 和 **right**
+- grid 不支持 `grid-template-areas`、命名 area、`grid-auto-flow`、隐式轨道；`minmax()`、`fit-content()`、`auto-fill`/`auto-fit` 会回退为原始 CSS 字符串；命名网格线（如 `[sidebar]`）所在声明会被忽略
+- grid 的编译产物编码结构（数值槽）详见 [docs/grid-support.md](docs/grid-support.md)
+- 属性派发的架构改造说明详见 [docs/architecture-refactor.md](docs/architecture-refactor.md)
 
 ### 文本样式
 
@@ -302,3 +317,4 @@ function Index() {
   );
 }
 ```
+

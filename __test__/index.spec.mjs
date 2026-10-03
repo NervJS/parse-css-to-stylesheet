@@ -742,12 +742,47 @@ test('Harmony attrbute test color', t => {
 })
 
 test('Harmony attrbute test -webkt-line-clamp', t => {
+  // 注意：属性名是 `-webkt-line-clamp`（缺 `i`），这是历史遗留 typo。
+  // 真正的 -webkit-line-clamp 走 vendor-strip 后仍能产出 [81,...]，见下方同名
+  // 但拼写正确的测试。本用例固定不识别的 vendor 属性应当产出空 declarations，
+  // 防止误以为 typo 路径也走 WebkitLineClamp=81。
   const { code } = parse([`
   .line1 {
     -webkt-line-clamp: 1;
   }
   .line2 {
     -webkt-line-clamp: 2;
+  }
+  `], {
+    platformString: 'Harmony'
+  })
+  t.snapshot(code)
+})
+
+test('Harmony attrbute test -webkit-line-clamp', t => {
+  // 与上面 typo 测试互补：-webkit-line-clamp 应当走 vendor-strip +
+  // 『lineClamp』 特殊臂 → Normal::new(WebkitLineClamp, ...)
+  const { code } = parse([`
+  .line1 {
+    -webkit-line-clamp: 1;
+  }
+  .line2 {
+    -webkit-line-clamp: 2;
+  }
+  `], {
+    platformString: 'Harmony'
+  })
+  t.snapshot(code)
+})
+
+test('Harmony attrbute test -webkit-appearance -moz-appearance', t => {
+  // appearance 无注册表条目，应走 dispatch 未命中的兜底路径。此用例主要
+  // 证明 vendor-strip 分支（src/parse_style_properties.rs:182-186）对
+  // 非注册表即 vendor-only 属性也能正常走完 parse 流程。
+  const { code } = parse([`
+  .a {
+    -webkit-appearance: none;
+    -moz-appearance: none;
   }
   `], {
     platformString: 'Harmony'
@@ -823,4 +858,162 @@ test('Harmony combine test useHoc', t => {
     platformString: 'Harmony'
   })
   t.snapshot(code)
+})
+
+test('Harmony attrbute test grid', t => {
+  const { code } = parse([`
+  .grid {
+    display: grid;
+    grid-template-columns: 1fr 2fr;
+    grid-template-rows: auto 1fr;
+    gap: 10px;
+    justify-items: center;
+    align-items: stretch;
+    justify-content: space-between;
+    align-content: center;
+  }
+  .inline-grid {
+    display: inline-grid;
+  }
+  .grid-repeat {
+    display: grid;
+    grid-template-columns: repeat(3, 1fr);
+  }
+  .grid-repeat-multi {
+    grid-template-columns: repeat(2, 100px 1fr);
+  }
+  .grid-mixed {
+    grid-template-columns: 100px 50% 1fr 2fr;
+  }
+  .grid-none {
+    grid-template-columns: none;
+  }
+  .grid-keywords {
+    grid-template-columns: min-content max-content auto;
+  }
+  .grid-passthrough {
+    grid-template-columns: minmax(100px, 1fr);
+    grid-template-rows: repeat(auto-fill, 100px);
+  }
+  .item {
+    grid-column: 1 / span 2;
+    grid-row: 1 / 3;
+    justify-self: end;
+    align-self: center;
+  }
+  .item-start-end {
+    grid-column-start: 2;
+    grid-column-end: span 3;
+    grid-row-start: 1;
+    grid-row-end: -1;
+  }
+  .item-span {
+    grid-column: span 2;
+    grid-area: 1 / 2 / 3 / 4;
+  }
+  .item-named {
+    grid-column: header / footer;
+  }
+  `], {
+    platformString: 'Harmony'
+  })
+  t.snapshot(code)
+})
+
+test('Harmony attrbute test grid template shorthand', t => {
+  const { code } = parse([`
+  .grid-template {
+    display: grid;
+    grid-template: 1fr auto / 1fr 2fr;
+  }
+  `], {
+    platformString: 'Harmony'
+  })
+  t.snapshot(code)
+})
+
+test('Harmony attrbute test grid full features', t => {
+  const { code } = parse([`
+  .grid-minmax {
+    grid-template-columns: minmax(100px, 1fr) minmax(50%, auto) minmax(min-content, max-content);
+  }
+  .grid-fit {
+    grid-template-columns: fit-content(200px) fit-content(50%);
+  }
+  .grid-auto-repeat {
+    grid-template-columns: repeat(auto-fill, 100px) repeat(auto-fit, minmax(50px, 1fr));
+  }
+  .grid-auto-size {
+    grid-auto-rows: 100px;
+    grid-auto-columns: minmax(50px, auto);
+  }
+  .grid-flow-row {
+    grid-auto-flow: row;
+  }
+  .grid-flow-col-dense {
+    grid-auto-flow: column dense;
+  }
+  .grid-flow-row-dense {
+    grid-auto-flow: dense;
+  }
+  .place {
+    place-items: center stretch;
+    place-self: start;
+    place-content: space-between center;
+  }
+  .place-single {
+    place-items: baseline;
+  }
+  `], {
+    platformString: 'Harmony'
+  })
+  t.snapshot(code)
+})
+
+test('Harmony grid flatbuffer v2 round trip', t => {
+  const { buffer } = parse([`
+  .grid {
+    display: grid;
+    grid-template-columns: 1fr 2fr;
+    grid-template-rows: auto 1fr;
+  }
+  .item {
+    grid-column: 1 / span 2;
+    grid-area: 1 / 2 / 3 / 4;
+  }
+  `], {
+    platformString: 'Harmony',
+    output: { isBin: true, version: 'v2' }
+  })
+  t.true(buffer instanceof Buffer)
+  t.true(buffer.length > 0)
+})
+
+test('Harmony grid string parser parity for new enums and place shorthands', t => {
+  const { code } = parse([`
+  .inline-flex { display: inline-flex; }
+  .stretch { justify-content: stretch; align-content: stretch; }
+  .place { place-items: center stretch; place-self: start; place-content: stretch; }
+  `], { platformString: 'Harmony' })
+  const styles = JSON.parse(code).styles
+  const declarations = selector => styles.find(style => style.selector[0] === selector).declarations
+  t.deepEqual(declarations('inline-flex'), [[11, 8]])
+  t.deepEqual(declarations('stretch'), [[2, 4], [1, 4]])
+  t.deepEqual(declarations('place'), [[3, 2], [127, 4], [4, 1], [128, 1], [1, 4], [2, 4]])
+})
+
+test('Harmony place shorthand var fallback preserves property ids', t => {
+  const { code } = parse([`
+  .place-var {
+    place-items: var(--items);
+    place-self: var(--self);
+    place-content: var(--content);
+  }
+  `], { platformString: 'Harmony' })
+  t.deepEqual(JSON.parse(code).styles[0].declarations.map(([id]) => id), [132, 133, 134])
+})
+
+test('Harmony grid-auto-flow dense matches inline string parsing', t => {
+  const { code } = parse([`.dense { grid-auto-flow: dense; }`], { platformString: 'Harmony' })
+  t.deepEqual(JSON.parse(code).styles[0].declarations, [[131, 2]])
 })

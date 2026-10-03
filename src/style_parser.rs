@@ -3,7 +3,6 @@ use std::{cell::RefCell, convert::Infallible, rc::Rc};
 
 use super::parse_style_properties::parse_style_properties;
 use crate::constants::Pseudo;
-use crate::parse_style_properties::DeclsAndVars;
 use crate::style_propetries::style_value_type::CssVariable;
 use crate::{generate_expr_enum, generate_expr_lit_str};
 use crate::style_propetries::font_weight::{self, FontWeight};

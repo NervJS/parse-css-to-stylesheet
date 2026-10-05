@@ -1,3 +1,12 @@
+## [2.0.2](https://github.com/NervJS/parse-css-to-stylesheet/compare/v2.0.1...v2.0.2) (2026-10-05)
+
+
+### Bug Fixes
+
+* 修复filter/background-position单位错误 ([01fd025](https://github.com/NervJS/parse-css-to-stylesheet/commit/01fd0254fb0e40d3fe764ec44a21ef6648231dc3))
+
+
+
 ## [2.0.1](https://github.com/NervJS/parse-css-to-stylesheet/compare/v2.0.0...v2.0.1) (2026-10-03)
 
 

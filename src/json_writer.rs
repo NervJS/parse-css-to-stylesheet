@@ -20,6 +20,7 @@ pub struct JsonWriter {
   design_width: Option<i32>,
   allow_inherit: Option<bool>,
   design_mode: Option<String>,
+  platform: Platform,
 }
 
 impl JsonWriter {
@@ -31,6 +32,7 @@ impl JsonWriter {
     design_width: Option<i32>,
     allow_inherit: Option<bool>,
     design_mode: Option<String>,
+    platform: Platform,
   ) -> Self {
     Self {
       styles,
@@ -40,6 +42,7 @@ impl JsonWriter {
       design_width,
       allow_inherit,
       design_mode,
+      platform,
     }
   }
 
@@ -113,7 +116,7 @@ impl JsonWriter {
               key: PropName::Ident(Ident::new("declarations".into(), DUMMY_SP)),
               value: Box::new(Expr::Array(ArrayLit {
                 span: DUMMY_SP,
-                elems: parse_style_values(rule_item.declarations.clone(), rule_item.important_declarections.clone(), Platform::Harmony),
+                elems: parse_style_values(rule_item.declarations.clone(), rule_item.important_declarections.clone(), self.platform.clone()),
               })),
             }))),
           ];
@@ -215,7 +218,7 @@ impl JsonWriter {
           .map(|keyframe_item| {
             Expr::Object(ObjectLit {
               span: DUMMY_SP,
-              props: keyframe_item.to_expr(),
+              props: keyframe_item.to_expr(self.platform.clone()),
             })
           })
           .collect();

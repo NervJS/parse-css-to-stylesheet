@@ -34,6 +34,7 @@ pub fn main() {
     None,
     None,
     None,
+    platform,
   );
 
   let style_json = style_map.to_json();

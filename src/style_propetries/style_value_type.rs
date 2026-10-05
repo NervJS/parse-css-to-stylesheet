@@ -112,7 +112,7 @@ macro_rules! __dispatch_style_value_type_to_expr {
       fn to_expr(&self, platform: Platform) -> PropertyTuple {
         match self {
           StyleValueType::Normal(value) => generate_expr_based_on_platform!(platform, value),
-          StyleValueType::Expr(value) => generate_expr_based_on_platform!(platform, value),
+          StyleValueType::Expr(value) => value.to_expr_for_platform(platform),
           StyleValueType::Variable(value) => generate_expr_based_on_platform!(platform, value),
           $(
             StyleValueType::$variant(value) => generate_expr_based_on_platform!(platform, value),

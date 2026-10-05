@@ -14,6 +14,7 @@ use swc_core::ecma::ast::*;
 
 use crate::{
   generate_expr_enum,
+  generate_expr_lit_num,
   style_propetries::{style_property_enum, traits::ToExpr},
 };
 
@@ -134,11 +135,11 @@ impl ToExpr for BackgroundPosition {
       ImagePosition::ImagePositionXY(x, y) => PropertyTuple::Array(vec![
         (
           CSSPropertyType::BackgroundPositionX,
-          generate_expr_with_css_input(x.to_string(), Platform::Harmony).into(),
+          position_length_expr(x).into(),
         ),
         (
           CSSPropertyType::BackgroundPositionY,
-          generate_expr_with_css_input(y.to_string(), Platform::Harmony).into(),
+          position_length_expr(y).into(),
         ),
       ]),
       ImagePosition::TopStart => PropertyTuple::Array(vec![
@@ -240,6 +241,16 @@ impl ToExpr for BackgroundPosition {
     //   expr
     // )
   }
+}
+
+// Match other layout lengths: numeric wire values are design pixels (LPX).
+// The generic string helper leaves "12px" intact, which the native parser
+// interprets as VP and scales twice on a 375px design page.
+fn position_length_expr(input: &str) -> Expr {
+  if let Some(px) = input.strip_suffix("px").and_then(|value| value.parse::<f64>().ok()) {
+    return generate_expr_lit_num!(px);
+  }
+  generate_expr_with_css_input(input.to_string(), Platform::Harmony)
 }
 
 impl From<(String, &Property<'_>)> for BackgroundPosition {

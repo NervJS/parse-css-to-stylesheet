@@ -89,7 +89,7 @@ pub struct KeyFrameItem {
   pub declarations: Vec<StyleValueType>,
 }
 impl KeyFrameItem {
-  pub fn to_expr(&self) -> Vec<PropOrSpread> {
+  pub fn to_expr(&self, platform: Platform) -> Vec<PropOrSpread> {
     let arr_keyframe_items = vec![
       PropOrSpread::Prop(Box::new(Prop::KeyValue(KeyValueProp {
         key: PropName::Ident(Ident::new("percent".into(), DUMMY_SP)),
@@ -99,7 +99,7 @@ impl KeyFrameItem {
         key: PropName::Str("event".into()),
         value: Box::new(Expr::Array(ArrayLit {
           span: DUMMY_SP,
-          elems: parse_style_values(self.declarations.clone(), vec![], Platform::Harmony),
+          elems: parse_style_values(self.declarations.clone(), vec![], platform),
         })),
       }))),
     ];

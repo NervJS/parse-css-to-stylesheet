@@ -4,7 +4,7 @@ use lightningcss::{
 };
 
 use crate::{
-  generate_expr_lit_str,
+  generate_expr_lit_str, generate_expr_lit_str_raw,
   style_propetries::{
     animation_multi::AnimationMulti, aspect_ratio::AspectRatio, background::Background, background_image::BackgroundImage, background_position::BackgroundPosition, background_repeat::BackgroundRepeat, background_size::BackgroundSize, border::Border, border_color::BorderColor, border_radius::BorderRadius, border_style::BorderStyle, border_width::BorderWidth, box_orient::BoxOrient, box_shadow::BoxShadow, color::ColorProperty, display::Display, expr::Expr, flex::Flex, flex_align::FlexAlign, flex_basis::FlexBasis, flex_direction::FlexDirection, flex_wrap::FlexWrap, font_size::FontSize, font_style::FontStyle, font_weight::FontWeight, gap::Gap, grid_auto_flow::GridAutoFlow, grid_placement::GridPlacement, grid_template::GridTemplate, item_align::ItemAlign, length_value::LengthValueProperty, letter_spacing::LetterSpacing, line_height::LineHeight, marin_padding::MarginPadding, max_size::MaxSizeProperty, normal::Normal, number::NumberProperty, opacity::Opacity, overflow::Overflow, pointer_events::PointerEvents, position::Position, size::SizeProperty, style_property_type::{string_to_css_property_type, CSSPropertyType}, style_value_type::{CssVariable, StyleValueType}, text_align::TextAlign, text_decoration::TextDecoration, text_overflow::TextOverflow, text_shadow::TextShadow, text_transform::TextTransform, transform::Transform, transform_origin::TransformOrigin, transition::Transition, variable::Variable, vertical_align::VerticalAlign, visibility::Visibility, white_space::WhiteSpace, word_break::WordBreak
 
@@ -354,13 +354,13 @@ pub fn parse_style_properties(properties: &Vec<(String, Property)>) -> DeclsAndV
         // 吐出字符串
         final_properties.push(StyleValueType::Expr(Expr::new(
           CSSPropertyType::Filter,
-          generate_expr_lit_str!(value.value_to_css_string(PrinterOptions::default()).unwrap()),
+          generate_expr_lit_str_raw!(value.value_to_css_string(PrinterOptions::default()).unwrap()),
         )));
       }
       "backdropFilter" => {
         final_properties.push(StyleValueType::Expr(Expr::new(
           CSSPropertyType::BackdropFilter,
-          generate_expr_lit_str!(value.value_to_css_string(PrinterOptions::default()).unwrap()),
+          generate_expr_lit_str_raw!(value.value_to_css_string(PrinterOptions::default()).unwrap()),
         )));
       }
       _ => {

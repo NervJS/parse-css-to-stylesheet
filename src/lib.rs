@@ -84,7 +84,8 @@ pub fn parse(styles: Vec<String>, options: ParseOptions) -> ParseResult {
     style_data.all_fonts.borrow().clone(),
     design_width,
     allow_inherit,
-    design_mode
+    design_mode,
+    platform,
   );
 
   let style_json = style_map.to_json();
